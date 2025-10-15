@@ -1,0 +1,25 @@
+[chain]
+name = "string"
+id = "string"
+# cosmos, evm, etc... but for now only cosmos is supported
+type = "cosmos"
+# this referrs to the directory name within the chain registry
+registry = "string"
+# the url of the explorer for the chain
+explorer_url = "string"
+slip44 = "integer" # slip44 for the chain
+
+chain.rpcs = [ {url = "string" provider = "string"} ]
+chain.rest = [ {url = "string" provider = "string"} ]
+
+[[token]]
+# the chain marked denom
+denom = "string"
+# the full name of the token, Bitcoin, Osmosis, Ether, etc...
+name = "string"
+# example: USDC, BTC, ATONE etc...
+symbol = "string"
+# the exponent of the token
+exponent = "string"
+# path to the icon of the token
+icon = "string"

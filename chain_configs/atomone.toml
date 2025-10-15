@@ -1,0 +1,29 @@
+[chain]
+name = "Atom One"
+id = "atomone-1"
+type = "cosmos"
+registry = "atomone"
+explorer_url = "https://thespectra.io/atomone"
+slip44 = 118
+
+chain.rpcs = [ 
+    {url = "https://atomone-rpc.cogwheel.zone" provider = "Cogwheel"},
+]
+
+chain.rest = [ 
+    {url = "https://atomone-api.cogwheel.zone" provider = "Cogwheel"},
+]
+
+[[token]]
+denom = "uatone"
+name = "Atone"
+symbol = "ATONE"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone"
+
+[[token]]
+denom = "uphoton"
+name = "Photon"
+symbol = "PHOTON"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/photon"

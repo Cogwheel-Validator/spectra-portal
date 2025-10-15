@@ -1,0 +1,14 @@
+name = "string"
+symbol = "string"
+exponent = "integer"
+icon = "string"
+denom = "string"
+# list of chains that the token is allowed to be used on
+# if empty, then the token is allowed to be used on all chains
+# use chain ids here
+#
+# This is done becuase not every token might be needed on every chain
+# for example ATONE at it's current form can be used on Atom One, Stargaze and GetBZE.
+# However, OSMO outside of Osmosis is rarely needed. Unless you are sending this token to the chain of
+# origin and to other chains that have some use for Osmosis like another DEX for example.
+allowed_chains = ["string"]

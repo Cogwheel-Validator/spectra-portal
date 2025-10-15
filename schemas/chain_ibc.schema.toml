@@ -1,0 +1,18 @@
+[chain]
+name = "string"
+id = "string"
+
+[[chain.ibc]]
+# real denom of the token
+# if for some example the origin is from another chain then use ibc denom present on the chain that
+# this chain is connected to
+denom = "string"
+# the IBC encoded denom
+ibc_denom = "string"
+ibc_version = "string"
+to_chain.name = "string" # name of the chain that this token is connected to
+to_chain.id = "string" # id of the chain that this token is connected to
+connection_id = "string"
+channel.id = "string"
+channel.state = "string"
+port_id = "string"

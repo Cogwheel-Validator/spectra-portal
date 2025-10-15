@@ -1,0 +1,22 @@
+[chain]
+name = "Osmosis"
+id = "osmosis-1"
+type = "cosmos"
+registry = "osmosis"
+explorer_url = "https://mintscan.io/osmosis"
+slip44 = 118
+
+chain.rpcs = [ 
+    {url = "https://osmosis-rpc.cogwheel.zone" provider = "Cogwheel"},
+]
+
+chain.rest = [ 
+    {url = "https://osmosis-api.cogwheel.zone" provider = "Cogwheel"},
+]
+
+[[token]]
+denom = "uosmo"
+name = "Osmosis"
+symbol = "OSMO"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo"
