@@ -1,4 +1,4 @@
-package queryrest
+package query
 
 import (
 	"net/http"
@@ -76,9 +76,7 @@ type NodeStatus struct {
 type NodeInfoResponse struct {
 	Network string `json:"network"`
 	Version string `json:"version"`
-	Other   struct {
-		TxIndexer string `json:"tx_indexer"`
-	} `json:"other"`
+	Other   NodeInfoOther `json:"other"`
 	ApplicationVersion struct {
 		AppName          string `json:"app_name"`
 		Version          string `json:"version"`
