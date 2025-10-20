@@ -7,11 +7,11 @@ explorer_url = "https://thespectra.io/atomone"
 slip44 = 118
 
 chain.rpcs = [ 
-    {url = "https://atomone-rpc.cogwheel.zone" provider = "Cogwheel"},
+    {url = "https://atomone-rpc.cogwheel.zone", provider = "Cogwheel"},
 ]
 
 chain.rest = [ 
-    {url = "https://atomone-api.cogwheel.zone" provider = "Cogwheel"},
+    {url = "https://atomone-api.cogwheel.zone", provider = "Cogwheel"},
 ]
 
 [[token]]

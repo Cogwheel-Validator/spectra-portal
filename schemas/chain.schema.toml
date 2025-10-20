@@ -9,8 +9,8 @@ registry = "string"
 explorer_url = "string"
 slip44 = "integer" # slip44 for the chain
 
-chain.rpcs = [ {url = "string" provider = "string"} ]
-chain.rest = [ {url = "string" provider = "string"} ]
+chain.rpcs = [ {url = "string", provider = "string"} ]
+chain.rest = [ {url = "string", provider = "string"} ]
 
 [[token]]
 # the chain marked denom

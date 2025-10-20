@@ -7,11 +7,11 @@ explorer_url = "https://mintscan.io/osmosis"
 slip44 = 118
 
 chain.rpcs = [ 
-    {url = "https://osmosis-rpc.cogwheel.zone" provider = "Cogwheel"},
+    {url = "https://osmosis-rpc.cogwheel.zone", provider = "Cogwheel"},
 ]
 
 chain.rest = [ 
-    {url = "https://osmosis-api.cogwheel.zone" provider = "Cogwheel"},
+    {url = "https://osmosis-api.cogwheel.zone", provider = "Cogwheel"},
 ]
 
 [[token]]
