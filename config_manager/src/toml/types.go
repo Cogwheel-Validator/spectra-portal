@@ -1,5 +1,11 @@
 package toml
 
+var ChainTypes = []string{
+	"cosmos",
+	// slice is probably overkill here but for now it's fine
+	// if future this could be expanded to other types
+}
+
 type ChainConfig struct {
 	Name string `toml:"name"`
 	Id string `toml:"id"`
