@@ -3,10 +3,13 @@ module github.com/Cogwheel-Validator/spectra-ibc-hub
 go 1.25.1
 
 require (
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20250912141014-52f32327d4b0.1
+	connectrpc.com/connect v1.19.1
 	github.com/hashicorp/go-getter v1.8.2
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/viper v1.21.0
+	google.golang.org/protobuf v1.36.10
 )
 
 require (
@@ -64,5 +67,4 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	google.golang.org/grpc v1.56.3 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
 )

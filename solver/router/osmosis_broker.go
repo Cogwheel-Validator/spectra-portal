@@ -33,13 +33,16 @@ func (o *OsmosisSqsBroker) QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom 
 		return nil, err
 	}
 
+	// Convert SQS response to typed OsmosisRouteData
+	routeData := ConvertSqsResponseToRouteData(response)
+
 	// Convert SQS response to standardized SwapResult
 	return &SwapResult{
 		AmountIn:     response.AmountIn.Amount,
 		AmountOut:    response.AmountOut,
 		PriceImpact:  response.PriceImpact,
 		EffectiveFee: response.EffectiveFee,
-		RouteData:    response.Route, // Keep the full route data for frontend
+		RouteData:    routeData,
 	}, nil
 }
 

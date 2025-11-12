@@ -1,0 +1,204 @@
+package rpc
+
+import (
+	"context"
+
+	"connectrpc.com/connect"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/models"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/router"
+	v1 "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1"
+	v1connect "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1/v1connect"
+)
+
+// SolverServer implements the ConnectRPC SolverServiceHandler interface
+type SolverServer struct {
+	solver        *router.Solver
+	denomResolver *router.DenomResolver
+}
+
+// Verify that SolverServer implements the interface
+var _ v1connect.SolverServiceHandler = (*SolverServer)(nil)
+
+// NewSolverServer creates a new SolverServer
+func NewSolverServer(solver *router.Solver, denomResolver *router.DenomResolver) *SolverServer {
+	return &SolverServer{
+		solver:        solver,
+		denomResolver: denomResolver,
+	}
+}
+
+// SolveRoute implements the ConnectRPC handler for solving routes
+func (s *SolverServer) SolveRoute(
+	ctx context.Context,
+	req *connect.Request[v1.SolveRouteRequest],
+) (*connect.Response[v1.SolveRouteResponse], error) {
+	// Step 1: Convert proto request to internal models.RouteRequest
+	internalReq := models.RouteRequest{
+		ChainA:          req.Msg.ChainA,
+		TokenInDenom:    req.Msg.TokenInDenom,
+		AmountIn:        req.Msg.AmountIn,
+		ChainB:          req.Msg.ChainB,
+		TokenOutDenom:   req.Msg.TokenOutDenom,
+		SenderAddress:   req.Msg.SenderAddress,
+		ReceiverAddress: req.Msg.ReceiverAddress,
+	}
+
+	// Step 2: Call your existing solver logic with internal types
+	internalResp := s.solver.Solve(internalReq)
+
+	// Step 3: Convert internal models.RouteResponse to proto response
+	protoResp := convertToProtoResponse(&internalResp)
+
+	// Step 4: Return wrapped in connect.Response
+	return connect.NewResponse(protoResp), nil
+}
+
+// LookupDenom implements the ConnectRPC handler for denom lookup
+func (s *SolverServer) LookupDenom(
+	ctx context.Context,
+	req *connect.Request[v1.LookupDenomRequest],
+) (*connect.Response[v1.LookupDenomResponse], error) {
+	denomInfo, err := s.denomResolver.ResolveDenom(req.Msg.ChainId, req.Msg.Denom)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, err)
+	}
+	return connect.NewResponse(&v1.LookupDenomResponse{
+		ChainDenom: denomInfo.ChainDenom,
+		BaseDenom: denomInfo.BaseDenom,
+		OriginChain: denomInfo.OriginChain,
+		IsNative: denomInfo.IsNative,
+		IbcPath: denomInfo.IbcPath,
+	}), nil
+}
+
+// ==================== Conversion Functions ====================
+// These convert between internal models and protobuf types
+
+func convertToProtoResponse(resp *models.RouteResponse) *v1.SolveRouteResponse {
+	protoResp := &v1.SolveRouteResponse{
+		Success:      resp.Success,
+		ErrorMessage: resp.ErrorMessage,
+	}
+
+	// Convert Direct route if present (using protobuf oneof)
+	if resp.Direct != nil {
+		protoResp.Route = &v1.SolveRouteResponse_Direct{
+			Direct: convertToProtoDirectRoute(resp.Direct),
+		}
+	}
+
+	// Convert MultiHop route if present (using protobuf oneof)
+	if resp.MultiHop != nil {
+		protoResp.Route = &v1.SolveRouteResponse_MultiHop{
+			MultiHop: convertToProtoMultiHopRoute(resp.MultiHop),
+		}
+	}
+
+	return protoResp
+}
+
+func convertToProtoDirectRoute(direct *models.DirectRoute) *v1.DirectRoute {
+	return &v1.DirectRoute{
+		Transfer: convertToProtoIBCLeg(direct.Transfer),
+	}
+}
+
+func convertToProtoMultiHopRoute(multiHop *models.MultiHopRoute) *v1.MultiHopRoute {
+	return &v1.MultiHopRoute{
+		Path:        multiHop.Path,
+		InboundLeg:  convertToProtoIBCLeg(multiHop.InboundLeg),
+		Swap:        convertToProtoSwapQuote(multiHop.Swap),
+		OutboundLeg: convertToProtoIBCLeg(multiHop.OutboundLeg),
+	}
+}
+
+func convertToProtoIBCLeg(leg *models.IBCLeg) *v1.IBCLeg {
+	if leg == nil {
+		return nil
+	}
+	return &v1.IBCLeg{
+		FromChain: leg.FromChain,
+		ToChain:   leg.ToChain,
+		Channel:   leg.Channel,
+		Port:      leg.Port,
+		Token:     convertToProtoTokenMapping(leg.Token),
+		Amount:    leg.Amount,
+	}
+}
+
+func convertToProtoTokenMapping(token *models.TokenMapping) *v1.TokenMapping {
+	if token == nil {
+		return nil
+	}
+	return &v1.TokenMapping{
+		ChainDenom:  token.ChainDenom,
+		BaseDenom:   token.BaseDenom,
+		OriginChain: token.OriginChain,
+		IsNative:    token.IsNative,
+	}
+}
+
+func convertToProtoSwapQuote(swap *models.SwapQuote) *v1.SwapQuote {
+	if swap == nil {
+		return nil
+	}
+
+	protoSwap := &v1.SwapQuote{
+		Broker:       swap.Broker,
+		TokenIn:      convertToProtoTokenMapping(swap.TokenIn),
+		TokenOut:     convertToProtoTokenMapping(swap.TokenOut),
+		AmountIn:     swap.AmountIn,
+		AmountOut:    swap.AmountOut,
+		PriceImpact:  swap.PriceImpact,
+		EffectiveFee: swap.EffectiveFee,
+	}
+
+	// Convert broker-specific RouteData based on broker type
+	// This is the key part - converting interface{} to typed oneof
+	switch swap.Broker {
+	case "osmosis":
+		if osmosisData, ok := swap.RouteData.(*router.OsmosisRouteData); ok {
+			protoSwap.RouteData = &v1.SwapQuote_OsmosisRouteData{
+				OsmosisRouteData: convertOsmosisRouteData(osmosisData),
+			}
+		}
+	// Add more brokers here as you implement them:
+	// case "astroport" for example:
+	}
+
+	return protoSwap
+}
+
+func convertOsmosisRouteData(data *router.OsmosisRouteData) *v1.OsmosisRouteData {
+	if data == nil {
+		return nil
+	}
+
+	routes := make([]*v1.OsmosisRoute, len(data.Routes))
+	for i, route := range data.Routes {
+		pools := make([]*v1.OsmosisPool, len(route.Pools))
+		for j, pool := range route.Pools {
+			pools[j] = &v1.OsmosisPool{
+				Id:            int32(pool.ID),
+				Type:          int32(pool.Type),
+				SpreadFactor:  pool.SpreadFactor,
+				TokenOutDenom: pool.TokenOutDenom,
+				TakerFee:      pool.TakerFee,
+				LiquidityCap:  pool.LiquidityCap,
+			}
+		}
+
+		routes[i] = &v1.OsmosisRoute{
+			Pools:     pools,
+			HasCwPool: route.HasCwPool,
+			OutAmount: route.OutAmount,
+			InAmount:  route.InAmount,
+		}
+	}
+
+	return &v1.OsmosisRouteData{
+		Routes:               routes,
+		LiquidityCap:         data.LiquidityCap,
+		LiquidityCapOverflow: data.LiquidityCapOverflow,
+	}
+}

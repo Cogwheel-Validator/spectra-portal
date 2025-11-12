@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package rpc.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1";
+
+// SolverService provides route discovery and validation for IBC transfers and swaps
+service SolverService {
+    // SolveRoute finds and validates a route between two chains
+    rpc SolveRoute(SolveRouteRequest) returns (SolveRouteResponse) {}
+    
+    // LookupDenom resolves denom information on a specific chain
+    rpc LookupDenom(LookupDenomRequest) returns (LookupDenomResponse) {}
+}
+
+message SolveRouteRequest {
+    string chain_a = 1 [(buf.validate.field).required = true];
+    string token_in_denom = 2 [
+        (buf.validate.field).required = true, 
+        (buf.validate.field).string.min_len = 1, 
+        // the max length of a denom is 68 characters because 
+        // ibc/ + 64 characters for the hash
+        (buf.validate.field).string.max_len = 68];
+    string amount_in = 3 [(buf.validate.field).required = true];
+    string chain_b = 4 [(buf.validate.field).required = true];
+    string token_out_denom = 5 [
+        (buf.validate.field).required = true, 
+        (buf.validate.field).string.min_len = 1, 
+        (buf.validate.field).string.max_len = 68];
+    string sender_address = 6 [(buf.validate.field).required = true];
+    string receiver_address = 7 [(buf.validate.field).required = true];
+}
+
+message SolveRouteResponse {
+    bool success = 1;
+    string error_message = 2;
+    oneof route {
+        DirectRoute direct = 3;
+        MultiHopRoute multi_hop = 4;
+    }
+}
+
+message DirectRoute {
+    IBCLeg transfer = 1;
+}
+
+message MultiHopRoute {
+    repeated string path = 1;
+    IBCLeg inbound_leg = 2;
+    SwapQuote swap = 3;
+    IBCLeg outbound_leg = 4;
+}
+
+message IBCLeg {
+    string from_chain = 1;
+    string to_chain = 2;
+    string channel = 3;
+    string port = 4;
+    TokenMapping token = 5;
+    string amount = 6;
+}
+
+message TokenMapping {
+    string chain_denom = 1;
+    string base_denom = 2;
+    string origin_chain = 3;
+    bool is_native = 4;
+}
+
+// SwapQuote with broker-specific route data
+message SwapQuote {
+    string broker = 1;
+    TokenMapping token_in = 2;
+    TokenMapping token_out = 3;
+    string amount_in = 4;
+    string amount_out = 5;
+    string price_impact = 6;
+    string effective_fee = 7;
+    
+    // Broker-specific route data using oneof for type safety
+    oneof route_data {
+        OsmosisRouteData osmosis_route_data = 8;
+        // Future brokers can be added here without breaking existing clients
+    }
+}
+
+// Osmosis-specific route data (from SQS API)
+message OsmosisRouteData {
+    repeated OsmosisRoute routes = 1;
+    string liquidity_cap = 2;
+    bool liquidity_cap_overflow = 3;
+}
+
+message OsmosisRoute {
+    repeated OsmosisPool pools = 1;
+    bool has_cw_pool = 2;
+    string out_amount = 3;
+    string in_amount = 4;
+}
+
+message OsmosisPool {
+    int32 id = 1;
+    int32 type = 2;
+    string spread_factor = 3;
+    string token_out_denom = 4;
+    string taker_fee = 5;
+    string liquidity_cap = 6;
+}
+
+// Denom lookup messages
+message LookupDenomRequest {
+    string chain_id = 1 [(buf.validate.field).required = true];
+    string denom = 2 [
+        (buf.validate.field).required = true,
+        (buf.validate.field).string.min_len = 1,
+        (buf.validate.field).string.max_len = 68
+    ];
+}
+
+message LookupDenomResponse {
+    string chain_denom = 1;
+    string base_denom = 2;
+    string origin_chain = 3;
+    bool is_native = 4;
+    string ibc_path = 5;
+}
