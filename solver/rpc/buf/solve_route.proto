@@ -16,16 +16,16 @@ service SolverService {
 }
 
 message SolveRouteRequest {
-    string chain_a = 1 [(buf.validate.field).required = true];
-    string token_in_denom = 2 [
+    string chain_from = 1 [(buf.validate.field).required = true];
+    string token_from_denom = 2 [
         (buf.validate.field).required = true, 
         (buf.validate.field).string.min_len = 1, 
         // the max length of a denom is 68 characters because 
         // ibc/ + 64 characters for the hash
         (buf.validate.field).string.max_len = 68];
     string amount_in = 3 [(buf.validate.field).required = true];
-    string chain_b = 4 [(buf.validate.field).required = true];
-    string token_out_denom = 5 [
+    string chain_to = 4 [(buf.validate.field).required = true];
+    string token_to_denom = 5 [
         (buf.validate.field).required = true, 
         (buf.validate.field).string.min_len = 1, 
         (buf.validate.field).string.max_len = 68];
@@ -38,7 +38,8 @@ message SolveRouteResponse {
     string error_message = 2;
     oneof route {
         DirectRoute direct = 3;
-        MultiHopRoute multi_hop = 4;
+        IndirectRoute indirect = 4;
+        BrokerSwapRoute broker_swap = 5;
     }
 }
 
@@ -46,11 +47,21 @@ message DirectRoute {
     IBCLeg transfer = 1;
 }
 
-message MultiHopRoute {
+message IndirectRoute {
+    repeated string path = 1;
+    repeated IBCLeg legs = 2;
+    bool supports_pfm = 3;
+    string pfm_start_chain = 4;
+    string pfm_memo = 5;
+}
+
+message BrokerSwapRoute {
     repeated string path = 1;
     IBCLeg inbound_leg = 2;
     SwapQuote swap = 3;
     IBCLeg outbound_leg = 4;
+    bool outbound_supports_pfm = 5;
+    string outbound_pfm_memo = 6;
 }
 
 message IBCLeg {

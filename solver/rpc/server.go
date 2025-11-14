@@ -34,11 +34,11 @@ func (s *SolverServer) SolveRoute(
 ) (*connect.Response[v1.SolveRouteResponse], error) {
 	// Step 1: Convert proto request to internal models.RouteRequest
 	internalReq := models.RouteRequest{
-		ChainA:          req.Msg.ChainA,
-		TokenInDenom:    req.Msg.TokenInDenom,
+		ChainFrom:          req.Msg.ChainFrom,
+		TokenFromDenom:    req.Msg.TokenFromDenom,
 		AmountIn:        req.Msg.AmountIn,
-		ChainB:          req.Msg.ChainB,
-		TokenOutDenom:   req.Msg.TokenOutDenom,
+		ChainTo:          req.Msg.ChainTo,
+		TokenToDenom:   req.Msg.TokenToDenom,
 		SenderAddress:   req.Msg.SenderAddress,
 		ReceiverAddress: req.Msg.ReceiverAddress,
 	}
@@ -87,10 +87,17 @@ func convertToProtoResponse(resp *models.RouteResponse) *v1.SolveRouteResponse {
 		}
 	}
 
-	// Convert MultiHop route if present (using protobuf oneof)
-	if resp.MultiHop != nil {
-		protoResp.Route = &v1.SolveRouteResponse_MultiHop{
-			MultiHop: convertToProtoMultiHopRoute(resp.MultiHop),
+	// Convert Indirect route if present (using protobuf oneof)
+	if resp.Indirect != nil {
+		protoResp.Route = &v1.SolveRouteResponse_Indirect{
+			Indirect: convertToProtoIndirectRoute(resp.Indirect),
+		}
+	}
+
+	// Convert BrokerSwap route if present (using protobuf oneof)
+	if resp.BrokerSwap != nil {
+		protoResp.Route = &v1.SolveRouteResponse_BrokerSwap{
+			BrokerSwap: convertToProtoBrokerSwapRoute(resp.BrokerSwap),
 		}
 	}
 
@@ -103,12 +110,28 @@ func convertToProtoDirectRoute(direct *models.DirectRoute) *v1.DirectRoute {
 	}
 }
 
-func convertToProtoMultiHopRoute(multiHop *models.MultiHopRoute) *v1.MultiHopRoute {
-	return &v1.MultiHopRoute{
-		Path:        multiHop.Path,
-		InboundLeg:  convertToProtoIBCLeg(multiHop.InboundLeg),
-		Swap:        convertToProtoSwapQuote(multiHop.Swap),
-		OutboundLeg: convertToProtoIBCLeg(multiHop.OutboundLeg),
+func convertToProtoIndirectRoute(indirect *models.IndirectRoute) *v1.IndirectRoute {
+	legs := make([]*v1.IBCLeg, len(indirect.Legs))
+	for i, leg := range indirect.Legs {
+		legs[i] = convertToProtoIBCLeg(leg)
+	}
+	return &v1.IndirectRoute{
+		Path:        indirect.Path,
+		Legs:        legs,
+		SupportsPfm: indirect.SupportsPFM,
+		PfmStartChain: indirect.PFMStartChain,
+		PfmMemo:      indirect.PFMMemo,
+	}
+}
+
+func convertToProtoBrokerSwapRoute(brokerSwap *models.BrokerRoute) *v1.BrokerSwapRoute {
+	return &v1.BrokerSwapRoute{
+		Path:                brokerSwap.Path,
+		InboundLeg:          convertToProtoIBCLeg(brokerSwap.InboundLeg),
+		Swap:                convertToProtoSwapQuote(brokerSwap.Swap),
+		OutboundLeg:         convertToProtoIBCLeg(brokerSwap.OutboundLeg),
+		OutboundSupportsPfm: brokerSwap.OutboundSupportsPFM,
+		OutboundPfmMemo:     brokerSwap.OutboundPFMMemo,
 	}
 }
 

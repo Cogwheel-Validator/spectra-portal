@@ -20,8 +20,8 @@ type OsmosisRoute struct {
 }
 
 type OsmosisPool struct {
-	ID            int    `json:"id"`
-	Type          int    `json:"type"`
+	ID            int32    `json:"id"`
+	Type          int32    `json:"type"`
 	SpreadFactor  string `json:"spread_factor"`
 	TokenOutDenom string `json:"token_out_denom"`
 	TakerFee      string `json:"taker_fee"`
