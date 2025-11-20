@@ -71,9 +71,22 @@ func (s *SolverServer) LookupDenom(
 	}), nil
 }
 
-// ==================== Conversion Functions ====================
+// CONVERT FUNCTIONS
 // These convert between internal models and protobuf types
 
+/*
+Converts internal models.RouteResponse to v1.SolveRouteResponse
+It uses the protobuf oneof to represent the different route types.
+
+Parameters:
+- resp: *models.RouteResponse
+
+Returns:
+- *v1.SolveRouteResponse
+
+Errors:
+- None
+*/
 func convertToProtoResponse(resp *models.RouteResponse) *v1.SolveRouteResponse {
 	protoResp := &v1.SolveRouteResponse{
 		Success:      resp.Success,
@@ -104,12 +117,36 @@ func convertToProtoResponse(resp *models.RouteResponse) *v1.SolveRouteResponse {
 	return protoResp
 }
 
+/*
+Converts internal models.DirectRoute to v1.DirectRoute
+
+Parameters:
+- direct: *models.DirectRoute
+
+Returns:
+- *v1.DirectRoute
+
+Errors:
+- None
+*/
 func convertToProtoDirectRoute(direct *models.DirectRoute) *v1.DirectRoute {
 	return &v1.DirectRoute{
 		Transfer: convertToProtoIBCLeg(direct.Transfer),
 	}
 }
 
+/*
+Converts internal models.IndirectRoute to v1.IndirectRoute
+
+Parameters:
+- indirect: *models.IndirectRoute
+
+Returns:
+- *v1.IndirectRoute
+
+Errors:
+- None
+*/
 func convertToProtoIndirectRoute(indirect *models.IndirectRoute) *v1.IndirectRoute {
 	legs := make([]*v1.IBCLeg, len(indirect.Legs))
 	for i, leg := range indirect.Legs {
@@ -124,6 +161,18 @@ func convertToProtoIndirectRoute(indirect *models.IndirectRoute) *v1.IndirectRou
 	}
 }
 
+/*
+Converts internal models.BrokerRoute to v1.BrokerSwapRoute
+
+Parameters:
+- brokerSwap: *models.BrokerRoute
+
+Returns:
+- *v1.BrokerSwapRoute
+
+Errors:
+- None
+*/
 func convertToProtoBrokerSwapRoute(brokerSwap *models.BrokerRoute) *v1.BrokerSwapRoute {
 	return &v1.BrokerSwapRoute{
 		Path:                brokerSwap.Path,
@@ -135,6 +184,18 @@ func convertToProtoBrokerSwapRoute(brokerSwap *models.BrokerRoute) *v1.BrokerSwa
 	}
 }
 
+/*
+Converts internal models.IBCLeg to v1.IBCLeg
+
+Parameters:
+- leg: *models.IBCLeg
+
+Returns:
+- *v1.IBCLeg
+
+Errors:
+- None
+*/
 func convertToProtoIBCLeg(leg *models.IBCLeg) *v1.IBCLeg {
 	if leg == nil {
 		return nil
@@ -149,6 +210,18 @@ func convertToProtoIBCLeg(leg *models.IBCLeg) *v1.IBCLeg {
 	}
 }
 
+/*
+Converts internal models.TokenMapping to v1.TokenMapping
+
+Parameters:
+- token: *models.TokenMapping
+
+Returns:
+- *v1.TokenMapping
+
+Errors:
+- None
+*/
 func convertToProtoTokenMapping(token *models.TokenMapping) *v1.TokenMapping {
 	if token == nil {
 		return nil
@@ -161,6 +234,18 @@ func convertToProtoTokenMapping(token *models.TokenMapping) *v1.TokenMapping {
 	}
 }
 
+/*
+Converts internal models.SwapQuote to v1.SwapQuote
+
+Parameters:
+- swap: *models.SwapQuote
+
+Returns:
+- *v1.SwapQuote
+
+Errors:
+- None
+*/
 func convertToProtoSwapQuote(swap *models.SwapQuote) *v1.SwapQuote {
 	if swap == nil {
 		return nil
@@ -192,6 +277,18 @@ func convertToProtoSwapQuote(swap *models.SwapQuote) *v1.SwapQuote {
 	return protoSwap
 }
 
+/*
+Converts internal models.OsmosisRouteData to v1.OsmosisRouteData
+
+Parameters:
+- data: *models.OsmosisRouteData
+
+Returns:
+- *v1.OsmosisRouteData
+
+Errors:
+- None
+*/
 func convertOsmosisRouteData(data *router.OsmosisRouteData) *v1.OsmosisRouteData {
 	if data == nil {
 		return nil
