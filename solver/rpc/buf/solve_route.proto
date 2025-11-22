@@ -3,6 +3,7 @@ syntax = "proto3";
 package rpc.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/empty.proto";
 
 option go_package = "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1";
 
@@ -13,6 +14,12 @@ service SolverService {
     
     // LookupDenom resolves denom information on a specific chain
     rpc LookupDenom(LookupDenomRequest) returns (LookupDenomResponse) {}
+
+    // GetChainInfo returns information about a specific chain
+    rpc GetChainInfo(ChainInfoRequest) returns (ChainInfoResponse) {}
+
+    // GetSolverSupportedChains returns a list of supported chains
+    rpc GetSolverSupportedChains(google.protobuf.Empty) returns (SolverSupportedChainsResponse) {}
 }
 
 message SolveRouteRequest {
@@ -136,4 +143,41 @@ message LookupDenomResponse {
     string origin_chain = 3;
     bool is_native = 4;
     string ibc_path = 5;
+}
+
+message SolverSupportedChainsResponse {
+    repeated string chain_ids = 1 [(buf.validate.field).required = true];
+}
+
+message ChainInfoRequest {
+    string chain_id = 1;
+}
+
+message ChainInfoResponse {
+    ChainInfo chain_info = 1;
+}
+
+message ChainInfo {
+    string chain_id = 1;
+    string chain_name = 2;
+    bool has_pfm = 3;
+    bool is_broker = 4;
+    repeated BasicRoute routes = 5;
+}
+
+message TokenInfo {
+    string chain_denom = 1;
+    string ibc_denom = 2;
+    string base_denom = 3;
+    string origin_chain = 4;
+    int32 decimals = 5;
+}
+
+message BasicRoute {
+    string to_chain = 1;
+    string to_chain_id = 2;
+    string connection_id = 3;
+    string channel_id = 4;
+    string port_id = 5;
+    map<string, TokenInfo> allowed_tokens = 6;
 }

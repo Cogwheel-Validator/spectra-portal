@@ -352,6 +352,7 @@ func NewRouteIndex() *RouteIndex {
 
 // Solver orchestrates route finding and integrates with broker DEX APIs
 type Solver struct {
+	chainsMap     map[string]SolverChain
 	routeIndex    *RouteIndex
 	brokerClients map[string]BrokerClient // brokerId -> broker client interface
 	denomResolver *DenomResolver
@@ -360,8 +361,13 @@ type Solver struct {
 }
 
 // NewSolver creates a new Solver with the given route index and broker clients
-func NewSolver(routeIndex *RouteIndex, brokerClients map[string]BrokerClient) *Solver {
+func NewSolver(chains []SolverChain, routeIndex *RouteIndex, brokerClients map[string]BrokerClient) *Solver {
+	chainMap := make(map[string]SolverChain, len(chains))
+	for _, chain := range chains {
+		chainMap[chain.Id] = chain
+	}
 	return &Solver{
+		chainsMap:     chainMap,
 		routeIndex:    routeIndex,
 		brokerClients: brokerClients,
 		denomResolver: NewDenomResolver(routeIndex),
@@ -717,3 +723,35 @@ func (s *Solver) buildBrokerRoute(
 	}, nil
 }
 
+
+/*
+GetChainInfo returns the information about a specific chain
+
+Parameters:
+- chainId: the id of the chain to get information for
+
+Returns:
+- SolverChain: the information about the chain
+- error: if the chain is not found
+*/
+func (s *Solver) GetChainInfo(chainId string) (SolverChain, error) {
+	chain, exists := s.chainsMap[chainId]
+	if !exists {
+		return SolverChain{}, fmt.Errorf("chain %s not found", chainId)
+	}
+	return chain, nil
+}
+
+/*
+GetAllChains returns the list of all chains
+
+Returns:
+- []string: the list of all chain ids
+*/
+func (s *Solver) GetAllChains() []string {
+	chains := make([]string, 0, len(s.chainsMap))
+	for chainId := range s.chainsMap {
+		chains = append(chains, chainId)
+	}
+	return chains
+}

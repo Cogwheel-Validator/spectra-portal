@@ -9,6 +9,7 @@ import (
 	context "context"
 	errors "errors"
 	v1 "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"
 )
@@ -39,6 +40,12 @@ const (
 	// SolverServiceLookupDenomProcedure is the fully-qualified name of the SolverService's LookupDenom
 	// RPC.
 	SolverServiceLookupDenomProcedure = "/rpc.v1.SolverService/LookupDenom"
+	// SolverServiceGetChainInfoProcedure is the fully-qualified name of the SolverService's
+	// GetChainInfo RPC.
+	SolverServiceGetChainInfoProcedure = "/rpc.v1.SolverService/GetChainInfo"
+	// SolverServiceGetSolverSupportedChainsProcedure is the fully-qualified name of the SolverService's
+	// GetSolverSupportedChains RPC.
+	SolverServiceGetSolverSupportedChainsProcedure = "/rpc.v1.SolverService/GetSolverSupportedChains"
 )
 
 // SolverServiceClient is a client for the rpc.v1.SolverService service.
@@ -47,6 +54,10 @@ type SolverServiceClient interface {
 	SolveRoute(context.Context, *connect.Request[v1.SolveRouteRequest]) (*connect.Response[v1.SolveRouteResponse], error)
 	// LookupDenom resolves denom information on a specific chain
 	LookupDenom(context.Context, *connect.Request[v1.LookupDenomRequest]) (*connect.Response[v1.LookupDenomResponse], error)
+	// GetChainInfo returns information about a specific chain
+	GetChainInfo(context.Context, *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error)
+	// GetSolverSupportedChains returns a list of supported chains
+	GetSolverSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.SolverSupportedChainsResponse], error)
 }
 
 // NewSolverServiceClient constructs a client for the rpc.v1.SolverService service. By default, it
@@ -72,13 +83,27 @@ func NewSolverServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(solverServiceMethods.ByName("LookupDenom")),
 			connect.WithClientOptions(opts...),
 		),
+		getChainInfo: connect.NewClient[v1.ChainInfoRequest, v1.ChainInfoResponse](
+			httpClient,
+			baseURL+SolverServiceGetChainInfoProcedure,
+			connect.WithSchema(solverServiceMethods.ByName("GetChainInfo")),
+			connect.WithClientOptions(opts...),
+		),
+		getSolverSupportedChains: connect.NewClient[emptypb.Empty, v1.SolverSupportedChainsResponse](
+			httpClient,
+			baseURL+SolverServiceGetSolverSupportedChainsProcedure,
+			connect.WithSchema(solverServiceMethods.ByName("GetSolverSupportedChains")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // solverServiceClient implements SolverServiceClient.
 type solverServiceClient struct {
-	solveRoute  *connect.Client[v1.SolveRouteRequest, v1.SolveRouteResponse]
-	lookupDenom *connect.Client[v1.LookupDenomRequest, v1.LookupDenomResponse]
+	solveRoute               *connect.Client[v1.SolveRouteRequest, v1.SolveRouteResponse]
+	lookupDenom              *connect.Client[v1.LookupDenomRequest, v1.LookupDenomResponse]
+	getChainInfo             *connect.Client[v1.ChainInfoRequest, v1.ChainInfoResponse]
+	getSolverSupportedChains *connect.Client[emptypb.Empty, v1.SolverSupportedChainsResponse]
 }
 
 // SolveRoute calls rpc.v1.SolverService.SolveRoute.
@@ -91,12 +116,26 @@ func (c *solverServiceClient) LookupDenom(ctx context.Context, req *connect.Requ
 	return c.lookupDenom.CallUnary(ctx, req)
 }
 
+// GetChainInfo calls rpc.v1.SolverService.GetChainInfo.
+func (c *solverServiceClient) GetChainInfo(ctx context.Context, req *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error) {
+	return c.getChainInfo.CallUnary(ctx, req)
+}
+
+// GetSolverSupportedChains calls rpc.v1.SolverService.GetSolverSupportedChains.
+func (c *solverServiceClient) GetSolverSupportedChains(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[v1.SolverSupportedChainsResponse], error) {
+	return c.getSolverSupportedChains.CallUnary(ctx, req)
+}
+
 // SolverServiceHandler is an implementation of the rpc.v1.SolverService service.
 type SolverServiceHandler interface {
 	// SolveRoute finds and validates a route between two chains
 	SolveRoute(context.Context, *connect.Request[v1.SolveRouteRequest]) (*connect.Response[v1.SolveRouteResponse], error)
 	// LookupDenom resolves denom information on a specific chain
 	LookupDenom(context.Context, *connect.Request[v1.LookupDenomRequest]) (*connect.Response[v1.LookupDenomResponse], error)
+	// GetChainInfo returns information about a specific chain
+	GetChainInfo(context.Context, *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error)
+	// GetSolverSupportedChains returns a list of supported chains
+	GetSolverSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.SolverSupportedChainsResponse], error)
 }
 
 // NewSolverServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -118,12 +157,28 @@ func NewSolverServiceHandler(svc SolverServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(solverServiceMethods.ByName("LookupDenom")),
 		connect.WithHandlerOptions(opts...),
 	)
+	solverServiceGetChainInfoHandler := connect.NewUnaryHandler(
+		SolverServiceGetChainInfoProcedure,
+		svc.GetChainInfo,
+		connect.WithSchema(solverServiceMethods.ByName("GetChainInfo")),
+		connect.WithHandlerOptions(opts...),
+	)
+	solverServiceGetSolverSupportedChainsHandler := connect.NewUnaryHandler(
+		SolverServiceGetSolverSupportedChainsProcedure,
+		svc.GetSolverSupportedChains,
+		connect.WithSchema(solverServiceMethods.ByName("GetSolverSupportedChains")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/rpc.v1.SolverService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SolverServiceSolveRouteProcedure:
 			solverServiceSolveRouteHandler.ServeHTTP(w, r)
 		case SolverServiceLookupDenomProcedure:
 			solverServiceLookupDenomHandler.ServeHTTP(w, r)
+		case SolverServiceGetChainInfoProcedure:
+			solverServiceGetChainInfoHandler.ServeHTTP(w, r)
+		case SolverServiceGetSolverSupportedChainsProcedure:
+			solverServiceGetSolverSupportedChainsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -139,4 +194,12 @@ func (UnimplementedSolverServiceHandler) SolveRoute(context.Context, *connect.Re
 
 func (UnimplementedSolverServiceHandler) LookupDenom(context.Context, *connect.Request[v1.LookupDenomRequest]) (*connect.Response[v1.LookupDenomResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.SolverService.LookupDenom is not implemented"))
+}
+
+func (UnimplementedSolverServiceHandler) GetChainInfo(context.Context, *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.SolverService.GetChainInfo is not implemented"))
+}
+
+func (UnimplementedSolverServiceHandler) GetSolverSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.SolverSupportedChainsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.SolverService.GetSolverSupportedChains is not implemented"))
 }

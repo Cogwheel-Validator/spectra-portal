@@ -2,8 +2,11 @@ package rpc
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -46,6 +49,19 @@ type OTelConfig struct {
 	UseOTLPLogs  bool   // Use OTLP for logs (Loki, etc.)
 	OTLPLogsURL  string // Default: http://localhost:4318/v1/logs
 
+	// Security
+	// InsecureOTLP allows unencrypted connections to OTLP endpoints.
+	// WARNING: Only set to true for local development or testing.
+	// Production environments should use TLS-secured connections (leave false).
+	InsecureOTLP bool
+
+	// TLS Configuration for OTLP client connections (optional)
+	// These are used when YOUR server connects TO the observability backend
+	// This is SEPARATE from your RPC server's TLS certificate
+	OTLPClientCertFile string // Path to client certificate (for mTLS)
+	OTLPClientKeyFile  string // Path to client key (for mTLS)
+	OTLPCACertFile     string // Path to CA certificate to verify server
+
 	// Development mode uses stdout exporters
 	DevelopmentMode bool
 }
@@ -66,6 +82,7 @@ func DefaultOTelConfig() *OTelConfig {
 		EnableLogs:      false, // Keep false by default, zerolog handles app logs
 		UseOTLPLogs:     false,
 		OTLPLogsURL:     "http://localhost:4318/v1/logs",
+		InsecureOTLP:    false, // Secure by default - must explicitly enable for local dev
 		DevelopmentMode: false,
 	}
 }
@@ -161,6 +178,41 @@ func newPropagator() propagation.TextMapPropagator {
 	)
 }
 
+// buildTLSConfig creates a TLS configuration for OTLP client connections
+func buildTLSConfig(config *OTelConfig) (*tls.Config, error) {
+	if config.InsecureOTLP {
+		return nil, nil // No TLS config needed for insecure connections
+	}
+
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
+
+	// Load custom CA certificate if provided
+	if config.OTLPCACertFile != "" {
+		caCert, err := os.ReadFile(config.OTLPCACertFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read CA certificate: %w", err)
+		}
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caCert) {
+			return nil, fmt.Errorf("failed to append CA certificate")
+		}
+		tlsConfig.RootCAs = caCertPool
+	}
+
+	// Load client certificate for mTLS if provided
+	if config.OTLPClientCertFile != "" && config.OTLPClientKeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(config.OTLPClientCertFile, config.OTLPClientKeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load client certificate: %w", err)
+		}
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+
+	return tlsConfig, nil
+}
+
 func newTracerProvider(ctx context.Context, res *resource.Resource, config *OTelConfig) (*trace.TracerProvider, error) {
 	var exporter trace.SpanExporter
 	var err error
@@ -175,8 +227,23 @@ func newTracerProvider(ctx context.Context, res *resource.Resource, config *OTel
 		// Use OTLP exporter for production (works with Jaeger, Tempo, etc.)
 		otlpOpts := []otlptracehttp.Option{
 			otlptracehttp.WithEndpoint(config.OTLPTracesURL),
-			otlptracehttp.WithInsecure(), // Use TLS in production by removing this
 		}
+		
+		// Configure TLS
+		if config.InsecureOTLP {
+			// Only use insecure connections if explicitly enabled (e.g., for local development)
+			otlpOpts = append(otlpOpts, otlptracehttp.WithInsecure())
+		} else {
+			// Build TLS config (may include custom CA or client certs)
+			tlsConfig, err := buildTLSConfig(config)
+			if err != nil {
+				return nil, fmt.Errorf("failed to build TLS config for traces: %w", err)
+			}
+			if tlsConfig != nil {
+				otlpOpts = append(otlpOpts, otlptracehttp.WithTLSClientConfig(tlsConfig))
+			}
+		}
+		
 		exporter, err = otlptracehttp.New(ctx, otlpOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create OTLP trace exporter: %w", err)
@@ -222,8 +289,23 @@ func newMeterProvider(ctx context.Context, res *resource.Resource, config *OTelC
 			// Use OTLP in production
 			otlpOpts := []otlpmetrichttp.Option{
 				otlpmetrichttp.WithEndpoint(config.OTLPMetricsURL),
-				otlpmetrichttp.WithInsecure(), // Use TLS in production
 			}
+			
+			// Configure TLS
+			if config.InsecureOTLP {
+				// Only use insecure connections if explicitly enabled (e.g., for local development)
+				otlpOpts = append(otlpOpts, otlpmetrichttp.WithInsecure())
+			} else {
+				// Build TLS config (may include custom CA or client certs)
+				tlsConfig, err := buildTLSConfig(config)
+				if err != nil {
+					return nil, fmt.Errorf("failed to build TLS config for metrics: %w", err)
+				}
+				if tlsConfig != nil {
+					otlpOpts = append(otlpOpts, otlpmetrichttp.WithTLSClientConfig(tlsConfig))
+				}
+			}
+			
 			otlpExporter, err := otlpmetrichttp.New(ctx, otlpOpts...)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create OTLP metric exporter: %w", err)
@@ -261,8 +343,23 @@ func newLoggerProvider(ctx context.Context, res *resource.Resource, config *OTel
 		// Use OTLP exporter for production (works with Loki, etc.)
 		otlpOpts := []otlploghttp.Option{
 			otlploghttp.WithEndpoint(config.OTLPLogsURL),
-			otlploghttp.WithInsecure(), // Use TLS in production
 		}
+		
+		// Configure TLS
+		if config.InsecureOTLP {
+			// Only use insecure connections if explicitly enabled (e.g., for local development)
+			otlpOpts = append(otlpOpts, otlploghttp.WithInsecure())
+		} else {
+			// Build TLS config (may include custom CA or client certs)
+			tlsConfig, err := buildTLSConfig(config)
+			if err != nil {
+				return nil, fmt.Errorf("failed to build TLS config for logs: %w", err)
+			}
+			if tlsConfig != nil {
+				otlpOpts = append(otlpOpts, otlploghttp.WithTLSClientConfig(tlsConfig))
+			}
+		}
+		
 		exporter, err = otlploghttp.New(ctx, otlpOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create OTLP log exporter: %w", err)

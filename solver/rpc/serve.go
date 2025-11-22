@@ -23,6 +23,13 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
+var logger zerolog.Logger
+
+func init() {
+	out := zerolog.ConsoleWriter{Out: os.Stderr}
+	logger = zerolog.New(out).With().Timestamp().Logger()
+}
+
 // ServerConfig holds configuration for the RPC server
 type ServerConfig struct {
 	Address          string
@@ -39,8 +46,8 @@ func DefaultServerConfig() *ServerConfig {
 	burst := 200
 	return &ServerConfig{
 		Address:          "localhost:8080",
-		AllowedOrigins:   []string{"*"},
-		EnableReflection: false,
+		AllowedOrigins:   []string{"http://localhost:3000"}, // Restrict to localhost:3000 for development
+		EnableReflection: true,
 		RatePerMinute:    &rateLimit,
 		Burst:            &burst,
 		OTelConfig:       DefaultOTelConfig(),
@@ -97,12 +104,29 @@ func NewServer(
 	if config.Burst != nil {
 		mux.Use(middleware.Throttle(*config.Burst))
 	}
-
-	// Add Prometheus metrics endpoint if enabled
-	// The Prometheus exporter provides metrics through the promhttp handler
+	
+	// Prometheus metrics endpoint
 	if config.OTelConfig != nil && config.OTelConfig.UsePrometheus {
 		mux.Handle("/metrics", promhttp.Handler())
+		logger.Info().Msg("Metrics endpoint: /metrics")
 	}
+
+	// Health check endpoint (for load balancer and other services)
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"healthy","service":"spectra-ibc-hub"}`))
+	})
+	logger.Info().Msg("Health check: /health")
+
+	// Readiness probe (Kubernetes readiness checks)
+	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+		// TODO: Add actual readiness checks
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ready"}`))
+	})
+	logger.Info().Msg("Readiness probe: /ready")
 
 	// Create the SolverServer implementation
 	solverServer := NewSolverServer(solver, denomResolver)
@@ -176,7 +200,14 @@ func newCORSHandler(
 	}
 	if len(allowedOrigins) == 0 {
 		allowedOrigins = []string{"*"}
-	}	
+	}
+	
+	// CORS spec forbids wildcard origins with credentials
+	allowCredentials := true
+	if len(allowedOrigins) == 1 && allowedOrigins[0] == "*" {
+		allowCredentials = false
+	}
+	
     return cors.New(cors.Options{
         AllowedOrigins: allowedOrigins,
         AllowedMethods: []string{
@@ -207,7 +238,7 @@ func newCORSHandler(
             "Grpc-Status",
             "Grpc-Status-Details-Bin",
         },
-        AllowCredentials: true,
+        AllowCredentials: allowCredentials,
         MaxAge:          int(2 * time.Hour / time.Second),
         Debug:           *debug, // Set to true for debugging
     }).Handler(next)
@@ -217,13 +248,10 @@ func newCORSHandler(
 func loggingInterceptor() connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			// Configure logging
-			out := zerolog.ConsoleWriter{Out: os.Stderr}
-			log := zerolog.New(out).With().Timestamp().Logger()
 
 			start := time.Now()
             
-            log.Info().
+            logger.Info().
                 Str("procedure", req.Spec().Procedure).
                 Str("protocol", req.Peer().Protocol).
                 Msg("request started")
@@ -233,13 +261,13 @@ func loggingInterceptor() connect.UnaryInterceptorFunc {
             duration := time.Since(start)
             
             if err != nil {
-                log.Error().
+                logger.Error().
                     Err(err).
                     Str("procedure", req.Spec().Procedure).
                     Dur("duration", duration).
                     Msg("request failed")
             } else {
-                log.Info().
+                logger.Info().
                     Str("procedure", req.Spec().Procedure).
                     Dur("duration", duration).
                     Msg("request completed")
@@ -250,22 +278,54 @@ func loggingInterceptor() connect.UnaryInterceptorFunc {
     }
 }
 
-// Start begins serving RPC requests
+// Start begins serving RPC requests without TLS
+// Use this when:
+// - Behind a reverse proxy (nginx, Caddy, Traefik) that handles TLS
+// - Behind a service mesh (Istio, Linkerd, Consul) that handles mTLS
+// - On internal networks where TLS is not required
 func (s *Server) Start() error {
-	fmt.Printf("Starting RPC server on %s\n", s.config.Address)
-	fmt.Printf("\tProtocols: gRPC, gRPC-Web, Connect\n")
-	fmt.Printf("\tCORS origins: %v\n", s.config.AllowedOrigins)
-
+	s.logServerInfo("http")
 	return s.httpServer.ListenAndServe()
 }
 
 // StartTLS begins serving RPC requests with TLS
+// Use this for direct exposure to the internet without a reverse proxy
 func (s *Server) StartTLS(certFile, keyFile string) error {
-	fmt.Printf("Starting RPC server on %s using TLS\n", s.config.Address)
-	fmt.Printf("\tProtocols: gRPC, gRPC-Web, Connect\n")
-	fmt.Printf("\tCORS origins: %v\n", s.config.AllowedOrigins)
-
+	s.logServerInfo("https")
 	return s.httpServer.ListenAndServeTLS(certFile, keyFile)
+}
+
+// logServerInfo logs server startup information
+func (s *Server) logServerInfo(protocol string) {
+	logger.Info().Msgf("🚀 Spectra IBC Hub RPC Server starting")
+	logger.Info().Msgf("   Address: %s://%s", protocol, s.config.Address)
+	logger.Info().Msgf("   Protocols: gRPC, gRPC-Web, Connect (auto-detected)")
+	
+	// Log endpoints
+	logger.Info().Msg("📍 Available endpoints:")
+	logger.Info().Msg("   RPC: /rpc.v1.SolverService/* (public)")
+	logger.Info().Msg("   Health: /health (public - for load balancers)")
+	logger.Info().Msg("   Ready: /ready (public - for Kubernetes)")
+	
+	if s.config.OTelConfig != nil && s.config.OTelConfig.UsePrometheus {
+		logger.Warn().Msg("   Metrics: /metrics (⚠️  RESTRICT TO INTERNAL)")
+	}
+	
+	if s.config.EnableReflection {
+		logger.Warn().Msg("   Reflection: enabled (⚠️  DISABLE IN PRODUCTION)")
+	}
+	
+	// Log nginx reverse proxy example
+	if protocol == "http" {
+		logger.Info().Msg("")
+		logger.Info().Msg("💡 Example nginx config to restrict /metrics:")
+		logger.Info().Msg("   location /metrics {")
+		logger.Info().Msg("     allow 10.0.0.0/8;  # Internal network")
+		logger.Info().Msg("     deny all;")
+		logger.Info().Msg("   }")
+	}
+	
+	logger.Info().Msg("")
 }
 
 // Shutdown gracefully shuts down the server and OpenTelemetry

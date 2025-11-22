@@ -8,6 +8,7 @@ import (
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/router"
 	v1 "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1"
 	v1connect "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1/v1connect"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // SolverServer implements the ConnectRPC SolverServiceHandler interface
@@ -68,6 +69,45 @@ func (s *SolverServer) LookupDenom(
 		OriginChain: denomInfo.OriginChain,
 		IsNative: denomInfo.IsNative,
 		IbcPath: denomInfo.IbcPath,
+	}), nil
+}
+
+/*
+GetChainInfo returns the information about a specific chain
+
+Parameters:
+- chainId: the id of the chain to get information for
+
+Returns:
+- *v1.ChainInfo: the information about the chain
+- *connect.Error: if the chain is not found
+*/
+func (s *SolverServer) GetChainInfo(
+	ctx context.Context,
+	req *connect.Request[v1.ChainInfoRequest],
+) (*connect.Response[v1.ChainInfoResponse], error) {
+	chain, err := s.solver.GetChainInfo(req.Msg.ChainId)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, err)
+	}
+	return connect.NewResponse(&v1.ChainInfoResponse{
+		ChainInfo: convertToProtoChainInfo(&chain),
+	}), nil
+}
+
+/*
+GetSolverSupportedChains returns the list of all supported chains
+
+Returns:
+- []string: the list of all chain ids
+*/
+func (s *SolverServer) GetSolverSupportedChains(
+	ctx context.Context,
+	req *connect.Request[emptypb.Empty],
+) (*connect.Response[v1.SolverSupportedChainsResponse], error) {
+	chains := s.solver.GetAllChains()
+	return connect.NewResponse(&v1.SolverSupportedChainsResponse{
+		ChainIds: chains,
 	}), nil
 }
 
@@ -321,4 +361,43 @@ func convertOsmosisRouteData(data *router.OsmosisRouteData) *v1.OsmosisRouteData
 		LiquidityCap:         data.LiquidityCap,
 		LiquidityCapOverflow: data.LiquidityCapOverflow,
 	}
+}
+
+func convertToProtoChainInfo(chain *router.SolverChain) *v1.ChainInfo {
+	return &v1.ChainInfo{
+		ChainId:   chain.Id,
+		ChainName: chain.Name,
+		HasPfm:    chain.HasPFM,
+		IsBroker:  chain.Broker,
+		Routes:    convertToProtoBasicRoute(chain.Routes),
+	}
+}
+
+func convertToProtoBasicRoute(routes []router.BasicRoute) []*v1.BasicRoute {
+	protoRoutes := make([]*v1.BasicRoute, len(routes))
+	for i := range routes {
+		protoRoutes[i] = &v1.BasicRoute{
+		ToChain:   routes[i].ToChain,
+		ToChainId: routes[i].ToChainId,
+		ConnectionId: routes[i].ConnectionId,
+		ChannelId: routes[i].ChannelId,
+		PortId: routes[i].PortId,
+		AllowedTokens: convertToProtoTokenInfo(routes[i].AllowedTokens),
+	}
+	}
+	return protoRoutes
+}
+
+func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo) map[string]*v1.TokenInfo {
+	protoTokenInfos := make(map[string]*v1.TokenInfo, len(tokenInfo))
+	for denom, tokenInfo := range tokenInfo {
+		protoTokenInfos[denom] = &v1.TokenInfo{
+			ChainDenom: tokenInfo.ChainDenom,
+			IbcDenom: tokenInfo.IbcDenom,
+			BaseDenom: tokenInfo.BaseDenom,
+			OriginChain: tokenInfo.OriginChain,
+			Decimals: int32(tokenInfo.Decimals),
+		}
+	}
+	return protoTokenInfos
 }
