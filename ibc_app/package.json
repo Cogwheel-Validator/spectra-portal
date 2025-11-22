@@ -1,31 +1,27 @@
 {
-  "name": "ibc-app",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "bun run next dev",
-    "build": "bun run next build",
-    "start": "bun run next start",
-    "lint": "biome check",
-    "format": "biome format --write"
-  },
-  "dependencies": {
-    "@tanstack/react-query": "^5.90.2",
-    "next": "15.5.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.2.0",
-    "@tailwindcss/postcss": "^4.1.14",
-    "@types/node": "^20.19.19",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "daisyui": "^5.1.27",
-    "tailwindcss": "^4.1.14",
-    "typescript": "^5.9.3"
-  },
-  "trustedDependencies": [
-    "@tailwindcss/oxide"
-  ]
+	"name": "spectra-ibc-hub-app",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "bun --bun next dev --turbopack",
+		"build": "bun --bun next build --turbopack",
+		"start": "bun --bun next start",
+		"lint": "biome check",
+		"format": "biome format --write"
+	},
+	"dependencies": {
+		"next": "16.0.3",
+		"react": "19.2.0",
+		"react-dom": "19.2.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.0",
+		"@tailwindcss/postcss": "^4",
+		"@types/node": "^20",
+		"@types/react": "^19",
+		"@types/react-dom": "^19",
+		"babel-plugin-react-compiler": "1.0.0",
+		"tailwindcss": "^4",
+		"typescript": "^5"
+	}
 }

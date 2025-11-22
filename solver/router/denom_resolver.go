@@ -21,14 +21,22 @@ func NewDenomResolver(routeIndex *RouteIndex) *DenomResolver {
 // ResolveDenom resolves a denom on a specific chain and returns detailed information
 func (dr *DenomResolver) ResolveDenom(chainID, denom string) (*models.DenomInfo, error) {
 	// Check if we have token info for this denom on this chain
+	var ibcPath string
 	if chainTokens, exists := dr.routeIndex.denomToTokenInfo[chainID]; exists {
+		chainRoutes := dr.routeIndex.chainRoutes[chainID]
+		for _, route := range chainRoutes {
+			if _, allowed := route.AllowedTokens[denom]; allowed {
+				ibcPath = route.PortId + "/" + route.ChannelId
+				break
+			}
+		}
 		if tokenInfo, found := chainTokens[denom]; found {
 			return &models.DenomInfo{
 				ChainDenom:  tokenInfo.ChainDenom,
 				BaseDenom:   tokenInfo.BaseDenom,
 				OriginChain: tokenInfo.OriginChain,
 				IsNative:    tokenInfo.OriginChain == chainID,
-				IbcPath:     "", // Could be enhanced to track IBC path
+				IbcPath:     ibcPath,
 			}, nil
 		}
 	}
