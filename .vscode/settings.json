@@ -1,6 +1,13 @@
 {
 	"editor.defaultFormatter": "biomejs.biome",
 	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.fixAll": "explicit",
+		"source.organizeImports.biome": "explicit",
+
+		"source.fixAll.biome": "explicit"
+
+	},
 	"biome.configurationPath": "./ibc_app/biome.json",
 	"biome.lsp.trace.server": "verbose",
 	"biome.lsp.bin": "./ibc_app/node_modules/@biomejs/biome/bin/biome",
@@ -22,5 +29,6 @@
 	"[json]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},
-	"notebook.defaultFormatter": "biomejs.biome"
+	"notebook.defaultFormatter": "biomejs.biome",
+	"editor.codeActions.triggerOnFocusChange": true
 }
