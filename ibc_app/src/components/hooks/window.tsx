@@ -14,6 +14,9 @@ export function useWindowSize(): { width: number; height: number } {
             });
         };
 
+        // Set initial size on mount
+        handleResize();
+
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);

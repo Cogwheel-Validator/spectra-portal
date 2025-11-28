@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { FlyInButton } from "@/components/motion/flyInButton";
 import { Particles } from "@/components/ui/particles";
 
 export default function Home() {
@@ -23,11 +24,13 @@ export default function Home() {
                         <u className="font-extrabold">Spectra Solver RPC</u>, sending assets has
                         never been easier.
                         <br />
+                        <br />
+                        Send your assets to another chain using the Spectra 💫 IBC!
                     </p>
 
-                    <button type="button" className="btn btn-primary btn-lg lg:btn-xl">
+                    <FlyInButton type="button" className="btn btn-primary btn-lg lg:btn-xl">
                         <Link href="/ibc">IBC</Link>
-                    </button>
+                    </FlyInButton>
                 </div>
             </div>
         </div>
