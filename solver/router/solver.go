@@ -53,6 +53,9 @@ func (cmi *ChainMapId) GetChain(id int) string {
 	return ""
 }
 
+/*
+Solver Chain is a type that represents one unit in the Solver Graph.
+*/
 type SolverChain struct {
 	Name string
 	Id string
@@ -63,6 +66,7 @@ type SolverChain struct {
 	Routes []BasicRoute
 }
 
+// BasicRoute is a type that represents a route between two chains.
 type BasicRoute struct {
 	ToChain string
 	ToChainId string
@@ -92,13 +96,31 @@ type RouteIndex struct {
 	brokerRoutes        map[string]map[string]*BasicRoute    // brokerChainId -> toChainId -> BasicRoute
 	chainToBrokerRoutes map[string]map[string]*BasicRoute    // chainId -> brokerChainId -> BasicRoute
 	denomToTokenInfo    map[string]map[string]*TokenInfo    // chainId -> denom -> TokenInfo
-	brokers             map[string]bool                      // chainId -> is broker
+	brokers             map[string]bool                      // brokerId -> is broker
+	brokerChains        map[string]string                    // chainId -> brokerId (for chains that are brokers)
 	pfmChains           map[string]bool                      // chainId -> supports PFM
 	chainRoutes         map[string]map[string]*BasicRoute    // chainId -> toChainId -> BasicRoute (all routes from a chain)
 }
 
 
-func (ri *RouteIndex) BuildIndex(chains []SolverChain) {
+func (ri *RouteIndex) BuildIndex(chains []SolverChain) error {
+	if len(chains) == 0 {
+		return fmt.Errorf("no chains to build index for")
+	}
+
+	// First pass: Register all brokers and PFM chains
+	for _, chain := range chains {
+		if chain.HasPFM {
+			ri.pfmChains[chain.Id] = true
+		}
+		
+		if chain.Broker {
+			ri.brokers[chain.BrokerId] = true
+			ri.brokerChains[chain.Id] = chain.BrokerId
+		}
+	}
+
+	// Second pass: Build all route indices
 	for _, chain := range chains {
 		if ri.denomToTokenInfo[chain.Id] == nil {
 			ri.denomToTokenInfo[chain.Id] = make(map[string]*TokenInfo)
@@ -131,15 +153,16 @@ func (ri *RouteIndex) BuildIndex(chains []SolverChain) {
 				ri.chainRoutes[chain.Id][route.ToChainId] = &route
 			}
 
-			// Index broker routes
-			if ri.brokers[route.ToChainId] {
+			// Index broker routes - check if destination chain is a broker
+			if brokerId, isBroker := ri.brokerChains[route.ToChainId]; isBroker {
 				if ri.chainToBrokerRoutes[chain.Id] == nil {
 					ri.chainToBrokerRoutes[chain.Id] = make(map[string]*BasicRoute)
 				}
-				ri.chainToBrokerRoutes[chain.Id][route.ToChainId] = &route
+				ri.chainToBrokerRoutes[chain.Id][brokerId] = &route
 			}
 		}
 
+		// Build broker-specific route maps
 		if chain.Broker {
 			if ri.brokerRoutes[chain.BrokerId] == nil {
 				ri.brokerRoutes[chain.BrokerId] = make(map[string]*BasicRoute)
@@ -149,9 +172,10 @@ func (ri *RouteIndex) BuildIndex(chains []SolverChain) {
 					ri.brokerRoutes[chain.BrokerId][route.ToChainId] = &route
 				}
 			}
-			ri.brokers[chain.BrokerId] = true
 		}
 	}
+
+	return nil
 }
 
 func (ri *RouteIndex) FindDirectRoute(req models.RouteRequest) *BasicRoute {
@@ -267,7 +291,8 @@ func (ri *RouteIndex) findTokenByOrigin(chainId, originChain, baseDenom string) 
 }
 
 type MultiHopInfo struct {
-	BrokerChain   string
+	BrokerChain   string       // Broker ID (e.g., "osmosis")
+	BrokerChainId string       // Broker chain ID (e.g., "osmosis-1")
 	InboundRoute  *BasicRoute
 	OutboundRoute *BasicRoute
 	TokenIn       *TokenInfo
@@ -291,6 +316,18 @@ func (ri *RouteIndex) FindMultiHopRoute(req models.RouteRequest) []*MultiHopInfo
 	multiHopInfos := []*MultiHopInfo{}
 	// Check if we can route through a broker with token swap
 	for brokerId := range ri.brokers {
+		// Find the chain ID for this broker
+		var brokerChainId string
+		for chainId, bid := range ri.brokerChains {
+			if bid == brokerId {
+				brokerChainId = chainId
+				break
+			}
+		}
+		if brokerChainId == "" {
+			continue // Should not happen, but defensive check
+		}
+		
 		// Can we reach broker from source?
 		inboundRoute := ri.chainToBrokerRoutes[req.ChainFrom][brokerId]
 		if inboundRoute == nil {
@@ -315,13 +352,25 @@ func (ri *RouteIndex) FindMultiHopRoute(req models.RouteRequest) []*MultiHopInfo
 			continue
 		}
 		
-		// Check if output token is allowed on outbound route
-		if _, allowed := outboundRoute.AllowedTokens[req.TokenToDenom]; !allowed {
+		// Check if there's a token in the outbound route that will become the desired token on destination
+		// We need to find a token in AllowedTokens whose IbcDenom matches req.TokenToDenom
+		var matchingToken *TokenInfo
+		for _, tokenInfo := range outboundRoute.AllowedTokens {
+			// Check if this token becomes the desired denom on the destination
+			// The IbcDenom field indicates what the token becomes after IBC transfer
+			if tokenInfo.IbcDenom == req.TokenToDenom {
+				matchingToken = &tokenInfo
+				break
+			}
+		}
+		
+		if matchingToken == nil {
 			continue
 		}
 		
 		multiHopInfos = append(multiHopInfos, &MultiHopInfo{
 			BrokerChain:   brokerId,
+			BrokerChainId: brokerChainId,
 			InboundRoute:  inboundRoute,
 			OutboundRoute: outboundRoute,
 			TokenIn:       &tokenIn,
@@ -345,6 +394,7 @@ func NewRouteIndex() *RouteIndex {
 		chainToBrokerRoutes: make(map[string]map[string]*BasicRoute),
 		denomToTokenInfo:    make(map[string]map[string]*TokenInfo),
 		brokers:             make(map[string]bool),
+		brokerChains:        make(map[string]string),
 		pfmChains:           make(map[string]bool),
 		chainRoutes:         make(map[string]map[string]*BasicRoute),
 	}
@@ -585,8 +635,8 @@ func (s *Solver) buildBrokerSwapResponse(
 	}
 
 	// Determine the correct denoms to use on the broker chain
-	tokenInDenomOnBroker := s.denomResolver.GetDenomOnChain(hopInfo.TokenIn, hopInfo.BrokerChain)
-	tokenOutDenomOnBroker := s.denomResolver.GetDenomOnChain(hopInfo.TokenOut, hopInfo.BrokerChain)
+	tokenInDenomOnBroker := s.denomResolver.GetDenomOnChain(hopInfo.TokenIn, hopInfo.BrokerChainId)
+	tokenOutDenomOnBroker := s.denomResolver.GetDenomOnChain(hopInfo.TokenOut, hopInfo.BrokerChainId)
 
 	// Query with retry logic
 	swapResult, err := s.queryBrokerWithRetry(brokerClient, req.AmountIn, tokenInDenomOnBroker, tokenOutDenomOnBroker)
@@ -652,24 +702,24 @@ func (s *Solver) buildBrokerRoute(
 
 	// Create token mapping for token on broker (after inbound IBC)
 	tokenInOnBroker := &models.TokenMapping{
-		ChainDenom:  s.denomResolver.GetDenomOnChain(hopInfo.TokenIn, hopInfo.BrokerChain),
+		ChainDenom:  s.denomResolver.GetDenomOnChain(hopInfo.TokenIn, hopInfo.BrokerChainId),
 		BaseDenom:   hopInfo.TokenIn.BaseDenom,
 		OriginChain: hopInfo.TokenIn.OriginChain,
-		IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, hopInfo.BrokerChain),
+		IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, hopInfo.BrokerChainId),
 	}
 
 	// Create token mapping for token out on broker (after swap)
 	tokenOutOnBroker := &models.TokenMapping{
-		ChainDenom:  s.denomResolver.GetDenomOnChain(hopInfo.TokenOut, hopInfo.BrokerChain),
+		ChainDenom:  s.denomResolver.GetDenomOnChain(hopInfo.TokenOut, hopInfo.BrokerChainId),
 		BaseDenom:   hopInfo.TokenOut.BaseDenom,
 		OriginChain: hopInfo.TokenOut.OriginChain,
-		IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenOut, hopInfo.BrokerChain),
+		IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenOut, hopInfo.BrokerChainId),
 	}
 
 	// Build the inbound IBC leg
 	inboundLeg := &models.IBCLeg{
 		FromChain: req.ChainFrom,
-		ToChain:   hopInfo.BrokerChain,
+		ToChain:   hopInfo.BrokerChainId,
 		Channel:   hopInfo.InboundRoute.ChannelId,
 		Port:      hopInfo.InboundRoute.PortId,
 		Token:     inboundTokenMapping,
@@ -690,7 +740,7 @@ func (s *Solver) buildBrokerRoute(
 
 	// Build the outbound IBC leg
 	outboundLeg := &models.IBCLeg{
-		FromChain: hopInfo.BrokerChain,
+		FromChain: hopInfo.BrokerChainId,
 		ToChain:   req.ChainTo,
 		Channel:   hopInfo.OutboundRoute.ChannelId,
 		Port:      hopInfo.OutboundRoute.PortId,
@@ -700,7 +750,7 @@ func (s *Solver) buildBrokerRoute(
 	
 	// Check if broker supports PFM for outbound forwarding
 	// This allows the swap result to be automatically forwarded to the destination
-	supportsPFM := s.routeIndex.pfmChains[hopInfo.BrokerChain]
+	supportsPFM := s.routeIndex.pfmChains[hopInfo.BrokerChainId]
 	pfmMemo := ""
 	
 	if supportsPFM {
@@ -714,7 +764,7 @@ func (s *Solver) buildBrokerRoute(
 
 	// Build the complete broker route
 	return &models.BrokerRoute{
-		Path:                []string{req.ChainFrom, hopInfo.BrokerChain, req.ChainTo},
+		Path:                []string{req.ChainFrom, hopInfo.BrokerChainId, req.ChainTo},
 		InboundLeg:          inboundLeg,
 		Swap:                swap,
 		OutboundLeg:         outboundLeg,
