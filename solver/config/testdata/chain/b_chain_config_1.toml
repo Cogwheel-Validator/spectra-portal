@@ -1,0 +1,4 @@
+# Bad chain config - missing required fields
+[chain]
+name = "Test Chain"
+# Missing id, type, registry, etc.

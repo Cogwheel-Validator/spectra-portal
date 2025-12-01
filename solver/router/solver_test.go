@@ -293,8 +293,6 @@ var chains = []router.SolverChain{
 	},
 }
 
-var routeIndex = router.NewRouteIndex()
-
 // MockBrokerClient implements the BrokerClient interface for testing
 type MockBrokerClient struct {
 	brokerType string

@@ -36,8 +36,9 @@ message SolveRouteRequest {
         (buf.validate.field).required = true, 
         (buf.validate.field).string.min_len = 1, 
         (buf.validate.field).string.max_len = 68];
-    string sender_address = 6 [(buf.validate.field).required = true];
-    string receiver_address = 7 [(buf.validate.field).required = true];
+    // the length of a bech32 address is between 38 and 68 characters
+    string sender_address = 6 [(buf.validate.field).required = true, (buf.validate.field).string.min_len = 38, (buf.validate.field).string.max_len = 68];
+    string receiver_address = 7 [(buf.validate.field).required = true, (buf.validate.field).string.min_len = 38, (buf.validate.field).string.max_len = 68];
 }
 
 message SolveRouteResponse {
