@@ -1,3 +1,6 @@
+# Osmosis Chain Configuration
+# Osmosis is configured as a DEX broker for swap routing.
+
 [chain]
 name = "Osmosis"
 id = "osmosis-1"
@@ -5,18 +8,38 @@ type = "cosmos"
 registry = "osmosis"
 explorer_url = "https://mintscan.io/osmosis"
 slip44 = 118
+bech32_prefix = "osmo"
 
-chain.rpcs = [ 
-    {url = "https://osmosis-rpc.cogwheel.zone", provider = "Cogwheel"},
-]
+# Osmosis is a DEX broker
+is_broker = true
+broker_id = "osmosis-sqs"
 
-chain.rest = [ 
-    {url = "https://osmosis-api.cogwheel.zone", provider = "Cogwheel"},
-]
+# Osmosis supports PFM for packet forwarding
+has_pfm = true
 
+# RPC endpoints
+[[chain.rpcs]]
+url = "https://osmosis-rpc.cogwheel.zone"
+provider = "Cogwheel"
+
+[[chain.rpcs]]
+url = "https://rpc.osmosis.zone"
+provider = "Osmosis"
+
+# REST endpoints
+[[chain.rest]]
+url = "https://osmosis-api.cogwheel.zone"
+provider = "Cogwheel"
+
+[[chain.rest]]
+url = "https://lcd.osmosis.zone"
+provider = "Osmosis"
+
+# Native tokens on this chain
 [[token]]
 denom = "uosmo"
 name = "Osmosis"
 symbol = "OSMO"
 exponent = 6
-icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo"
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png"
+coingecko_id = "osmosis"

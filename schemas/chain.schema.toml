@@ -20,6 +20,6 @@ name = "string"
 # example: USDC, BTC, ATONE etc...
 symbol = "string"
 # the exponent of the token
-exponent = "string"
+exponent = "integer"
 # path to the icon of the token
 icon = "string"

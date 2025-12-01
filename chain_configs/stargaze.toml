@@ -1,0 +1,32 @@
+
+[chain]
+name = "Stargaze"
+id = "stargaze-1"
+type = "cosmos"
+registry = "stargaze"
+explorer_url = "https://mintscan.io/stargaze"
+slip44 = 118
+bech32_prefix = "stars"
+
+is_broker = false
+broker_id = ""
+
+has_pfm = false
+
+# RPC endpoints
+[[chain.rpcs]]
+url = "https://stargaze-rpc.polkachu.com"
+provider = "Polkachu"
+
+# REST endpoints
+[[chain.rest]]
+url = "https://stargaze-api.polkachu.com"
+provider = "Polkachu"
+
+[[token]]
+denom = "ustars"
+name = "Stargaze"
+symbol = "STARS"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/stargaze/stars.png"
+coingecko_id = "stargaze"

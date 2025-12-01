@@ -69,7 +69,7 @@ func (c *RpcClient) performRequest (url, method string, params map[string]any, r
 
 func (c *RpcClient) queryStatus (url string) (RpcStatusResponse, error) {
 	var response RpcStatusResponse
-	err := c.performRequest(url, "status", nil, &response)
+	err := c.performRequest(url, status, nil, &response)
 	if err != nil {
 		return RpcStatusResponse{}, err
 	}
@@ -78,7 +78,7 @@ func (c *RpcClient) queryStatus (url string) (RpcStatusResponse, error) {
 
 func (c *RpcClient) queryAbciInfo(url string) (AbciInfoResponse, error) {
 	var response AbciInfoResponse
-	err := c.performRequest(url, "abci_info", nil, &response)
+	err := c.performRequest(url, abci_info, nil, &response)
 	if err != nil {
 		return AbciInfoResponse{}, err
 	}
@@ -158,7 +158,7 @@ func (c *RpcClient) ValidateRpcEndpoints() []string {
 
 	for url, data := range rawData {
 		// Check tx indexer first
-		if data.Status.NodeInfo.Other.TxIndexer != "on" {
+		if data.Status.NodeInfo.Other.TxIndex != "on" {
 			log.Printf("tx indexer is not enabled for %s", url)
 			continue
 		}

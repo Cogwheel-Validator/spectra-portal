@@ -1,0 +1,269 @@
+package input
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"slices"
+	"time"
+)
+
+// ValidationError contains details about a validation failure.
+type ValidationError struct {
+	Field   string
+	Message string
+}
+
+func (e *ValidationError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Field, e.Message)
+}
+
+// ValidationResult contains the results of validating a chain configuration.
+type ValidationResult struct {
+	ChainID  string
+	IsValid  bool
+	Errors   []error
+	Warnings []string
+}
+
+// Validator validates human-readable chain configurations.
+type Validator struct {
+	httpClient   *http.Client
+	skipNetCheck bool
+}
+
+// ValidatorOption configures the validator.
+type ValidatorOption func(*Validator)
+
+// WithHTTPClient sets a custom HTTP client for network checks.
+func WithHTTPClient(client *http.Client) ValidatorOption {
+	return func(v *Validator) {
+		v.httpClient = client
+	}
+}
+
+// WithSkipNetworkCheck disables network reachability checks.
+func WithSkipNetworkCheck(skip bool) ValidatorOption {
+	return func(v *Validator) {
+		v.skipNetCheck = skip
+	}
+}
+
+// NewValidator creates a new configuration validator.
+func NewValidator(opts ...ValidatorOption) *Validator {
+	v := &Validator{
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+	}
+	for _, opt := range opts {
+		opt(v)
+	}
+	return v
+}
+
+// SupportedChainTypes lists the chain types we currently support.
+var SupportedChainTypes = []string{"cosmos"}
+
+// Validate validates a single chain configuration.
+func (v *Validator) Validate(config *ChainInput) *ValidationResult {
+	result := &ValidationResult{
+		ChainID: config.Chain.ID,
+		IsValid: true,
+	}
+
+	// Required field validations
+	v.validateRequired(config, result)
+
+	// Type validations
+	v.validateTypes(config, result)
+
+	// Logical validations
+	v.validateLogic(config, result)
+
+	// Network validations (optional)
+	if !v.skipNetCheck {
+		v.validateNetwork(config, result)
+	}
+
+	result.IsValid = len(result.Errors) == 0
+	return result
+}
+
+// ValidateAll validates all configurations and returns a map of results.
+func (v *Validator) ValidateAll(configs map[string]*ChainInput) (map[string]*ValidationResult, error) {
+	results := make(map[string]*ValidationResult)
+	var hasErrors bool
+
+	for chainID, config := range configs {
+		result := v.Validate(config)
+		results[chainID] = result
+		if !result.IsValid {
+			hasErrors = true
+		}
+	}
+
+	if hasErrors {
+		return results, errors.New("one or more configurations failed validation")
+	}
+	return results, nil
+}
+
+func (v *Validator) validateRequired(config *ChainInput, result *ValidationResult) {
+	chain := config.Chain
+
+	if chain.Name == "" {
+		result.Errors = append(result.Errors, &ValidationError{"chain.name", "is required"})
+	}
+	if chain.ID == "" {
+		result.Errors = append(result.Errors, &ValidationError{"chain.id", "is required"})
+	}
+	if chain.Type == "" {
+		result.Errors = append(result.Errors, &ValidationError{"chain.type", "is required"})
+	}
+	if chain.Registry == "" {
+		result.Errors = append(result.Errors, &ValidationError{"chain.registry", "is required"})
+	}
+	if chain.ExplorerURL == "" {
+		result.Errors = append(result.Errors, &ValidationError{"chain.explorer_url", "is required"})
+	}
+	if chain.Bech32Prefix == "" {
+		result.Errors = append(result.Errors, &ValidationError{"chain.bech32_prefix", "is required"})
+	}
+	if len(chain.RPCs) == 0 {
+		result.Errors = append(result.Errors, &ValidationError{"chain.rpcs", "at least one RPC endpoint is required"})
+	}
+	if len(chain.Rest) == 0 {
+		result.Errors = append(result.Errors, &ValidationError{"chain.rest", "at least one REST endpoint is required"})
+	}
+
+	// Validate tokens
+	for i, token := range config.Tokens {
+		prefix := fmt.Sprintf("token[%d]", i)
+		if token.Denom == "" {
+			result.Errors = append(result.Errors, &ValidationError{prefix + ".denom", "is required"})
+		}
+		if token.Name == "" {
+			result.Errors = append(result.Errors, &ValidationError{prefix + ".name", "is required"})
+		}
+		if token.Symbol == "" {
+			result.Errors = append(result.Errors, &ValidationError{prefix + ".symbol", "is required"})
+		}
+		if token.Icon == "" {
+			result.Errors = append(result.Errors, &ValidationError{prefix + ".icon", "is required"})
+		}
+	}
+}
+
+func (v *Validator) validateTypes(config *ChainInput, result *ValidationResult) {
+	chain := config.Chain
+
+	if chain.Type != "" && !slices.Contains(SupportedChainTypes, chain.Type) {
+		result.Errors = append(result.Errors, &ValidationError{
+			"chain.type",
+			fmt.Sprintf("unsupported type '%s', must be one of: %v", chain.Type, SupportedChainTypes),
+		})
+	}
+
+	if chain.Slip44 < 0 {
+		result.Errors = append(result.Errors, &ValidationError{"chain.slip44", "must be non-negative"})
+	}
+
+	for i, token := range config.Tokens {
+		if token.Exponent < 0 || token.Exponent > 18 {
+			result.Errors = append(result.Errors, &ValidationError{
+				fmt.Sprintf("token[%d].exponent", i),
+				"must be between 0 and 18",
+			})
+		}
+	}
+}
+
+func (v *Validator) validateLogic(config *ChainInput, result *ValidationResult) {
+	chain := config.Chain
+
+	// If it's a broker, broker_id is required
+	if chain.IsBroker && chain.BrokerID == "" {
+		result.Errors = append(result.Errors, &ValidationError{
+			"chain.broker_id",
+			"is required when chain.is_broker is true",
+		})
+	}
+
+	// Check for duplicate token denoms
+	seenDenoms := make(map[string]bool)
+	for i, token := range config.Tokens {
+		if seenDenoms[token.Denom] {
+			result.Errors = append(result.Errors, &ValidationError{
+				fmt.Sprintf("token[%d].denom", i),
+				fmt.Sprintf("duplicate denom '%s'", token.Denom),
+			})
+		}
+		seenDenoms[token.Denom] = true
+	}
+
+	// Warn if no tokens are defined
+	if len(config.Tokens) == 0 {
+		result.Warnings = append(result.Warnings, "no tokens defined - IBC routing may be limited")
+	}
+
+	// Validate endpoint URLs
+	for i, rpc := range chain.RPCs {
+		if rpc.URL == "" {
+			result.Errors = append(result.Errors, &ValidationError{
+				fmt.Sprintf("chain.rpcs[%d].url", i),
+				"is required",
+			})
+		}
+	}
+	for i, rest := range chain.Rest {
+		if rest.URL == "" {
+			result.Errors = append(result.Errors, &ValidationError{
+				fmt.Sprintf("chain.rest[%d].url", i),
+				"is required",
+			})
+		}
+	}
+}
+
+func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult) {
+	// Check explorer URL is reachable
+	if config.Chain.ExplorerURL != "" {
+		resp, err := v.httpClient.Head(config.Chain.ExplorerURL)
+		if err != nil {
+			result.Warnings = append(result.Warnings,
+				fmt.Sprintf("explorer URL %s is not reachable: %v", config.Chain.ExplorerURL, err))
+		} else {
+			resp.Body.Close()
+		}
+	}
+
+	// Check at least one RPC is reachable
+	rpcReachable := false
+	for _, rpc := range config.Chain.RPCs {
+		resp, err := v.httpClient.Get(rpc.URL + "/status")
+		if err == nil {
+			resp.Body.Close()
+			rpcReachable = true
+			break
+		}
+	}
+	if !rpcReachable && len(config.Chain.RPCs) > 0 {
+		result.Warnings = append(result.Warnings, "no RPC endpoints are currently reachable")
+	}
+
+	// Check at least one REST is reachable
+	restReachable := false
+	for _, rest := range config.Chain.Rest {
+		resp, err := v.httpClient.Get(rest.URL + "/cosmos/base/tendermint/v1beta1/node_info")
+		if err == nil {
+			resp.Body.Close()
+			restReachable = true
+			break
+		}
+	}
+	if !restReachable && len(config.Chain.Rest) > 0 {
+		result.Warnings = append(result.Warnings, "no REST endpoints are currently reachable")
+	}
+}
+

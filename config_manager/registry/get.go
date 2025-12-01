@@ -26,8 +26,8 @@ import (
 //	- Used to download the IBC registry from the GitHub repository
 func RegistryGitDownload(dst string) error {
 	// format for using go getter
-	url := "https://github.com/cosmos/chain-registry.git//_IBC"
-	deadline := time.Now().Add(30 * time.Second)
+	url := "github.com/cosmos/chain-registry//_IBC"
+	deadline := time.Now().Add(120 * time.Second)
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
@@ -36,12 +36,16 @@ func RegistryGitDownload(dst string) error {
 		Src: url,
 		Dst: dst,
 		Mode: getter.ClientModeDir,
+		Detectors: []getter.Detector{
+			&getter.GitHubDetector{},
+		},
 		Getters: map[string]getter.Getter{
 			"git": &getter.GitGetter{},
 		},
 	}
-	log.Printf("Downloading registry from %s to %s", url, dst)
+	fmt.Printf("Downloading registry from %s to %s", url, dst)
 	err := opts.Get()
+
 	if err != nil {
 		return fmt.Errorf("failed to download registry: %w", err)
 	}

@@ -159,7 +159,9 @@ func (c *RestClient) GetDenomHash(stringifiedRoute string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return response.Hash, nil
+
+	// place ibc/ in front of the hash because the denom hash is usually in the format of ibc/hash
+	return "ibc/" + response.Hash, nil
 }
 
 // retry the GET request
@@ -227,13 +229,13 @@ func getRestStatus(
 	// collect only the data the program needs
 	network := response.Network
 	version := response.Version
-	tx_indexer := response.Other.TxIndexer
+	tx_index := response.Other.TxIndex
 	application_version := response.ApplicationVersion
 	app_name := application_version.AppName
 	app_version := application_version.Version
 	git_commit := application_version.GitCommit
 	cosmos_sdk_version := application_version.CosmosSdkVersion
-	tx_indexer_bool := tx_indexer == "on"
+	tx_indexer_bool := tx_index == "on"
 	nodeStatus := NodeStatus{
 		BaseUrl: baseUrl,
 		Network: network,

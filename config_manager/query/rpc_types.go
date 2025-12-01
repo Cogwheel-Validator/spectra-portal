@@ -16,7 +16,7 @@ type RpcClient struct {
 
 type RpcStatusResponse struct {
 	JsonRPC string `json:"json_rpc"`
-	Id string `json:"id"`
+	Id int `json:"id"`
 	Result StatusResault `json:"result"`
 }
 
@@ -32,7 +32,7 @@ type StatusNodeInfo struct {
 }
 
 type NodeInfoOther struct {
-	TxIndexer string `json:"tx_indexer"`
+	TxIndex string `json:"tx_index"`
 }
 
 type StatusSyncInfo struct {

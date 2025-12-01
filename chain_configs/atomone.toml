@@ -1,3 +1,7 @@
+# Atom One Chain Configuration
+# This human-readable config is used by the config_manager to generate
+# backend and frontend configurations.
+
 [chain]
 name = "Atom One"
 id = "atomone-1"
@@ -5,25 +9,31 @@ type = "cosmos"
 registry = "atomone"
 explorer_url = "https://thespectra.io/atomone"
 slip44 = 118
+bech32_prefix = "atone"
 
-chain.rpcs = [ 
-    {url = "https://atomone-rpc.cogwheel.zone", provider = "Cogwheel"},
-]
+# Packet Forward Middleware support
+has_pfm = false
 
-chain.rest = [ 
-    {url = "https://atomone-api.cogwheel.zone", provider = "Cogwheel"},
-]
+# RPC endpoints
+[[chain.rpcs]]
+url = "https://atomone-rpc.cogwheel.zone"
+provider = "Cogwheel"
+
+# REST endpoints
+[[chain.rest]]
+url = "https://atomone-api.cogwheel.zone"
+provider = "Cogwheel"
 
 [[token]]
 denom = "uatone"
 name = "Atone"
 symbol = "ATONE"
 exponent = 6
-icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone"
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png"
 
 [[token]]
 denom = "uphoton"
 name = "Photon"
 symbol = "PHOTON"
 exponent = 6
-icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/photon"
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/photon.png"
