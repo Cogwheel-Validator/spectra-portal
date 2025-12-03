@@ -7,28 +7,27 @@ import (
 
 // rpcClient is an object for the RPC API
 type RpcClient struct {
-	BaseURLs []string
-	Client *http.Client
+	BaseURLs      []string
+	Client        *http.Client
 	RetryAttempts int
-	RetryDelay time.Duration
-	Timeout time.Duration
+	RetryDelay    time.Duration
+	Timeout       time.Duration
 }
 
 type RpcStatusResponse struct {
-	JsonRPC string `json:"json_rpc"`
-	Id int `json:"id"`
-	Result StatusResault `json:"result"`
+	JsonRPC string        `json:"json_rpc"`
+	Id      int           `json:"id"`
+	Result  StatusResault `json:"result"`
 }
 
 type StatusResault struct {
-	NodeInfo StatusNodeInfo `json:"node_info"`
+	NodeInfo       StatusNodeInfo `json:"node_info"`
 	StatusSyncInfo StatusSyncInfo `json:"sync_info"`
-
 }
 type StatusNodeInfo struct {
-	Network string `json:"network"`
-	Version string `json:"version"`
-	Other NodeInfoOther `json:"other"`	
+	Network string        `json:"network"`
+	Version string        `json:"version"`
+	Other   NodeInfoOther `json:"other"`
 }
 
 type NodeInfoOther struct {
@@ -36,14 +35,14 @@ type NodeInfoOther struct {
 }
 
 type StatusSyncInfo struct {
-	LatestBlockHeight string `json:"latest_block_height"`
-	LatestBlockTime time.Time `json:"latest_block_time"`
-	CatchingUp bool `json:"catching_up"`
+	LatestBlockHeight string    `json:"latest_block_height"`
+	LatestBlockTime   time.Time `json:"latest_block_time"`
+	CatchingUp        bool      `json:"catching_up"`
 }
 
 type AbciInfoResponse struct {
-	Jsonrpc string `json:"jsonrpc"`
-	ID      int    `json:"id"`
+	Jsonrpc string                 `json:"jsonrpc"`
+	ID      int                    `json:"id"`
 	Result  AbciInfoResponseResult `json:"result"`
 }
 
@@ -60,5 +59,10 @@ type AbciInfoResponseResultResponse struct {
 
 type CollectedValidationData struct {
 	AbciInfo AbciInfoResponseResultResponse
-	Status StatusResault
+	Status   StatusResault
+}
+
+type URLProvider struct {
+	URL      string
+	Provider string
 }

@@ -106,4 +106,3 @@ func (l *ChainConfigLoader) InitializeSolver(
 	solver := router.NewSolver(chains, routeIndex, brokerClients)
 	return solver, nil
 }
-

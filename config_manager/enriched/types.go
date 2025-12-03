@@ -163,4 +163,3 @@ type RegistryConfig struct {
 	// All chains in the registry
 	Chains map[string]*ChainConfig `json:"chains"`
 }
-

@@ -214,4 +214,3 @@ func (c *ClientConverter) buildConnectedChains(
 
 	return connected
 }
-

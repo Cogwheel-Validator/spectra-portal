@@ -33,21 +33,21 @@ type OTelConfig struct {
 	Environment    string
 
 	// Traces
-	EnableTracing   bool
-	UseOTLPTraces   bool   // Use OTLP for traces (Jaeger, Tempo, etc.)
-	OTLPTracesURL   string // Default: http://localhost:4318/v1/traces
+	EnableTracing bool
+	UseOTLPTraces bool   // Use OTLP for traces (Jaeger, Tempo, etc.)
+	OTLPTracesURL string // Default: http://localhost:4318/v1/traces
 
 	// Metrics
 	EnableMetrics     bool
-	UsePrometheus     bool   // Expose /metrics endpoint
-	UseOTLPMetrics    bool   // Use OTLP for metrics
-	OTLPMetricsURL    string // Default: http://localhost:4318/v1/metrics
+	UsePrometheus     bool                 // Expose /metrics endpoint
+	UseOTLPMetrics    bool                 // Use OTLP for metrics
+	OTLPMetricsURL    string               // Default: http://localhost:4318/v1/metrics
 	PrometheusHandler *prometheus.Exporter // Will be set if Prometheus is enabled
 
 	// Logs
-	EnableLogs   bool
-	UseOTLPLogs  bool   // Use OTLP for logs (Loki, etc.)
-	OTLPLogsURL  string // Default: http://localhost:4318/v1/logs
+	EnableLogs  bool
+	UseOTLPLogs bool   // Use OTLP for logs (Loki, etc.)
+	OTLPLogsURL string // Default: http://localhost:4318/v1/logs
 
 	// Security
 	// InsecureOTLP allows unencrypted connections to OTLP endpoints.
@@ -228,7 +228,7 @@ func newTracerProvider(ctx context.Context, res *resource.Resource, config *OTel
 		otlpOpts := []otlptracehttp.Option{
 			otlptracehttp.WithEndpoint(config.OTLPTracesURL),
 		}
-		
+
 		// Configure TLS
 		if config.InsecureOTLP {
 			// Only use insecure connections if explicitly enabled (e.g., for local development)
@@ -243,7 +243,7 @@ func newTracerProvider(ctx context.Context, res *resource.Resource, config *OTel
 				otlpOpts = append(otlpOpts, otlptracehttp.WithTLSClientConfig(tlsConfig))
 			}
 		}
-		
+
 		exporter, err = otlptracehttp.New(ctx, otlpOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create OTLP trace exporter: %w", err)
@@ -290,7 +290,7 @@ func newMeterProvider(ctx context.Context, res *resource.Resource, config *OTelC
 			otlpOpts := []otlpmetrichttp.Option{
 				otlpmetrichttp.WithEndpoint(config.OTLPMetricsURL),
 			}
-			
+
 			// Configure TLS
 			if config.InsecureOTLP {
 				// Only use insecure connections if explicitly enabled (e.g., for local development)
@@ -305,7 +305,7 @@ func newMeterProvider(ctx context.Context, res *resource.Resource, config *OTelC
 					otlpOpts = append(otlpOpts, otlpmetrichttp.WithTLSClientConfig(tlsConfig))
 				}
 			}
-			
+
 			otlpExporter, err := otlpmetrichttp.New(ctx, otlpOpts...)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create OTLP metric exporter: %w", err)
@@ -344,7 +344,7 @@ func newLoggerProvider(ctx context.Context, res *resource.Resource, config *OTel
 		otlpOpts := []otlploghttp.Option{
 			otlploghttp.WithEndpoint(config.OTLPLogsURL),
 		}
-		
+
 		// Configure TLS
 		if config.InsecureOTLP {
 			// Only use insecure connections if explicitly enabled (e.g., for local development)
@@ -359,7 +359,7 @@ func newLoggerProvider(ctx context.Context, res *resource.Resource, config *OTel
 				otlpOpts = append(otlpOpts, otlploghttp.WithTLSClientConfig(tlsConfig))
 			}
 		}
-		
+
 		exporter, err = otlploghttp.New(ctx, otlpOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create OTLP log exporter: %w", err)

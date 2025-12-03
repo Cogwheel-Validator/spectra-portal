@@ -2,10 +2,10 @@ package registry
 
 // Main json struct object from the chain registry
 type ChainIbcData struct {
-		Schema string `json:"$schema"`
-		Chain1 IbcChainData `json:"chain_1"`
-		Chain2 IbcChainData `json:"chain_2"`
-		Channels []IbcChannelData `json:"channels"`
+	Schema   string           `json:"$schema"`
+	Chain1   IbcChainData     `json:"chain_1"`
+	Chain2   IbcChainData     `json:"chain_2"`
+	Channels []IbcChannelData `json:"channels"`
 }
 
 // IBC chain data
@@ -17,13 +17,12 @@ type IbcChainData struct {
 
 // IBC channel data
 type IbcChannelData struct {
-	Chain1 ChannelChainData `json:"chain_1"`
-	Chain2 ChannelChainData `json:"chain_2"`
-	Ordering string `json:"ordering"`
-	Version  string `json:"version"`
-	Tags     ChannelTags `json:"tags"`
+	Chain1   ChannelChainData `json:"chain_1"`
+	Chain2   ChannelChainData `json:"chain_2"`
+	Ordering string           `json:"ordering"`
+	Version  string           `json:"version"`
+	Tags     ChannelTags      `json:"tags"`
 }
-
 
 // Channel chain data
 type ChannelChainData struct {
@@ -37,8 +36,7 @@ type ChannelTags struct {
 	Status    string `json:"status"`
 }
 
-
-/* 
+/*
 The internal Spectra IBC Hub registry
 
 It should hold the information about the chains and channels that are supported by the Spectra IBC Hub.
@@ -52,9 +50,9 @@ type IbcRegistry struct {
 IbcChain is a struct that holds the information about a chain that is supported by the Spectra IBC Hub.
 */
 type IbcChain struct {
-	ChainName string `toml:"chain_name"`
-	ChainId string `toml:"chain_id"`
-	Channels []IbcChannel `toml:"channels"`
+	ChainName string       `toml:"chain_name"`
+	ChainId   string       `toml:"chain_id"`
+	Channels  []IbcChannel `toml:"channels"`
 }
 
 /*
@@ -62,9 +60,9 @@ IbcChannel is a struct that holds the information about a channel such as channe
 chain it is connected to.
 */
 type IbcChannel struct {
-	ChannelId string `toml:"channel_id"`
-	PortId string `toml:"port_id"`
+	ChannelId    string `toml:"channel_id"`
+	PortId       string `toml:"port_id"`
 	ConnectionId string `toml:"connection_id"`
-	ToChainName string `toml:"to_chain_name"`
-	ToChainId string `toml:"to_chain_id"`
+	ToChainName  string `toml:"to_chain_name"`
+	ToChainId    string `toml:"to_chain_id"`
 }

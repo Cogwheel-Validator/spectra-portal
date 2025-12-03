@@ -3,6 +3,7 @@ package input
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"slices"
 	"time"
@@ -27,6 +28,9 @@ type ValidationResult struct {
 }
 
 // Validator validates human-readable chain configurations.
+// Note: Network validation is skipped by default since the enriched.Builder
+// performs thorough endpoint validation (version consensus, height sync, tx indexer).
+// Use WithSkipNetworkCheck(false) to enable basic reachability checks here.
 type Validator struct {
 	httpClient   *http.Client
 	skipNetCheck bool
@@ -50,11 +54,13 @@ func WithSkipNetworkCheck(skip bool) ValidatorOption {
 }
 
 // NewValidator creates a new configuration validator.
+// Network checks are skipped by default - use WithSkipNetworkCheck(false) to enable.
 func NewValidator(opts ...ValidatorOption) *Validator {
 	v := &Validator{
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
+		skipNetCheck: true, // Skip by default - builder does thorough validation
 	}
 	for _, opt := range opts {
 		opt(v)
@@ -226,6 +232,20 @@ func (v *Validator) validateLogic(config *ChainInput, result *ValidationResult) 
 	}
 }
 
+// validateNetwork validates the network reachability of the chain.
+// this is not a deep network validation, it only checks if the endpoints are reachable.
+//
+// Parameters:
+// - config: the chain configuration to validate
+// - result: the validation result to store the warnings
+//
+// Returns:
+// - nil if the network is reachable
+// - result containing:
+//   - Warnings: warnings about the network reachability
+//   - Errors: errors about the network reachability if the network is not reachable
+//   - IsValid: true if the network is reachable, false otherwise
+//   - ChainID: the chain ID
 func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult) {
 	// Check explorer URL is reachable
 	if config.Chain.ExplorerURL != "" {
@@ -234,7 +254,9 @@ func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult
 			result.Warnings = append(result.Warnings,
 				fmt.Sprintf("explorer URL %s is not reachable: %v", config.Chain.ExplorerURL, err))
 		} else {
-			resp.Body.Close()
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("failed to close response body: %v", err)
+			}
 		}
 	}
 
@@ -243,7 +265,9 @@ func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult
 	for _, rpc := range config.Chain.RPCs {
 		resp, err := v.httpClient.Get(rpc.URL + "/status")
 		if err == nil {
-			resp.Body.Close()
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("failed to close response body: %v", err)
+			}
 			rpcReachable = true
 			break
 		}
@@ -257,7 +281,9 @@ func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult
 	for _, rest := range config.Chain.Rest {
 		resp, err := v.httpClient.Get(rest.URL + "/cosmos/base/tendermint/v1beta1/node_info")
 		if err == nil {
-			resp.Body.Close()
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("failed to close response body: %v", err)
+			}
 			restReachable = true
 			break
 		}
@@ -266,4 +292,3 @@ func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult
 		result.Warnings = append(result.Warnings, "no REST endpoints are currently reachable")
 	}
 }
-

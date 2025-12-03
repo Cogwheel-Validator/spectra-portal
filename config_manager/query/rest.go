@@ -5,197 +5,21 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
-	"net/url"
 	"time"
+
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
 )
 
-// NewRestClient creates a new RestClient
-//
-// Params:
-//	- baseURLs: the list of API URLs to use
-//	- retryAttempts: the number of times to retry the request
-//	- retryDelay: the delay between retries
-//	- timeout: the timeout for the request
-//
-// Usage:
-// - Used to make a client from which you can make requests to the REST APIs to gather the data
-//
-// Returns:
-//	- *RestClient: the new RestClient
-func NewRestClient(
-	baseURLs []string, 
-	retryAttempts int, 
-	retryDelay time.Duration,
-	timeout time.Duration,
-	chainId string) *RestClient {
-	healthyUrls := declareWorkingRestApis(baseURLs, retryAttempts, retryDelay, timeout, chainId)
-
-	if len(healthyUrls) == 0 {
-		log.Fatalf("No healthy URLs found for the chain %s", chainId)
-	}
-
-	return &RestClient{
-		BaseURLs: healthyUrls,
-		Client: &http.Client{
-			Timeout: timeout,
-		},
-		RetryAttempts: retryAttempts,
-		RetryDelay: retryDelay,
-	}
-}
-
-// Gather the IBC channel data from the REST API
-//
-// Usage:
-//	- To verify if all of the data match from the chain registry
-//
-// It currently assumes that all IBC channels are on the same port "transfer" which is
-// 99% of the time true.
-func (c *RestClient) GetIbcChannelData(channelId string) (*IbcChannelDataResponse, error) {
-	fullURL := fmt.Sprintf("%s/ibc/core/channel/v1/channels/%s/ports/tranfer", generateRandomApiUrl(c.BaseURLs), channelId)
-	resp, err := c.retryGetRequest(fullURL)
-	if err != nil {
-		return nil, err
-	}
-	
-	// read the body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	// close the body
-	defer func(body io.ReadCloser) {
-		err := body.Close()
-		if err != nil {
-			log.Fatalf("Failed to close response body: %v", err)
-		}
-	}(resp.Body)
-
-	// unmarshal the body
-	var ibcChannelDataResponse IbcChannelDataResponse
-	err = json.Unmarshal(body, &ibcChannelDataResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	// return the response
-	return &ibcChannelDataResponse, nil
-}
-
-func (c *RestClient) GetAllDenomTraces(denom string, nextKey string) (*DenomTracesResponse, error) {
-	fullURL := fmt.Sprintf("%s/ibc/apps/transfer/v1/denom_traces?pagination.key=%s", generateRandomApiUrl(c.BaseURLs), nextKey)
-	resp, err := c.retryGetRequest(fullURL)
-	if err != nil {
-		return nil, err
-	}
-	// read the body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	// unmarshal the body
-	var denomTracesResponse DenomTracesResponse
-	err = json.Unmarshal(body, &denomTracesResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	// close manually because the program needs to check if there are other pages
-	err = resp.Body.Close()
-	if err != nil {
-		log.Fatalf("Failed to close response body: %v", err)
-	}
-
-	// get all the pages
-	for denomTracesResponse.Pagination.NextKey != "" {
-		var newDenomTracesResponse *DenomTracesResponse
-		newDenomTracesResponse, err = c.GetAllDenomTraces(denom, denomTracesResponse.Pagination.NextKey)
-		if err != nil {
-			return nil, err
-		}
-		denomTracesResponse.DenomTraces = append(
-			denomTracesResponse.DenomTraces, newDenomTracesResponse.DenomTraces...)
-		denomTracesResponse.Pagination = newDenomTracesResponse.Pagination
-	}
-
-	// return the response
-	return &denomTracesResponse, nil
-
-}
-
-// Get the denom hash from the REST API
-//
-// Params:
-//	- stringifiedRoute: the stringified route to get the denom hash from, to get this you need to
-//	  combine the path, example: "transfer/channel-1" or "transfer/channel-2/transfer/channel-80" for multihops 
-//	  and then add original chain denom, example: uatone, uosmo, etc... The function should use url.PathEscape
-//	  to make it safe for the URL
-//
-// Usage:
-//	- To get the denom hash from the REST API
-//
-// Returns:
-//	- string: the denom hash
-func (c *RestClient) GetDenomHash(stringifiedRoute string) (string, error) {
-	urlStringifiedRoute := url.PathEscape(stringifiedRoute)
-	fullURL := fmt.Sprintf("%s/ibc/apps/transfer/v1/denom_hashes/%s", generateRandomApiUrl(c.BaseURLs), urlStringifiedRoute)
-	resp, err := c.retryGetRequest(fullURL)
-	if err != nil {
-		return "", err
-	}
-	// read the body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	
-	var response struct {
-		Hash string `json:"hash"`
-	}
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return "", err
-	}
-
-	// place ibc/ in front of the hash because the denom hash is usually in the format of ibc/hash
-	return "ibc/" + response.Hash, nil
-}
-
-// retry the GET request
-func (c *RestClient) retryGetRequest(fullURL string) (*http.Response, error) {
-	retryAmt := 0
-	var resp *http.Response
-	var err error
-	for retryAmt < c.RetryAttempts {
-		resp, err = c.Client.Get(fullURL)
-		if err != nil {
-			retryAmt++
-			// wait before retrying
-			time.Sleep(c.RetryDelay)
-		} else {
-			break
-		}
-	}
-	return resp, err
-}
-
-// generate a random API URL from the list of API URLs
-func generateRandomApiUrl(baseURLs []string) string {
-	return baseURLs[rand.Intn(len(baseURLs))]
-}
-
 func getRestStatus(
-	baseUrl string, 
-	retryAttempts int, 
-	retryDelay time.Duration, 
+	endpoint input.APIEndpoint,
+	retryAttempts int,
+	retryDelay time.Duration,
 	timeout time.Duration) (NodeStatus, error) {
 	client := http.Client{
 		Timeout: timeout,
 	}
-	fullURL := fmt.Sprintf("%s/cosmos/base/tendermint/v1beta1/node_info", baseUrl)
+	fullURL := fmt.Sprintf("%s/cosmos/base/tendermint/v1beta1/node_info", endpoint.URL)
 	resp, err := client.Get(fullURL)
 	if err != nil {
 		//retry
@@ -212,7 +36,7 @@ func getRestStatus(
 			return NodeStatus{}, err
 		}
 	}
-	
+
 	// read the body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -227,9 +51,9 @@ func getRestStatus(
 	}
 
 	// collect only the data the program needs
-	network := response.Network
-	version := response.Version
-	tx_index := response.Other.TxIndex
+	network := response.DefaultNodeInfo.Network
+	version := response.DefaultNodeInfo.Version
+	tx_index := response.DefaultNodeInfo.Other.TxIndex
 	application_version := response.ApplicationVersion
 	app_name := application_version.AppName
 	app_version := application_version.Version
@@ -237,13 +61,14 @@ func getRestStatus(
 	cosmos_sdk_version := application_version.CosmosSdkVersion
 	tx_indexer_bool := tx_index == "on"
 	nodeStatus := NodeStatus{
-		BaseUrl: baseUrl,
-		Network: network,
-		Version: version,
-		TxIndexer: tx_indexer_bool,
-		AppName: app_name,
-		AppVersion: app_version,
-		GitCommit: git_commit,
+		BaseUrl:          endpoint.URL,
+		Provider:         endpoint.Provider,
+		Network:          network,
+		Version:          version,
+		TxIndexer:        tx_indexer_bool,
+		AppName:          app_name,
+		AppVersion:       app_version,
+		GitCommit:        git_commit,
 		CosmosSdkVersion: cosmos_sdk_version,
 	}
 
@@ -251,42 +76,69 @@ func getRestStatus(
 	return nodeStatus, nil
 }
 
-func declareWorkingRestApis(
-	baseURLs []string, 
-	retryAttempts int, 
-	retryDelay time.Duration, 
-	timeout time.Duration, 
-	chainId string) []string {
-	
+// ValidateRestEndpoints validates the REST endpoints and returns a map of healthy endpoints
+//
+// Parameters:
+// - endpoints - the input endpoints to validate
+// - retryAttempts - the number of retry attempts to perform
+// - retryDelay - the delay between retry attempts
+// - timeout - the timeout for the request
+//
+// Returns a map of healthy endpoints
+func ValidateRestEndpoints(
+	endpoints []input.APIEndpoint,
+	retryAttempts int,
+	retryDelay time.Duration,
+	timeout time.Duration,
+) map[URLProvider]bool {
+	chainIds := make(map[string]int)
 	// Step 1: Collect node status from all endpoints
-	nodeStatuses := make([]NodeStatus, 0, len(baseURLs))
-	for _, baseURL := range baseURLs {
-		nodeStatus, err := getRestStatus(baseURL, retryAttempts, retryDelay, timeout)
+	nodeStatuses := make([]NodeStatus, 0, len(endpoints))
+	for _, endpoint := range endpoints {
+		nodeStatus, err := getRestStatus(endpoint, retryAttempts, retryDelay, timeout)
 		if err != nil {
-			log.Printf("Failed to get REST status for %s: %v", baseURL, err)
-			continue
-		}
-		if nodeStatus.Network != chainId {
-			log.Printf("REST API for %s is not for the matching chain %s", baseURL, chainId)
+			log.Printf("Failed to get REST status for %s: %v", endpoint.URL, err)
 			continue
 		}
 		if !nodeStatus.TxIndexer {
-			log.Printf("REST API for %s does not have tx indexer enabled", baseURL)
+			log.Printf("REST API for %s does not have tx indexer enabled", endpoint.URL)
 			continue
 		}
 		nodeStatuses = append(nodeStatuses, nodeStatus)
+		chainIds[nodeStatus.Network]++
 	}
-	
+
 	if len(nodeStatuses) == 0 {
-		log.Fatalf("No REST APIs are working and are for the matching chain %s", chainId)
+		log.Fatalf("No REST APIs are working and are for the matching chain")
+	}
+
+	mainChainId := ""
+	maxCount := 0
+	for chainId, count := range chainIds {
+		if count > maxCount {
+			maxCount = count
+			mainChainId = chainId
+		}
+	}
+
+	if mainChainId == "" {
+		log.Fatalf("No main chain ID found")
+	}
+
+	// now that the chainId are collected remove any that are considered secondary
+	filteredNodeStatuses := make([]NodeStatus, 0)
+	for _, nodeStatus := range nodeStatuses {
+		if nodeStatus.Network == mainChainId {
+			filteredNodeStatuses = append(filteredNodeStatuses, nodeStatus)
+		}
 	}
 
 	// Step 2: Count occurrences of each attribute
 	binaryNames := make(map[string]int)
 	binaryCommits := make(map[string]int)
 	versions := make(map[string]int)
-	
-	for _, nodeStatus := range nodeStatuses {
+
+	for _, nodeStatus := range filteredNodeStatuses {
 		if nodeStatus.AppName != "" {
 			binaryNames[nodeStatus.AppName]++
 		}
@@ -304,25 +156,25 @@ func declareWorkingRestApis(
 	expectedCommit := getMostCommonValue(binaryCommits)
 
 	// Step 4: Filter endpoints that match consensus
-	healthyUrls := make([]string, 0, len(nodeStatuses))
-	for _, nodeStatus := range nodeStatuses {
+	healthyEndpoints := make(map[URLProvider]bool)
+	for _, nodeStatus := range filteredNodeStatuses {
 		// Note: In case of network upgrades, validators may have different versions.
 		// This strict matching ensures consistency but may need to be relaxed
 		// for chains with staggered upgrade patterns.
-		if nodeStatus.AppName == expectedBinaryName && 
-		   nodeStatus.Version == expectedVersion && 
-		   nodeStatus.GitCommit == expectedCommit {
-			healthyUrls = append(healthyUrls, nodeStatus.BaseUrl)
+		if nodeStatus.AppName == expectedBinaryName &&
+			nodeStatus.Version == expectedVersion &&
+			nodeStatus.GitCommit == expectedCommit {
+			healthyEndpoints[URLProvider{URL: nodeStatus.BaseUrl, Provider: nodeStatus.Provider}] = true
 		} else {
 			log.Printf("Filtering out %s due to version mismatch (app: %s, version: %s, commit: %s)",
 				nodeStatus.BaseUrl, nodeStatus.AppName, nodeStatus.Version, nodeStatus.GitCommit)
 		}
 	}
-	
-	if len(healthyUrls) == 0 {
+
+	if len(healthyEndpoints) == 0 {
 		log.Printf("Warning: No endpoints match consensus values. Expected - app: %s, version: %s, commit: %s",
 			expectedBinaryName, expectedVersion, expectedCommit)
 	}
-	
-	return healthyUrls
+
+	return healthyEndpoints
 }

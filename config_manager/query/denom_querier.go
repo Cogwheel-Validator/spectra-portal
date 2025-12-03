@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -41,13 +42,13 @@ type DenomTraceInfo struct {
 
 // ParsedDenomTrace contains parsed information from a denom trace.
 type ParsedDenomTrace struct {
-	Path        string   // Full path, e.g., "transfer/channel-2/transfer/channel-75"
-	BaseDenom   string   // Original denom, e.g., "uatone"
-	IBCDenom    string   // Full IBC denom hash, e.g., "ibc/ABC123..."
-	Channels    []string // Parsed channel IDs in order
-	Ports       []string // Parsed port IDs in order
-	HopCount    int      // Number of IBC hops
-	FirstHop    string   // First channel in path (direct connection to this chain)
+	Path      string   // Full path, e.g., "transfer/channel-2/transfer/channel-75"
+	BaseDenom string   // Original denom, e.g., "uatone"
+	IBCDenom  string   // Full IBC denom hash, e.g., "ibc/ABC123..."
+	Channels  []string // Parsed channel IDs in order
+	Ports     []string // Parsed port IDs in order
+	HopCount  int      // Number of IBC hops
+	FirstHop  string   // First channel in path (direct connection to this chain)
 }
 
 // QueryAllDenomTraces fetches all denom traces from the chain.
@@ -201,7 +202,11 @@ func (q *DenomQuerier) doGetWithRetry(url string) ([]byte, error) {
 			lastErr = err
 			continue
 		}
-		defer resp.Body.Close()
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				log.Printf("failed to close response body: %v", err)
+			}
+		}()
 
 		if resp.StatusCode != http.StatusOK {
 			lastErr = fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -227,7 +232,10 @@ func (q *DenomQuerier) IsHealthy() bool {
 	if err != nil {
 		return false
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("failed to close response body: %v", err)
+		}
+	}()
 	return resp.StatusCode == http.StatusOK
 }
-

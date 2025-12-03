@@ -3,6 +3,7 @@ package enriched
 import (
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
@@ -11,25 +12,33 @@ import (
 )
 
 // RouteBuilder builds IBC routes purely from configuration data.
-// It does NOT query chains - it computes expected IBC denoms from:
-// 1. Native tokens defined in input configs
-// 2. IBC channels from the registry
-// 3. Multi-hop tokens explicitly defined in configs
+// It computes expected IBC denoms from:
+//
+//  1. Native tokens - tokens where OriginChain is empty, can only be sent FROM this chain
+//  2. Routable IBC tokens - tokens where OriginChain is set, these are IBC tokens
+//     that have been received and can be forwarded to specific destinations
+//
+// Key principle: A route only allows tokens that:
+//   - Are NATIVE to the source chain (sending out their first hop)
+//   - Originated from the destination chain (unwinding/sending back)
+//   - Are explicitly defined as ROUTABLE on this chain for that destination
 type RouteBuilder struct {
 	inputConfigs map[string]*input.ChainInput
 	ibcData      []registry.ChainIbcData
 
 	// Lookup maps built during initialization
-	chainByRegistry map[string]string                            // registry name -> chain ID
-	channelMap      map[string]map[string]*ChannelInfo           // fromChainID -> toChainID -> channel info
-	tokenLookup     map[string]map[string]*input.TokenMeta       // chainID -> denom -> token
+	chainByRegistry map[string]string                      // registry name -> chain ID
+	channelMap      map[string]map[string]*ChannelInfo     // fromChainID -> toChainID -> channel info
+	tokenLookup     map[string]map[string]*input.TokenMeta // chainID -> denom -> token
+	nativeTokens    map[string][]*input.TokenMeta          // chainID -> native tokens only
+	routableTokens  map[string][]*input.TokenMeta          // chainID -> routable IBC tokens only
 }
 
 // ChannelInfo contains channel information for a direct connection
 type ChannelInfo struct {
 	FromChainID           string
 	ToChainID             string
-	ChannelID             string // Our channel
+	ChannelID             string // Our channel (tokens arrive via this channel)
 	CounterpartyChannelID string // Their channel
 	PortID                string
 	ConnectionID          string
@@ -44,22 +53,36 @@ func NewRouteBuilder(inputConfigs map[string]*input.ChainInput, ibcData []regist
 		chainByRegistry: make(map[string]string),
 		channelMap:      make(map[string]map[string]*ChannelInfo),
 		tokenLookup:     make(map[string]map[string]*input.TokenMeta),
+		nativeTokens:    make(map[string][]*input.TokenMeta),
+		routableTokens:  make(map[string][]*input.TokenMeta),
 	}
 	rb.buildLookupMaps()
 	return rb
 }
 
 func (rb *RouteBuilder) buildLookupMaps() {
-	// Build registry name -> chain ID map
+	// Build registry name -> chain ID map and token lookups
 	for chainID, cfg := range rb.inputConfigs {
 		rb.chainByRegistry[cfg.Chain.Registry] = chainID
 
-		// Build token lookup
+		// Build token lookup and categorize tokens
 		rb.tokenLookup[chainID] = make(map[string]*input.TokenMeta)
+		rb.nativeTokens[chainID] = make([]*input.TokenMeta, 0)
+		rb.routableTokens[chainID] = make([]*input.TokenMeta, 0)
+
 		for i := range cfg.Tokens {
 			token := &cfg.Tokens[i]
 			rb.tokenLookup[chainID][token.Denom] = token
+
+			if token.IsNative() {
+				rb.nativeTokens[chainID] = append(rb.nativeTokens[chainID], token)
+			} else {
+				rb.routableTokens[chainID] = append(rb.routableTokens[chainID], token)
+			}
 		}
+
+		log.Printf("Chain %s: %d native tokens, %d routable IBC tokens",
+			chainID, len(rb.nativeTokens[chainID]), len(rb.routableTokens[chainID]))
 	}
 
 	// Build channel map from IBC registry
@@ -131,8 +154,6 @@ func (rb *RouteBuilder) BuildRoutesForChain(chainID string) []RouteConfig {
 		return routes
 	}
 
-	chainConfig := rb.inputConfigs[chainID]
-
 	for toChainID, channelInfo := range channels {
 		toChainConfig := rb.inputConfigs[toChainID]
 		if toChainConfig == nil {
@@ -147,7 +168,7 @@ func (rb *RouteBuilder) BuildRoutesForChain(chainID string) []RouteConfig {
 			PortID:                channelInfo.PortID,
 			CounterpartyChannelID: channelInfo.CounterpartyChannelID,
 			State:                 channelInfo.Status,
-			AllowedTokens:         rb.buildAllowedTokensForRoute(chainID, toChainID, channelInfo, chainConfig),
+			AllowedTokens:         rb.buildAllowedTokensForRoute(chainID, toChainID, channelInfo),
 		}
 
 		routes = append(routes, route)
@@ -156,23 +177,40 @@ func (rb *RouteBuilder) BuildRoutesForChain(chainID string) []RouteConfig {
 	return routes
 }
 
-// buildAllowedTokensForRoute computes allowed tokens for a route
+// buildAllowedTokensForRoute computes allowed tokens for a route.
+//
+// The logic is:
+//
+//  1. NATIVE tokens from source chain: These are tokens that originate on this chain
+//     and can be sent out (first hop). Only included if destination is in AllowedDestinations.
+//
+//  2. Tokens originally from DESTINATION chain: IBC tokens that came from the destination
+//     can be sent back (unwinding). These are computed, not explicitly defined.
+//
+//  3. ROUTABLE IBC tokens: Explicitly defined IBC tokens on the source chain that can
+//     be forwarded to specific destinations. Only included if destination matches.
 func (rb *RouteBuilder) buildAllowedTokensForRoute(
 	fromChainID, toChainID string,
 	channelInfo *ChannelInfo,
-	chainConfig *input.ChainInput,
 ) []RouteTokenInfo {
 	tokens := make([]RouteTokenInfo, 0)
+	seen := make(map[string]bool) // Track added tokens by source denom
 
-	// 1. Add native tokens from this chain that can be sent out
-	for _, token := range chainConfig.Tokens {
-		if !rb.isTokenAllowedToChain(&token, toChainID) {
+	log.Printf("Building tokens for route %s -> %s (channel %s)", fromChainID, toChainID, channelInfo.ChannelID)
+
+	// === 1. NATIVE tokens from this chain ===
+	// Only tokens that are truly native (OriginChain is empty)
+	for _, token := range rb.nativeTokens[fromChainID] {
+		if !rb.isTokenAllowedToChain(token, toChainID) {
+			log.Printf("\tSkipping native token %s - not allowed to %s", token.Denom, toChainID)
 			continue
 		}
 
 		// Compute IBC denom on destination chain
-		trace := fmt.Sprintf("%s/%s/%s", channelInfo.PortID, channelInfo.ChannelID, token.Denom)
-		ibcDenom := query.ComputeDenomHash(trace)
+		// When we SEND, the destination receives: ibc/hash(transfer/THEIR_CHANNEL/denom)
+		ibcDenom := rb.computeIBCDenom(channelInfo.PortID, channelInfo.CounterpartyChannelID, token.Denom)
+
+		log.Printf("\tAdding native token %s -> %s", token.Denom, ibcDenom)
 
 		tokens = append(tokens, RouteTokenInfo{
 			SourceDenom:      token.Denom,
@@ -181,148 +219,94 @@ func (rb *RouteBuilder) buildAllowedTokensForRoute(
 			OriginChain:      fromChainID,
 			Decimals:         token.Exponent,
 		})
+		seen[token.Denom] = true
 	}
 
-	// 2. Add tokens received from the destination chain that can be sent back (unwound)
-	toChainConfig := rb.inputConfigs[toChainID]
-	if toChainConfig != nil {
-		for _, token := range toChainConfig.Tokens {
-			// Compute what the IBC denom is ON OUR CHAIN
-			// (received via the counterparty's channel)
-			receiveTrace := fmt.Sprintf("%s/%s/%s",
-				channelInfo.PortID, channelInfo.CounterpartyChannelID, token.Denom)
-			ibcDenomOnOurChain := query.ComputeDenomHash(receiveTrace)
+	// === 2. Tokens that ORIGINATED from the destination chain (unwinding) ===
+	// If destination chain has native tokens, we might have received them via IBC.
+	// When we send them back, they unwind to native.
+	for _, token := range rb.nativeTokens[toChainID] {
+		// Compute IBC denom of this token ON OUR CHAIN
+		// When we RECEIVE from toChain: ibc/hash(transfer/OUR_CHANNEL/denom)
+		ibcDenomOnOurChain := rb.computeIBCDenom(channelInfo.PortID, channelInfo.ChannelID, token.Denom)
 
-			// When sent back, it unwounds to the native denom
-			tokens = append(tokens, RouteTokenInfo{
-				SourceDenom:      ibcDenomOnOurChain,
-				DestinationDenom: token.Denom, // Unwound to native
-				BaseDenom:        token.Denom,
-				OriginChain:      toChainID,
-				Decimals:         token.Exponent,
-			})
-		}
-	}
-
-	// 3. Add explicitly defined received tokens that came through this route
-	for _, received := range chainConfig.ReceivedTokens {
-		// Check if this token should go through toChainID
-		if !rb.receivedTokenUsesRoute(received, fromChainID, toChainID) {
+		if seen[ibcDenomOnOurChain] {
 			continue
 		}
 
-		// Compute the IBC denom of this token on our chain
-		ibcDenomOnOurChain := rb.computeReceivedTokenDenom(received, fromChainID)
-		if ibcDenomOnOurChain == "" {
-			continue
-		}
-
-		// Get token info from origin chain
-		originToken := rb.getTokenFromChain(received.OriginChain, received.OriginDenom)
-		decimals := 6 // Default
-		if originToken != nil {
-			decimals = originToken.Exponent
-		}
-
-		// Compute destination denom
-		var destDenom string
-		if toChainID == received.OriginChain {
-			// Unwinding to origin
-			destDenom = received.OriginDenom
-		} else {
-			// Forwarding further - compute new IBC denom
-			trace := fmt.Sprintf("%s/%s/%s", channelInfo.PortID, channelInfo.ChannelID, ibcDenomOnOurChain)
-			destDenom = query.ComputeDenomHash(trace)
-		}
+		log.Printf("\tAdding unwind token %s (from %s) -> %s (native)",
+			ibcDenomOnOurChain, toChainID, token.Denom)
 
 		tokens = append(tokens, RouteTokenInfo{
 			SourceDenom:      ibcDenomOnOurChain,
-			DestinationDenom: destDenom,
-			BaseDenom:        received.OriginDenom,
-			OriginChain:      received.OriginChain,
-			Decimals:         decimals,
+			DestinationDenom: token.Denom, // Unwound to native
+			BaseDenom:        token.Denom,
+			OriginChain:      toChainID,
+			Decimals:         token.Exponent,
 		})
+		seen[ibcDenomOnOurChain] = true
+	}
+
+	// === 3. ROUTABLE IBC tokens defined on this chain ===
+	// These are IBC tokens that we've received and explicitly want to forward
+	for _, token := range rb.routableTokens[fromChainID] {
+		if !rb.isTokenAllowedToChain(token, toChainID) {
+			log.Printf("\tSkipping routable token %s - not allowed to %s", token.Denom, toChainID)
+			continue
+		}
+
+		if seen[token.Denom] {
+			continue
+		}
+
+		// The token is already an IBC denom on our chain
+		// When we forward it, compute what it becomes on destination
+		destDenom := rb.computeForwardedTokenDenom(token, channelInfo)
+
+		log.Printf("\tAdding routable token %s (origin: %s) -> %s",
+			token.Denom, token.OriginChain, destDenom)
+
+		tokens = append(tokens, RouteTokenInfo{
+			SourceDenom:      token.Denom,
+			DestinationDenom: destDenom,
+			BaseDenom:        token.OriginDenom,
+			OriginChain:      token.OriginChain,
+			Decimals:         token.Exponent,
+		})
+		seen[token.Denom] = true
 	}
 
 	return tokens
+}
+
+// computeForwardedTokenDenom computes what an IBC token becomes when forwarded
+func (rb *RouteBuilder) computeForwardedTokenDenom(token *input.TokenMeta, channelInfo *ChannelInfo) string {
+	// If we're sending to the token's origin chain, it might unwind
+	if channelInfo.ToChainID == token.OriginChain {
+		// Check if the path is direct (single hop IBC denom)
+		// For simplicity, assume direct path unwinding
+		return token.OriginDenom
+	}
+
+	// Otherwise, the token gets wrapped again on the destination
+	// New denom = ibc/hash(transfer/THEIR_CHANNEL/our_ibc_denom)
+	return rb.computeIBCDenom(channelInfo.PortID, channelInfo.CounterpartyChannelID, token.Denom)
+}
+
+// computeIBCDenom computes the IBC denom hash for a token
+func (rb *RouteBuilder) computeIBCDenom(port, channel, denom string) string {
+	trace := fmt.Sprintf("%s/%s/%s", port, channel, denom)
+	return query.ComputeDenomHash(trace)
 }
 
 func (rb *RouteBuilder) isTokenAllowedToChain(token *input.TokenMeta, toChainID string) bool {
 	if len(token.AllowedDestinations) == 0 {
 		return true // No restrictions
 	}
-	for _, allowed := range token.AllowedDestinations {
-		if allowed == toChainID {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(token.AllowedDestinations, toChainID)
 }
 
-// receivedTokenUsesRoute checks if a received token's path goes through toChainID
-func (rb *RouteBuilder) receivedTokenUsesRoute(received input.ReceivedToken, ourChainID, toChainID string) bool {
-	if len(received.ViaChains) == 0 {
-		// Direct transfer - check if toChainID is the origin
-		return toChainID == received.OriginChain
-	}
-
-	// Multi-hop - check if toChainID is in the path
-	// The path is: OriginChain -> ViaChains[0] -> ViaChains[1] -> ... -> OurChain
-	// When sending back, we reverse: OurChain -> ViaChains[last] -> ... -> OriginChain
-
-	// Check if toChainID is the last via chain (immediate hop back)
-	if received.ViaChains[len(received.ViaChains)-1] == toChainID {
-		return true
-	}
-
-	return false
-}
-
-// computeReceivedTokenDenom computes what IBC denom a received token has on our chain
-func (rb *RouteBuilder) computeReceivedTokenDenom(received input.ReceivedToken, ourChainID string) string {
-	if len(received.ViaChains) == 0 {
-		// Direct transfer from origin
-		channel := rb.GetChannel(ourChainID, received.OriginChain)
-		if channel == nil {
-			return ""
-		}
-		// Note: we receive via the counterparty's channel
-		trace := fmt.Sprintf("transfer/%s/%s", channel.CounterpartyChannelID, received.OriginDenom)
-		return query.ComputeDenomHash(trace)
-	}
-
-	// Multi-hop: build the path backwards
-	// Token travels: OriginChain -> via[0] -> via[1] -> ... -> via[n-1] -> OurChain
-	// The IBC path on our chain is: transfer/channel-to-via[n-1]/transfer/channel-via[n-1]-to-via[n-2]/.../denom
-
-	path := ""
-	currentChain := ourChainID
-
-	// Walk backwards through the via chains
-	for i := len(received.ViaChains) - 1; i >= 0; i-- {
-		prevChain := received.ViaChains[i]
-		channel := rb.GetChannel(currentChain, prevChain)
-		if channel == nil {
-			log.Printf("Warning: no channel between %s and %s for received token", currentChain, prevChain)
-			return ""
-		}
-		// We receive via the counterparty's channel
-		path = fmt.Sprintf("transfer/%s/%s", channel.CounterpartyChannelID, path)
-		currentChain = prevChain
-	}
-
-	// Finally, add the hop from via[0] to origin chain
-	channel := rb.GetChannel(received.ViaChains[0], received.OriginChain)
-	if channel == nil {
-		log.Printf("Warning: no channel between %s and %s for received token", received.ViaChains[0], received.OriginChain)
-		return ""
-	}
-	path = fmt.Sprintf("%stransfer/%s/%s", path, channel.CounterpartyChannelID, received.OriginDenom)
-
-	return query.ComputeDenomHash(path)
-}
-
-func (rb *RouteBuilder) getTokenFromChain(chainID, denom string) *input.TokenMeta {
+func (rb *RouteBuilder) GetTokenFromChain(chainID, denom string) *input.TokenMeta {
 	if tokens, ok := rb.tokenLookup[chainID]; ok {
 		return tokens[denom]
 	}
@@ -339,22 +323,17 @@ func (rb *RouteBuilder) BuildIBCTokensForChain(chainID string) []IBCTokenConfig 
 		return tokens
 	}
 
-	// 1. Tokens received directly from connected chains
+	// 1. Tokens received directly from connected chains (their native tokens)
 	for toChainID := range rb.channelMap[chainID] {
-		toChainConfig := rb.inputConfigs[toChainID]
-		if toChainConfig == nil {
-			continue
-		}
-
 		channel := rb.GetChannel(chainID, toChainID)
 		if channel == nil {
 			continue
 		}
 
-		for _, token := range toChainConfig.Tokens {
-			// Compute IBC denom on our chain
-			trace := fmt.Sprintf("transfer/%s/%s", channel.CounterpartyChannelID, token.Denom)
-			ibcDenom := query.ComputeDenomHash(trace)
+		// Get native tokens from the connected chain
+		for _, token := range rb.nativeTokens[toChainID] {
+			// Compute IBC denom on our chain (using our channel where tokens arrive)
+			ibcDenom := rb.computeIBCDenom("transfer", channel.ChannelID, token.Denom)
 
 			if seen[ibcDenom] {
 				continue
@@ -369,57 +348,32 @@ func (rb *RouteBuilder) BuildIBCTokensForChain(chainID string) []IBCTokenConfig 
 				Decimals:      token.Exponent,
 				Icon:          token.Icon,
 				OriginChain:   toChainID,
-				IBCPath:       fmt.Sprintf("transfer/%s", channel.CounterpartyChannelID),
+				IBCPath:       fmt.Sprintf("transfer/%s", channel.ChannelID),
 				SourceChannel: channel.ChannelID,
 			})
 		}
 	}
 
-	// 2. Explicitly defined received tokens (multi-hop)
-	for _, received := range chainConfig.ReceivedTokens {
-		ibcDenom := rb.computeReceivedTokenDenom(received, chainID)
-		if ibcDenom == "" || seen[ibcDenom] {
+	// 2. Routable IBC tokens defined on this chain
+	// These are explicitly declared IBC tokens that can be forwarded
+	for _, token := range rb.routableTokens[chainID] {
+		if seen[token.Denom] {
 			continue
 		}
-		seen[ibcDenom] = true
-
-		// Get token info from origin
-		originToken := rb.getTokenFromChain(received.OriginChain, received.OriginDenom)
-
-		name := received.DisplayName
-		symbol := received.DisplaySymbol
-		decimals := 6
-		icon := ""
-
-		if originToken != nil {
-			if name == "" {
-				name = originToken.Name
-			}
-			if symbol == "" {
-				symbol = originToken.Symbol
-			}
-			decimals = originToken.Exponent
-			icon = originToken.Icon
-		}
-
-		// Build the IBC path description
-		pathParts := []string{}
-		pathParts = append(pathParts, received.ViaChains...)
-		pathParts = append(pathParts, received.OriginChain)
+		seen[token.Denom] = true
 
 		tokens = append(tokens, IBCTokenConfig{
-			IBCDenom:      ibcDenom,
-			BaseDenom:     received.OriginDenom,
-			Name:          name,
-			Symbol:        symbol,
-			Decimals:      decimals,
-			Icon:          icon,
-			OriginChain:   received.OriginChain,
-			IBCPath:       fmt.Sprintf("via %s", strings.Join(pathParts, " -> ")),
-			SourceChannel: "", // Multi-hop doesn't have single source
+			IBCDenom:      token.Denom,
+			BaseDenom:     token.OriginDenom,
+			Name:          token.Name,
+			Symbol:        token.Symbol,
+			Decimals:      token.Exponent,
+			Icon:          token.Icon,
+			OriginChain:   token.OriginChain,
+			IBCPath:       fmt.Sprintf("multi-hop from %s", token.OriginChain),
+			SourceChannel: "", // Multi-hop
 		})
 	}
 
 	return tokens
 }
-

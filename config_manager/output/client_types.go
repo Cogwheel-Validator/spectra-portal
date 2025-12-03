@@ -135,4 +135,3 @@ type ClientTokenSummary struct {
 	// CoinGecko ID for price lookups
 	CoinGeckoID string `json:"coingecko_id,omitempty"`
 }
-

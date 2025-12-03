@@ -7,13 +7,11 @@ package input
 // ChainInput is the human-readable chain configuration that developers write.
 // This is parsed from TOML files in the chain_configs/ directory.
 type ChainInput struct {
-	Chain          ChainMeta       `toml:"chain"`
-	Tokens         []TokenMeta     `toml:"token"`
-	ReceivedTokens []ReceivedToken `toml:"received_token"`
+	Chain  ChainMeta   `toml:"chain"`
+	Tokens []TokenMeta `toml:"token"`
 }
 
 // ChainMeta contains the basic chain identification and metadata.
-// Most of this can be filled in by hand without querying any APIs.
 type ChainMeta struct {
 	// Required: Human-readable name (e.g., "Osmosis", "Cosmos Hub")
 	Name string `toml:"name"`
@@ -44,7 +42,6 @@ type ChainMeta struct {
 	BrokerID string `toml:"broker_id,omitempty"`
 
 	// Optional: Set to true if this chain supports Packet Forward Middleware
-	// If not set, will be auto-detected during config generation
 	HasPFM *bool `toml:"has_pfm,omitempty"`
 
 	// RPC and REST endpoints
@@ -61,11 +58,36 @@ type APIEndpoint struct {
 	Provider string `toml:"provider,omitempty"`
 }
 
-// TokenMeta contains information about a NATIVE token on this chain.
-// Only define tokens that are native to this chain unless it is a multi hop(might change in the future).
-// IBC tokens will be computed based on routes and other chain configs.
+// TokenMeta contains information about a token on this chain.
+//
+// There are two types of tokens you can define:
+//
+// 1. NATIVE tokens - tokens that originate on this chain:
+//
+//		[[token]]
+//		denom = "uatone"
+//		name = "Atone"
+//		symbol = "ATONE"
+//		exponent = 6
+//		allowed_destinations = ["osmosis-1", "stargaze-1"]
+//
+//	 2. ROUTABLE IBC tokens - IBC tokens received from another chain that you want
+//	    to forward to other destinations (multi-hop support):
+//
+//	    [[token]]
+//	    denom = "ibc/ABC123..."      # The IBC denom ON THIS CHAIN
+//	    name = "Atone"
+//	    symbol = "ATONE"
+//	    exponent = 6
+//	    origin_chain = "atomone-1"   # Where the token is truly native
+//	    origin_denom = "uatone"      # Native denom on origin chain
+//	    allowed_destinations = ["osmosis-1"]  # Can ONLY forward to these chains
+//
+// This allows explicit control over multi-hop routing.
 type TokenMeta struct {
-	// Required: The on-chain denom (e.g., "uosmo", "uatone")
+	// Required: The on-chain denom
+	// For native tokens: "uatone", "uosmo"
+	// For routable IBC tokens: "ibc/ABC123..." (the IBC hash on this chain)
 	Denom string `toml:"denom"`
 
 	// Required: Human-readable name (e.g., "Osmosis", "Atom One")
@@ -87,33 +109,27 @@ type TokenMeta struct {
 	// If empty, token can be sent to all connected chains.
 	// Use chain IDs (e.g., ["osmosis-1", "cosmoshub-4"])
 	AllowedDestinations []string `toml:"allowed_destinations,omitempty"`
+
+	// === Multi-hop support ===
+	// Set these fields for IBC tokens that you want to forward (route through this chain)
+
+	// Optional: Chain ID where this token is truly native.
+	// If set, this token is treated as a "routable IBC token" not a native token.
+	// Example: "atomone-1" for ATONE
+	OriginChain string `toml:"origin_chain,omitempty"`
+
+	// Optional: The native denom on the origin chain.
+	// Required if OriginChain is set.
+	// Example: "uatone"
+	OriginDenom string `toml:"origin_denom,omitempty"`
 }
 
-// ReceivedToken defines a token that this chain receives from another chain
-// through a multi-hop path. Use this for tokens that don't come directly
-// from their origin chain.
-//
-// Example: Sei tokens on Noble that come via Osmosis
-//
-//	[[received_token]]
-//	origin_denom = "usei"
-//	origin_chain = "pacific-1"
-//	via_chains = ["osmosis-1"]
-type ReceivedToken struct {
-	// Required: The original denom on the origin chain
-	OriginDenom string `toml:"origin_denom"`
+// IsNative returns true if this token is native to the chain (not an IBC token being forwarded)
+func (t *TokenMeta) IsNative() bool {
+	return t.OriginChain == ""
+}
 
-	// Required: Chain ID where this token is native
-	OriginChain string `toml:"origin_chain"`
-
-	// Required: Chain IDs this token travels through to reach us (in order)
-	// For direct transfers, leave empty or omit.
-	// For multi-hop: ["intermediate-chain-1", "intermediate-chain-2"]
-	ViaChains []string `toml:"via_chains"`
-
-	// Optional: Override display name for this token on our chain
-	DisplayName string `toml:"display_name,omitempty"`
-
-	// Optional: Override symbol for this token on our chain
-	DisplaySymbol string `toml:"display_symbol,omitempty"`
+// IsRoutableIBC returns true if this is an IBC token that can be forwarded to other chains
+func (t *TokenMeta) IsRoutableIBC() bool {
+	return t.OriginChain != ""
 }

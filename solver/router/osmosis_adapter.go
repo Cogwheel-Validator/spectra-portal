@@ -20,8 +20,8 @@ type OsmosisRoute struct {
 }
 
 type OsmosisPool struct {
-	ID            int32    `json:"id"`
-	Type          int32    `json:"type"`
+	ID            int32  `json:"id"`
+	Type          int32  `json:"type"`
 	SpreadFactor  string `json:"spread_factor"`
 	TokenOutDenom string `json:"token_out_denom"`
 	TakerFee      string `json:"taker_fee"`
@@ -31,10 +31,10 @@ type OsmosisPool struct {
 // ConvertSqsResponseToRouteData converts the SQS API response to typed OsmosisRouteData
 func ConvertSqsResponseToRouteData(sqsResponse sqsquery.RouteTokenResponse) *OsmosisRouteData {
 	routes := make([]OsmosisRoute, 0, len(sqsResponse.Route))
-	
+
 	for _, sqsRoute := range sqsResponse.Route {
 		pools := make([]OsmosisPool, 0, len(sqsRoute.Pools))
-		
+
 		for _, sqsPool := range sqsRoute.Pools {
 			pools = append(pools, OsmosisPool{
 				ID:            sqsPool.ID,
@@ -45,7 +45,7 @@ func ConvertSqsResponseToRouteData(sqsResponse sqsquery.RouteTokenResponse) *Osm
 				LiquidityCap:  sqsPool.LiquidityCap,
 			})
 		}
-		
+
 		routes = append(routes, OsmosisRoute{
 			Pools:     pools,
 			HasCwPool: sqsRoute.HasCwPool,
@@ -53,11 +53,10 @@ func ConvertSqsResponseToRouteData(sqsResponse sqsquery.RouteTokenResponse) *Osm
 			InAmount:  sqsRoute.InAmount,
 		})
 	}
-	
+
 	return &OsmosisRouteData{
 		Routes:               routes,
 		LiquidityCap:         sqsResponse.LiquidityCap,
 		LiquidityCapOverflow: sqsResponse.LiquidityCapOverflow,
 	}
 }
-

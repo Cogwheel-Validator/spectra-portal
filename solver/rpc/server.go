@@ -35,11 +35,11 @@ func (s *SolverServer) SolveRoute(
 ) (*connect.Response[v1.SolveRouteResponse], error) {
 	// Step 1: Convert proto request to internal models.RouteRequest
 	internalReq := models.RouteRequest{
-		ChainFrom:          req.Msg.ChainFrom,
-		TokenFromDenom:    req.Msg.TokenFromDenom,
+		ChainFrom:       req.Msg.ChainFrom,
+		TokenFromDenom:  req.Msg.TokenFromDenom,
 		AmountIn:        req.Msg.AmountIn,
-		ChainTo:          req.Msg.ChainTo,
-		TokenToDenom:   req.Msg.TokenToDenom,
+		ChainTo:         req.Msg.ChainTo,
+		TokenToDenom:    req.Msg.TokenToDenom,
 		SenderAddress:   req.Msg.SenderAddress,
 		ReceiverAddress: req.Msg.ReceiverAddress,
 	}
@@ -64,11 +64,11 @@ func (s *SolverServer) LookupDenom(
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 	return connect.NewResponse(&v1.LookupDenomResponse{
-		ChainDenom: denomInfo.ChainDenom,
-		BaseDenom: denomInfo.BaseDenom,
+		ChainDenom:  denomInfo.ChainDenom,
+		BaseDenom:   denomInfo.BaseDenom,
 		OriginChain: denomInfo.OriginChain,
-		IsNative: denomInfo.IsNative,
-		IbcPath: denomInfo.IbcPath,
+		IsNative:    denomInfo.IsNative,
+		IbcPath:     denomInfo.IbcPath,
 	}), nil
 }
 
@@ -193,11 +193,11 @@ func convertToProtoIndirectRoute(indirect *models.IndirectRoute) *v1.IndirectRou
 		legs[i] = convertToProtoIBCLeg(leg)
 	}
 	return &v1.IndirectRoute{
-		Path:        indirect.Path,
-		Legs:        legs,
-		SupportsPfm: indirect.SupportsPFM,
+		Path:          indirect.Path,
+		Legs:          legs,
+		SupportsPfm:   indirect.SupportsPFM,
 		PfmStartChain: indirect.PFMStartChain,
-		PfmMemo:      indirect.PFMMemo,
+		PfmMemo:       indirect.PFMMemo,
 	}
 }
 
@@ -310,8 +310,8 @@ func convertToProtoSwapQuote(swap *models.SwapQuote) *v1.SwapQuote {
 				OsmosisRouteData: convertOsmosisRouteData(osmosisData),
 			}
 		}
-	// Add more brokers here as you implement them:
-	// case "astroport" for example:
+		// Add more brokers here as you implement them:
+		// case "astroport" for example:
 	}
 
 	return protoSwap
@@ -377,13 +377,13 @@ func convertToProtoBasicRoute(routes []router.BasicRoute) []*v1.BasicRoute {
 	protoRoutes := make([]*v1.BasicRoute, len(routes))
 	for i := range routes {
 		protoRoutes[i] = &v1.BasicRoute{
-		ToChain:   routes[i].ToChain,
-		ToChainId: routes[i].ToChainId,
-		ConnectionId: routes[i].ConnectionId,
-		ChannelId: routes[i].ChannelId,
-		PortId: routes[i].PortId,
-		AllowedTokens: convertToProtoTokenInfo(routes[i].AllowedTokens),
-	}
+			ToChain:       routes[i].ToChain,
+			ToChainId:     routes[i].ToChainId,
+			ConnectionId:  routes[i].ConnectionId,
+			ChannelId:     routes[i].ChannelId,
+			PortId:        routes[i].PortId,
+			AllowedTokens: convertToProtoTokenInfo(routes[i].AllowedTokens),
+		}
 	}
 	return protoRoutes
 }
@@ -392,11 +392,11 @@ func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo) map[string]*
 	protoTokenInfos := make(map[string]*v1.TokenInfo, len(tokenInfo))
 	for denom, tokenInfo := range tokenInfo {
 		protoTokenInfos[denom] = &v1.TokenInfo{
-			ChainDenom: tokenInfo.ChainDenom,
-			IbcDenom: tokenInfo.IbcDenom,
-			BaseDenom: tokenInfo.BaseDenom,
+			ChainDenom:  tokenInfo.ChainDenom,
+			IbcDenom:    tokenInfo.IbcDenom,
+			BaseDenom:   tokenInfo.BaseDenom,
 			OriginChain: tokenInfo.OriginChain,
-			Decimals: int32(tokenInfo.Decimals),
+			Decimals:    int32(tokenInfo.Decimals),
 		}
 	}
 	return protoTokenInfos

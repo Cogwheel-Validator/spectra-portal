@@ -5,6 +5,7 @@ package pipeline
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,9 +54,6 @@ type GeneratorConfig struct {
 
 	// Skip downloading fresh registry data (use cache)
 	UseRegistryCache bool
-
-	// Deprecated: queries are no longer used, IBC denoms are computed
-	SkipDenomQueries bool
 }
 
 // Generator is the main config generation pipeline.
@@ -70,23 +68,21 @@ type Generator struct {
 
 // NewGenerator creates a new pipeline generator with the given configuration.
 func NewGenerator(config GeneratorConfig) *Generator {
-	var validatorOpts []input.ValidatorOption
-	if config.SkipNetworkValidation {
-		validatorOpts = append(validatorOpts, input.WithSkipNetworkCheck(true))
-	}
-
 	var clientConvOpts []output.ClientConverterOption
 	if config.ChainLogoBaseURL != "" {
 		clientConvOpts = append(clientConvOpts, output.WithChainLogoBaseURL(config.ChainLogoBaseURL))
 	}
 
+	// Builder handles all network validation (version consensus, height sync, tx indexer)
 	var builderOpts []enriched.BuilderOption
-	// Note: SkipDenomQueries is now a no-op, IBC denoms are always computed
+	if config.SkipNetworkValidation {
+		builderOpts = append(builderOpts, enriched.WithSkipNetworkCheck(true))
+	}
 
 	return &Generator{
 		config:         config,
 		inputLoader:    input.NewLoader(),
-		inputValidator: input.NewValidator(validatorOpts...),
+		inputValidator: input.NewValidator(),
 		enrichBuilder:  enriched.NewBuilder(builderOpts...),
 		solverConv:     output.NewSolverConverter(),
 		clientConv:     output.NewClientConverter(clientConvOpts...),
@@ -119,15 +115,15 @@ func (g *Generator) Generate() (*GenerateResult, error) {
 	}
 
 	// Step 1: Load input configs
-	fmt.Println("Loading chain configs...")
+	log.Println("Loading chain configs...")
 	inputConfigs, err := g.inputLoader.LoadAllConfigs(g.config.InputDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load input configs: %w", err)
 	}
-	fmt.Printf("Loaded %d chain configs\n", len(inputConfigs))
+	log.Printf("Loaded %d chain configs", len(inputConfigs))
 
 	// Step 2: Validate input configs
-	fmt.Println("Validating configs...")
+	log.Println("Validating configs...")
 	validationResults, _ := g.inputValidator.ValidateAll(inputConfigs)
 	result.ValidationResults = validationResults
 
@@ -136,27 +132,27 @@ func (g *Generator) Generate() (*GenerateResult, error) {
 		if valResult.IsValid {
 			validCount++
 		} else {
-			fmt.Printf("%s: validation failed\n", chainID)
+			log.Printf("%s: validation failed", chainID)
 			for _, err := range valResult.Errors {
-				fmt.Printf("\t- %v\n", err)
+				log.Printf("\t- %v", err)
 			}
 		}
 		for _, warning := range valResult.Warnings {
 			result.Warnings = append(result.Warnings, fmt.Sprintf("%s: %s", chainID, warning))
 		}
 	}
-	fmt.Printf("%d/%d chains passed validation\n", validCount, len(inputConfigs))
+	log.Printf("%d/%d chains passed validation", validCount, len(inputConfigs))
 
 	// Step 3: Fetch IBC registry data
-	fmt.Println("Fetching IBC registry data...")
+	log.Println("Fetching IBC registry data...")
 	ibcData, err := g.fetchIBCRegistry(inputConfigs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch IBC registry: %w", err)
 	}
-	fmt.Printf("Found %d IBC connections\n", len(ibcData))
+	log.Printf("Found %d IBC connections", len(ibcData))
 
 	// Step 4: Build enriched configs (IBC denoms computed from config)
-	fmt.Println("Building enriched configs...")
+	log.Println("Building enriched configs...")
 	enrichedReg, err := g.enrichBuilder.BuildRegistry(inputConfigs, ibcData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build enriched config: %w", err)
@@ -164,7 +160,7 @@ func (g *Generator) Generate() (*GenerateResult, error) {
 	result.ChainsProcessed = len(enrichedReg.Chains)
 
 	// Step 5: Generate solver config
-	fmt.Println("Generating solver config...")
+	log.Println("Generating solver config...")
 	solverConfig, err := g.solverConv.Convert(enrichedReg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert to solver config: %w", err)
@@ -175,11 +171,11 @@ func (g *Generator) Generate() (*GenerateResult, error) {
 			return nil, fmt.Errorf("failed to write solver config: %w", err)
 		}
 		result.SolverConfigPath = g.config.SolverOutputPath
-		fmt.Printf("Written to %s\n", g.config.SolverOutputPath)
+		log.Printf("Written to %s", g.config.SolverOutputPath)
 	}
 
 	// Step 6: Generate client config
-	fmt.Println("Generating client config...")
+	log.Println("Generating client config...")
 	clientConfig, err := g.clientConv.Convert(enrichedReg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert to client config: %w", err)
@@ -190,16 +186,16 @@ func (g *Generator) Generate() (*GenerateResult, error) {
 			return nil, fmt.Errorf("failed to write client config: %w", err)
 		}
 		result.ClientConfigPath = g.config.ClientOutputPath
-		fmt.Printf("Written to %s\n", g.config.ClientOutputPath)
+		log.Printf("Written to %s", g.config.ClientOutputPath)
 	}
 
-	fmt.Println("Config generation complete!")
+	log.Println("Config generation complete!")
 	return result, nil
 }
 
 func (g *Generator) fetchIBCRegistry(inputConfigs map[string]*input.ChainInput) ([]registry.ChainIbcData, error) {
 	keywords := g.inputLoader.GetRegistryKeywords(inputConfigs)
-	fmt.Printf("Looking for IBC data matching: %v\n", keywords)
+	log.Printf("Looking for IBC data matching: %v", keywords)
 
 	// Determine cache path
 	cachePath := g.config.RegistryCachePath

@@ -17,13 +17,13 @@ import (
 // RegistryGitDownload downloads the IBC registry from the GitHub repository
 //
 // Params:
-//	- dst: the directory to download the registry to
+//   - dst: the directory to download the registry to
 //
 // Returns:
-//	- error: if the registry cannot be downloaded
+//   - error: if the registry cannot be downloaded
 //
 // Usage:
-//	- Used to download the IBC registry from the GitHub repository
+//   - Used to download the IBC registry from the GitHub repository
 func RegistryGitDownload(dst string) error {
 	// format for using go getter
 	url := "github.com/cosmos/chain-registry//_IBC"
@@ -32,9 +32,9 @@ func RegistryGitDownload(dst string) error {
 	defer cancel()
 
 	opts := getter.Client{
-		Ctx: ctx,
-		Src: url,
-		Dst: dst,
+		Ctx:  ctx,
+		Src:  url,
+		Dst:  dst,
 		Mode: getter.ClientModeDir,
 		Detectors: []getter.Detector{
 			&getter.GitHubDetector{},
@@ -55,16 +55,16 @@ func RegistryGitDownload(dst string) error {
 // ProcessIbcRegistry processes the IBC registry and returns the data
 //
 // Params:
-//	- dst: the directory to read the registry from, this is the directory where the registry is downloaded to
-//	- keywords: the keywords to search for, this is the keywords pulled out from chain configurations by
-//  looking at the registry string
+//   - dst: the directory to read the registry from, this is the directory where the registry is downloaded to
+//   - keywords: the keywords to search for, this is the keywords pulled out from chain configurations by
+//     looking at the registry string
 //
 // Returns:
-//	- []ChainIbcData: the IBC data
-//	- error: if the registry cannot be read or processed
+//   - []ChainIbcData: the IBC data
+//   - error: if the registry cannot be read or processed
 //
 // Usage:
-//	- Used to process the IBC registry and return the data
+//   - Used to process the IBC registry and return the data
 func ProcessIbcRegistry(dst string, keywords []string) ([]ChainIbcData, error) {
 	ibcData := []ChainIbcData{}
 	// read the registry from the file
@@ -83,29 +83,29 @@ func ProcessIbcRegistry(dst string, keywords []string) ([]ChainIbcData, error) {
 		if strings.HasSuffix(name, ".json") {
 			name = strings.TrimSuffix(name, ".json")
 			chainNames := strings.Split(name, "-")
-				if slices.Contains(keywords, chainNames[0]) && slices.Contains(keywords, chainNames[1]) {
-					// open the file and read the contents with untrimmed name
-					filePath := fmt.Sprintf("%s/%s", dst, file.Name())
-					jsonFile, err := os.Open(filePath)
-					if err != nil {
-						return nil, fmt.Errorf("failed to open file: %w", err)
+			if slices.Contains(keywords, chainNames[0]) && slices.Contains(keywords, chainNames[1]) {
+				// open the file and read the contents with untrimmed name
+				filePath := fmt.Sprintf("%s/%s", dst, file.Name())
+				jsonFile, err := os.Open(filePath)
+				if err != nil {
+					return nil, fmt.Errorf("failed to open file: %w", err)
+				}
+				defer func() {
+					if err := jsonFile.Close(); err != nil {
+						log.Fatalf("Failed to close file: %v", err)
 					}
-					defer func(){
-						if err := jsonFile.Close(); err != nil {
-							log.Fatalf("Failed to close file: %v", err)
-						}
-					}()
-					body, err := io.ReadAll(jsonFile)
-					if err != nil {
-						return nil, fmt.Errorf("failed to read file: %w", err)
-					}
-					var data ChainIbcData
-					err = json.Unmarshal(body, &data)
-					if err != nil {
-						return nil, fmt.Errorf("failed to unmarshal file: %w", err)
-					}
-					ibcData = append(ibcData, data)
-				}		
+				}()
+				body, err := io.ReadAll(jsonFile)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read file: %w", err)
+				}
+				var data ChainIbcData
+				err = json.Unmarshal(body, &data)
+				if err != nil {
+					return nil, fmt.Errorf("failed to unmarshal file: %w", err)
+				}
+				ibcData = append(ibcData, data)
+			}
 		}
 
 	}

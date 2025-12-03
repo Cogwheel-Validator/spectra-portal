@@ -50,7 +50,7 @@ func createTestInputConfigs() map[string]*input.ChainInput {
 	}
 }
 
-// createTestInputConfigsWithMultiHop creates configs with multi-hop token
+// createTestInputConfigsWithMultiHop creates configs with multi-hop routable token
 func createTestInputConfigsWithMultiHop() map[string]*input.ChainInput {
 	configs := createTestInputConfigs()
 
@@ -72,14 +72,21 @@ func createTestInputConfigsWithMultiHop() map[string]*input.ChainInput {
 		},
 	}
 
-	// Add received token on AtomOne - STARS via Osmosis
-	configs["atomone-1"].ReceivedTokens = []input.ReceivedToken{
-		{
-			OriginDenom: "ustars",
-			OriginChain: "stargaze-1",
-			ViaChains:   []string{"osmosis-1"},
-		},
-	}
+	// Add routable STARS token on Osmosis - STARS that arrived via Stargaze
+	// and should be forwardable to AtomOne
+	// The IBC denom of STARS on Osmosis is: ibc/hash(transfer/channel-75/ustars)
+	starsOnOsmosis := "ibc/987C17B11ABC2B20019178ACE62929FE9840202CE79498E29FE8E5CB02B7C0A4" // Example hash
+
+	configs["osmosis-1"].Tokens = append(configs["osmosis-1"].Tokens, input.TokenMeta{
+		Denom:               starsOnOsmosis,
+		Name:                "Stargaze",
+		Symbol:              "STARS",
+		Exponent:            6,
+		Icon:                "https://example.com/stars.png",
+		OriginChain:         "stargaze-1",
+		OriginDenom:         "ustars",
+		AllowedDestinations: []string{"atomone-1"}, // Can only forward to AtomOne
+	})
 
 	return configs
 }
@@ -160,7 +167,7 @@ func createTestIBCDataWithStargaze() []registry.ChainIbcData {
 }
 
 func TestBuildRegistry(t *testing.T) {
-	builder := NewBuilder()
+	builder := NewBuilder(WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -203,7 +210,7 @@ func TestBuildRegistry(t *testing.T) {
 }
 
 func TestBuildRoutes(t *testing.T) {
-	builder := NewBuilder()
+	builder := NewBuilder(WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -248,7 +255,7 @@ func TestBuildRoutes(t *testing.T) {
 }
 
 func TestRouteAllowedTokens(t *testing.T) {
-	builder := NewBuilder()
+	builder := NewBuilder(WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -304,7 +311,7 @@ func TestRouteAllowedTokens(t *testing.T) {
 }
 
 func TestIBCTokensComputed(t *testing.T) {
-	builder := NewBuilder()
+	builder := NewBuilder(WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -337,8 +344,8 @@ func TestIBCTokensComputed(t *testing.T) {
 	}
 }
 
-func TestMultiHopReceivedToken(t *testing.T) {
-	builder := NewBuilder()
+func TestRoutableIBCToken(t *testing.T) {
+	builder := NewBuilder(WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigsWithMultiHop()
 	ibcData := createTestIBCDataWithStargaze()
 
@@ -347,30 +354,72 @@ func TestMultiHopReceivedToken(t *testing.T) {
 		t.Fatalf("BuildRegistry() error = %v", err)
 	}
 
-	// AtomOne should have STARS as an IBC token (via Osmosis)
-	atomone := reg.Chains["atomone-1"]
+	// Osmosis should have STARS as a routable IBC token
+	osmosis := reg.Chains["osmosis-1"]
 
-	// Should have OSMO (direct) + STARS (multi-hop)
-	if len(atomone.IBCTokens) < 2 {
-		t.Errorf("atomone IBCTokens = %d, want at least 2", len(atomone.IBCTokens))
-	}
-
-	foundStars := false
-	for _, token := range atomone.IBCTokens {
-		if token.BaseDenom == "ustars" {
-			foundStars = true
-			if token.OriginChain != "stargaze-1" {
-				t.Errorf("STARS OriginChain = %q, want 'stargaze-1'", token.OriginChain)
-			}
-			if token.IBCDenom[:4] != "ibc/" {
-				t.Errorf("STARS IBCDenom should be hash, got %q", token.IBCDenom)
-			}
-			t.Logf("Found STARS on AtomOne: %s", token.IBCDenom)
+	// Check that STARS IBC token is listed
+	foundStarsIBC := false
+	for _, token := range osmosis.IBCTokens {
+		if token.BaseDenom == "ustars" && token.OriginChain == "stargaze-1" {
+			foundStarsIBC = true
+			t.Logf("Found STARS IBC token on Osmosis: %s", token.IBCDenom)
 		}
 	}
 
-	if !foundStars {
-		t.Error("STARS (multi-hop via Osmosis) not found on AtomOne")
+	if !foundStarsIBC {
+		t.Error("STARS IBC token not found on Osmosis")
+	}
+
+	// Check Osmosis -> AtomOne route has STARS
+	var toAtomoneRoute *RouteConfig
+	for i := range osmosis.Routes {
+		if osmosis.Routes[i].ToChainID == "atomone-1" {
+			toAtomoneRoute = &osmosis.Routes[i]
+			break
+		}
+	}
+
+	if toAtomoneRoute == nil {
+		t.Fatal("Osmosis -> AtomOne route not found")
+	}
+
+	// Should have STARS as routable token
+	foundStarsInRoute := false
+	for _, token := range toAtomoneRoute.AllowedTokens {
+		t.Logf("Route token: %s (base: %s, origin: %s)", token.SourceDenom, token.BaseDenom, token.OriginChain)
+		if token.BaseDenom == "ustars" && token.OriginChain == "stargaze-1" {
+			foundStarsInRoute = true
+		}
+	}
+
+	if !foundStarsInRoute {
+		t.Error("STARS not found in Osmosis -> AtomOne route allowed tokens")
+	}
+
+	// Check Osmosis -> Stargaze route does NOT have the routable STARS
+	// (it should only have native OSMO and unwinding STARS from Stargaze)
+	var toStargazeRoute *RouteConfig
+	for i := range osmosis.Routes {
+		if osmosis.Routes[i].ToChainID == "stargaze-1" {
+			toStargazeRoute = &osmosis.Routes[i]
+			break
+		}
+	}
+
+	if toStargazeRoute == nil {
+		t.Fatal("Osmosis -> Stargaze route not found")
+	}
+
+	// Should NOT have STARS as routable (it's not in AllowedDestinations for STARS)
+	for _, token := range toStargazeRoute.AllowedTokens {
+		// The routable STARS token should NOT appear in this route
+		if token.OriginChain == "stargaze-1" && token.BaseDenom == "ustars" {
+			// This is okay - it's the unwinding path
+			if token.SourceDenom[:4] != "ibc/" {
+				// Native STARS should not be here from Osmosis
+				t.Error("Native STARS should not be in Osmosis -> Stargaze as source (should be IBC denom)")
+			}
+		}
 	}
 }
 
@@ -406,7 +455,7 @@ func TestStatusCheck(t *testing.T) {
 				},
 			}
 
-			builder := NewBuilder()
+			builder := NewBuilder(WithSkipNetworkCheck(true))
 			inputConfigs := createTestInputConfigs()
 			reg, err := builder.BuildRegistry(inputConfigs, ibcData)
 
@@ -425,7 +474,7 @@ func TestStatusCheck(t *testing.T) {
 }
 
 func TestEmptyInputConfigs(t *testing.T) {
-	builder := NewBuilder()
+	builder := NewBuilder(WithSkipNetworkCheck(true))
 	_, err := builder.BuildRegistry(map[string]*input.ChainInput{}, nil)
 	if err == nil {
 		t.Error("BuildRegistry() should error with empty input configs")
@@ -439,7 +488,7 @@ func TestTokenAllowedDestinations(t *testing.T) {
 	// Restrict PHOTON to only Osmosis (which is the only connection anyway)
 	configs["atomone-1"].Tokens[1].AllowedDestinations = []string{"osmosis-1"}
 
-	builder := NewBuilder()
+	builder := NewBuilder(WithSkipNetworkCheck(true))
 	ibcData := createTestIBCData()
 
 	reg, err := builder.BuildRegistry(configs, ibcData)
@@ -460,5 +509,37 @@ func TestTokenAllowedDestinations(t *testing.T) {
 
 	if !foundPhoton {
 		t.Error("uphoton should be allowed to osmosis-1")
+	}
+}
+
+func TestNativeVsRoutableTokenCategorization(t *testing.T) {
+	configs := createTestInputConfigsWithMultiHop()
+	ibcData := createTestIBCDataWithStargaze()
+
+	rb := NewRouteBuilder(configs, ibcData)
+
+	// AtomOne should have 2 native tokens
+	if len(rb.nativeTokens["atomone-1"]) != 2 {
+		t.Errorf("AtomOne native tokens = %d, want 2", len(rb.nativeTokens["atomone-1"]))
+	}
+	if len(rb.routableTokens["atomone-1"]) != 0 {
+		t.Errorf("AtomOne routable tokens = %d, want 0", len(rb.routableTokens["atomone-1"]))
+	}
+
+	// Osmosis should have 1 native token (OSMO) and 1 routable (STARS)
+	if len(rb.nativeTokens["osmosis-1"]) != 1 {
+		t.Errorf("Osmosis native tokens = %d, want 1", len(rb.nativeTokens["osmosis-1"]))
+	}
+	if len(rb.routableTokens["osmosis-1"]) != 1 {
+		t.Errorf("Osmosis routable tokens = %d, want 1", len(rb.routableTokens["osmosis-1"]))
+	}
+
+	// Check the routable token is correctly identified
+	routable := rb.routableTokens["osmosis-1"][0]
+	if routable.OriginChain != "stargaze-1" {
+		t.Errorf("Routable STARS OriginChain = %q, want 'stargaze-1'", routable.OriginChain)
+	}
+	if routable.OriginDenom != "ustars" {
+		t.Errorf("Routable STARS OriginDenom = %q, want 'ustars'", routable.OriginDenom)
 	}
 }

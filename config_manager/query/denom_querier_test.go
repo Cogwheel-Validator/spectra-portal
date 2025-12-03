@@ -154,4 +154,3 @@ func TestDenomHashConsistency(t *testing.T) {
 		t.Errorf("ComputeDenomHash is not consistent: %q != %q", hash1, hash2)
 	}
 }
-

@@ -72,7 +72,7 @@ func (dr *DenomResolver) GetDenomOnChain(tokenInfo *TokenInfo, targetChainID str
 	if tokenInfo.OriginChain == targetChainID {
 		return tokenInfo.BaseDenom
 	}
-	
+
 	// Otherwise, use the IBC denom for that chain
 	return tokenInfo.IbcDenom
 }
@@ -81,4 +81,3 @@ func (dr *DenomResolver) GetDenomOnChain(tokenInfo *TokenInfo, targetChainID str
 func (dr *DenomResolver) IsTokenNativeToChain(tokenInfo *TokenInfo, chainID string) bool {
 	return tokenInfo.OriginChain == chainID
 }
-

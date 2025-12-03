@@ -37,11 +37,12 @@ func LoadSolverConfig(filePath string) (*SolverConfig, error) {
 // the runtime router structures.
 //
 // Usage:
-//   config, _ := output.LoadSolverConfig("path/to/solver_config.toml")
-//   chains, err := config.ToRouterTypes()
-//   routeIndex := router.NewRouteIndex()
-//   routeIndex.BuildIndex(chains)
-//   solver := router.NewSolver(chains, routeIndex, brokerClients)
+//
+//	config, _ := output.LoadSolverConfig("path/to/solver_config.toml")
+//	chains, err := config.ToRouterTypes()
+//	routeIndex := router.NewRouteIndex()
+//	routeIndex.BuildIndex(chains)
+//	solver := router.NewSolver(chains, routeIndex, brokerClients)
 type RouterChain struct {
 	Name     string
 	ID       string
@@ -96,17 +97,10 @@ func (c *SolverConfig) ToRouterTypes() ([]RouterChain, error) {
 			}
 
 			for denom, tokenInfo := range route.AllowedTokens {
-				chains[i].Routes[j].AllowedTokens[denom] = RouterTokenInfo{
-					ChainDenom:  tokenInfo.ChainDenom,
-					IBCDenom:    tokenInfo.IBCDenom,
-					BaseDenom:   tokenInfo.BaseDenom,
-					OriginChain: tokenInfo.OriginChain,
-					Decimals:    tokenInfo.Decimals,
-				}
+				chains[i].Routes[j].AllowedTokens[denom] = RouterTokenInfo(tokenInfo)
 			}
 		}
 	}
 
 	return chains, nil
 }
-

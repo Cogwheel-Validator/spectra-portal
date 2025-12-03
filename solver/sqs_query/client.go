@@ -49,7 +49,7 @@ So when using this query, you can only use one of the following parameters:
 - tokenOut and tokenInDenom
 */
 func (c *SqsQueryClient) GetRoute(
-	tokenIn, tokenOut *TokenRequest, 
+	tokenIn, tokenOut *TokenRequest,
 	tokenInDenom, tokenOutDenom *string,
 	singleRoute bool) (RouteTokenResponse, error) {
 	// check if the tokenIn and tokenOut are not nil
@@ -85,7 +85,7 @@ func (c *SqsQueryClient) GetRoute(
 	if tokenOut != nil {
 		newTokenOut = string(tokenOut.Amount + tokenOut.Denom)
 	}
-	
+
 	var tokenInParam string
 	var tokenOutParam string
 	var tokenInDenomParam string
@@ -97,25 +97,29 @@ func (c *SqsQueryClient) GetRoute(
 		tokenInParam = "tokenIn=" + url.QueryEscape(newTokenIn)
 		tokenOutDenomParam = "tokenOutDenom=" + url.QueryEscape(newTokenOutDenom)
 		fullURL = fmt.Sprintf(
-			"%s/route?%s&%s&singleRoute=%t&humanDenoms=false&applyExponents=false&appendBaseFee=true", 
+			"%s/route?%s&%s&singleRoute=%t&humanDenoms=false&applyExponents=false&appendBaseFee=true",
 			c.baseURL, tokenInParam, tokenOutDenomParam, singleRoute,
 		)
 	} else if tokenOut != nil && tokenInDenom != nil {
 		tokenOutParam = "tokenOut=" + url.QueryEscape(newTokenOut)
 		tokenInDenomParam = "tokenInDenom=" + url.QueryEscape(newTokenInDenom)
 		fullURL = fmt.Sprintf(
-			"%s/route?%s&%s&singleRoute=%t&humanDenoms=false&applyExponents=false&appendBaseFee=true", 
+			"%s/route?%s&%s&singleRoute=%t&humanDenoms=false&applyExponents=false&appendBaseFee=true",
 			c.baseURL, tokenOutParam, tokenInDenomParam, singleRoute,
 		)
 	} else {
 		return RouteTokenResponse{}, errors.New("invalid parameters")
 	}
-	
+
 	resp, err := c.httpClient.Get(fullURL)
 	if err != nil {
 		return RouteTokenResponse{}, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Failed to close response body: %v", err)
+		}
+	}()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return RouteTokenResponse{}, err
@@ -134,7 +138,11 @@ func (c *SqsQueryClient) GetTokenPrice(tokenDenom string) (decimal.Decimal, erro
 	if err != nil {
 		return decimal.Decimal{}, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("failed to close response body: %v", err)
+		}
+	}()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return decimal.Decimal{}, err
@@ -148,7 +156,7 @@ func (c *SqsQueryClient) GetTokenPrice(tokenDenom string) (decimal.Decimal, erro
 		}
 	}
 	The denom is kinda the key here, the second value is probably USDC, however I haven't tested
-	this more, it could probably be even something like USDT on some pairs and there are some other 
+	this more, it could probably be even something like USDT on some pairs and there are some other
 	variations of ibc denoms for stablecoins.
 	So just collect the string and turn it into a decimal.Decimal
 	*/
@@ -175,14 +183,18 @@ func (c *SqsQueryClient) GetTokenPrice(tokenDenom string) (decimal.Decimal, erro
 
 func (c *SqsQueryClient) GetAllPossibleRoutes(tokenInDenom, tokenOutDenom string) (AllPossibleRoutesResponse, error) {
 	fullURL := fmt.Sprintf(
-		"%s/router/routes?tokenInDenom=%s&tokenOutDenom=%s", 
+		"%s/router/routes?tokenInDenom=%s&tokenOutDenom=%s",
 		c.baseURL, url.QueryEscape(tokenInDenom), url.QueryEscape(tokenOutDenom),
 	)
 	resp, err := c.httpClient.Get(fullURL)
 	if err != nil {
 		return AllPossibleRoutesResponse{}, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("failed to close response body: %v", err)
+		}
+	}()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return AllPossibleRoutesResponse{}, err

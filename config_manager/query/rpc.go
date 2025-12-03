@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
 )
 
 const (
-	status = "status"
-	net_info = "net_info"
+	status    = "status"
+	net_info  = "net_info"
 	abci_info = "abci_info"
 )
 
@@ -23,16 +25,16 @@ func NewRpcClient(baseURLs []string, retryAttempts int, retryDelay time.Duration
 			Timeout: timeout,
 		},
 		RetryAttempts: retryAttempts,
-		RetryDelay: retryDelay,
+		RetryDelay:    retryDelay,
 	}
 }
 
-func (c *RpcClient) performRequest (url, method string, params map[string]any, result any) error {
+func (c *RpcClient) performRequest(url, method string, params map[string]any, result any) error {
 	requestBody, err := json.Marshal(map[string]any{
 		"jsonrpc": "2.0",
-		"method": method,
-		"params": params,
-		"id": 1,
+		"method":  method,
+		"params":  params,
+		"id":      1,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to marshal request body for method %s: %w", method, err)
@@ -67,7 +69,7 @@ func (c *RpcClient) performRequest (url, method string, params map[string]any, r
 	return nil
 }
 
-func (c *RpcClient) queryStatus (url string) (RpcStatusResponse, error) {
+func (c *RpcClient) queryStatus(url string) (RpcStatusResponse, error) {
 	var response RpcStatusResponse
 	err := c.performRequest(url, status, nil, &response)
 	if err != nil {
@@ -90,7 +92,7 @@ func getMostCommonValue(counts map[string]int) string {
 	if len(counts) == 0 {
 		return ""
 	}
-	
+
 	var mostCommon string
 	maxCount := 0
 	for key, count := range counts {
@@ -107,7 +109,7 @@ func getMaxHeight(heights []int) int {
 	if len(heights) == 0 {
 		return 0
 	}
-	
+
 	max := heights[0]
 	for _, h := range heights {
 		if h > max {
@@ -122,23 +124,39 @@ type endpointData struct {
 	Version     string
 	AbciAppName string
 	ChainId     string
+	Provider    string
 }
 
-func (c *RpcClient) ValidateRpcEndpoints() []string {
+// ValidateRpcEndpoints validates the RPC endpoints and returns a map of healthy endpoints
+//
+// Parameters:
+// - endpoints - the input endpoints to validate
+// - retryAttempts - the number of retry attempts to perform
+// - retryDelay - the delay between retry attempts
+// - timeout - the timeout for the request
+//
+// Returns a map of healthy endpoints
+func ValidateRpcEndpoints(
+	endpoints []input.APIEndpoint,
+	retryAttempts int,
+	retryDelay time.Duration,
+	timeout time.Duration,
+) map[URLProvider]bool {
 	// Step 1: Collect validation data from all endpoints
-	rawData := make(map[string]CollectedValidationData)
-	for _, url := range c.BaseURLs {
-		status, err := c.queryStatus(url)
+	rawData := make(map[URLProvider]CollectedValidationData)
+	for _, endpoint := range endpoints {
+		c := NewRpcClient([]string{endpoint.URL}, retryAttempts, retryDelay, timeout)
+		status, err := c.queryStatus(endpoint.URL)
 		if err != nil {
-			log.Printf("failed to query status for %s: %v", url, err)
+			log.Printf("failed to query status for %s: %v", endpoint.URL, err)
 			continue
 		}
-		abciInfo, err := c.queryAbciInfo(url)
+		abciInfo, err := c.queryAbciInfo(endpoint.URL)
 		if err != nil {
-			log.Printf("failed to query abci info for %s: %v", url, err)
+			log.Printf("failed to query abci info for %s: %v", endpoint.URL, err)
 			continue
 		}
-		rawData[url] = CollectedValidationData{
+		rawData[URLProvider{URL: endpoint.URL, Provider: endpoint.Provider}] = CollectedValidationData{
 			AbciInfo: abciInfo.Result.Response,
 			Status:   status.Result,
 		}
@@ -146,26 +164,26 @@ func (c *RpcClient) ValidateRpcEndpoints() []string {
 
 	if len(rawData) == 0 {
 		log.Printf("no endpoints returned valid data")
-		return []string{}
+		return map[URLProvider]bool{}
 	}
 
 	// Step 2: Parse and filter by tx indexer
-	processedData := make(map[string]endpointData)
+	processedData := make(map[URLProvider]endpointData)
 	heights := make([]int, 0, len(rawData))
 	versionCounts := make(map[string]int)
 	abciAppCounts := make(map[string]int)
 	chainIdCounts := make(map[string]int)
 
-	for url, data := range rawData {
+	for endpoint, data := range rawData {
 		// Check tx indexer first
 		if data.Status.NodeInfo.Other.TxIndex != "on" {
-			log.Printf("tx indexer is not enabled for %s", url)
+			log.Printf("tx indexer is not enabled for %s", endpoint.URL)
 			continue
 		}
 
 		height, err := strconv.Atoi(data.Status.StatusSyncInfo.LatestBlockHeight)
 		if err != nil {
-			log.Printf("failed to convert latest block height for %s: %v", url, err)
+			log.Printf("failed to convert latest block height for %s: %v", endpoint.URL, err)
 			continue
 		}
 
@@ -174,11 +192,12 @@ func (c *RpcClient) ValidateRpcEndpoints() []string {
 			Version:     data.AbciInfo.Version,
 			AbciAppName: data.AbciInfo.Data,
 			ChainId:     data.Status.NodeInfo.Network,
+			Provider:    endpoint.Provider,
 		}
 
-		processedData[url] = epData
+		processedData[endpoint] = epData
 		heights = append(heights, height)
-		
+
 		if epData.Version != "" {
 			versionCounts[epData.Version]++
 		}
@@ -192,7 +211,7 @@ func (c *RpcClient) ValidateRpcEndpoints() []string {
 
 	if len(processedData) == 0 {
 		log.Printf("no endpoints passed tx indexer check")
-		return []string{}
+		return map[URLProvider]bool{}
 	}
 
 	// Step 3: Determine consensus values
@@ -202,33 +221,33 @@ func (c *RpcClient) ValidateRpcEndpoints() []string {
 	expectedAbciApp := getMostCommonValue(abciAppCounts)
 
 	// Step 4: Filter endpoints by consensus
-	validEndpoints := make([]string, 0, len(processedData))
-	for url, data := range processedData {
+	validEndpoints := make(map[URLProvider]bool)
+	for endpoint, data := range processedData {
 		// Check height (within 500 blocks of highest)
 		if data.Height < maxHeight-500 {
-			log.Printf("endpoint %s is behind by more than 500 blocks", url)
-			continue
-		}
-		
-		// Check version match
-		if data.Version != expectedVersion {
-			log.Printf("endpoint %s has different version: %s (expected: %s)", url, data.Version, expectedVersion)
-			continue
-		}
-		
-		// Check chain ID match
-		if data.ChainId != expectedChainId {
-			log.Printf("endpoint %s has different chain ID: %s (expected: %s)", url, data.ChainId, expectedChainId)
-			continue
-		}
-		
-		// Check ABCI app match
-		if data.AbciAppName != expectedAbciApp {
-			log.Printf("endpoint %s has different ABCI app: %s (expected: %s)", url, data.AbciAppName, expectedAbciApp)
+			log.Printf("endpoint %s is behind by more than 500 blocks", endpoint.URL)
 			continue
 		}
 
-		validEndpoints = append(validEndpoints, url)
+		// Check version match
+		if data.Version != expectedVersion {
+			log.Printf("endpoint %s has different version: %s (expected: %s)", endpoint.URL, data.Version, expectedVersion)
+			continue
+		}
+
+		// Check chain ID match
+		if data.ChainId != expectedChainId {
+			log.Printf("endpoint %s has different chain ID: %s (expected: %s)", endpoint.URL, data.ChainId, expectedChainId)
+			continue
+		}
+
+		// Check ABCI app match
+		if data.AbciAppName != expectedAbciApp {
+			log.Printf("endpoint %s has different ABCI app: %s (expected: %s)", endpoint.URL, data.AbciAppName, expectedAbciApp)
+			continue
+		}
+
+		validEndpoints[URLProvider{URL: endpoint.URL, Provider: data.Provider}] = true
 	}
 
 	return validEndpoints

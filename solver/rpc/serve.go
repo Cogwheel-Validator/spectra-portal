@@ -46,7 +46,7 @@ func DefaultServerConfig() *ServerConfig {
 	burst := 200
 	return &ServerConfig{
 		Address:          "localhost:8080",
-		AllowedOrigins:   []string{"http://localhost:3000"}, // Restrict to localhost:3000 for development
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:8080"}, // Restrict to localhost:3000 and localhost:8080 for development
 		EnableReflection: true,
 		RatePerMinute:    &rateLimit,
 		Burst:            &burst,
@@ -56,10 +56,10 @@ func DefaultServerConfig() *ServerConfig {
 
 // Server wraps the HTTP server and provides lifecycle management
 type Server struct {
-	config         *ServerConfig
-	httpServer     *http.Server
-	mux            *chi.Mux
-	otelShutdown   func(context.Context) error
+	config       *ServerConfig
+	httpServer   *http.Server
+	mux          *chi.Mux
+	otelShutdown func(context.Context) error
 }
 
 // NewServer creates a new RPC server with the given configuration
@@ -85,26 +85,26 @@ func NewServer(
 
 	// use chi and append any middleware here
 	mux := chi.NewMux()
-	
+
 	// Add OpenTelemetry HTTP instrumentation
 	mux.Use(func(next http.Handler) http.Handler {
 		return otelhttp.NewHandler(next, "http-server")
 	})
-	
+
 	mux.Use(middleware.Logger)
 	mux.Use(middleware.Recoverer)
 	mux.Use(middleware.RequestID)
 	mux.Use(middleware.RealIP)
 	mux.Use(middleware.Compress(5))
 	mux.Use(middleware.Timeout(60 * time.Second))
-	
+
 	if config.RatePerMinute != nil {
 		mux.Use(httprate.LimitByIP(*config.RatePerMinute, 1*time.Minute))
 	}
 	if config.Burst != nil {
 		mux.Use(middleware.Throttle(*config.Burst))
 	}
-	
+
 	// Prometheus metrics endpoint
 	if config.OTelConfig != nil && config.OTelConfig.UsePrometheus {
 		mux.Handle("/metrics", promhttp.Handler())
@@ -115,7 +115,9 @@ func NewServer(
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"healthy","service":"spectra-ibc-hub"}`))
+		if _, err := w.Write([]byte(`{"status":"healthy","service":"spectra-ibc-hub"}`)); err != nil {
+			logger.Error().Msgf("Failed to write health check response: %v", err)
+		}
 	})
 	logger.Info().Msg("Health check: /health")
 
@@ -124,7 +126,9 @@ func NewServer(
 		// TODO: Add actual readiness checks
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ready"}`))
+		if _, err := w.Write([]byte(`{"status":"ready"}`)); err != nil {
+			logger.Error().Msgf("Failed to write readiness probe response: %v", err)
+		}
 	})
 	logger.Info().Msg("Readiness probe: /ready")
 
@@ -162,7 +166,7 @@ func NewServer(
 			v1connect.SolverServiceName,
 		)
 		reflectionPath, reflectionHandler := grpcreflect.NewHandlerV1(
-			reflector, connectOpts...
+			reflector, connectOpts...,
 		)
 		mux.Handle(reflectionPath, reflectionHandler)
 	}
@@ -190,7 +194,7 @@ func NewServer(
 }
 
 func newCORSHandler(
-	allowedOrigins []string, 
+	allowedOrigins []string,
 	next http.Handler,
 	debug *bool,
 ) http.Handler {
@@ -201,81 +205,83 @@ func newCORSHandler(
 	if len(allowedOrigins) == 0 {
 		allowedOrigins = []string{"*"}
 	}
-	
+
 	// CORS spec forbids wildcard origins with credentials
-	allowCredentials := true
+	var allowCredentials bool
 	if len(allowedOrigins) == 1 && allowedOrigins[0] == "*" {
 		allowCredentials = false
+	} else {
+		allowCredentials = true
 	}
-	
-    return cors.New(cors.Options{
-        AllowedOrigins: allowedOrigins,
-        AllowedMethods: []string{
-            http.MethodGet,
-            http.MethodPost,
-        },
-        AllowedHeaders: []string{
-            "Accept",
-            "Accept-Encoding",
-            "Accept-Post",
-            "Connect-Accept-Encoding",
-            "Connect-Content-Encoding",
-            "Connect-Protocol-Version",
-            "Content-Encoding",
-            "Content-Type",
-            "Grpc-Accept-Encoding",
-            "Grpc-Encoding",
-            "Grpc-Message",
-            "Grpc-Status",
-            "Grpc-Status-Details-Bin",
-            "Grpc-Timeout",
-        },
-        ExposedHeaders: []string{
-            "Content-Encoding",
-            "Connect-Content-Encoding",
-            "Grpc-Encoding",
-            "Grpc-Message",
-            "Grpc-Status",
-            "Grpc-Status-Details-Bin",
-        },
-        AllowCredentials: allowCredentials,
-        MaxAge:          int(2 * time.Hour / time.Second),
-        Debug:           *debug, // Set to true for debugging
-    }).Handler(next)
+
+	return cors.New(cors.Options{
+		AllowedOrigins: allowedOrigins,
+		AllowedMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+		},
+		AllowedHeaders: []string{
+			"Accept",
+			"Accept-Encoding",
+			"Accept-Post",
+			"Connect-Accept-Encoding",
+			"Connect-Content-Encoding",
+			"Connect-Protocol-Version",
+			"Content-Encoding",
+			"Content-Type",
+			"Grpc-Accept-Encoding",
+			"Grpc-Encoding",
+			"Grpc-Message",
+			"Grpc-Status",
+			"Grpc-Status-Details-Bin",
+			"Grpc-Timeout",
+		},
+		ExposedHeaders: []string{
+			"Content-Encoding",
+			"Connect-Content-Encoding",
+			"Grpc-Encoding",
+			"Grpc-Message",
+			"Grpc-Status",
+			"Grpc-Status-Details-Bin",
+		},
+		AllowCredentials: allowCredentials,
+		MaxAge:           int(2 * time.Hour / time.Second),
+		Debug:            *debug, // Set to true for debugging
+	}).Handler(next)
 }
 
-//logging interceptor
+// logging interceptor
 func loggingInterceptor() connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 
 			start := time.Now()
-            
-            logger.Info().
-                Str("procedure", req.Spec().Procedure).
-                Str("protocol", req.Peer().Protocol).
-                Msg("request started")
 
-            resp, err := next(ctx, req)
-            
-            duration := time.Since(start)
-            
-            if err != nil {
-                logger.Error().
-                    Err(err).
-                    Str("procedure", req.Spec().Procedure).
-                    Dur("duration", duration).
-                    Msg("request failed")
-            } else {
-                logger.Info().
-                    Str("procedure", req.Spec().Procedure).
-                    Dur("duration", duration).
-                    Msg("request completed")
-            }
+			logger.Info().
+				Str("procedure", req.Spec().Procedure).
+				Str("protocol", req.Peer().Protocol).
+				Msg("request started")
 
-            return resp, err
-        }
-    }
+			resp, err := next(ctx, req)
+
+			duration := time.Since(start)
+
+			if err != nil {
+				logger.Error().
+					Err(err).
+					Str("procedure", req.Spec().Procedure).
+					Dur("duration", duration).
+					Msg("request failed")
+			} else {
+				logger.Info().
+					Str("procedure", req.Spec().Procedure).
+					Dur("duration", duration).
+					Msg("request completed")
+			}
+
+			return resp, err
+		}
+	}
 }
 
 // Start begins serving RPC requests without TLS
@@ -297,53 +303,53 @@ func (s *Server) StartTLS(certFile, keyFile string) error {
 
 // logServerInfo logs server startup information
 func (s *Server) logServerInfo(protocol string) {
-	logger.Info().Msgf("🚀 Spectra IBC Hub RPC Server starting")
-	logger.Info().Msgf("   Address: %s://%s", protocol, s.config.Address)
-	logger.Info().Msgf("   Protocols: gRPC, gRPC-Web, Connect (auto-detected)")
-	
+	logger.Info().Msgf("\tSpectra IBC Hub RPC Server starting")
+	logger.Info().Msgf("\tAddress: %s://%s", protocol, s.config.Address)
+	logger.Info().Msgf("\tProtocols: gRPC, gRPC-Web, Connect (auto-detected)")
+
 	// Log endpoints
-	logger.Info().Msg("📍 Available endpoints:")
-	logger.Info().Msg("   RPC: /rpc.v1.SolverService/* (public)")
-	logger.Info().Msg("   Health: /health (public - for load balancers)")
-	logger.Info().Msg("   Ready: /ready (public - for Kubernetes)")
-	
+	logger.Info().Msg("\tAvailable endpoints:")
+	logger.Info().Msg("\tRPC: /rpc.v1.SolverService/* (public)")
+	logger.Info().Msg("\tHealth: /health (public - for load balancers)")
+	logger.Info().Msg("\tReady: /ready (public - for Kubernetes)")
+
 	if s.config.OTelConfig != nil && s.config.OTelConfig.UsePrometheus {
-		logger.Warn().Msg("   Metrics: /metrics (⚠️  RESTRICT TO INTERNAL)")
+		logger.Warn().Msg("\tMetrics: /metrics (RESTRICT TO INTERNAL)")
 	}
-	
+
 	if s.config.EnableReflection {
-		logger.Warn().Msg("   Reflection: enabled (⚠️  DISABLE IN PRODUCTION)")
+		logger.Warn().Msg("\tReflection: enabled (DISABLE IN PRODUCTION)")
 	}
-	
+
 	// Log nginx reverse proxy example
 	if protocol == "http" {
 		logger.Info().Msg("")
-		logger.Info().Msg("💡 Example nginx config to restrict /metrics:")
-		logger.Info().Msg("   location /metrics {")
-		logger.Info().Msg("     allow 10.0.0.0/8;  # Internal network")
-		logger.Info().Msg("     deny all;")
-		logger.Info().Msg("   }")
+		logger.Info().Msg("\tExample nginx config to restrict /metrics:")
+		logger.Info().Msg("\tlocation /metrics {")
+		logger.Info().Msg("\t\tallow 10.0.0.0/8;  # Internal network")
+		logger.Info().Msg("\t\tdeny all;")
+		logger.Info().Msg("\t}")
 	}
-	
+
 	logger.Info().Msg("")
 }
 
 // Shutdown gracefully shuts down the server and OpenTelemetry
 func (s *Server) Shutdown(ctx context.Context) error {
 	fmt.Println("Shutting down RPC server...")
-	
+
 	// Shutdown HTTP server first
 	if err := s.httpServer.Shutdown(ctx); err != nil {
 		fmt.Printf("Error shutting down HTTP server: %v\n", err)
 	}
-	
+
 	// Then shutdown OpenTelemetry to flush any pending telemetry
 	if s.otelShutdown != nil {
 		if err := s.otelShutdown(ctx); err != nil {
 			return fmt.Errorf("failed to shutdown OpenTelemetry: %w", err)
 		}
 	}
-	
+
 	return nil
 }
 

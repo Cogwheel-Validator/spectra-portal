@@ -11,281 +11,281 @@ import (
 
 var chains = []router.SolverChain{
 	{
-		Name: "Osmosis",
-		Id: "osmosis-1",
-		Broker: true,
+		Name:     "Osmosis",
+		Id:       "osmosis-1",
+		Broker:   true,
 		BrokerId: "osmosis",
-		HasPFM: true,
+		HasPFM:   true,
 		Routes: []router.BasicRoute{
 			{
-				ToChain: "cosmoshub",
-				ToChainId: "cosmoshub-4",
+				ToChain:      "cosmoshub",
+				ToChainId:    "cosmoshub-4",
 				ConnectionId: "connection-0",
-				ChannelId: "channel-0",
-				PortId: "transfer",
+				ChannelId:    "channel-0",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2": {
-						ChainDenom: "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
-						IbcDenom: "uatom",
-						BaseDenom: "uatom",
+						ChainDenom:  "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+						IbcDenom:    "uatom",
+						BaseDenom:   "uatom",
 						OriginChain: "cosmoshub-4",
-						Decimals: 6,
+						Decimals:    6,
 					},
 					"uosmo": {
-						ChainDenom: "uosmo",
-						IbcDenom: "ibc/ED07A3391A112B175915CD8FAF43A2DA8E4790EDE12566649D0C2F97716B8518",
-						BaseDenom: "uosmo",
+						ChainDenom:  "uosmo",
+						IbcDenom:    "ibc/ED07A3391A112B175915CD8FAF43A2DA8E4790EDE12566649D0C2F97716B8518",
+						BaseDenom:   "uosmo",
 						OriginChain: "osmosis-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 			{
-				ToChain: "juno",
-				ToChainId: "juno-1",
+				ToChain:      "juno",
+				ToChainId:    "juno-1",
 				ConnectionId: "connection-1",
-				ChannelId: "channel-1",
-				PortId: "transfer",
+				ChannelId:    "channel-1",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"ibc/ujuno-osmosis": {
-						ChainDenom: "ibc/ujuno-osmosis",
-						IbcDenom: "ujuno",
-						BaseDenom: "ujuno",
+						ChainDenom:  "ibc/ujuno-osmosis",
+						IbcDenom:    "ujuno",
+						BaseDenom:   "ujuno",
 						OriginChain: "juno-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 					"uosmo": {
-						ChainDenom: "uosmo",
-						IbcDenom: "ibc/osmouosmo",
-						BaseDenom: "uosmo",
+						ChainDenom:  "uosmo",
+						IbcDenom:    "ibc/osmouosmo",
+						BaseDenom:   "uosmo",
 						OriginChain: "osmosis-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 			{
-				ToChain: "atomone",
-				ToChainId: "atomone-1",
+				ToChain:      "atomone",
+				ToChainId:    "atomone-1",
 				ConnectionId: "connection-2",
-				ChannelId: "channel-2",
-				PortId: "transfer",
+				ChannelId:    "channel-2",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"ibc/uatone-osmo": {
-						ChainDenom: "ibc/uatone-osmo",
-						IbcDenom: "uatone",
-						BaseDenom: "uatone",
+						ChainDenom:  "ibc/uatone-osmo",
+						IbcDenom:    "uatone",
+						BaseDenom:   "uatone",
 						OriginChain: "atomone-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 					"ibc/uphoton-osmo": {
-						ChainDenom: "ibc/uphoton-osmo",
-						IbcDenom: "uphoton",
-						BaseDenom: "uphoton",
+						ChainDenom:  "ibc/uphoton-osmo",
+						IbcDenom:    "uphoton",
+						BaseDenom:   "uphoton",
 						OriginChain: "atomone-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 			{
-				ToChain: "noble",
-				ToChainId: "noble-1",
+				ToChain:      "noble",
+				ToChainId:    "noble-1",
 				ConnectionId: "connection-3",
-				ChannelId: "channel-3",
-				PortId: "transfer",
+				ChannelId:    "channel-3",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4": {
-						ChainDenom: "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
-						IbcDenom: "uusdc", // What it becomes on Noble (native)
-						BaseDenom: "uusdc",
+						ChainDenom:  "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
+						IbcDenom:    "uusdc", // What it becomes on Noble (native)
+						BaseDenom:   "uusdc",
 						OriginChain: "noble-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 		},
 	},
 	{
-		Name: "Cosmos Hub",
-		Id: "cosmoshub-4",
-		Broker: false,
+		Name:     "Cosmos Hub",
+		Id:       "cosmoshub-4",
+		Broker:   false,
 		BrokerId: "",
-		HasPFM: true,
+		HasPFM:   true,
 		Routes: []router.BasicRoute{
 			{
-				ToChain: "osmosis",
-				ToChainId: "osmosis-1",
+				ToChain:      "osmosis",
+				ToChainId:    "osmosis-1",
 				ConnectionId: "connection-0",
-				ChannelId: "channel-0",
-				PortId: "transfer",
+				ChannelId:    "channel-0",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"uatom": {
-						ChainDenom: "uatom",
-						IbcDenom: "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
-						BaseDenom: "uatom",
+						ChainDenom:  "uatom",
+						IbcDenom:    "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+						BaseDenom:   "uatom",
 						OriginChain: "cosmoshub-4",
-						Decimals: 6,
+						Decimals:    6,
 					},
 					"ibc/ED07A3391A112B175915CD8FAF43A2DA8E4790EDE12566649D0C2F97716B8518": {
-						ChainDenom: "ibc/ED07A3391A112B175915CD8FAF43A2DA8E4790EDE12566649D0C2F97716B8518",
-						IbcDenom: "uosmo",
-						BaseDenom: "uosmo",
+						ChainDenom:  "ibc/ED07A3391A112B175915CD8FAF43A2DA8E4790EDE12566649D0C2F97716B8518",
+						IbcDenom:    "uosmo",
+						BaseDenom:   "uosmo",
 						OriginChain: "osmosis-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 					"ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED": {
 						ChainDenom: "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED",
 						// this will probabably never happen but we need to test is the
 						/// token originated from another chain and that ibc origined from another chain
-						IbcDenom: "ibc/osmosis-ujuno",
-						BaseDenom: "ujuno",
+						IbcDenom:    "ibc/osmosis-ujuno",
+						BaseDenom:   "ujuno",
 						OriginChain: "juno-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 			{
-				ToChain: "juno",
-				ToChainId: "juno-1",
+				ToChain:      "juno",
+				ToChainId:    "juno-1",
 				ConnectionId: "connection-1",
-				ChannelId: "channel-1",
-				PortId: "transfer",
+				ChannelId:    "channel-1",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9": {
-						ChainDenom: "ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9",
-						IbcDenom: "ujuno",
-						BaseDenom: "ujuno",
+						ChainDenom:  "ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9",
+						IbcDenom:    "ujuno",
+						BaseDenom:   "ujuno",
 						OriginChain: "juno-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 		},
 	},
 	{
-		Name: "Juno",
-		Id: "juno-1",
-		Broker: false,
+		Name:     "Juno",
+		Id:       "juno-1",
+		Broker:   false,
 		BrokerId: "",
-		HasPFM: true,
+		HasPFM:   true,
 		Routes: []router.BasicRoute{
 			{
-				ToChain: "cosmoshub",
-				ToChainId: "cosmoshub-4",
+				ToChain:      "cosmoshub",
+				ToChainId:    "cosmoshub-4",
 				ConnectionId: "connection-1",
-				ChannelId: "channel-1",
-				PortId: "transfer",
+				ChannelId:    "channel-1",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"ujuno": {
-						ChainDenom: "ujuno",
-						IbcDenom: "ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9",
-						BaseDenom: "ujuno",
+						ChainDenom:  "ujuno",
+						IbcDenom:    "ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9",
+						BaseDenom:   "ujuno",
 						OriginChain: "juno-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 			{
-				ToChain: "osmosis",
-				ToChainId: "osmosis-1",
+				ToChain:      "osmosis",
+				ToChainId:    "osmosis-1",
 				ConnectionId: "connection-0",
-				ChannelId: "channel-0",
-				PortId: "transfer",
+				ChannelId:    "channel-0",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"ujuno": {
-						ChainDenom: "ujuno",
-						IbcDenom: "ibc/ujuno-osmosis",
-						BaseDenom: "ujuno",
+						ChainDenom:  "ujuno",
+						IbcDenom:    "ibc/ujuno-osmosis",
+						BaseDenom:   "ujuno",
 						OriginChain: "juno-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 			{
-				ToChain: "noble",
-				ToChainId: "noble-1",
+				ToChain:      "noble",
+				ToChainId:    "noble-1",
 				ConnectionId: "connection-3",
-				ChannelId: "channel-3",
-				PortId: "transfer",
+				ChannelId:    "channel-3",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034": {
-						ChainDenom: "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
-						IbcDenom: "uusdc", // What it becomes on Noble (native)
-						BaseDenom: "uusdc",
+						ChainDenom:  "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
+						IbcDenom:    "uusdc", // What it becomes on Noble (native)
+						BaseDenom:   "uusdc",
 						OriginChain: "noble-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 		},
 	},
 	{
-		Name: "Atom One",
-		Id: "atomone-1",
-		Broker: false,
+		Name:     "Atom One",
+		Id:       "atomone-1",
+		Broker:   false,
 		BrokerId: "",
-		HasPFM: false,
+		HasPFM:   false,
 		Routes: []router.BasicRoute{
 			{
-				ToChain: "osmosis",
-				ToChainId: "osmosis-1",
+				ToChain:      "osmosis",
+				ToChainId:    "osmosis-1",
 				ConnectionId: "connection-0",
-				ChannelId: "channel-0",
-				PortId: "transfer",
+				ChannelId:    "channel-0",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"uatone": {
-						ChainDenom: "uatone",
-						IbcDenom: "ibc/uatone",
-						BaseDenom: "uatone",
+						ChainDenom:  "uatone",
+						IbcDenom:    "ibc/uatone",
+						BaseDenom:   "uatone",
 						OriginChain: "atomone-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 					"uphoton": {
-						ChainDenom: "uphoton",
-						IbcDenom: "ibc/uphoton",
-						BaseDenom: "uphoton",
+						ChainDenom:  "uphoton",
+						IbcDenom:    "ibc/uphoton",
+						BaseDenom:   "uphoton",
 						OriginChain: "atomone-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 		},
 	},
 	{
-		Name: "Noble",
-		Id: "noble-1",
-		Broker: false,
+		Name:     "Noble",
+		Id:       "noble-1",
+		Broker:   false,
 		BrokerId: "",
-		HasPFM: true,
+		HasPFM:   true,
 		Routes: []router.BasicRoute{
 			{
-				ToChain: "juno",
-				ToChainId: "juno-1",
+				ToChain:      "juno",
+				ToChainId:    "juno-1",
 				ConnectionId: "connection-1",
-				ChannelId: "channel-1",
-				PortId: "transfer",
+				ChannelId:    "channel-1",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"uusdc": {
-						ChainDenom: "uusdc",
-						IbcDenom: "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034", // What it becomes on Juno
-						BaseDenom: "uusdc",
+						ChainDenom:  "uusdc",
+						IbcDenom:    "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034", // What it becomes on Juno
+						BaseDenom:   "uusdc",
 						OriginChain: "noble-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
 			{
-				ToChain: "osmosis",
-				ToChainId: "osmosis-1",
+				ToChain:      "osmosis",
+				ToChainId:    "osmosis-1",
 				ConnectionId: "connection-0",
-				ChannelId: "channel-0",
-				PortId: "transfer",
+				ChannelId:    "channel-0",
+				PortId:       "transfer",
 				AllowedTokens: map[string]router.TokenInfo{
 					"uusdc": {
-						ChainDenom: "uusdc",
-						IbcDenom: "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4", // What it becomes on Osmosis
-						BaseDenom: "uusdc",
+						ChainDenom:  "uusdc",
+						IbcDenom:    "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4", // What it becomes on Osmosis
+						BaseDenom:   "uusdc",
 						OriginChain: "noble-1",
-						Decimals: 6,
+						Decimals:    6,
 					},
 				},
 			},
@@ -303,7 +303,7 @@ func (m *MockBrokerClient) QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom 
 	if m.swapFunc != nil {
 		return m.swapFunc(tokenInDenom, tokenInAmount, tokenOutDenom)
 	}
-	// Fake swap, but in this case we will assume 1:1 swap with 0.3% fee and 
+	// Fake swap, but in this case we will assume 1:1 swap with 0.3% fee and
 	// slipage can be anywhere from 0.1% to 0.9%, for this purpose and to ease testing
 	// we will just assume it is 1% in total
 	return &router.SwapResult{
@@ -475,18 +475,18 @@ func TestSolver_IndirectRoute(t *testing.T) {
 
 	// Verify legs
 	assert.Equal(t, len(indirect.Legs), 2)
-	
+
 	// First leg: Juno -> Noble
 	leg1 := indirect.Legs[0]
 	assert.Equal(t, leg1.FromChain, "juno-1")
 	assert.Equal(t, leg1.ToChain, "noble-1")
 	assert.Equal(t, leg1.Amount, "5000000")
-	
+
 	// Second leg: Noble -> Osmosis
 	leg2 := indirect.Legs[1]
 	assert.Equal(t, leg2.FromChain, "noble-1")
 	assert.Equal(t, leg2.ToChain, "osmosis-1")
-	
+
 	// Verify PFM support - Noble supports PFM, so it should be enabled
 	assert.True(t, indirect.SupportsPFM)
 	if indirect.PFMMemo == "" {
@@ -670,7 +670,6 @@ func BenchmarkSolver_DirectRoute(b *testing.B) {
 		ReceiverAddress: "osmo1receiver",
 	}
 
-	
 	for b.Loop() {
 		solver.Solve(req)
 	}
@@ -689,7 +688,6 @@ func BenchmarkSolver_BrokerSwapRoute(b *testing.B) {
 		ReceiverAddress: "juno1receiver",
 	}
 
-	
 	for b.Loop() {
 		solver.Solve(req)
 	}
@@ -699,14 +697,13 @@ func BenchmarkSolver_IndirectRoute(b *testing.B) {
 	solver, _ := setupTestSolver()
 
 	req := models.RouteRequest{
-		ChainFrom:       "juno-1",
-		ChainTo:         "osmosis-1",
-		TokenFromDenom:  "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
-		TokenToDenom:    "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
+		ChainFrom:      "juno-1",
+		ChainTo:        "osmosis-1",
+		TokenFromDenom: "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
+		TokenToDenom:   "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
 	}
 
 	for b.Loop() {
 		solver.Solve(req)
 	}
 }
-

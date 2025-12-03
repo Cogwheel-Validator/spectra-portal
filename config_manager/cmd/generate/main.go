@@ -12,7 +12,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -30,14 +30,13 @@ func main() {
 	chainLogoBase := flag.String("chain-logo-base", "", "Base URL for chain logos")
 	skipNetwork := flag.Bool("skip-network", false, "Skip network validation of endpoints")
 	useCache := flag.Bool("use-cache", false, "Use cached registry data instead of downloading fresh")
-	skipDenomQueries := flag.Bool("skip-denom-queries", false, "Skip REST queries for denom traces (use computed hashes)")
 	validate := flag.Bool("validate-only", false, "Only validate configs, don't generate")
 
 	flag.Parse()
 
 	// Validate inputs
 	if _, err := os.Stat(*inputDir); os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "Error: input directory does not exist: %s\n", *inputDir)
+		log.Printf("Error: input directory does not exist: %s", *inputDir)
 		os.Exit(1)
 	}
 
@@ -51,7 +50,6 @@ func main() {
 		ChainLogoBaseURL:      *chainLogoBase,
 		SkipNetworkValidation: *skipNetwork,
 		UseRegistryCache:      *useCache,
-		SkipDenomQueries:      *skipDenomQueries,
 	}
 
 	if *validate {
@@ -61,23 +59,22 @@ func main() {
 
 	generator := pipeline.NewGenerator(config)
 
-	fmt.Println("Starting config generation pipeline...")
-	fmt.Println()
+	log.Printf("Starting config generation pipeline...")
 
 	result, err := generator.Generate()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error while generating configs: %v\n", err)
+		log.Printf("Error while generating configs: %v", err)
 		os.Exit(1)
 	}
 
 	// Print summary
-	fmt.Println("\nSummary:")
-	fmt.Printf("Chains processed: %d\n", result.ChainsProcessed)
+	log.Printf("Summary:")
+	log.Printf("Chains processed: %d", result.ChainsProcessed)
 
 	if len(result.Warnings) > 0 {
-		fmt.Println("\nWarnings:")
+		log.Printf("Warnings:")
 		for _, warning := range result.Warnings {
-			fmt.Printf("\t- %s\n", warning)
+			log.Printf("\t- %s", warning)
 		}
 	}
 
@@ -86,26 +83,26 @@ func main() {
 	for chainID, valResult := range result.ValidationResults {
 		if !valResult.IsValid {
 			hasFailures = true
-			fmt.Printf("%s: validation failed\n", chainID)
+			log.Printf("%s: validation failed", chainID)
 		}
 	}
 
 	if hasFailures {
-		fmt.Println("\nSome chains failed validation. Check the errors above.")
+		log.Printf("Some chains failed validation. Check the errors above.")
 		os.Exit(1)
 	}
 
 	if !*validate {
-		fmt.Println("\nOutput files:")
+		log.Printf("Output files:")
 		if result.SolverConfigPath != "" {
-			fmt.Printf("\tSolver: %s\n", result.SolverConfigPath)
+			log.Printf("\tSolver: %s", result.SolverConfigPath)
 		}
 		if result.ClientConfigPath != "" {
-			fmt.Printf("\tClient: %s\n", result.ClientConfigPath)
+			log.Printf("\tClient: %s", result.ClientConfigPath)
 		}
 	}
 
-	fmt.Println("\nFinished the generation pipeline!")
+	log.Printf("Finished the generation pipeline!")
 }
 
 func parseFormat(s string) pipeline.OutputFormat {

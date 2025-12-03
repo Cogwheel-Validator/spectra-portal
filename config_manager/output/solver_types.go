@@ -77,4 +77,3 @@ type SolverTokenInfo struct {
 	// Number of decimal places
 	Decimals int `json:"decimals" toml:"decimals"`
 }
-

@@ -50,4 +50,3 @@ func (o *OsmosisSqsBroker) QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom 
 func (o *OsmosisSqsBroker) GetBrokerType() string {
 	return "osmosis"
 }
-

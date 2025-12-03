@@ -97,4 +97,3 @@ func (l *Loader) GetRegistryKeywords(configs map[string]*ChainInput) []string {
 	}
 	return keywords
 }
-

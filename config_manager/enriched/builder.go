@@ -3,9 +3,11 @@ package enriched
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/query"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/registry"
 )
 
@@ -18,10 +20,12 @@ const (
 // Builder builds enriched configurations from input configs and IBC registry data.
 // It computes IBC denoms deterministically from the defined tokens and channels,
 // without querying chain REST APIs. This ensures only "legitimate" tokens are included.
+// It also validates the network reachability of the chain fully.
 type Builder struct {
 	retryAttempts int
 	retryDelay    time.Duration
 	timeout       time.Duration
+	skipNetCheck  bool
 }
 
 // BuilderOption configures the builder.
@@ -48,12 +52,10 @@ func WithTimeout(timeout time.Duration) BuilderOption {
 	}
 }
 
-// Deprecated: queries are no longer used
-// WithSkipDenomQueries is deprecated - queries are no longer used.
-// Kept for some inital idea but will be removed in future.
-func WithSkipDenomQueries(skip bool) BuilderOption {
+// WithSkipNetworkCheck disables network reachability checks.
+func WithSkipNetworkCheck(skip bool) BuilderOption {
 	return func(b *Builder) {
-		// No-op - we don't query anymore
+		b.skipNetCheck = skip
 	}
 }
 
@@ -63,6 +65,7 @@ func NewBuilder(opts ...BuilderOption) *Builder {
 		retryAttempts: defaultRetryAttempts,
 		retryDelay:    defaultRetryDelay,
 		timeout:       defaultTimeout,
+		skipNetCheck:  false,
 	}
 	for _, opt := range opts {
 		opt(b)
@@ -74,7 +77,7 @@ func NewBuilder(opts ...BuilderOption) *Builder {
 // Routes and IBC tokens are computed deterministically from:
 // 1. Native tokens defined in each chain's config
 // 2. IBC channels from the registry
-// 3. Multi-hop tokens explicitly defined via received_token
+// 3. Routable IBC tokens (multi-hop support via origin_chain/origin_denom)
 func (b *Builder) BuildRegistry(
 	inputConfigs map[string]*input.ChainInput,
 	ibcData []registry.ChainIbcData,
@@ -84,8 +87,8 @@ func (b *Builder) BuildRegistry(
 	}
 
 	reg := &RegistryConfig{
-		// TODO: Add proper versioning
-		Version:     "1.0.0",
+		// Use date as a version
+		Version:     "v" + strings.ReplaceAll(time.Now().UTC().Format(time.DateOnly), "-", ""),
 		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
 		Chains:      make(map[string]*ChainConfig),
 	}
@@ -135,8 +138,8 @@ func (b *Builder) buildChainConfig(
 	}
 
 	// Convert REST/RPC endpoints
-	config.HealthyRPCs = b.convertEndpoints(chain.RPCs)
-	config.HealthyRests = b.convertEndpoints(chain.Rest)
+	config.HealthyRPCs = b.convertEndpoints(chain.RPCs, false)
+	config.HealthyRests = b.convertEndpoints(chain.Rest, true)
 
 	// Convert native tokens
 	config.NativeTokens = b.buildNativeTokens(inputCfg.Tokens, chain.ID)
@@ -153,22 +156,50 @@ func (b *Builder) buildChainConfig(
 	return config, nil
 }
 
-func (b *Builder) convertEndpoints(endpoints []input.APIEndpoint) []Endpoint {
-	result := make([]Endpoint, len(endpoints))
-	for i, ep := range endpoints {
-		result[i] = Endpoint{
+func (b *Builder) convertEndpoints(
+	endpoints []input.APIEndpoint,
+	checkingRest bool,
+) []Endpoint {
+	// Skip network validation - just mark all as healthy (assumed)
+	if b.skipNetCheck {
+		result := make([]Endpoint, 0, len(endpoints))
+		for _, endpoint := range endpoints {
+			result = append(result, Endpoint{
+				URL:      endpoint.URL,
+				Provider: endpoint.Provider,
+				Healthy:  true,
+			})
+		}
+		return result
+	}
+
+	// Perform full network validation
+	var healthyEndpoints map[query.URLProvider]bool
+	if checkingRest {
+		healthyEndpoints = query.ValidateRestEndpoints(endpoints, b.retryAttempts, b.retryDelay, b.timeout)
+	} else {
+		healthyEndpoints = query.ValidateRpcEndpoints(endpoints, b.retryAttempts, b.retryDelay, b.timeout)
+	}
+
+	result := make([]Endpoint, 0, len(healthyEndpoints))
+	for ep, healthy := range healthyEndpoints {
+		result = append(result, Endpoint{
 			URL:      ep.URL,
 			Provider: ep.Provider,
-			Healthy:  true, // Assume healthy for now
-		}
+			Healthy:  healthy,
+		})
 	}
 	return result
 }
 
 func (b *Builder) buildNativeTokens(tokens []input.TokenMeta, chainID string) []TokenConfig {
-	result := make([]TokenConfig, len(tokens))
-	for i, token := range tokens {
-		result[i] = TokenConfig{
+	result := make([]TokenConfig, 0, len(tokens))
+	for _, token := range tokens {
+		// Only include native tokens (those without OriginChain)
+		if !token.IsNative() {
+			continue
+		}
+		result = append(result, TokenConfig{
 			Denom:               token.Denom,
 			Name:                token.Name,
 			Symbol:              token.Symbol,
@@ -177,7 +208,7 @@ func (b *Builder) buildNativeTokens(tokens []input.TokenMeta, chainID string) []
 			CoinGeckoID:         token.CoinGeckoID,
 			OriginChain:         chainID,
 			AllowedDestinations: token.AllowedDestinations,
-		}
+		})
 	}
 	return result
 }
