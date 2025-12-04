@@ -2,37 +2,138 @@ package router
 
 import (
 	"fmt"
+	"strings"
 
 	models "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/models"
 )
 
-// DenomResolver helps resolve token denoms across chains and tracks token origins
+// DenomResolver helps resolve token denoms across chains and tracks token origins.
+// It supports:
+// - Human-readable denom resolution (e.g., "uatone" → IBC denom)
+// - Cross-chain denom lookup
+// - Token availability discovery
 type DenomResolver struct {
 	routeIndex *RouteIndex
+	chains     map[string]SolverChain
+
+	// Lookup maps for efficient resolution
+	baseDenomToChains map[string]map[string]*TokenInfo // baseDenom:originChain -> chainID -> TokenInfo
 }
 
 // NewDenomResolver creates a new denom resolver
 func NewDenomResolver(routeIndex *RouteIndex) *DenomResolver {
-	return &DenomResolver{
-		routeIndex: routeIndex,
+	dr := &DenomResolver{
+		routeIndex:        routeIndex,
+		chains:            make(map[string]SolverChain),
+		baseDenomToChains: make(map[string]map[string]*TokenInfo),
+	}
+	dr.buildLookupMaps()
+	return dr
+}
+
+// SetChains sets the chain information for the resolver
+func (dr *DenomResolver) SetChains(chains []SolverChain) {
+	for _, chain := range chains {
+		dr.chains[chain.Id] = chain
+	}
+	dr.buildLookupMaps()
+}
+
+// buildLookupMaps builds efficient lookup maps from the route index
+func (dr *DenomResolver) buildLookupMaps() {
+	// Build baseDenom:originChain -> chainID -> TokenInfo map
+	for chainID, tokens := range dr.routeIndex.denomToTokenInfo {
+		for _, tokenInfo := range tokens {
+			key := tokenKey(tokenInfo.BaseDenom, tokenInfo.OriginChain)
+			if dr.baseDenomToChains[key] == nil {
+				dr.baseDenomToChains[key] = make(map[string]*TokenInfo)
+			}
+			dr.baseDenomToChains[key][chainID] = tokenInfo
+		}
 	}
 }
 
-// ResolveDenom resolves a denom on a specific chain and returns detailed information
+// tokenKey creates a unique key for a token (baseDenom:originChain)
+func tokenKey(baseDenom, originChain string) string {
+	return baseDenom + ":" + originChain
+}
+
+// ResolveDenom resolves a denom on a specific chain and returns detailed information.
+// Accepts either:
+// - Human-readable denom (e.g., "uatone", "uosmo")
+// - IBC denom (e.g., "ibc/ABC123...")
 func (dr *DenomResolver) ResolveDenom(chainID, denom string) (*models.DenomInfo, error) {
-	// Check if we have token info for this denom on this chain
-	var ibcPath string
-	if chainTokens, exists := dr.routeIndex.denomToTokenInfo[chainID]; exists {
-		chainRoutes := dr.routeIndex.chainRoutes[chainID]
-		for _, route := range chainRoutes {
+	// First try direct lookup
+	if info, err := dr.lookupDenom(chainID, denom); err == nil {
+		return info, nil
+	}
+
+	// If not found and it looks like a base denom (not IBC), try to find it
+	if !strings.HasPrefix(denom, "ibc/") {
+		// Search through all tokens to find one with matching base denom
+		if info, err := dr.resolveHumanReadableDenom(chainID, denom); err == nil {
+			return info, nil
+		}
+	}
+
+	return nil, fmt.Errorf("denom %s not found on chain %s", denom, chainID)
+}
+
+// lookupDenom does a direct lookup of a denom on a chain
+func (dr *DenomResolver) lookupDenom(chainID, denom string) (*models.DenomInfo, error) {
+	chainTokens, exists := dr.routeIndex.denomToTokenInfo[chainID]
+	if !exists {
+		return nil, fmt.Errorf("chain %s not found", chainID)
+	}
+
+	tokenInfo, found := chainTokens[denom]
+	if !found {
+		return nil, fmt.Errorf("denom %s not found on chain %s", denom, chainID)
+	}
+
+	// Find IBC path if applicable
+	ibcPath := ""
+	if tokenInfo.OriginChain != chainID {
+		// Find the route this token came from
+		for _, route := range dr.routeIndex.chainRoutes[chainID] {
 			if _, allowed := route.AllowedTokens[denom]; allowed {
 				ibcPath = route.PortId + "/" + route.ChannelId
 				break
 			}
 		}
-		if tokenInfo, found := chainTokens[denom]; found {
+	}
+
+	return &models.DenomInfo{
+		ChainDenom:  tokenInfo.ChainDenom,
+		BaseDenom:   tokenInfo.BaseDenom,
+		OriginChain: tokenInfo.OriginChain,
+		IsNative:    tokenInfo.OriginChain == chainID,
+		IbcPath:     ibcPath,
+	}, nil
+}
+
+// resolveHumanReadableDenom tries to find a token by its base denom on a chain
+func (dr *DenomResolver) resolveHumanReadableDenom(chainID, baseDenom string) (*models.DenomInfo, error) {
+	chainTokens, exists := dr.routeIndex.denomToTokenInfo[chainID]
+	if !exists {
+		return nil, fmt.Errorf("chain %s not found", chainID)
+	}
+
+	// Search for token with matching base denom
+	for denom, tokenInfo := range chainTokens {
+		if tokenInfo.BaseDenom == baseDenom {
+			ibcPath := ""
+			if tokenInfo.OriginChain != chainID {
+				for _, route := range dr.routeIndex.chainRoutes[chainID] {
+					if _, allowed := route.AllowedTokens[denom]; allowed {
+						ibcPath = route.PortId + "/" + route.ChannelId
+						break
+					}
+				}
+			}
+
 			return &models.DenomInfo{
-				ChainDenom:  tokenInfo.ChainDenom,
+				ChainDenom:  denom,
 				BaseDenom:   tokenInfo.BaseDenom,
 				OriginChain: tokenInfo.OriginChain,
 				IsNative:    tokenInfo.OriginChain == chainID,
@@ -41,7 +142,119 @@ func (dr *DenomResolver) ResolveDenom(chainID, denom string) (*models.DenomInfo,
 		}
 	}
 
-	return nil, fmt.Errorf("denom %s not found on chain %s", denom, chainID)
+	return nil, fmt.Errorf("token with base denom %s not found on chain %s", baseDenom, chainID)
+}
+
+// ResolveToChainDenom resolves a human-readable or IBC denom to the actual chain denom.
+// Use this when you need the exact denom to use in transactions.
+func (dr *DenomResolver) ResolveToChainDenom(chainID, denom string) (string, error) {
+	info, err := dr.ResolveDenom(chainID, denom)
+	if err != nil {
+		return "", err
+	}
+	return info.ChainDenom, nil
+}
+
+// GetTokenDenomsAcrossChains returns all denoms for a token (identified by base denom and origin)
+// across all supported chains. If onChainID is provided, returns only for that chain.
+func (dr *DenomResolver) GetTokenDenomsAcrossChains(baseDenom, originChain, onChainID string) ([]models.ChainDenom, bool) {
+	key := tokenKey(baseDenom, originChain)
+	chainDenoms, exists := dr.baseDenomToChains[key]
+	if !exists {
+		return nil, false
+	}
+
+	result := make([]models.ChainDenom, 0, len(chainDenoms))
+
+	for chainID, tokenInfo := range chainDenoms {
+		// Filter by onChainID if specified
+		if onChainID != "" && chainID != onChainID {
+			continue
+		}
+
+		chainName := chainID
+		if chain, ok := dr.chains[chainID]; ok {
+			chainName = chain.Name
+		}
+
+		result = append(result, models.ChainDenom{
+			ChainID:   chainID,
+			ChainName: chainName,
+			Denom:     tokenInfo.ChainDenom,
+			IsNative:  tokenInfo.OriginChain == chainID,
+		})
+	}
+
+	return result, len(result) > 0
+}
+
+// GetChainTokens returns all tokens available on a specific chain
+func (dr *DenomResolver) GetChainTokens(chainID string) (*models.ChainTokens, error) {
+	chainTokens, exists := dr.routeIndex.denomToTokenInfo[chainID]
+	if !exists {
+		return nil, fmt.Errorf("chain %s not found", chainID)
+	}
+
+	chainName := chainID
+	if chain, ok := dr.chains[chainID]; ok {
+		chainName = chain.Name
+	}
+
+	result := &models.ChainTokens{
+		ChainID:      chainID,
+		ChainName:    chainName,
+		NativeTokens: make([]models.TokenDetails, 0),
+		IBCTokens:    make([]models.TokenDetails, 0),
+	}
+
+	for denom, tokenInfo := range chainTokens {
+		detail := models.TokenDetails{
+			Denom:       denom,
+			Symbol:      "", // We don't have symbol in TokenInfo, would need to add
+			BaseDenom:   tokenInfo.BaseDenom,
+			OriginChain: tokenInfo.OriginChain,
+			Decimals:    tokenInfo.Decimals,
+			IsNative:    tokenInfo.OriginChain == chainID,
+		}
+
+		if detail.IsNative {
+			result.NativeTokens = append(result.NativeTokens, detail)
+		} else {
+			result.IBCTokens = append(result.IBCTokens, detail)
+		}
+	}
+
+	return result, nil
+}
+
+// GetAvailableOn returns all chains where a specific token is available
+func (dr *DenomResolver) GetAvailableOn(baseDenom, originChain string) []models.ChainDenom {
+	denoms, _ := dr.GetTokenDenomsAcrossChains(baseDenom, originChain, "")
+	return denoms
+}
+
+// InferTokenToDenom handles the case when token_to_denom is empty.
+// It tries to find the same token (same origin) on the destination chain.
+func (dr *DenomResolver) InferTokenToDenom(chainFrom, tokenFromDenom, chainTo string) (string, error) {
+	// First resolve the source token
+	sourceInfo, err := dr.ResolveDenom(chainFrom, tokenFromDenom)
+	if err != nil {
+		return "", fmt.Errorf("cannot resolve source token: %w", err)
+	}
+
+	// Find the same token on the destination chain
+	destInfo, err := dr.resolveHumanReadableDenom(chainTo, sourceInfo.BaseDenom)
+	if err != nil {
+		// Try direct lookup with the base denom key
+		denoms, found := dr.GetTokenDenomsAcrossChains(sourceInfo.BaseDenom, sourceInfo.OriginChain, chainTo)
+		if !found || len(denoms) == 0 {
+			return "", fmt.Errorf("token %s (origin: %s) not available on chain %s",
+				sourceInfo.BaseDenom, sourceInfo.OriginChain, chainTo)
+		}
+		return denoms[0].Denom, nil
+	}
+
+	return destInfo.ChainDenom, nil
 }
 
 // CreateTokenMapping creates a TokenMapping for API responses

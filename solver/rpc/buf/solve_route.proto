@@ -10,35 +10,70 @@ option go_package = "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1
 // SolverService provides route discovery and validation for IBC transfers and swaps
 service SolverService {
     // SolveRoute finds and validates a route between two chains
+    // Supports human-readable denoms (e.g., "uatone") or IBC denoms
     rpc SolveRoute(SolveRouteRequest) returns (SolveRouteResponse) {}
     
     // LookupDenom resolves denom information on a specific chain
+    // Accepts human-readable base denoms or IBC denom hashes
     rpc LookupDenom(LookupDenomRequest) returns (LookupDenomResponse) {}
+
+    // GetTokenDenoms returns all IBC denoms for a token across supported chains
+    // Use this to discover what denom a token has on different chains
+    rpc GetTokenDenoms(GetTokenDenomsRequest) returns (GetTokenDenomsResponse) {}
 
     // GetChainInfo returns information about a specific chain
     rpc GetChainInfo(ChainInfoRequest) returns (ChainInfoResponse) {}
 
     // GetSolverSupportedChains returns a list of supported chains
     rpc GetSolverSupportedChains(google.protobuf.Empty) returns (SolverSupportedChainsResponse) {}
+
+    // GetChainTokens returns all tokens available on a specific chain
+    // Includes both native tokens and IBC tokens with their denoms
+    rpc GetChainTokens(GetChainTokensRequest) returns (GetChainTokensResponse) {}
 }
 
+// SolveRouteRequest - Find a route between chains
+// 
+// For token_from_denom and token_to_denom, you can use:
+// - Human-readable denom (e.g., "uatone", "uosmo", "ustars")
+// - Full IBC denom (e.g., "ibc/ABC123...")
+//
+// The solver will automatically resolve human-readable denoms.
+// If token_to_denom is empty, the solver assumes you want the same token
+// on the destination chain (useful for bridging without swapping).
 message SolveRouteRequest {
+    // Source chain ID (e.g., "osmosis-1", "atomone-1")
     string chain_from = 1 [(buf.validate.field).required = true];
+    
+    // Token denom on source chain - can be human-readable (e.g., "uatone") 
+    // or IBC denom (e.g., "ibc/...")
     string token_from_denom = 2 [
         (buf.validate.field).required = true, 
         (buf.validate.field).string.min_len = 1, 
-        // the max length of a denom is 68 characters because 
-        // ibc/ + 64 characters for the hash
-        (buf.validate.field).string.max_len = 68];
+        (buf.validate.field).string.max_len = 128];
+    
+    // Amount to transfer/swap (in base units)
     string amount_in = 3 [(buf.validate.field).required = true];
+    
+    // Destination chain ID
     string chain_to = 4 [(buf.validate.field).required = true];
-    string token_to_denom = 5 [
+    
+    // Token denom you want to receive on destination chain
+    // Can be human-readable (e.g., "uosmo") or IBC denom
+    // If empty, assumes same token as token_from (bridging without swap)
+    string token_to_denom = 5 [(buf.validate.field).string.max_len = 128];
+    
+    // Sender address on source chain
+    string sender_address = 6 [
         (buf.validate.field).required = true, 
-        (buf.validate.field).string.min_len = 1, 
+        (buf.validate.field).string.min_len = 38, 
         (buf.validate.field).string.max_len = 68];
-    // the length of a bech32 address is between 38 and 68 characters
-    string sender_address = 6 [(buf.validate.field).required = true, (buf.validate.field).string.min_len = 38, (buf.validate.field).string.max_len = 68];
-    string receiver_address = 7 [(buf.validate.field).required = true, (buf.validate.field).string.min_len = 38, (buf.validate.field).string.max_len = 68];
+    
+    // Receiver address on destination chain
+    string receiver_address = 7 [
+        (buf.validate.field).required = true, 
+        (buf.validate.field).string.min_len = 38, 
+        (buf.validate.field).string.max_len = 68];
 }
 
 message SolveRouteResponse {
@@ -82,9 +117,13 @@ message IBCLeg {
 }
 
 message TokenMapping {
+    // The denom as it appears on the current chain (native or IBC)
     string chain_denom = 1;
+    // The base/native denom on the token's origin chain
     string base_denom = 2;
+    // The chain ID where this token is native
     string origin_chain = 3;
+    // True if this is the token's native chain
     bool is_native = 4;
 }
 
@@ -128,22 +167,90 @@ message OsmosisPool {
     string liquidity_cap = 6;
 }
 
-// Denom lookup messages
+// LookupDenomRequest - Resolve token information
+// Accepts either:
+// - Human-readable denom (e.g., "uatone", "uosmo")
+// - IBC denom (e.g., "ibc/ABC123...")
 message LookupDenomRequest {
     string chain_id = 1 [(buf.validate.field).required = true];
     string denom = 2 [
         (buf.validate.field).required = true,
         (buf.validate.field).string.min_len = 1,
-        (buf.validate.field).string.max_len = 68
+        (buf.validate.field).string.max_len = 128
     ];
 }
 
 message LookupDenomResponse {
-    string chain_denom = 1;
+    bool found = 1;
+    // The denom as it appears on this chain
+    string chain_denom = 2;
+    // The base/native denom
+    string base_denom = 3;
+    // Where this token is native
+    string origin_chain = 4;
+    // True if this is the token's native chain
+    bool is_native = 5;
+    // IBC path if this is an IBC token (e.g., "transfer/channel-75")
+    string ibc_path = 6;
+    // Denoms on other chains where this token is available
+    repeated ChainDenom available_on = 7;
+}
+
+// ChainDenom represents a token's denom on a specific chain
+message ChainDenom {
+    string chain_id = 1;
+    string chain_name = 2;
+    string denom = 3;
+    bool is_native = 4;
+}
+
+// GetTokenDenomsRequest - Get all denoms for a token across chains
+// Use this to discover what denom a token has on different chains
+message GetTokenDenomsRequest {
+    // The base denom (e.g., "uatone", "uosmo", "ustars")
+    string base_denom = 1 [(buf.validate.field).required = true];
+    // The chain where this token is native (e.g., "atomone-1", "osmosis-1")
+    string origin_chain = 2 [(buf.validate.field).required = true];
+    // Optional: Filter to a specific chain. If empty, returns denoms on all chains
+    string on_chain_id = 3;
+}
+
+message GetTokenDenomsResponse {
+    bool found = 1;
     string base_denom = 2;
     string origin_chain = 3;
-    bool is_native = 4;
-    string ibc_path = 5;
+    // All chains where this token is available and what denom it has
+    repeated ChainDenom denoms = 4;
+}
+
+// GetChainTokensRequest - Get all tokens on a chain
+message GetChainTokensRequest {
+    string chain_id = 1 [(buf.validate.field).required = true];
+}
+
+message GetChainTokensResponse {
+    string chain_id = 1;
+    string chain_name = 2;
+    // Native tokens on this chain
+    repeated TokenDetails native_tokens = 3;
+    // IBC tokens received on this chain
+    repeated TokenDetails ibc_tokens = 4;
+}
+
+// TokenDetails - Full token information
+message TokenDetails {
+    // Denom on this chain (native or IBC hash)
+    string denom = 1;
+    // Human-readable symbol (e.g., "ATONE", "OSMO")
+    string symbol = 2;
+    // Base denom on origin chain
+    string base_denom = 3;
+    // Chain where token is native
+    string origin_chain = 4;
+    // Number of decimals
+    int32 decimals = 5;
+    // True if native to this chain
+    bool is_native = 6;
 }
 
 message SolverSupportedChainsResponse {

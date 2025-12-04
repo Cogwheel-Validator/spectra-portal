@@ -28,47 +28,184 @@ func NewSolverServer(solver *router.Solver, denomResolver *router.DenomResolver)
 	}
 }
 
-// SolveRoute implements the ConnectRPC handler for solving routes
+// SolveRoute implements the ConnectRPC handler for solving routes.
+// Supports:
+// - Human-readable denoms (e.g., "uatone") which are resolved automatically
+// - Empty token_to_denom which defaults to the same token (bridging without swap)
 func (s *SolverServer) SolveRoute(
 	ctx context.Context,
 	req *connect.Request[v1.SolveRouteRequest],
 ) (*connect.Response[v1.SolveRouteResponse], error) {
-	// Step 1: Convert proto request to internal models.RouteRequest
+	// Step 1: Resolve token_from_denom (could be human-readable)
+	resolvedFromDenom, err := s.denomResolver.ResolveToChainDenom(req.Msg.ChainFrom, req.Msg.TokenFromDenom)
+	if err != nil {
+		return connect.NewResponse(&v1.SolveRouteResponse{
+			Success:      false,
+			ErrorMessage: "Could not resolve source token: " + err.Error(),
+		}), nil
+	}
+
+	// Step 2: Resolve token_to_denom (could be empty or human-readable)
+	var resolvedToDenom string
+	if req.Msg.TokenToDenom == "" {
+		// Empty → infer same token on destination chain
+		resolvedToDenom, err = s.denomResolver.InferTokenToDenom(
+			req.Msg.ChainFrom,
+			resolvedFromDenom,
+			req.Msg.ChainTo,
+		)
+		if err != nil {
+			return connect.NewResponse(&v1.SolveRouteResponse{
+				Success:      false,
+				ErrorMessage: "Could not infer destination token: " + err.Error(),
+			}), nil
+		}
+	} else {
+		// Resolve human-readable denom if needed
+		resolvedToDenom, err = s.denomResolver.ResolveToChainDenom(req.Msg.ChainTo, req.Msg.TokenToDenom)
+		if err != nil {
+			return connect.NewResponse(&v1.SolveRouteResponse{
+				Success:      false,
+				ErrorMessage: "Could not resolve destination token: " + err.Error(),
+			}), nil
+		}
+	}
+
+	// Step 3: Build internal request with resolved denoms
 	internalReq := models.RouteRequest{
 		ChainFrom:       req.Msg.ChainFrom,
-		TokenFromDenom:  req.Msg.TokenFromDenom,
+		TokenFromDenom:  resolvedFromDenom,
 		AmountIn:        req.Msg.AmountIn,
 		ChainTo:         req.Msg.ChainTo,
-		TokenToDenom:    req.Msg.TokenToDenom,
+		TokenToDenom:    resolvedToDenom,
 		SenderAddress:   req.Msg.SenderAddress,
 		ReceiverAddress: req.Msg.ReceiverAddress,
 	}
 
-	// Step 2: Call your existing solver logic with internal types
+	// Step 4: Call solver with resolved denoms
 	internalResp := s.solver.Solve(internalReq)
 
-	// Step 3: Convert internal models.RouteResponse to proto response
+	// Step 5: Convert to proto response
 	protoResp := convertToProtoResponse(&internalResp)
 
-	// Step 4: Return wrapped in connect.Response
 	return connect.NewResponse(protoResp), nil
 }
 
-// LookupDenom implements the ConnectRPC handler for denom lookup
+// LookupDenom implements the ConnectRPC handler for denom lookup.
+// Accepts human-readable denoms (e.g., "uatone") or IBC denoms.
+// Returns the token info plus all chains where this token is available.
 func (s *SolverServer) LookupDenom(
 	ctx context.Context,
 	req *connect.Request[v1.LookupDenomRequest],
 ) (*connect.Response[v1.LookupDenomResponse], error) {
 	denomInfo, err := s.denomResolver.ResolveDenom(req.Msg.ChainId, req.Msg.Denom)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return connect.NewResponse(&v1.LookupDenomResponse{
+			Found: false,
+		}), nil
 	}
+
+	// Get where else this token is available
+	availableOn := s.denomResolver.GetAvailableOn(denomInfo.BaseDenom, denomInfo.OriginChain)
+	protoAvailableOn := make([]*v1.ChainDenom, len(availableOn))
+	for i, cd := range availableOn {
+		protoAvailableOn[i] = &v1.ChainDenom{
+			ChainId:   cd.ChainID,
+			ChainName: cd.ChainName,
+			Denom:     cd.Denom,
+			IsNative:  cd.IsNative,
+		}
+	}
+
 	return connect.NewResponse(&v1.LookupDenomResponse{
+		Found:       true,
 		ChainDenom:  denomInfo.ChainDenom,
 		BaseDenom:   denomInfo.BaseDenom,
 		OriginChain: denomInfo.OriginChain,
 		IsNative:    denomInfo.IsNative,
 		IbcPath:     denomInfo.IbcPath,
+		AvailableOn: protoAvailableOn,
+	}), nil
+}
+
+// GetTokenDenoms returns all denoms for a token across supported chains.
+// Use this to discover what denom a token has on different chains.
+func (s *SolverServer) GetTokenDenoms(
+	ctx context.Context,
+	req *connect.Request[v1.GetTokenDenomsRequest],
+) (*connect.Response[v1.GetTokenDenomsResponse], error) {
+	denoms, found := s.denomResolver.GetTokenDenomsAcrossChains(
+		req.Msg.BaseDenom,
+		req.Msg.OriginChain,
+		req.Msg.OnChainId, // Optional filter
+	)
+
+	if !found {
+		return connect.NewResponse(&v1.GetTokenDenomsResponse{
+			Found:       false,
+			BaseDenom:   req.Msg.BaseDenom,
+			OriginChain: req.Msg.OriginChain,
+		}), nil
+	}
+
+	protoDenoms := make([]*v1.ChainDenom, len(denoms))
+	for i, cd := range denoms {
+		protoDenoms[i] = &v1.ChainDenom{
+			ChainId:   cd.ChainID,
+			ChainName: cd.ChainName,
+			Denom:     cd.Denom,
+			IsNative:  cd.IsNative,
+		}
+	}
+
+	return connect.NewResponse(&v1.GetTokenDenomsResponse{
+		Found:       true,
+		BaseDenom:   req.Msg.BaseDenom,
+		OriginChain: req.Msg.OriginChain,
+		Denoms:      protoDenoms,
+	}), nil
+}
+
+// GetChainTokens returns all tokens available on a specific chain.
+// Includes both native tokens and IBC tokens with their denoms.
+func (s *SolverServer) GetChainTokens(
+	ctx context.Context,
+	req *connect.Request[v1.GetChainTokensRequest],
+) (*connect.Response[v1.GetChainTokensResponse], error) {
+	tokens, err := s.denomResolver.GetChainTokens(req.Msg.ChainId)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, err)
+	}
+
+	nativeTokens := make([]*v1.TokenDetails, len(tokens.NativeTokens))
+	for i, t := range tokens.NativeTokens {
+		nativeTokens[i] = &v1.TokenDetails{
+			Denom:       t.Denom,
+			Symbol:      t.Symbol,
+			BaseDenom:   t.BaseDenom,
+			OriginChain: t.OriginChain,
+			Decimals:    int32(t.Decimals),
+			IsNative:    t.IsNative,
+		}
+	}
+
+	ibcTokens := make([]*v1.TokenDetails, len(tokens.IBCTokens))
+	for i, t := range tokens.IBCTokens {
+		ibcTokens[i] = &v1.TokenDetails{
+			Denom:       t.Denom,
+			Symbol:      t.Symbol,
+			BaseDenom:   t.BaseDenom,
+			OriginChain: t.OriginChain,
+			Decimals:    int32(t.Decimals),
+			IsNative:    t.IsNative,
+		}
+	}
+
+	return connect.NewResponse(&v1.GetChainTokensResponse{
+		ChainId:      tokens.ChainID,
+		ChainName:    tokens.ChainName,
+		NativeTokens: nativeTokens,
+		IbcTokens:    ibcTokens,
 	}), nil
 }
 

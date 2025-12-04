@@ -1,0 +1,28 @@
+[chain]
+name = "Cosmos Hub"
+id = "cosmoshub-1"
+type = "cosmos"
+registry = "cosmoshub"
+explorer_url = "https://mintscan.io/cosmoshub"
+slip44 = 118
+bech32_prefix = "cosmos"
+
+# Packet Forward Middleware support
+has_pfm = true
+
+# RPC endpoints
+[[chain.rpcs]]
+url = "https://rpc.cosmoshub-4.citizenweb3.com/"
+provider = "CitizenWeb3"
+
+# REST endpoints
+[[chain.rest]]
+url = "https://api.cosmoshub-4.citizenweb3.com/"
+provider = "CitizenWeb3"
+
+[[token]]
+denom = "uatom"
+name = "Atom"
+symbol = "ATOM"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/cosmoshub/atom.png"

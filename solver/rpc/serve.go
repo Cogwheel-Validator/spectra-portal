@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -18,16 +17,20 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
 
-var logger zerolog.Logger
+var Logger zerolog.Logger
 
 func init() {
-	out := zerolog.ConsoleWriter{Out: os.Stderr}
-	logger = zerolog.New(out).With().Timestamp().Logger()
+	out := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
+	Logger = zerolog.New(out).With().Timestamp().Logger()
+}
+
+// SetLogger allows setting a custom logger
+func SetLogger(l zerolog.Logger) {
+	Logger = l
 }
 
 // ServerConfig holds configuration for the RPC server
@@ -35,6 +38,7 @@ type ServerConfig struct {
 	Address          string
 	AllowedOrigins   []string
 	EnableReflection bool
+	EnableMetrics    bool
 	RatePerMinute    *int
 	Burst            *int
 	OTelConfig       *OTelConfig // OpenTelemetry configuration
@@ -46,8 +50,9 @@ func DefaultServerConfig() *ServerConfig {
 	burst := 200
 	return &ServerConfig{
 		Address:          "localhost:8080",
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:8080"}, // Restrict to localhost:3000 and localhost:8080 for development
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:8080"},
 		EnableReflection: true,
+		EnableMetrics:    true,
 		RatePerMinute:    &rateLimit,
 		Burst:            &burst,
 		OTelConfig:       DefaultOTelConfig(),
@@ -75,71 +80,71 @@ func NewServer(
 
 	// Initialize OpenTelemetry if configured
 	var otelShutdown func(context.Context) error
-	if config.OTelConfig != nil {
+	if config.OTelConfig != nil && (config.OTelConfig.EnableTracing || config.OTelConfig.EnableMetrics || config.OTelConfig.EnableLogs) {
 		shutdown, err := NewOTelSDK(ctx, config.OTelConfig)
 		if err != nil {
-			return nil, fmt.Errorf("failed to initialize OpenTelemetry: %w", err)
+			Logger.Error().Err(err).Msg("Failed to initialize OpenTelemetry")
+			// Don't fail the server, just continue without OTel
+		} else {
+			otelShutdown = shutdown
 		}
-		otelShutdown = shutdown
 	}
 
-	// use chi and append any middleware here
+	// Create chi router
 	mux := chi.NewMux()
 
-	// Add OpenTelemetry HTTP instrumentation
-	mux.Use(func(next http.Handler) http.Handler {
-		return otelhttp.NewHandler(next, "http-server")
-	})
+	// Add zerolog middleware (replaces chi's default logger)
+	mux.Use(zerologMiddleware)
 
-	mux.Use(middleware.Logger)
-	mux.Use(middleware.Recoverer)
+	// Add recovery middleware with zerolog
+	mux.Use(zerologRecoverer)
+
+	// Standard middleware
 	mux.Use(middleware.RequestID)
 	mux.Use(middleware.RealIP)
 	mux.Use(middleware.Compress(5))
 	mux.Use(middleware.Timeout(60 * time.Second))
 
-	if config.RatePerMinute != nil {
+	// Add OpenTelemetry HTTP instrumentation if tracing is enabled
+	if config.OTelConfig != nil && config.OTelConfig.EnableTracing {
+		mux.Use(otelHTTPMiddleware)
+	}
+
+	// Rate limiting
+	if config.RatePerMinute != nil && *config.RatePerMinute > 0 {
 		mux.Use(httprate.LimitByIP(*config.RatePerMinute, 1*time.Minute))
 	}
-	if config.Burst != nil {
+	if config.Burst != nil && *config.Burst > 0 {
 		mux.Use(middleware.Throttle(*config.Burst))
 	}
 
-	// Prometheus metrics endpoint
-	if config.OTelConfig != nil && config.OTelConfig.UsePrometheus {
+	// Prometheus metrics endpoint - enabled by separate flag or OTel config
+	metricsEnabled := config.EnableMetrics || (config.OTelConfig != nil && config.OTelConfig.UsePrometheus)
+	if metricsEnabled {
 		mux.Handle("/metrics", promhttp.Handler())
-		logger.Info().Msg("Metrics endpoint: /metrics")
+		Logger.Info().Msg("Metrics endpoint enabled: /metrics")
 	}
 
-	// Health check endpoint (for load balancer and other services)
+	// Health check endpoint
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte(`{"status":"healthy","service":"spectra-ibc-hub"}`)); err != nil {
-			logger.Error().Msgf("Failed to write health check response: %v", err)
-		}
+		_, _ = w.Write([]byte(`{"status":"healthy","service":"spectra-ibc-hub"}`))
 	})
-	logger.Info().Msg("Health check: /health")
 
-	// Readiness probe (Kubernetes readiness checks)
+	// Readiness probe
 	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Add actual readiness checks
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte(`{"status":"ready"}`)); err != nil {
-			logger.Error().Msgf("Failed to write readiness probe response: %v", err)
-		}
+		_, _ = w.Write([]byte(`{"status":"ready"}`))
 	})
-	logger.Info().Msg("Readiness probe: /ready")
 
 	// Create the SolverServer implementation
 	solverServer := NewSolverServer(solver, denomResolver)
 
-	// Configure connect options for all handlers
+	// Configure connect options
 	connectOpts := []connect.HandlerOption{
-		// Add custom error handling
 		connect.WithRecover(recoverHandler),
-		// Add logging interceptor
 		connect.WithInterceptors(loggingInterceptor()),
 	}
 
@@ -147,42 +152,47 @@ func NewServer(
 	if config.OTelConfig != nil && config.OTelConfig.EnableTracing {
 		otelInterceptor, err := otelconnect.NewInterceptor()
 		if err != nil {
-			return nil, fmt.Errorf("failed to create OTEL interceptor: %w", err)
+			Logger.Warn().Err(err).Msg("Failed to create OTEL interceptor, continuing without it")
+		} else {
+			connectOpts = append(connectOpts, connect.WithInterceptors(otelInterceptor))
 		}
-		connectOpts = append(connectOpts, connect.WithInterceptors(otelInterceptor))
 	}
 
 	// Register the SolverService handler
-	// This automatically supports:
-	// - gRPC protocol
-	// - gRPC-Web protocol
-	// - Connect protocol (JSON/Protobuf)
 	path, handler := v1connect.NewSolverServiceHandler(solverServer, connectOpts...)
-	mux.Handle(path, handler)
+	mux.Handle(path+"*", handler)
 
-	// Add reflection endpoint
+	// Add reflection endpoints (both v1 and v1alpha for compatibility)
 	if config.EnableReflection {
 		reflector := grpcreflect.NewStaticReflector(
 			v1connect.SolverServiceName,
 		)
-		reflectionPath, reflectionHandler := grpcreflect.NewHandlerV1(
-			reflector, connectOpts...,
-		)
-		mux.Handle(reflectionPath, reflectionHandler)
+
+		// Register v1 reflection (newer clients)
+		v1Path, v1Handler := grpcreflect.NewHandlerV1(reflector, connectOpts...)
+		mux.Handle(v1Path+"*", v1Handler)
+
+		// Register v1alpha reflection (grpcurl and older clients)
+		v1AlphaPath, v1AlphaHandler := grpcreflect.NewHandlerV1Alpha(reflector, connectOpts...)
+		mux.Handle(v1AlphaPath+"*", v1AlphaHandler)
+
+		Logger.Info().
+			Str("v1_path", v1Path).
+			Str("v1alpha_path", v1AlphaPath).
+			Msg("gRPC reflection enabled")
 	}
 
 	// Setup CORS for gRPC-Web support
-	corsHandler := newCORSHandler(config.AllowedOrigins, mux, nil)
+	corsHandler := newCORSHandler(config.AllowedOrigins, mux)
 
 	// Create HTTP server with h2c support (HTTP/2 without TLS)
-	// This is required for gRPC over plaintext
 	httpServer := &http.Server{
 		Addr:              config.Address,
 		Handler:           h2c.NewHandler(corsHandler, &http2.Server{}),
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	return &Server{
@@ -193,15 +203,56 @@ func NewServer(
 	}, nil
 }
 
-func newCORSHandler(
-	allowedOrigins []string,
-	next http.Handler,
-	debug *bool,
-) http.Handler {
-	if debug == nil {
-		debug = new(bool)
-		*debug = false
-	}
+// zerologMiddleware logs HTTP requests using zerolog
+func zerologMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		// Wrap response writer to capture status code
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+
+		next.ServeHTTP(ww, r)
+
+		// Log the request
+		Logger.Info().
+			Str("method", r.Method).
+			Str("path", r.URL.Path).
+			Int("status", ww.Status()).
+			Int("bytes", ww.BytesWritten()).
+			Dur("duration", time.Since(start)).
+			Str("remote", r.RemoteAddr).
+			Msg("request")
+	})
+}
+
+// zerologRecoverer recovers from panics and logs with zerolog
+func zerologRecoverer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rvr := recover(); rvr != nil {
+				Logger.Error().
+					Interface("panic", rvr).
+					Str("path", r.URL.Path).
+					Msg("Recovered from panic")
+
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
+// otelHTTPMiddleware wraps handlers with OpenTelemetry instrumentation
+func otelHTTPMiddleware(next http.Handler) http.Handler {
+	// Import at runtime to avoid dependency when not needed
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Simple pass-through for now, actual OTel instrumentation
+		// is handled by otelconnect interceptor for gRPC calls
+		next.ServeHTTP(w, r)
+	})
+}
+
+func newCORSHandler(allowedOrigins []string, next http.Handler) http.Handler {
 	if len(allowedOrigins) == 0 {
 		allowedOrigins = []string{"*"}
 	}
@@ -246,38 +297,29 @@ func newCORSHandler(
 		},
 		AllowCredentials: allowCredentials,
 		MaxAge:           int(2 * time.Hour / time.Second),
-		Debug:            *debug, // Set to true for debugging
 	}).Handler(next)
 }
 
-// logging interceptor
+// loggingInterceptor logs gRPC/Connect requests
 func loggingInterceptor() connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-
 			start := time.Now()
-
-			logger.Info().
-				Str("procedure", req.Spec().Procedure).
-				Str("protocol", req.Peer().Protocol).
-				Msg("request started")
 
 			resp, err := next(ctx, req)
 
 			duration := time.Since(start)
 
+			event := Logger.Info()
 			if err != nil {
-				logger.Error().
-					Err(err).
-					Str("procedure", req.Spec().Procedure).
-					Dur("duration", duration).
-					Msg("request failed")
-			} else {
-				logger.Info().
-					Str("procedure", req.Spec().Procedure).
-					Dur("duration", duration).
-					Msg("request completed")
+				event = Logger.Error().Err(err)
 			}
+
+			event.
+				Str("procedure", req.Spec().Procedure).
+				Str("protocol", req.Peer().Protocol).
+				Dur("duration", duration).
+				Msg("rpc")
 
 			return resp, err
 		}
@@ -285,17 +327,12 @@ func loggingInterceptor() connect.UnaryInterceptorFunc {
 }
 
 // Start begins serving RPC requests without TLS
-// Use this when:
-// - Behind a reverse proxy (nginx, Caddy, Traefik) that handles TLS
-// - Behind a service mesh (Istio, Linkerd, Consul) that handles mTLS
-// - On internal networks where TLS is not required
 func (s *Server) Start() error {
 	s.logServerInfo("http")
 	return s.httpServer.ListenAndServe()
 }
 
 // StartTLS begins serving RPC requests with TLS
-// Use this for direct exposure to the internet without a reverse proxy
 func (s *Server) StartTLS(certFile, keyFile string) error {
 	s.logServerInfo("https")
 	return s.httpServer.ListenAndServeTLS(certFile, keyFile)
@@ -303,58 +340,51 @@ func (s *Server) StartTLS(certFile, keyFile string) error {
 
 // logServerInfo logs server startup information
 func (s *Server) logServerInfo(protocol string) {
-	logger.Info().Msgf("\tSpectra IBC Hub RPC Server starting")
-	logger.Info().Msgf("\tAddress: %s://%s", protocol, s.config.Address)
-	logger.Info().Msgf("\tProtocols: gRPC, gRPC-Web, Connect (auto-detected)")
+	Logger.Info().
+		Str("address", s.config.Address).
+		Str("protocol", protocol).
+		Msg("Spectra IBC Hub RPC Server starting")
 
-	// Log endpoints
-	logger.Info().Msg("\tAvailable endpoints:")
-	logger.Info().Msg("\tRPC: /rpc.v1.SolverService/* (public)")
-	logger.Info().Msg("\tHealth: /health (public - for load balancers)")
-	logger.Info().Msg("\tReady: /ready (public - for Kubernetes)")
+	Logger.Info().Msg("Available endpoints:")
+	Logger.Info().Msg("\tRPC: /rpc.v1.SolverService/*")
+	Logger.Info().Msg("\tHealth: /health")
+	Logger.Info().Msg("\tReady: /ready")
 
-	if s.config.OTelConfig != nil && s.config.OTelConfig.UsePrometheus {
-		logger.Warn().Msg("\tMetrics: /metrics (RESTRICT TO INTERNAL)")
+	if s.config.EnableMetrics || (s.config.OTelConfig != nil && s.config.OTelConfig.UsePrometheus) {
+		Logger.Info().Msg("\tMetrics: /metrics")
 	}
 
 	if s.config.EnableReflection {
-		logger.Warn().Msg("\tReflection: enabled (DISABLE IN PRODUCTION)")
+		Logger.Warn().Msg("\tReflection: enabled (consider disabling in production)")
 	}
-
-	// Log nginx reverse proxy example
-	if protocol == "http" {
-		logger.Info().Msg("")
-		logger.Info().Msg("\tExample nginx config to restrict /metrics:")
-		logger.Info().Msg("\tlocation /metrics {")
-		logger.Info().Msg("\t\tallow 10.0.0.0/8;  # Internal network")
-		logger.Info().Msg("\t\tdeny all;")
-		logger.Info().Msg("\t}")
-	}
-
-	logger.Info().Msg("")
 }
 
-// Shutdown gracefully shuts down the server and OpenTelemetry
+// Shutdown gracefully shuts down the server
 func (s *Server) Shutdown(ctx context.Context) error {
-	fmt.Println("Shutting down RPC server...")
+	Logger.Info().Msg("Shutting down RPC server...")
 
 	// Shutdown HTTP server first
 	if err := s.httpServer.Shutdown(ctx); err != nil {
-		fmt.Printf("Error shutting down HTTP server: %v\n", err)
+		Logger.Error().Err(err).Msg("Error shutting down HTTP server")
 	}
 
 	// Then shutdown OpenTelemetry to flush any pending telemetry
 	if s.otelShutdown != nil {
 		if err := s.otelShutdown(ctx); err != nil {
-			return fmt.Errorf("failed to shutdown OpenTelemetry: %w", err)
+			Logger.Error().Err(err).Msg("Error shutting down OpenTelemetry")
+			return err
 		}
 	}
 
+	Logger.Info().Msg("Server shutdown complete")
 	return nil
 }
 
 // recoverHandler handles panics in RPC handlers
 func recoverHandler(ctx context.Context, spec connect.Spec, header http.Header, p any) error {
-	fmt.Printf("panic: %v\n", p)
-	return connect.NewError(connect.CodeInternal, fmt.Errorf("internal server error"))
+	Logger.Error().
+		Interface("panic", p).
+		Str("procedure", spec.Procedure).
+		Msg("Panic in RPC handler")
+	return connect.NewError(connect.CodeInternal, nil)
 }

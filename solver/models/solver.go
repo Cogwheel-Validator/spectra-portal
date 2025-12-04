@@ -89,3 +89,29 @@ type DenomInfo struct {
 	IsNative    bool   `json:"is_native"`    // True if native to query chain
 	IbcPath     string `json:"ibc_path"`     // IBC path if applicable (e.g., "transfer/channel-0")
 }
+
+// ChainDenom represents a token's denom on a specific chain
+type ChainDenom struct {
+	ChainID   string `json:"chain_id"`
+	ChainName string `json:"chain_name"`
+	Denom     string `json:"denom"`
+	IsNative  bool   `json:"is_native"`
+}
+
+// ChainTokens contains all tokens available on a chain
+type ChainTokens struct {
+	ChainID      string         `json:"chain_id"`
+	ChainName    string         `json:"chain_name"`
+	NativeTokens []TokenDetails `json:"native_tokens"`
+	IBCTokens    []TokenDetails `json:"ibc_tokens"`
+}
+
+// TokenDetails provides full information about a token
+type TokenDetails struct {
+	Denom       string `json:"denom"`        // Denom on this chain (native or IBC hash)
+	Symbol      string `json:"symbol"`       // Human-readable symbol (e.g., "ATONE", "OSMO")
+	BaseDenom   string `json:"base_denom"`   // Base denom on origin chain
+	OriginChain string `json:"origin_chain"` // Chain where token is native
+	Decimals    int    `json:"decimals"`     // Number of decimals
+	IsNative    bool   `json:"is_native"`    // True if native to this chain
+}

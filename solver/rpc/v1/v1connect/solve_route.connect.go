@@ -40,24 +40,38 @@ const (
 	// SolverServiceLookupDenomProcedure is the fully-qualified name of the SolverService's LookupDenom
 	// RPC.
 	SolverServiceLookupDenomProcedure = "/rpc.v1.SolverService/LookupDenom"
+	// SolverServiceGetTokenDenomsProcedure is the fully-qualified name of the SolverService's
+	// GetTokenDenoms RPC.
+	SolverServiceGetTokenDenomsProcedure = "/rpc.v1.SolverService/GetTokenDenoms"
 	// SolverServiceGetChainInfoProcedure is the fully-qualified name of the SolverService's
 	// GetChainInfo RPC.
 	SolverServiceGetChainInfoProcedure = "/rpc.v1.SolverService/GetChainInfo"
 	// SolverServiceGetSolverSupportedChainsProcedure is the fully-qualified name of the SolverService's
 	// GetSolverSupportedChains RPC.
 	SolverServiceGetSolverSupportedChainsProcedure = "/rpc.v1.SolverService/GetSolverSupportedChains"
+	// SolverServiceGetChainTokensProcedure is the fully-qualified name of the SolverService's
+	// GetChainTokens RPC.
+	SolverServiceGetChainTokensProcedure = "/rpc.v1.SolverService/GetChainTokens"
 )
 
 // SolverServiceClient is a client for the rpc.v1.SolverService service.
 type SolverServiceClient interface {
 	// SolveRoute finds and validates a route between two chains
+	// Supports human-readable denoms (e.g., "uatone") or IBC denoms
 	SolveRoute(context.Context, *connect.Request[v1.SolveRouteRequest]) (*connect.Response[v1.SolveRouteResponse], error)
 	// LookupDenom resolves denom information on a specific chain
+	// Accepts human-readable base denoms or IBC denom hashes
 	LookupDenom(context.Context, *connect.Request[v1.LookupDenomRequest]) (*connect.Response[v1.LookupDenomResponse], error)
+	// GetTokenDenoms returns all IBC denoms for a token across supported chains
+	// Use this to discover what denom a token has on different chains
+	GetTokenDenoms(context.Context, *connect.Request[v1.GetTokenDenomsRequest]) (*connect.Response[v1.GetTokenDenomsResponse], error)
 	// GetChainInfo returns information about a specific chain
 	GetChainInfo(context.Context, *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error)
 	// GetSolverSupportedChains returns a list of supported chains
 	GetSolverSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.SolverSupportedChainsResponse], error)
+	// GetChainTokens returns all tokens available on a specific chain
+	// Includes both native tokens and IBC tokens with their denoms
+	GetChainTokens(context.Context, *connect.Request[v1.GetChainTokensRequest]) (*connect.Response[v1.GetChainTokensResponse], error)
 }
 
 // NewSolverServiceClient constructs a client for the rpc.v1.SolverService service. By default, it
@@ -83,6 +97,12 @@ func NewSolverServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(solverServiceMethods.ByName("LookupDenom")),
 			connect.WithClientOptions(opts...),
 		),
+		getTokenDenoms: connect.NewClient[v1.GetTokenDenomsRequest, v1.GetTokenDenomsResponse](
+			httpClient,
+			baseURL+SolverServiceGetTokenDenomsProcedure,
+			connect.WithSchema(solverServiceMethods.ByName("GetTokenDenoms")),
+			connect.WithClientOptions(opts...),
+		),
 		getChainInfo: connect.NewClient[v1.ChainInfoRequest, v1.ChainInfoResponse](
 			httpClient,
 			baseURL+SolverServiceGetChainInfoProcedure,
@@ -95,6 +115,12 @@ func NewSolverServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(solverServiceMethods.ByName("GetSolverSupportedChains")),
 			connect.WithClientOptions(opts...),
 		),
+		getChainTokens: connect.NewClient[v1.GetChainTokensRequest, v1.GetChainTokensResponse](
+			httpClient,
+			baseURL+SolverServiceGetChainTokensProcedure,
+			connect.WithSchema(solverServiceMethods.ByName("GetChainTokens")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -102,8 +128,10 @@ func NewSolverServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 type solverServiceClient struct {
 	solveRoute               *connect.Client[v1.SolveRouteRequest, v1.SolveRouteResponse]
 	lookupDenom              *connect.Client[v1.LookupDenomRequest, v1.LookupDenomResponse]
+	getTokenDenoms           *connect.Client[v1.GetTokenDenomsRequest, v1.GetTokenDenomsResponse]
 	getChainInfo             *connect.Client[v1.ChainInfoRequest, v1.ChainInfoResponse]
 	getSolverSupportedChains *connect.Client[emptypb.Empty, v1.SolverSupportedChainsResponse]
+	getChainTokens           *connect.Client[v1.GetChainTokensRequest, v1.GetChainTokensResponse]
 }
 
 // SolveRoute calls rpc.v1.SolverService.SolveRoute.
@@ -116,6 +144,11 @@ func (c *solverServiceClient) LookupDenom(ctx context.Context, req *connect.Requ
 	return c.lookupDenom.CallUnary(ctx, req)
 }
 
+// GetTokenDenoms calls rpc.v1.SolverService.GetTokenDenoms.
+func (c *solverServiceClient) GetTokenDenoms(ctx context.Context, req *connect.Request[v1.GetTokenDenomsRequest]) (*connect.Response[v1.GetTokenDenomsResponse], error) {
+	return c.getTokenDenoms.CallUnary(ctx, req)
+}
+
 // GetChainInfo calls rpc.v1.SolverService.GetChainInfo.
 func (c *solverServiceClient) GetChainInfo(ctx context.Context, req *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error) {
 	return c.getChainInfo.CallUnary(ctx, req)
@@ -126,16 +159,29 @@ func (c *solverServiceClient) GetSolverSupportedChains(ctx context.Context, req 
 	return c.getSolverSupportedChains.CallUnary(ctx, req)
 }
 
+// GetChainTokens calls rpc.v1.SolverService.GetChainTokens.
+func (c *solverServiceClient) GetChainTokens(ctx context.Context, req *connect.Request[v1.GetChainTokensRequest]) (*connect.Response[v1.GetChainTokensResponse], error) {
+	return c.getChainTokens.CallUnary(ctx, req)
+}
+
 // SolverServiceHandler is an implementation of the rpc.v1.SolverService service.
 type SolverServiceHandler interface {
 	// SolveRoute finds and validates a route between two chains
+	// Supports human-readable denoms (e.g., "uatone") or IBC denoms
 	SolveRoute(context.Context, *connect.Request[v1.SolveRouteRequest]) (*connect.Response[v1.SolveRouteResponse], error)
 	// LookupDenom resolves denom information on a specific chain
+	// Accepts human-readable base denoms or IBC denom hashes
 	LookupDenom(context.Context, *connect.Request[v1.LookupDenomRequest]) (*connect.Response[v1.LookupDenomResponse], error)
+	// GetTokenDenoms returns all IBC denoms for a token across supported chains
+	// Use this to discover what denom a token has on different chains
+	GetTokenDenoms(context.Context, *connect.Request[v1.GetTokenDenomsRequest]) (*connect.Response[v1.GetTokenDenomsResponse], error)
 	// GetChainInfo returns information about a specific chain
 	GetChainInfo(context.Context, *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error)
 	// GetSolverSupportedChains returns a list of supported chains
 	GetSolverSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.SolverSupportedChainsResponse], error)
+	// GetChainTokens returns all tokens available on a specific chain
+	// Includes both native tokens and IBC tokens with their denoms
+	GetChainTokens(context.Context, *connect.Request[v1.GetChainTokensRequest]) (*connect.Response[v1.GetChainTokensResponse], error)
 }
 
 // NewSolverServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -157,6 +203,12 @@ func NewSolverServiceHandler(svc SolverServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(solverServiceMethods.ByName("LookupDenom")),
 		connect.WithHandlerOptions(opts...),
 	)
+	solverServiceGetTokenDenomsHandler := connect.NewUnaryHandler(
+		SolverServiceGetTokenDenomsProcedure,
+		svc.GetTokenDenoms,
+		connect.WithSchema(solverServiceMethods.ByName("GetTokenDenoms")),
+		connect.WithHandlerOptions(opts...),
+	)
 	solverServiceGetChainInfoHandler := connect.NewUnaryHandler(
 		SolverServiceGetChainInfoProcedure,
 		svc.GetChainInfo,
@@ -169,16 +221,26 @@ func NewSolverServiceHandler(svc SolverServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(solverServiceMethods.ByName("GetSolverSupportedChains")),
 		connect.WithHandlerOptions(opts...),
 	)
+	solverServiceGetChainTokensHandler := connect.NewUnaryHandler(
+		SolverServiceGetChainTokensProcedure,
+		svc.GetChainTokens,
+		connect.WithSchema(solverServiceMethods.ByName("GetChainTokens")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/rpc.v1.SolverService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SolverServiceSolveRouteProcedure:
 			solverServiceSolveRouteHandler.ServeHTTP(w, r)
 		case SolverServiceLookupDenomProcedure:
 			solverServiceLookupDenomHandler.ServeHTTP(w, r)
+		case SolverServiceGetTokenDenomsProcedure:
+			solverServiceGetTokenDenomsHandler.ServeHTTP(w, r)
 		case SolverServiceGetChainInfoProcedure:
 			solverServiceGetChainInfoHandler.ServeHTTP(w, r)
 		case SolverServiceGetSolverSupportedChainsProcedure:
 			solverServiceGetSolverSupportedChainsHandler.ServeHTTP(w, r)
+		case SolverServiceGetChainTokensProcedure:
+			solverServiceGetChainTokensHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -196,10 +258,18 @@ func (UnimplementedSolverServiceHandler) LookupDenom(context.Context, *connect.R
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.SolverService.LookupDenom is not implemented"))
 }
 
+func (UnimplementedSolverServiceHandler) GetTokenDenoms(context.Context, *connect.Request[v1.GetTokenDenomsRequest]) (*connect.Response[v1.GetTokenDenomsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.SolverService.GetTokenDenoms is not implemented"))
+}
+
 func (UnimplementedSolverServiceHandler) GetChainInfo(context.Context, *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.SolverService.GetChainInfo is not implemented"))
 }
 
 func (UnimplementedSolverServiceHandler) GetSolverSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.SolverSupportedChainsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.SolverService.GetSolverSupportedChains is not implemented"))
+}
+
+func (UnimplementedSolverServiceHandler) GetChainTokens(context.Context, *connect.Request[v1.GetChainTokensRequest]) (*connect.Response[v1.GetChainTokensResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.SolverService.GetChainTokens is not implemented"))
 }
