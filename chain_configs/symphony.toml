@@ -1,0 +1,44 @@
+[chain]
+name = "Symphony Network"
+id = "symphony-1"
+type = "cosmos"
+registry = "symphony"
+explorer_url = "https://thespectra.io/symphony"
+slip44 = 118
+bech32_prefix = "symphony"
+
+# Packet Forward Middleware support
+has_pfm = false
+
+# RPC endpoints
+[[chain.rpcs]]
+url = "https://symphony-rpc.cogwheel.zone"
+provider = "Cogwheel"
+
+[[chain.rpcs]]
+url = "https://symphony-rpc.polkachu.com"
+provider = "Polkachu"
+
+[[chain.rpcs]]
+url = "https://rpc.symphony.citizenweb3.com"
+provider = "CitizenWeb3"
+
+# REST endpoints
+[[chain.rest]]
+url = "https://symphony-api.cogwheel.zone"
+provider = "Cogwheel"
+
+[[chain.rest]]
+url = "https://symphony-api.polkachu.com"
+provider = "Polkachu"
+
+[[chain.rest]]
+url = "https://api.symphony.citizenweb3.com"
+provider = "CitizenWeb3"
+
+[[token]]
+denom = "note"
+name = "Melody"
+symbol = "MLD"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/symphony/melody.png"

@@ -1,0 +1,69 @@
+[chain]
+name = "Noble"
+id = "noble-1"
+type = "cosmos"
+registry = "noble"
+explorer_url = "https://mintscan.io/noble"
+slip44 = 118
+bech32_prefix = "noble"
+
+# Packet Forward Middleware support
+has_pfm = true
+
+# RPC endpoints
+[[chain.rpcs]]
+url = "https://noble-rpc.polkachu.com"
+provider = "Polkachu"
+
+[[chain.rpcs]]
+url = "https://noble-rpc.owallet.io"
+provider = "Owallet"
+
+[[chain.rpcs]]
+url = "https://rpc.lavenderfive.com:443/noble"
+provider = "LavenderFive"
+
+# REST endpoints
+[[chain.rest]]
+url = "https://noble-api.polkachu.com"
+provider = "Polkachu"
+
+[[chain.rest]]
+url = "https://noble-rest.owallet.io"
+provider = "Owallet"
+
+[[chain.rest]]
+url = "https://rest.lavenderfive.com:443/noble"
+provider = "LavenderFive"
+
+[[token]]
+denom = "ueure"
+name = "Eure"
+symbol = "EURe"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/eure.png"
+coingecko_id = "monerium-eur-money"
+
+[[token]]
+denom = "usdc"
+name = "USDC"
+symbol = "USDC"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdc.png"
+coingecko_id = "usd-coin"
+
+[[token]]
+denom = "usdn"
+name = "USDN"
+symbol = "USDN"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdn.png"
+coingecko_id = "neutrino-dollar"
+
+[[token]]
+denom = "uusdc"
+name = "USDC"
+symbol = "USDC"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdc.png"
+coingecko_id = "noble-dollar-usdn"

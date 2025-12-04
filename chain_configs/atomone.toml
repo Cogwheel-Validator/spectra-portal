@@ -1,7 +1,3 @@
-# Atom One Chain Configuration
-# This human-readable config is used by the config_manager to generate
-# backend and frontend configurations.
-
 [chain]
 name = "Atom One"
 id = "atomone-1"

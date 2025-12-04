@@ -14,6 +14,10 @@ bech32_prefix = "osmo"
 is_broker = true
 broker_id = "osmosis-sqs"
 
+# IBC hooks entry point contract for swap_and_action operations
+# This is the Skip/Osmosis entry point that handles swap and forward in one IBC message
+ibc_hooks_contract = "osmo10a3k4hvk37cc4hnxctw4p95fhscd2z6h2rmx0aukc6rm8u9qqx9smfsh7u"
+
 # Osmosis supports PFM for packet forwarding
 has_pfm = true
 
