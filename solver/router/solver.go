@@ -1,7 +1,6 @@
 package router
 
 import (
-	"container/list"
 	"fmt"
 	"os"
 	"time"
@@ -39,468 +38,15 @@ type SwapResult struct {
 	RouteData    interface{} // Broker-specific route data (pools, hops, etc.)
 }
 
-type ChainMapId map[string]int
-
-func NewChainMapId(chains []string) ChainMapId {
-	chainMapId := make(ChainMapId)
-	for i, chain := range chains {
-		chainMapId[chain] = i
-	}
-	return chainMapId
-}
-
-func (cmi *ChainMapId) GetId(chain string) int {
-	return (*cmi)[chain]
-}
-
-func (cmi *ChainMapId) GetChain(id int) string {
-	for chain, mapId := range *cmi {
-		if mapId == id {
-			return chain
-		}
-	}
-	return ""
-}
-
-/*
-Solver Chain is a type that represents one unit in the Solver Graph.
-*/
-type SolverChain struct {
-	Name string
-	Id   string
-	// if the chain is a broker, example: Osmosis, this will be true and the BrokerId will be the id of the broker
-	HasPFM   bool // has package forwaring middleware
-	Broker   bool
-	BrokerId string
-	Routes   []BasicRoute
-}
-
-// BasicRoute is a type that represents a route between two chains.
-type BasicRoute struct {
-	ToChain       string
-	ToChainId     string
-	ConnectionId  string
-	ChannelId     string
-	PortId        string
-	AllowedTokens map[string]TokenInfo
-}
-
-// TokenInfo contains comprehensive token information including origin tracking
-type TokenInfo struct {
-	// Denom on the current chain in the route context (native or IBC)
-	ChainDenom string
-	// Denom on the destination chain (after IBC transfer)
-	IbcDenom string
-	// Original native denom on the token's origin chain
-	BaseDenom string
-	// Chain ID where this token is native
-	OriginChain string
-	// Number of decimal places
-	Decimals int
-}
-
-// RouteIndex with denom mapping should be internal logic for the router
-type RouteIndex struct {
-	directRoutes        map[string]*BasicRoute            // "chainA->chainB->denom"
-	brokerRoutes        map[string]map[string]*BasicRoute // brokerChainId -> toChainId -> BasicRoute
-	chainToBrokerRoutes map[string]map[string]*BasicRoute // chainId -> brokerChainId -> BasicRoute
-	denomToTokenInfo    map[string]map[string]*TokenInfo  // chainId -> denom -> TokenInfo
-	brokers             map[string]bool                   // brokerId -> is broker
-	brokerChains        map[string]string                 // chainId -> brokerId (for chains that are brokers)
-	pfmChains           map[string]bool                   // chainId -> supports PFM
-	chainRoutes         map[string]map[string]*BasicRoute // chainId -> toChainId -> BasicRoute (all routes from a chain)
-}
-
-func (ri *RouteIndex) BuildIndex(chains []SolverChain) error {
-	if len(chains) == 0 {
-		return fmt.Errorf("no chains to build index for")
-	}
-
-	// First pass: Register all brokers and PFM chains
-	for _, chain := range chains {
-		if chain.HasPFM {
-			ri.pfmChains[chain.Id] = true
-		}
-
-		if chain.Broker {
-			ri.brokers[chain.BrokerId] = true
-			ri.brokerChains[chain.Id] = chain.BrokerId
-		}
-	}
-
-	// Second pass: Build all route indices
-	for _, chain := range chains {
-		if ri.denomToTokenInfo[chain.Id] == nil {
-			ri.denomToTokenInfo[chain.Id] = make(map[string]*TokenInfo)
-		}
-
-		// Track PFM support
-		if chain.HasPFM {
-			ri.pfmChains[chain.Id] = true
-		}
-
-		// Initialize chain routes map
-		if ri.chainRoutes[chain.Id] == nil {
-			ri.chainRoutes[chain.Id] = make(map[string]*BasicRoute)
-		}
-
-		for _, route := range chain.Routes {
-			// Index token info
-			for denom, tokenInfo := range route.AllowedTokens {
-				ri.denomToTokenInfo[chain.Id][denom] = &tokenInfo
-			}
-
-			// Index direct routes
-			for denom := range route.AllowedTokens {
-				key := routeKey(chain.Id, route.ToChainId, denom)
-				ri.directRoutes[key] = &route
-			}
-
-			// Index all chain-to-chain routes
-			if _, exists := ri.chainRoutes[chain.Id][route.ToChainId]; !exists {
-				ri.chainRoutes[chain.Id][route.ToChainId] = &route
-			}
-
-			// Index broker routes - check if destination chain is a broker
-			if brokerId, isBroker := ri.brokerChains[route.ToChainId]; isBroker {
-				if ri.chainToBrokerRoutes[chain.Id] == nil {
-					ri.chainToBrokerRoutes[chain.Id] = make(map[string]*BasicRoute)
-				}
-				ri.chainToBrokerRoutes[chain.Id][brokerId] = &route
-			}
-		}
-
-		// Build broker-specific route maps
-		if chain.Broker {
-			if ri.brokerRoutes[chain.BrokerId] == nil {
-				ri.brokerRoutes[chain.BrokerId] = make(map[string]*BasicRoute)
-			}
-			for _, route := range chain.Routes {
-				if _, exists := ri.brokerRoutes[chain.BrokerId][route.ToChainId]; !exists {
-					ri.brokerRoutes[chain.BrokerId][route.ToChainId] = &route
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func (ri *RouteIndex) FindDirectRoute(req models.RouteRequest) *BasicRoute {
-	// Check if same token can go directly
-	key := routeKey(req.ChainFrom, req.ChainTo, req.TokenFromDenom)
-	if route, exists := ri.directRoutes[key]; exists {
-		// Verify output denom matches (same token on both chains)
-		tokenInfo := ri.denomToTokenInfo[req.ChainFrom][req.TokenFromDenom]
-		if tokenInfo != nil && tokenInfo.IbcDenom == req.TokenToDenom {
-			return route
-		}
-	}
-	return nil
-}
-
-// FindIndirectRoute finds multi-hop paths without swaps using BFS
-// It looks for paths where the same token (by origin) can travel through intermediate chains
-func (ri *RouteIndex) FindIndirectRoute(req models.RouteRequest) *IndirectRouteInfo {
-	// Get source and destination token info
-	sourceToken := ri.denomToTokenInfo[req.ChainFrom][req.TokenFromDenom]
-	destToken := ri.denomToTokenInfo[req.ChainTo][req.TokenToDenom]
-
-	if sourceToken == nil || destToken == nil {
-		return nil
-	}
-
-	// Must be the same underlying token (same origin chain and base denom)
-	if sourceToken.OriginChain != destToken.OriginChain || sourceToken.BaseDenom != destToken.BaseDenom {
-		return nil
-	}
-
-	// BFS to find shortest path
-	type pathNode struct {
-		chainId string
-		route   *BasicRoute // route used to reach this chain
-		prev    *pathNode
-	}
-
-	queue := list.New()
-	queue.PushBack(&pathNode{chainId: req.ChainFrom, route: nil, prev: nil})
-	visited := map[string]bool{req.ChainFrom: true}
-
-	for queue.Len() > 0 {
-		element := queue.Front()
-		current := element.Value.(*pathNode)
-		queue.Remove(element)
-
-		// Check if we reached destination
-		if current.chainId == req.ChainTo {
-			// Reconstruct path
-			path := []string{}
-			routes := []*BasicRoute{}
-			node := current
-
-			for node != nil {
-				path = append([]string{node.chainId}, path...)
-				if node.route != nil {
-					routes = append([]*BasicRoute{node.route}, routes...)
-				}
-				node = node.prev
-			}
-
-			return &IndirectRouteInfo{
-				Path:   path,
-				Routes: routes,
-				Token:  sourceToken,
-			}
-		}
-
-		// Explore neighbors
-		for nextChainId, route := range ri.chainRoutes[current.chainId] {
-			if visited[nextChainId] {
-				continue
-			}
-
-			// Check if our token can travel on this route
-			// The token needs to be in AllowedTokens on the current chain
-			currentToken := ri.denomToTokenInfo[current.chainId][req.TokenFromDenom]
-			if current.chainId != req.ChainFrom {
-				// For intermediate chains, find the token by origin
-				currentToken = ri.findTokenByOrigin(current.chainId, sourceToken.OriginChain, sourceToken.BaseDenom)
-			}
-
-			if currentToken == nil {
-				continue
-			}
-
-			// Check if this token is allowed on the route
-			if _, allowed := route.AllowedTokens[currentToken.ChainDenom]; !allowed {
-				continue
-			}
-
-			visited[nextChainId] = true
-			queue.PushBack(&pathNode{
-				chainId: nextChainId,
-				route:   route,
-				prev:    current,
-			})
-		}
-	}
-
-	return nil
-}
-
-// findTokenByOrigin finds a token on a chain by its origin chain and base denom
-func (ri *RouteIndex) findTokenByOrigin(chainId, originChain, baseDenom string) *TokenInfo {
-	for _, tokenInfo := range ri.denomToTokenInfo[chainId] {
-		if tokenInfo.OriginChain == originChain && tokenInfo.BaseDenom == baseDenom {
-			return tokenInfo
-		}
-	}
-	return nil
-}
-
-type MultiHopInfo struct {
-	BrokerChain   string // Broker ID (e.g., "osmosis-sqs")
-	BrokerChainId string // Broker chain ID (e.g., "osmosis-1")
-	InboundRoute  *BasicRoute
-	OutboundRoute *BasicRoute // nil if destination is the broker itself
-	TokenIn       *TokenInfo
-	TokenOut      *TokenInfo
-	// SwapOnly is true when the destination is the broker chain (no outbound IBC transfer)
-	SwapOnly bool
-}
-
-// IndirectRouteInfo represents a multi-hop path without swaps
-type IndirectRouteInfo struct {
-	Path   []string      // Chain IDs in order
-	Routes []*BasicRoute // Routes between consecutive chains
-	Token  *TokenInfo    // Token that travels through all chains
-}
-
-// The purpose of the FindMultiHopRoute is to confirm that the tokenIn and tokenOut are possible
-// to be reached to the broker and that the broker can reach the destination chain.
-//
-// In the future there might be more than one broker that can reach the destination chain.
-// So we need to return a list of possible multi-hop routes.
-//
-// This also handles "swap-only" routes where the destination IS the broker chain.
-func (ri *RouteIndex) FindMultiHopRoute(req models.RouteRequest) []*MultiHopInfo {
-	multiHopInfos := []*MultiHopInfo{}
-
-	// Check if we can route through a broker with token swap
-	for brokerId := range ri.brokers {
-		// Find the chain ID for this broker
-		var brokerChainId string
-		for chainId, bid := range ri.brokerChains {
-			if bid == brokerId {
-				brokerChainId = chainId
-				break
-			}
-		}
-		if brokerChainId == "" {
-			continue // Should not happen, but defensive check
-		}
-
-		solverLog.Debug().
-			Str("brokerId", brokerId).
-			Str("brokerChainId", brokerChainId).
-			Str("chainFrom", req.ChainFrom).
-			Str("chainTo", req.ChainTo).
-			Msg("Checking broker route")
-
-		// Case 1: Destination IS the broker chain (swap-only, no outbound IBC)
-		if req.ChainTo == brokerChainId {
-			multiHopInfo := ri.findSwapOnlyRoute(req, brokerId, brokerChainId)
-			if multiHopInfo != nil {
-				solverLog.Debug().Msg("Found swap-only route (destination is broker)")
-				multiHopInfos = append(multiHopInfos, multiHopInfo)
-			}
-			continue
-		}
-
-		// Case 2: Full broker route (source → broker → destination)
-		multiHopInfo := ri.findFullBrokerRoute(req, brokerId, brokerChainId)
-		if multiHopInfo != nil {
-			solverLog.Debug().Msg("Found full broker route")
-			multiHopInfos = append(multiHopInfos, multiHopInfo)
-		}
-	}
-
-	solverLog.Debug().Int("count", len(multiHopInfos)).Msg("Found multi-hop routes")
-	return multiHopInfos
-}
-
-// findSwapOnlyRoute finds a route where the destination is the broker (IBC transfer + swap, no outbound)
-func (ri *RouteIndex) findSwapOnlyRoute(req models.RouteRequest, brokerId, brokerChainId string) *MultiHopInfo {
-	// Can we reach broker from source?
-	inboundRoute := ri.chainToBrokerRoutes[req.ChainFrom][brokerId]
-	if inboundRoute == nil {
-		solverLog.Debug().Str("chainFrom", req.ChainFrom).Str("brokerId", brokerId).Msg("No inbound route to broker")
-		return nil
-	}
-
-	// Is input token allowed on inbound route?
-	tokenIn, tokenAllowed := inboundRoute.AllowedTokens[req.TokenFromDenom]
-	if !tokenAllowed {
-		solverLog.Debug().Str("tokenFromDenom", req.TokenFromDenom).Msg("Input token not allowed on inbound route")
-		return nil
-	}
-
-	// Is output token available on the broker chain?
-	tokenOut := ri.denomToTokenInfo[brokerChainId][req.TokenToDenom]
-	if tokenOut == nil {
-		solverLog.Debug().
-			Str("tokenToDenom", req.TokenToDenom).
-			Str("brokerChainId", brokerChainId).
-			Msg("Output token not found on broker chain")
-		return nil
-	}
-
-	solverLog.Debug().
-		Str("tokenIn", tokenIn.ChainDenom).
-		Str("tokenOut", tokenOut.ChainDenom).
-		Msg("Swap-only route validated")
-
-	return &MultiHopInfo{
-		BrokerChain:   brokerId,
-		BrokerChainId: brokerChainId,
-		InboundRoute:  inboundRoute,
-		OutboundRoute: nil, // No outbound route needed
-		TokenIn:       &tokenIn,
-		TokenOut:      tokenOut,
-		SwapOnly:      true,
-	}
-}
-
-// findFullBrokerRoute finds a route with source → broker → destination
-func (ri *RouteIndex) findFullBrokerRoute(req models.RouteRequest, brokerId, brokerChainId string) *MultiHopInfo {
-	// Can we reach broker from source?
-	inboundRoute := ri.chainToBrokerRoutes[req.ChainFrom][brokerId]
-	if inboundRoute == nil {
-		solverLog.Debug().Str("chainFrom", req.ChainFrom).Str("brokerId", brokerId).Msg("No inbound route to broker")
-		return nil
-	}
-
-	// Is input token allowed?
-	tokenIn, tokenAllowed := inboundRoute.AllowedTokens[req.TokenFromDenom]
-	if !tokenAllowed {
-		solverLog.Debug().Str("tokenFromDenom", req.TokenFromDenom).Msg("Input token not allowed on inbound route")
-		return nil
-	}
-
-	// Can broker reach destination?
-	outboundRoute := ri.brokerRoutes[brokerId][req.ChainTo]
-	if outboundRoute == nil {
-		solverLog.Debug().Str("brokerId", brokerId).Str("chainTo", req.ChainTo).Msg("No outbound route from broker")
-		return nil
-	}
-
-	// Is output token available on destination?
-	tokenOut := ri.denomToTokenInfo[req.ChainTo][req.TokenToDenom]
-	if tokenOut == nil {
-		solverLog.Debug().Str("tokenToDenom", req.TokenToDenom).Str("chainTo", req.ChainTo).Msg("Output token not found on destination")
-		return nil
-	}
-
-	// Check if there's a token in the outbound route that will become the desired token on destination
-	// We need to find a token in AllowedTokens whose IbcDenom matches req.TokenToDenom
-	var matchingToken *TokenInfo
-	for _, tokenInfo := range outboundRoute.AllowedTokens {
-		// Check if this token becomes the desired denom on the destination
-		// The IbcDenom field indicates what the token becomes after IBC transfer
-		if tokenInfo.IbcDenom == req.TokenToDenom {
-			matchingToken = &tokenInfo
-			break
-		}
-	}
-
-	if matchingToken == nil {
-		solverLog.Debug().Str("tokenToDenom", req.TokenToDenom).Msg("No matching token in outbound route AllowedTokens")
-		return nil
-	}
-
-	solverLog.Debug().
-		Str("tokenIn", tokenIn.ChainDenom).
-		Str("tokenOut", tokenOut.ChainDenom).
-		Msg("Full broker route validated")
-
-	return &MultiHopInfo{
-		BrokerChain:   brokerId,
-		BrokerChainId: brokerChainId,
-		InboundRoute:  inboundRoute,
-		OutboundRoute: outboundRoute,
-		TokenIn:       &tokenIn,
-		TokenOut:      tokenOut,
-		SwapOnly:      false,
-	}
-}
-
-// routeKey is a helper function to create a unique key for a route
-func routeKey(fromChain, toChain, denom string) string {
-	return fmt.Sprintf("%s->%s:%s", fromChain, toChain, denom)
-}
-
-// NewRouteIndex creates a new RouteIndex with initialized maps
-func NewRouteIndex() *RouteIndex {
-	return &RouteIndex{
-		directRoutes:        make(map[string]*BasicRoute),
-		brokerRoutes:        make(map[string]map[string]*BasicRoute),
-		chainToBrokerRoutes: make(map[string]map[string]*BasicRoute),
-		denomToTokenInfo:    make(map[string]map[string]*TokenInfo),
-		brokers:             make(map[string]bool),
-		brokerChains:        make(map[string]string),
-		pfmChains:           make(map[string]bool),
-		chainRoutes:         make(map[string]map[string]*BasicRoute),
-	}
-}
-
 // Solver orchestrates route finding and integrates with broker DEX APIs
 type Solver struct {
-	chainsMap     map[string]SolverChain
-	routeIndex    *RouteIndex
-	brokerClients map[string]BrokerClient // brokerId -> broker client interface
-	denomResolver *DenomResolver
-	maxRetries    int
-	retryDelay    time.Duration
+	chainsMap        map[string]SolverChain // mapped chainId -> SolverChain
+	routeIndex       *RouteIndex // routeIndex from which all routes are found
+	brokerClients    map[string]BrokerClient // mapped brokerId -> broker client interface
+	denomResolver    *DenomResolver // denomResolver for resolving denoms across chains
+	addressConverter *AddressConverter // addressConverter for converting addresses across chains
+	maxRetries       int // maximum number of retries for broker queries
+	retryDelay       time.Duration // delay between retries for broker queries
 }
 
 // NewSolver creates a new Solver with the given route index and broker clients
@@ -510,12 +56,13 @@ func NewSolver(chains []SolverChain, routeIndex *RouteIndex, brokerClients map[s
 		chainMap[chain.Id] = chain
 	}
 	return &Solver{
-		chainsMap:     chainMap,
-		routeIndex:    routeIndex,
-		brokerClients: brokerClients,
-		denomResolver: NewDenomResolver(routeIndex),
-		maxRetries:    3,
-		retryDelay:    500 * time.Millisecond,
+		chainsMap:        chainMap,
+		routeIndex:       routeIndex,
+		brokerClients:    brokerClients,
+		denomResolver:    NewDenomResolver(routeIndex),
+		addressConverter: NewAddressConverter(chains),
+		maxRetries:       3,
+		retryDelay:       500 * time.Millisecond,
 	}
 }
 
@@ -761,16 +308,23 @@ func (s *Solver) buildBrokerSwapResponse(
 	}
 
 	// Determine the correct denoms to use on the broker chain
-	// For the input token: use IbcDenom (what it becomes after IBC transfer to broker)
-	tokenInDenomOnBroker := hopInfo.TokenIn.IbcDenom
-	// For the output token: use ChainDenom (the denom on the broker chain)
-	tokenOutDenomOnBroker := hopInfo.TokenOut.ChainDenom
+	var tokenInDenomOnBroker string
+	if hopInfo.SourceIsBroker {
+		// Source is the broker - token is already on broker, use ChainDenom directly
+		tokenInDenomOnBroker = hopInfo.TokenIn.ChainDenom
+	} else {
+		// Source is not broker - token will arrive via IBC, use IbcDenom
+		tokenInDenomOnBroker = hopInfo.TokenIn.IbcDenom
+	}
+	// For the output token: use TokenOutOnBroker.ChainDenom (the denom on the broker chain)
+	tokenOutDenomOnBroker := hopInfo.TokenOutOnBroker.ChainDenom
 
 	solverLog.Debug().
 		Str("tokenIn", tokenInDenomOnBroker).
 		Str("tokenOut", tokenOutDenomOnBroker).
 		Str("amount", req.AmountIn).
 		Bool("swapOnly", hopInfo.SwapOnly).
+		Bool("sourceIsBroker", hopInfo.SourceIsBroker).
 		Msg("Querying broker for swap")
 
 	// Query with retry logic
@@ -830,45 +384,96 @@ func (s *Solver) queryBrokerWithRetry(
 	return nil, fmt.Errorf("%s query failed after %d attempts: %w", client.GetBrokerType(), s.maxRetries+1, lastErr)
 }
 
-// buildBrokerRoute creates the broker swap route structure with PFM support
+// buildBrokerRoute creates the broker swap route structure with support for multiple legs.
+// Handles:
+// - Same-chain swap: no inbound/outbound legs
+// - Source is broker: no inbound legs
+// - Destination is broker: no outbound legs
+// - Full route: both inbound and outbound legs
 func (s *Solver) buildBrokerRoute(
 	req models.RouteRequest,
 	hopInfo *MultiHopInfo,
 	swapResult *SwapResult,
 	brokerType string,
 ) (*models.BrokerRoute, error) {
-	// Create token mapping for inbound leg (source chain token)
-	inboundTokenMapping := &models.TokenMapping{
-		ChainDenom:  hopInfo.TokenIn.ChainDenom,
-		BaseDenom:   hopInfo.TokenIn.BaseDenom,
-		OriginChain: hopInfo.TokenIn.OriginChain,
-		IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, req.ChainFrom),
+	// Validate hopInfo has required fields
+	if hopInfo == nil {
+		return nil, fmt.Errorf("hopInfo is nil")
+	}
+	if hopInfo.TokenIn == nil {
+		return nil, fmt.Errorf("hopInfo.TokenIn is nil")
+	}
+	if hopInfo.TokenOutOnBroker == nil {
+		return nil, fmt.Errorf("hopInfo.TokenOutOnBroker is nil")
+	}
+	if swapResult == nil {
+		return nil, fmt.Errorf("swapResult is nil")
 	}
 
-	// Create token mapping for token on broker (after inbound IBC)
-	tokenInOnBroker := &models.TokenMapping{
-		ChainDenom:  hopInfo.TokenIn.IbcDenom,
-		BaseDenom:   hopInfo.TokenIn.BaseDenom,
-		OriginChain: hopInfo.TokenIn.OriginChain,
-		IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, hopInfo.BrokerChainId),
+	// Get broker chain info for ibc-hooks contract
+	brokerChain, brokerExists := s.chainsMap[hopInfo.BrokerChainId]
+
+	// Build path based on route type
+	var path []string
+	if hopInfo.SourceIsBroker && hopInfo.SwapOnly {
+		// Same-chain swap
+		path = []string{hopInfo.BrokerChainId}
+	} else if hopInfo.SourceIsBroker {
+		// Source is broker, has outbound
+		path = []string{hopInfo.BrokerChainId, req.ChainTo}
+	} else if hopInfo.SwapOnly {
+		// Dest is broker, has inbound
+		path = []string{req.ChainFrom, hopInfo.BrokerChainId}
+	} else {
+		// Full route
+		path = []string{req.ChainFrom, hopInfo.BrokerChainId, req.ChainTo}
+	}
+
+	// Build inbound leg (nil if source is broker)
+	var inboundLeg *models.IBCLeg
+	var tokenInOnBroker *models.TokenMapping
+
+	if hopInfo.SourceIsBroker {
+		// Source is broker - token is already on broker chain
+		tokenInOnBroker = &models.TokenMapping{
+			ChainDenom:  hopInfo.TokenIn.ChainDenom,
+			BaseDenom:   hopInfo.TokenIn.BaseDenom,
+			OriginChain: hopInfo.TokenIn.OriginChain,
+			IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, hopInfo.BrokerChainId),
+		}
+	} else {
+		// Build inbound leg
+		inboundTokenMapping := &models.TokenMapping{
+			ChainDenom:  hopInfo.TokenIn.ChainDenom,
+			BaseDenom:   hopInfo.TokenIn.BaseDenom,
+			OriginChain: hopInfo.TokenIn.OriginChain,
+			IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, req.ChainFrom),
+		}
+
+		inboundLeg = &models.IBCLeg{
+			FromChain: req.ChainFrom,
+			ToChain:   hopInfo.BrokerChainId,
+			Channel:   hopInfo.InboundRoute.ChannelId,
+			Port:      hopInfo.InboundRoute.PortId,
+			Token:     inboundTokenMapping,
+			Amount:    req.AmountIn,
+		}
+
+		// Token on broker after IBC transfer
+		tokenInOnBroker = &models.TokenMapping{
+			ChainDenom:  hopInfo.TokenIn.IbcDenom,
+			BaseDenom:   hopInfo.TokenIn.BaseDenom,
+			OriginChain: hopInfo.TokenIn.OriginChain,
+			IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, hopInfo.BrokerChainId),
+		}
 	}
 
 	// Create token mapping for token out on broker (after swap)
 	tokenOutOnBroker := &models.TokenMapping{
-		ChainDenom:  hopInfo.TokenOut.ChainDenom,
-		BaseDenom:   hopInfo.TokenOut.BaseDenom,
-		OriginChain: hopInfo.TokenOut.OriginChain,
-		IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenOut, hopInfo.BrokerChainId),
-	}
-
-	// Build the inbound IBC leg
-	inboundLeg := &models.IBCLeg{
-		FromChain: req.ChainFrom,
-		ToChain:   hopInfo.BrokerChainId,
-		Channel:   hopInfo.InboundRoute.ChannelId,
-		Port:      hopInfo.InboundRoute.PortId,
-		Token:     inboundTokenMapping,
-		Amount:    req.AmountIn,
+		ChainDenom:  hopInfo.TokenOutOnBroker.ChainDenom,
+		BaseDenom:   hopInfo.TokenOutOnBroker.BaseDenom,
+		OriginChain: hopInfo.TokenOutOnBroker.OriginChain,
+		IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenOutOnBroker, hopInfo.BrokerChainId),
 	}
 
 	// Build the swap quote
@@ -883,52 +488,287 @@ func (s *Solver) buildBrokerRoute(
 		RouteData:    swapResult.RouteData,
 	}
 
-	// Handle swap-only case (destination is the broker chain)
-	if hopInfo.SwapOnly {
-		solverLog.Debug().Msg("Building swap-only route (no outbound leg)")
-		return &models.BrokerRoute{
-			Path:                []string{req.ChainFrom, hopInfo.BrokerChainId},
-			InboundLeg:          inboundLeg,
-			Swap:                swap,
-			OutboundLeg:         nil, // No outbound leg
-			OutboundSupportsPFM: false,
-			OutboundPFMMemo:     "",
-		}, nil
+	// Build outbound legs (empty if destination is broker)
+	var outboundLegs []*models.IBCLeg
+	supportsPFM := false
+
+	if !hopInfo.SwapOnly && len(hopInfo.OutboundRoutes) > 0 {
+		// Build leg for each outbound route
+		currentAmount := swapResult.AmountOut
+		currentToken := tokenOutOnBroker
+		prevChain := hopInfo.BrokerChainId
+
+		for i, route := range hopInfo.OutboundRoutes {
+			// Determine the token for this leg
+			var legToken *models.TokenMapping
+			if i == 0 {
+				legToken = currentToken
+			} else if i < len(hopInfo.IntermediateTokens) {
+				// Use intermediate token info
+				intToken := hopInfo.IntermediateTokens[i-1]
+				legToken = &models.TokenMapping{
+					ChainDenom:  intToken.ChainDenom,
+					BaseDenom:   intToken.BaseDenom,
+					OriginChain: intToken.OriginChain,
+					IsNative:    s.denomResolver.IsTokenNativeToChain(intToken, prevChain),
+				}
+			} else {
+				legToken = currentToken
+			}
+
+			outboundLeg := &models.IBCLeg{
+				FromChain: prevChain,
+				ToChain:   route.ToChainId,
+				Channel:   route.ChannelId,
+				Port:      route.PortId,
+				Token:     legToken,
+				Amount:    currentAmount,
+			}
+			outboundLegs = append(outboundLegs, outboundLeg)
+			prevChain = route.ToChainId
+		}
+
+		// PFM support check - all intermediate chains must support PFM
+		supportsPFM = true
+		for i := 0; i < len(hopInfo.OutboundRoutes)-1; i++ {
+			if !s.routeIndex.pfmChains[hopInfo.OutboundRoutes[i].ToChainId] {
+				supportsPFM = false
+				break
+			}
+		}
 	}
 
-	// Build the outbound IBC leg
-	outboundLeg := &models.IBCLeg{
-		FromChain: hopInfo.BrokerChainId,
-		ToChain:   req.ChainTo,
-		Channel:   hopInfo.OutboundRoute.ChannelId,
-		Port:      hopInfo.OutboundRoute.PortId,
-		Token:     tokenOutOnBroker,
-		Amount:    swapResult.AmountOut,
+	// Build execution data based on route type
+	var execution *models.BrokerExecutionData
+	var err error
+
+	if hopInfo.SourceIsBroker && hopInfo.SwapOnly {
+		// Same-chain swap - just need swap data, no IBC memo
+		solverLog.Debug().Msg("Building same-chain swap route (no IBC)")
+		execution = &models.BrokerExecutionData{
+			UsesWasm:        false,
+			Description:     "Same-chain swap on " + hopInfo.BrokerChainId,
+			MinOutputAmount: swapResult.AmountOut, // TODO: Apply slippage
+		}
+	} else if hopInfo.SourceIsBroker {
+		// Source is broker - need swap + outbound IBC
+		solverLog.Debug().Msg("Building broker-as-source route (swap + outbound)")
+		// For now, use swap-only execution since no ibc-hooks needed when starting from broker
+		execution = &models.BrokerExecutionData{
+			UsesWasm:        false,
+			Description:     "Swap on " + hopInfo.BrokerChainId + " then IBC to " + req.ChainTo,
+			MinOutputAmount: swapResult.AmountOut,
+		}
+	} else if hopInfo.SwapOnly {
+		// Destination is broker - need inbound IBC + swap
+		solverLog.Debug().Msg("Building swap-only route (inbound + swap)")
+		execution, err = s.buildSwapOnlyExecution(req, hopInfo, swapResult, brokerChain, brokerExists)
+		if err != nil {
+			solverLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
+		}
+	} else {
+		// Full route - need inbound IBC + swap + outbound IBC
+		solverLog.Debug().Int("outboundHops", len(outboundLegs)).Msg("Building full broker route (inbound + swap + outbound)")
+		execution, err = s.buildSwapAndForwardExecution(req, hopInfo, swapResult, outboundLegs, brokerChain, brokerExists)
+		if err != nil {
+			solverLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
+		}
 	}
 
-	// Check if broker supports PFM for outbound forwarding
-	// This allows the swap result to be automatically forwarded to the destination
-	supportsPFM := s.routeIndex.pfmChains[hopInfo.BrokerChainId]
-	pfmMemo := ""
-
-	if supportsPFM {
-		// Generate PFM memo for the outbound leg
-		pfmMemo = fmt.Sprintf(`{"forward":{"receiver":"%s","port":"%s","channel":"%s"}}`,
-			req.ReceiverAddress,
-			outboundLeg.Port,
-			outboundLeg.Channel,
-		)
-	}
-
-	// Build the complete broker route
 	return &models.BrokerRoute{
-		Path:                []string{req.ChainFrom, hopInfo.BrokerChainId, req.ChainTo},
+		Path:                path,
 		InboundLeg:          inboundLeg,
 		Swap:                swap,
-		OutboundLeg:         outboundLeg,
+		OutboundLegs:        outboundLegs,
 		OutboundSupportsPFM: supportsPFM,
-		OutboundPFMMemo:     pfmMemo,
+		Execution:           execution,
 	}, nil
+}
+
+// buildSwapOnlyExecution builds execution data for swap-only routes (destination is broker)
+func (s *Solver) buildSwapOnlyExecution(
+	req models.RouteRequest,
+	hopInfo *MultiHopInfo,
+	swapResult *SwapResult,
+	brokerChain SolverChain,
+	brokerExists bool,
+) (*models.BrokerExecutionData, error) {
+	if !brokerExists || brokerChain.IBCHooksContract == "" {
+		return nil, fmt.Errorf("ibc-hooks contract not configured for broker")
+	}
+
+	// Derive addresses
+	addresses, err := s.addressConverter.DeriveRouteAddresses(req.SenderAddress, hopInfo.BrokerChainId, req.ReceiverAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive addresses: %w", err)
+	}
+
+	// Calculate minimum output with 1% slippage
+	minOutput, err := CalculateMinOutput(swapResult.AmountOut, 100) // 100 bps = 1%
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate min output: %w", err)
+	}
+
+	// Get route data
+	routeData, ok := swapResult.RouteData.(*OsmosisRouteData)
+	if !ok {
+		return nil, fmt.Errorf("invalid route data type")
+	}
+
+	// Build wasm memo
+	memoBuilder := NewWasmMemoBuilder(brokerChain.IBCHooksContract)
+	memo, err := memoBuilder.BuildSwapMemo(SwapMemoParams{
+		TokenInDenom:    hopInfo.TokenIn.IbcDenom,
+		TokenOutDenom:   hopInfo.TokenOutOnBroker.ChainDenom,
+		MinOutputAmount: minOutput,
+		RouteData:       routeData,
+		TimeoutTimestamp: DefaultTimeoutTimestamp(),
+		RecoverAddress:  addresses.BrokerAddress,
+		PostSwapAction: PostSwapAction{
+			TransferTo: addresses.DestinationAddress, // For swap-only, receiver is on broker chain
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to build wasm memo: %w", err)
+	}
+
+	return &models.BrokerExecutionData{
+		Memo:            memo,
+		IBCReceiver:     brokerChain.IBCHooksContract,
+		RecoverAddress:  addresses.BrokerAddress,
+		MinOutputAmount: minOutput,
+		UsesWasm:        true,
+		Description:     fmt.Sprintf("IBC transfer with swap on %s", hopInfo.BrokerChainId),
+	}, nil
+}
+
+// buildSwapAndForwardExecution builds execution data for swap+forward routes
+// Supports multi-hop outbound via nested PFM memos
+func (s *Solver) buildSwapAndForwardExecution(
+	req models.RouteRequest,
+	hopInfo *MultiHopInfo,
+	swapResult *SwapResult,
+	outboundLegs []*models.IBCLeg,
+	brokerChain SolverChain,
+	brokerExists bool,
+) (*models.BrokerExecutionData, error) {
+	if !brokerExists || brokerChain.IBCHooksContract == "" {
+		return nil, fmt.Errorf("ibc-hooks contract not configured for broker")
+	}
+
+	if len(outboundLegs) == 0 {
+		return nil, fmt.Errorf("no outbound legs provided")
+	}
+
+	// Derive addresses
+	addresses, err := s.addressConverter.DeriveRouteAddresses(req.SenderAddress, hopInfo.BrokerChainId, req.ReceiverAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to derive addresses: %w", err)
+	}
+
+	// Calculate minimum output with 1% slippage
+	minOutput, err := CalculateMinOutput(swapResult.AmountOut, 100) // 100 bps = 1%
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate min output: %w", err)
+	}
+
+	// Get route data
+	routeData, ok := swapResult.RouteData.(*OsmosisRouteData)
+	if !ok {
+		return nil, fmt.Errorf("invalid route data type")
+	}
+
+	// Build the PFM forward memo for hops after the first one (if any)
+	// For multi-hop: wasm swap_and_action → ibc_transfer with nested PFM forward
+	forwardMemo := ""
+	if len(outboundLegs) > 1 {
+		// Build nested forward memo from the last hop backwards
+		forwardMemo = s.buildNestedForwardMemo(outboundLegs[1:], req.ReceiverAddress)
+		solverLog.Debug().Str("forwardMemo", forwardMemo).Msg("Built nested forward memo for multi-hop")
+	}
+
+	// Determine the receiver for the first IBC transfer (after swap)
+	// If there are more hops, receiver should be on the intermediate chain
+	firstHopReceiver := addresses.DestinationAddress
+	if len(outboundLegs) > 1 {
+		// For multi-hop, the receiver on the first intermediate chain
+		// We need to derive the address for the intermediate chain
+		intermediateChain := outboundLegs[0].ToChain
+		intermediateAddr, err := s.addressConverter.ConvertAddress(req.ReceiverAddress, intermediateChain)
+		if err != nil {
+			// Fallback to destination address (PFM will use it anyway)
+			solverLog.Warn().Err(err).Str("chain", intermediateChain).Msg("Failed to derive intermediate address")
+			intermediateAddr = addresses.DestinationAddress
+		}
+		firstHopReceiver = intermediateAddr
+	}
+
+	// Build wasm memo with IBC forwarding
+	memoBuilder := NewWasmMemoBuilder(brokerChain.IBCHooksContract)
+	memo, err := memoBuilder.BuildSwapMemo(SwapMemoParams{
+		TokenInDenom:     hopInfo.TokenIn.IbcDenom,
+		TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
+		MinOutputAmount:  minOutput,
+		RouteData:        routeData,
+		TimeoutTimestamp: DefaultTimeoutTimestamp(),
+		RecoverAddress:   addresses.BrokerAddress,
+		PostSwapAction: PostSwapAction{
+			IBCTransfer: &IBCTransferInfo{
+				SourceChannel: outboundLegs[0].Channel,
+				Receiver:      firstHopReceiver,
+				Memo:          forwardMemo,
+			},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to build wasm memo: %w", err)
+	}
+
+	// Build description
+	description := fmt.Sprintf("IBC transfer with swap on %s", hopInfo.BrokerChainId)
+	if len(outboundLegs) == 1 {
+		description += fmt.Sprintf(" and forward to %s", req.ChainTo)
+	} else {
+		description += fmt.Sprintf(" and forward via %d hops to %s", len(outboundLegs), req.ChainTo)
+	}
+
+	return &models.BrokerExecutionData{
+		Memo:            memo,
+		IBCReceiver:     brokerChain.IBCHooksContract,
+		RecoverAddress:  addresses.BrokerAddress,
+		MinOutputAmount: minOutput,
+		UsesWasm:        true,
+		Description:     description,
+	}, nil
+}
+
+// buildNestedForwardMemo builds a nested PFM forward memo for multi-hop forwarding
+// legs should be the remaining legs after the first hop (from intermediate chains onwards)
+func (s *Solver) buildNestedForwardMemo(legs []*models.IBCLeg, finalReceiver string) string {
+	if len(legs) == 0 {
+		return ""
+	}
+
+	// Build from the last leg backwards
+	var buildForward func(legIndex int) string
+	buildForward = func(legIndex int) string {
+		leg := legs[legIndex]
+
+		if legIndex == len(legs)-1 {
+			// Last hop - receiver is the final destination
+			return fmt.Sprintf(`{"forward":{"receiver":"%s","port":"%s","channel":"%s"}}`,
+				finalReceiver, leg.Port, leg.Channel)
+		}
+
+		// Intermediate hop - need to nest the next forward
+		// For intermediate hops, receiver should be the address on the next chain
+		// but PFM will override this, so we use finalReceiver
+		nextMemo := buildForward(legIndex + 1)
+		return fmt.Sprintf(`{"forward":{"receiver":"%s","port":"%s","channel":"%s","next":%s}}`,
+			finalReceiver, leg.Port, leg.Channel, nextMemo)
+	}
+
+	return buildForward(0)
 }
 
 /*

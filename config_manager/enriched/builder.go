@@ -121,15 +121,16 @@ func (b *Builder) buildChainConfig(
 	chain := inputCfg.Chain
 
 	config := &ChainConfig{
-		Name:         chain.Name,
-		ID:           chain.ID,
-		Type:         chain.Type,
-		Registry:     chain.Registry,
-		ExplorerURL:  chain.ExplorerURL,
-		Slip44:       chain.Slip44,
-		Bech32Prefix: chain.Bech32Prefix,
-		IsBroker:     chain.IsBroker,
-		BrokerID:     chain.BrokerID,
+		Name:             chain.Name,
+		ID:               chain.ID,
+		Type:             chain.Type,
+		Registry:         chain.Registry,
+		ExplorerURL:      chain.ExplorerURL,
+		Slip44:           chain.Slip44,
+		Bech32Prefix:     chain.Bech32Prefix,
+		IsBroker:         chain.IsBroker,
+		BrokerID:         chain.BrokerID,
+		IBCHooksContract: chain.IBCHooksContract,
 	}
 
 	// Set PFM support (from input or default to false)

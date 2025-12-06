@@ -33,6 +33,13 @@ type SolverChain struct {
 	// Broker identifier (e.g., "osmosis-sqs") - required if Broker is true
 	BrokerID string `json:"broker_id,omitempty" toml:"broker_id,omitempty"`
 
+	// IBC hooks contract address for swap operations (e.g., Osmosis entry point contract)
+	// This is used to build the wasm memo for swap_and_action operations
+	IBCHooksContract string `json:"ibc_hooks_contract,omitempty" toml:"ibc_hooks_contract,omitempty"`
+
+	// Bech32 prefix for addresses on this chain (e.g., "osmo", "cosmos")
+	Bech32Prefix string `json:"bech32_prefix,omitempty" toml:"bech32_prefix,omitempty"`
+
 	// Available IBC routes from this chain
 	Routes []SolverRoute `json:"routes" toml:"routes"`
 }
@@ -73,6 +80,9 @@ type SolverTokenInfo struct {
 
 	// Chain ID where this token is native
 	OriginChain string `json:"origin_chain" toml:"origin_chain"`
+
+	// Human-readable symbol (e.g., "ATOM", "OSMO")
+	Symbol string `json:"symbol,omitempty" toml:"symbol,omitempty"`
 
 	// Number of decimal places
 	Decimals int `json:"decimals" toml:"decimals"`

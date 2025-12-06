@@ -37,12 +37,14 @@ func (c *SolverConverter) Convert(reg *enriched.RegistryConfig) (*SolverConfig, 
 
 func (c *SolverConverter) convertChain(chain *enriched.ChainConfig) SolverChain {
 	solverChain := SolverChain{
-		Name:     chain.Name,
-		ID:       chain.ID,
-		HasPFM:   chain.HasPFM,
-		Broker:   chain.IsBroker,
-		BrokerID: chain.BrokerID,
-		Routes:   make([]SolverRoute, 0, len(chain.Routes)),
+		Name:             chain.Name,
+		ID:               chain.ID,
+		HasPFM:           chain.HasPFM,
+		Broker:           chain.IsBroker,
+		BrokerID:         chain.BrokerID,
+		IBCHooksContract: chain.IBCHooksContract,
+		Bech32Prefix:     chain.Bech32Prefix,
+		Routes:           make([]SolverRoute, 0, len(chain.Routes)),
 	}
 
 	for _, route := range chain.Routes {
@@ -74,6 +76,7 @@ func (c *SolverConverter) convertRoute(route enriched.RouteConfig) SolverRoute {
 			IBCDenom:    token.DestinationDenom,
 			BaseDenom:   token.BaseDenom,
 			OriginChain: token.OriginChain,
+			Symbol:      token.Symbol,
 			Decimals:    token.Decimals,
 		}
 	}

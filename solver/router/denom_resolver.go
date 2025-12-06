@@ -112,37 +112,81 @@ func (dr *DenomResolver) lookupDenom(chainID, denom string) (*models.DenomInfo, 
 	}, nil
 }
 
-// resolveHumanReadableDenom tries to find a token by its base denom on a chain
-func (dr *DenomResolver) resolveHumanReadableDenom(chainID, baseDenom string) (*models.DenomInfo, error) {
+// resolveHumanReadableDenom tries to find a token by its base denom on a chain.
+// Supports disambiguation syntax: "denom@origin_chain" (e.g., "uusdc@noble-1")
+// If multiple tokens have the same base denom and no origin is specified, returns an error.
+func (dr *DenomResolver) resolveHumanReadableDenom(chainID, denomInput string) (*models.DenomInfo, error) {
 	chainTokens, exists := dr.routeIndex.denomToTokenInfo[chainID]
 	if !exists {
 		return nil, fmt.Errorf("chain %s not found", chainID)
 	}
 
-	// Search for token with matching base denom
+	// Check for disambiguation syntax: denom@origin_chain
+	baseDenom := denomInput
+	wantedOrigin := ""
+	if idx := strings.LastIndex(denomInput, "@"); idx > 0 {
+		baseDenom = denomInput[:idx]
+		wantedOrigin = denomInput[idx+1:]
+	}
+
+	// Collect all matching tokens
+	var matches []*tokenMatch
 	for denom, tokenInfo := range chainTokens {
 		if tokenInfo.BaseDenom == baseDenom {
-			ibcPath := ""
-			if tokenInfo.OriginChain != chainID {
-				for _, route := range dr.routeIndex.chainRoutes[chainID] {
-					if _, allowed := route.AllowedTokens[denom]; allowed {
-						ibcPath = route.PortId + "/" + route.ChannelId
-						break
-					}
-				}
+			// If origin specified, filter by it
+			if wantedOrigin != "" && tokenInfo.OriginChain != wantedOrigin {
+				continue
 			}
-
-			return &models.DenomInfo{
-				ChainDenom:  denom,
-				BaseDenom:   tokenInfo.BaseDenom,
-				OriginChain: tokenInfo.OriginChain,
-				IsNative:    tokenInfo.OriginChain == chainID,
-				IbcPath:     ibcPath,
-			}, nil
+			matches = append(matches, &tokenMatch{
+				denom:     denom,
+				tokenInfo: tokenInfo,
+			})
 		}
 	}
 
-	return nil, fmt.Errorf("token with base denom %s not found on chain %s", baseDenom, chainID)
+	// Handle results
+	if len(matches) == 0 {
+		if wantedOrigin != "" {
+			return nil, fmt.Errorf("token %s from %s not found on chain %s", baseDenom, wantedOrigin, chainID)
+		}
+		return nil, fmt.Errorf("token with base denom %s not found on chain %s", baseDenom, chainID)
+	}
+
+	if len(matches) > 1 {
+		// Ambiguous - list the options
+		origins := make([]string, len(matches))
+		for i, m := range matches {
+			origins[i] = m.tokenInfo.OriginChain
+		}
+		return nil, fmt.Errorf("ambiguous token %s on chain %s - available from: %s. Use %s@<origin_chain> to specify",
+			baseDenom, chainID, strings.Join(origins, ", "), baseDenom)
+	}
+
+	// Single match - return it
+	match := matches[0]
+	ibcPath := ""
+	if match.tokenInfo.OriginChain != chainID {
+		for _, route := range dr.routeIndex.chainRoutes[chainID] {
+			if _, allowed := route.AllowedTokens[match.denom]; allowed {
+				ibcPath = route.PortId + "/" + route.ChannelId
+				break
+			}
+		}
+	}
+
+	return &models.DenomInfo{
+		ChainDenom:  match.denom,
+		BaseDenom:   match.tokenInfo.BaseDenom,
+		OriginChain: match.tokenInfo.OriginChain,
+		IsNative:    match.tokenInfo.OriginChain == chainID,
+		IbcPath:     ibcPath,
+	}, nil
+}
+
+// tokenMatch is a helper for collecting matching tokens
+type tokenMatch struct {
+	denom     string
+	tokenInfo *TokenInfo
 }
 
 // ResolveToChainDenom resolves a human-readable or IBC denom to the actual chain denom.
@@ -210,7 +254,7 @@ func (dr *DenomResolver) GetChainTokens(chainID string) (*models.ChainTokens, er
 	for denom, tokenInfo := range chainTokens {
 		detail := models.TokenDetails{
 			Denom:       denom,
-			Symbol:      "", // We don't have symbol in TokenInfo, would need to add
+			Symbol:      tokenInfo.Symbol,
 			BaseDenom:   tokenInfo.BaseDenom,
 			OriginChain: tokenInfo.OriginChain,
 			Decimals:    tokenInfo.Decimals,

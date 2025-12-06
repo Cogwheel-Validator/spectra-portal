@@ -66,6 +66,7 @@ type RouterTokenInfo struct {
 	IBCDenom    string
 	BaseDenom   string
 	OriginChain string
+	Symbol      string
 	Decimals    int
 }
 

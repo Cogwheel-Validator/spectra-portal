@@ -426,20 +426,24 @@ func TestSolver_BrokerSwapRoute(t *testing.T) {
 	assert.NotNil(t, brokerRoute.Swap.TokenOut)
 	assert.Equal(t, brokerRoute.Swap.AmountOut, "980000")
 
-	// Verify outbound leg (Osmosis -> Juno)
-	assert.NotNil(t, brokerRoute.OutboundLeg)
-	assert.Equal(t, brokerRoute.OutboundLeg.FromChain, "osmosis-1")
-	assert.Equal(t, brokerRoute.OutboundLeg.ToChain, "juno-1")
-	assert.Equal(t, brokerRoute.OutboundLeg.Amount, "980000")
+	// Verify outbound legs (Osmosis -> Juno)
+	assert.Equal(t, len(brokerRoute.OutboundLegs), 1)
+	assert.Equal(t, brokerRoute.OutboundLegs[0].FromChain, "osmosis-1")
+	assert.Equal(t, brokerRoute.OutboundLegs[0].ToChain, "juno-1")
+	assert.Equal(t, brokerRoute.OutboundLegs[0].Amount, "980000")
 
 	// Verify PFM support
 	t.Logf("OutboundSupportsPFM: %v", brokerRoute.OutboundSupportsPFM)
-	t.Logf("OutboundPFMMemo: %s", brokerRoute.OutboundPFMMemo)
+	if brokerRoute.Execution != nil {
+		t.Logf("Execution Memo: %s", brokerRoute.Execution.Memo)
+		if brokerRoute.OutboundSupportsPFM && brokerRoute.Execution.Memo == "" {
+			t.Error("Expected non-empty execution memo when PFM is supported")
+		}
+	} else {
+		t.Log("Note: Execution data not available (ibc-hooks contract not configured in test)")
+	}
 	if !brokerRoute.OutboundSupportsPFM {
 		t.Log("Note: Outbound PFM not supported, will require manual forwarding")
-	}
-	if brokerRoute.OutboundSupportsPFM && brokerRoute.OutboundPFMMemo == "" {
-		t.Error("Expected non-empty PFM memo when PFM is supported")
 	}
 
 	// if all goes well

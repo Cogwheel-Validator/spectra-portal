@@ -2,12 +2,15 @@ package rpc
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"connectrpc.com/connect"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/models"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/router"
 	v1 "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1"
 	v1connect "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1/v1connect"
+	"github.com/btcsuite/btcutil/bech32"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -32,17 +35,26 @@ func NewSolverServer(solver *router.Solver, denomResolver *router.DenomResolver)
 // Supports:
 // - Human-readable denoms (e.g., "uatone") which are resolved automatically
 // - Empty token_to_denom which defaults to the same token (bridging without swap)
+//
+// Returns:
+// - 400 Bad Request: Invalid input (bad address format, unknown chain, etc.)
+// - 200 OK with success=false: Valid query but no route exists
+// - 200 OK with success=true: Route found
 func (s *SolverServer) SolveRoute(
 	ctx context.Context,
 	req *connect.Request[v1.SolveRouteRequest],
 ) (*connect.Response[v1.SolveRouteResponse], error) {
+	// Step 0: Validate input parameters (returns 400 for validation errors)
+	if err := s.validateSolveRouteRequest(req.Msg); err != nil {
+		return nil, err
+	}
+
 	// Step 1: Resolve token_from_denom (could be human-readable)
 	resolvedFromDenom, err := s.denomResolver.ResolveToChainDenom(req.Msg.ChainFrom, req.Msg.TokenFromDenom)
 	if err != nil {
-		return connect.NewResponse(&v1.SolveRouteResponse{
-			Success:      false,
-			ErrorMessage: "Could not resolve source token: " + err.Error(),
-		}), nil
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("could not resolve source token '%s' on chain '%s': %w",
+				req.Msg.TokenFromDenom, req.Msg.ChainFrom, err))
 	}
 
 	// Step 2: Resolve token_to_denom (could be empty or human-readable)
@@ -55,19 +67,16 @@ func (s *SolverServer) SolveRoute(
 			req.Msg.ChainTo,
 		)
 		if err != nil {
-			return connect.NewResponse(&v1.SolveRouteResponse{
-				Success:      false,
-				ErrorMessage: "Could not infer destination token: " + err.Error(),
-			}), nil
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("could not infer destination token: %w", err))
 		}
 	} else {
 		// Resolve human-readable denom if needed
 		resolvedToDenom, err = s.denomResolver.ResolveToChainDenom(req.Msg.ChainTo, req.Msg.TokenToDenom)
 		if err != nil {
-			return connect.NewResponse(&v1.SolveRouteResponse{
-				Success:      false,
-				ErrorMessage: "Could not resolve destination token: " + err.Error(),
-			}), nil
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("could not resolve destination token '%s' on chain '%s': %w",
+					req.Msg.TokenToDenom, req.Msg.ChainTo, err))
 		}
 	}
 
@@ -86,9 +95,62 @@ func (s *SolverServer) SolveRoute(
 	internalResp := s.solver.Solve(internalReq)
 
 	// Step 5: Convert to proto response
+	// Note: "No route found" returns 200 with success=false (valid query, valid answer)
 	protoResp := convertToProtoResponse(&internalResp)
 
 	return connect.NewResponse(protoResp), nil
+}
+
+// validateSolveRouteRequest validates the request parameters
+// Returns a ConnectRPC error (which translates to HTTP 400) for invalid input
+func (s *SolverServer) validateSolveRouteRequest(req *v1.SolveRouteRequest) error {
+	// Validate chain IDs exist and get chain info for prefix validation
+	sourceChain, err := s.solver.GetChainInfo(req.ChainFrom)
+	if err != nil {
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("unknown source chain: %s", req.ChainFrom))
+	}
+	destChain, err := s.solver.GetChainInfo(req.ChainTo)
+	if err != nil {
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("unknown destination chain: %s", req.ChainTo))
+	}
+
+	// Validate sender address format (must be valid bech32)
+	senderPrefix, err := validateBech32Address(req.SenderAddress)
+	if err != nil {
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("invalid sender address '%s': %w", req.SenderAddress, err))
+	}
+
+	// Validate sender address prefix matches source chain
+	if sourceChain.Bech32Prefix != "" && senderPrefix != sourceChain.Bech32Prefix {
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("sender address prefix '%s' does not match source chain '%s' (expected prefix: %s)",
+				senderPrefix, req.ChainFrom, sourceChain.Bech32Prefix))
+	}
+
+	// Validate receiver address format (must be valid bech32)
+	receiverPrefix, err := validateBech32Address(req.ReceiverAddress)
+	if err != nil {
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("invalid receiver address '%s': %w", req.ReceiverAddress, err))
+	}
+
+	// Validate receiver address prefix matches destination chain
+	if destChain.Bech32Prefix != "" && receiverPrefix != destChain.Bech32Prefix {
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("receiver address prefix '%s' does not match destination chain '%s' (expected prefix: %s)",
+				receiverPrefix, req.ChainTo, destChain.Bech32Prefix))
+	}
+
+	// Validate amount is positive
+	if req.AmountIn == "" || req.AmountIn == "0" {
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("amount_in must be a positive number"))
+	}
+
+	return nil
 }
 
 // LookupDenom implements the ConnectRPC handler for denom lookup.
@@ -351,14 +413,33 @@ Errors:
 - None
 */
 func convertToProtoBrokerSwapRoute(brokerSwap *models.BrokerRoute) *v1.BrokerSwapRoute {
-	return &v1.BrokerSwapRoute{
+	// Convert outbound legs
+	outboundLegs := make([]*v1.IBCLeg, len(brokerSwap.OutboundLegs))
+	for i, leg := range brokerSwap.OutboundLegs {
+		outboundLegs[i] = convertToProtoIBCLeg(leg)
+	}
+
+	result := &v1.BrokerSwapRoute{
 		Path:                brokerSwap.Path,
 		InboundLeg:          convertToProtoIBCLeg(brokerSwap.InboundLeg),
 		Swap:                convertToProtoSwapQuote(brokerSwap.Swap),
-		OutboundLeg:         convertToProtoIBCLeg(brokerSwap.OutboundLeg),
+		OutboundLegs:        outboundLegs,
 		OutboundSupportsPfm: brokerSwap.OutboundSupportsPFM,
-		OutboundPfmMemo:     brokerSwap.OutboundPFMMemo,
 	}
+
+	// Add execution data if available
+	if brokerSwap.Execution != nil {
+		result.Execution = &v1.BrokerExecutionData{
+			Memo:            brokerSwap.Execution.Memo,
+			IbcReceiver:     brokerSwap.Execution.IBCReceiver,
+			RecoverAddress:  brokerSwap.Execution.RecoverAddress,
+			MinOutputAmount: brokerSwap.Execution.MinOutputAmount,
+			UsesWasm:        brokerSwap.Execution.UsesWasm,
+			Description:     brokerSwap.Execution.Description,
+		}
+	}
+
+	return result
 }
 
 /*
@@ -537,4 +618,47 @@ func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo) map[string]*
 		}
 	}
 	return protoTokenInfos
+}
+
+// validateBech32Address validates that an address is a valid bech32 address
+// Returns the prefix if valid, or an error if invalid
+func validateBech32Address(address string) (string, error) {
+	if address == "" {
+		return "", fmt.Errorf("address is empty")
+	}
+
+	// Check minimum length (prefix + "1" + data + checksum)
+	if len(address) < 10 {
+		return "", fmt.Errorf("address too short (minimum 10 characters)")
+	}
+
+	// Check for separator
+	sepIdx := strings.LastIndex(address, "1")
+	if sepIdx < 1 {
+		return "", fmt.Errorf("missing bech32 separator '1'")
+	}
+
+	// Validate the prefix (human-readable part)
+	prefix := address[:sepIdx]
+	if prefix == "" {
+		return "", fmt.Errorf("empty bech32 prefix")
+	}
+
+	// Try to decode as bech32 - this validates the checksum
+	decodedPrefix, data, err := bech32.Decode(address)
+	if err != nil {
+		return "", fmt.Errorf("invalid bech32 address (checksum failed): %w", err)
+	}
+
+	// Verify decoded prefix matches
+	if decodedPrefix != prefix {
+		return "", fmt.Errorf("bech32 prefix mismatch")
+	}
+
+	// Verify data is not empty (should be 20 or 32 bytes for cosmos addresses)
+	if len(data) == 0 {
+		return "", fmt.Errorf("empty address data")
+	}
+
+	return prefix, nil
 }

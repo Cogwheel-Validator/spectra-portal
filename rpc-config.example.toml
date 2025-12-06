@@ -39,7 +39,7 @@ burst = 200
 # Osmosis SQS Configuration
 # =============================================================================
 
-# Primary SQS endpoint (Osmosis Skip Sidecar Query Server)
+# Primary SQS endpoint (Osmosis Sidecar Query Server)
 sqs_main_url = "https://sqs.osmosis.zone"
 
 # Backup SQS endpoints for failover (optional)

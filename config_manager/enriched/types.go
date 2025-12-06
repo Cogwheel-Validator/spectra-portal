@@ -20,6 +20,9 @@ type ChainConfig struct {
 	IsBroker bool   `json:"is_broker"`
 	BrokerID string `json:"broker_id,omitempty"`
 
+	// IBC hooks contract address for swap operations (e.g., Osmosis entry point contract)
+	IBCHooksContract string `json:"ibc_hooks_contract,omitempty"`
+
 	// Middleware support (detected from chain or manually set)
 	HasPFM bool `json:"has_pfm"`
 
@@ -147,6 +150,9 @@ type RouteTokenInfo struct {
 
 	// Chain where token is native
 	OriginChain string `json:"origin_chain"`
+
+	// Human-readable symbol (e.g., "ATOM", "OSMO")
+	Symbol string `json:"symbol,omitempty"`
 
 	// Decimal places
 	Decimals int `json:"decimals"`

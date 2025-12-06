@@ -89,36 +89,42 @@ func NewSolverServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			httpClient,
 			baseURL+SolverServiceSolveRouteProcedure,
 			connect.WithSchema(solverServiceMethods.ByName("SolveRoute")),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		lookupDenom: connect.NewClient[v1.LookupDenomRequest, v1.LookupDenomResponse](
 			httpClient,
 			baseURL+SolverServiceLookupDenomProcedure,
 			connect.WithSchema(solverServiceMethods.ByName("LookupDenom")),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getTokenDenoms: connect.NewClient[v1.GetTokenDenomsRequest, v1.GetTokenDenomsResponse](
 			httpClient,
 			baseURL+SolverServiceGetTokenDenomsProcedure,
 			connect.WithSchema(solverServiceMethods.ByName("GetTokenDenoms")),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getChainInfo: connect.NewClient[v1.ChainInfoRequest, v1.ChainInfoResponse](
 			httpClient,
 			baseURL+SolverServiceGetChainInfoProcedure,
 			connect.WithSchema(solverServiceMethods.ByName("GetChainInfo")),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getSolverSupportedChains: connect.NewClient[emptypb.Empty, v1.SolverSupportedChainsResponse](
 			httpClient,
 			baseURL+SolverServiceGetSolverSupportedChainsProcedure,
 			connect.WithSchema(solverServiceMethods.ByName("GetSolverSupportedChains")),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getChainTokens: connect.NewClient[v1.GetChainTokensRequest, v1.GetChainTokensResponse](
 			httpClient,
 			baseURL+SolverServiceGetChainTokensProcedure,
 			connect.WithSchema(solverServiceMethods.ByName("GetChainTokens")),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -195,36 +201,42 @@ func NewSolverServiceHandler(svc SolverServiceHandler, opts ...connect.HandlerOp
 		SolverServiceSolveRouteProcedure,
 		svc.SolveRoute,
 		connect.WithSchema(solverServiceMethods.ByName("SolveRoute")),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	solverServiceLookupDenomHandler := connect.NewUnaryHandler(
 		SolverServiceLookupDenomProcedure,
 		svc.LookupDenom,
 		connect.WithSchema(solverServiceMethods.ByName("LookupDenom")),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	solverServiceGetTokenDenomsHandler := connect.NewUnaryHandler(
 		SolverServiceGetTokenDenomsProcedure,
 		svc.GetTokenDenoms,
 		connect.WithSchema(solverServiceMethods.ByName("GetTokenDenoms")),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	solverServiceGetChainInfoHandler := connect.NewUnaryHandler(
 		SolverServiceGetChainInfoProcedure,
 		svc.GetChainInfo,
 		connect.WithSchema(solverServiceMethods.ByName("GetChainInfo")),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	solverServiceGetSolverSupportedChainsHandler := connect.NewUnaryHandler(
 		SolverServiceGetSolverSupportedChainsProcedure,
 		svc.GetSolverSupportedChains,
 		connect.WithSchema(solverServiceMethods.ByName("GetSolverSupportedChains")),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	solverServiceGetChainTokensHandler := connect.NewUnaryHandler(
 		SolverServiceGetChainTokensProcedure,
 		svc.GetChainTokens,
 		connect.WithSchema(solverServiceMethods.ByName("GetChainTokens")),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/rpc.v1.SolverService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

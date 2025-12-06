@@ -41,6 +41,11 @@ type ChainMeta struct {
 	// Optional: Broker identifier, required if IsBroker is true (e.g., "osmosis-sqs")
 	BrokerID string `toml:"broker_id,omitempty"`
 
+	// Optional: IBC hooks contract address for swap operations
+	// This is the entry point contract for wasm swap_and_action (e.g., Osmosis entry point)
+	// Required if IsBroker is true and you want to generate executable swap memos
+	IBCHooksContract string `toml:"ibc_hooks_contract,omitempty"`
+
 	// Optional: Set to true if this chain supports Packet Forward Middleware
 	HasPFM *bool `toml:"has_pfm,omitempty"`
 

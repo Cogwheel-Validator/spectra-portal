@@ -7,6 +7,7 @@ require (
 	connectrpc.com/connect v1.19.1
 	connectrpc.com/grpcreflect v1.3.0
 	connectrpc.com/otelconnect v0.8.0
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/go-chi/httprate v0.15.0
 	github.com/hashicorp/go-getter v1.8.2

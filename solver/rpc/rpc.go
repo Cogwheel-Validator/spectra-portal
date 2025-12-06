@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -121,19 +122,19 @@ func NewServer(
 	// Prometheus metrics endpoint - enabled by separate flag or OTel config
 	metricsEnabled := config.EnableMetrics || (config.OTelConfig != nil && config.OTelConfig.UsePrometheus)
 	if metricsEnabled {
-		mux.Handle("/metrics", promhttp.Handler())
-		Logger.Info().Msg("Metrics endpoint enabled: /metrics")
+		mux.Handle("/server/metrics", promhttp.Handler())
+		Logger.Info().Msg("Metrics endpoint enabled: /server/metrics")
 	}
 
 	// Health check endpoint
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/server/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"healthy","service":"spectra-ibc-hub"}`))
+		_, _ = w.Write([]byte(`{"status":"healthy","service":"solver-rpc"}`))
 	})
 
 	// Readiness probe
-	mux.HandleFunc("/ready", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/server/ready", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status":"ready"}`))
@@ -145,7 +146,10 @@ func NewServer(
 	// Configure connect options
 	connectOpts := []connect.HandlerOption{
 		connect.WithRecover(recoverHandler),
-		connect.WithInterceptors(loggingInterceptor()),
+		connect.WithInterceptors(
+			loggingInterceptor(),
+			noCacheInterceptor(), // Prevent caching of volatile swap/route data
+		),
 	}
 
 	// Add OpenTelemetry tracing interceptor if enabled
@@ -272,9 +276,7 @@ func newCORSHandler(allowedOrigins []string, next http.Handler) http.Handler {
 			http.MethodPost,
 		},
 		AllowedHeaders: []string{
-			"Accept",
 			"Accept-Encoding",
-			"Accept-Post",
 			"Connect-Accept-Encoding",
 			"Connect-Content-Encoding",
 			"Connect-Protocol-Version",
@@ -326,6 +328,22 @@ func loggingInterceptor() connect.UnaryInterceptorFunc {
 	}
 }
 
+// noCacheInterceptor prevents caching of volatile responses like swap quotes.
+// While NO_SIDE_EFFECTS is semantically correct (queries don't modify state),
+// the results are time-sensitive and should not be cached by browsers/CDNs.
+func noCacheInterceptor() connect.UnaryInterceptorFunc {
+	return func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			resp, err := next(ctx, req)
+			if err == nil && resp != nil {
+				// Prevent caching of volatile data like swap quotes and routes
+				resp.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
+			}
+			return resp, err
+		}
+	}
+}
+
 // Start begins serving RPC requests without TLS
 func (s *Server) Start() error {
 	s.logServerInfo("http")
@@ -347,11 +365,11 @@ func (s *Server) logServerInfo(protocol string) {
 
 	Logger.Info().Msg("Available endpoints:")
 	Logger.Info().Msg("\tRPC: /rpc.v1.SolverService/*")
-	Logger.Info().Msg("\tHealth: /health")
-	Logger.Info().Msg("\tReady: /ready")
+	Logger.Info().Msg("\tHealth: /server/health")
+	Logger.Info().Msg("\tReady: /server/ready")
 
 	if s.config.EnableMetrics || (s.config.OTelConfig != nil && s.config.OTelConfig.UsePrometheus) {
-		Logger.Info().Msg("\tMetrics: /metrics")
+		Logger.Info().Msg("\tMetrics: /server/metrics")
 	}
 
 	if s.config.EnableReflection {
@@ -386,5 +404,6 @@ func recoverHandler(ctx context.Context, spec connect.Spec, header http.Header, 
 		Interface("panic", p).
 		Str("procedure", spec.Procedure).
 		Msg("Panic in RPC handler")
-	return connect.NewError(connect.CodeInternal, nil)
+	// Return a generic error message to clients (don't expose internal panic details)
+	return connect.NewError(connect.CodeInternal, fmt.Errorf("internal server error"))
 }

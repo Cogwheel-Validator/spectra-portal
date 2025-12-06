@@ -52,12 +52,14 @@ func (l *ChainConfigLoader) ConvertToRouterTypes(config *output.SolverConfig) ([
 
 	for i, solverChain := range config.Chains {
 		chains[i] = router.SolverChain{
-			Name:     solverChain.Name,
-			Id:       solverChain.ID,
-			HasPFM:   solverChain.HasPFM,
-			Broker:   solverChain.Broker,
-			BrokerId: solverChain.BrokerID,
-			Routes:   make([]router.BasicRoute, len(solverChain.Routes)),
+			Name:             solverChain.Name,
+			Id:               solverChain.ID,
+			HasPFM:           solverChain.HasPFM,
+			Broker:           solverChain.Broker,
+			BrokerId:         solverChain.BrokerID,
+			IBCHooksContract: solverChain.IBCHooksContract,
+			Bech32Prefix:     solverChain.Bech32Prefix,
+			Routes:           make([]router.BasicRoute, len(solverChain.Routes)),
 		}
 
 		for j, route := range solverChain.Routes {
@@ -76,6 +78,7 @@ func (l *ChainConfigLoader) ConvertToRouterTypes(config *output.SolverConfig) ([
 					IbcDenom:    tokenInfo.IBCDenom,
 					BaseDenom:   tokenInfo.BaseDenom,
 					OriginChain: tokenInfo.OriginChain,
+					Symbol:      tokenInfo.Symbol,
 					Decimals:    tokenInfo.Decimals,
 				}
 			}

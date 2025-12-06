@@ -217,6 +217,7 @@ func (rb *RouteBuilder) buildAllowedTokensForRoute(
 			DestinationDenom: ibcDenom,
 			BaseDenom:        token.Denom,
 			OriginChain:      fromChainID,
+			Symbol:           token.Symbol,
 			Decimals:         token.Exponent,
 		})
 		seen[token.Denom] = true
@@ -242,6 +243,7 @@ func (rb *RouteBuilder) buildAllowedTokensForRoute(
 			DestinationDenom: token.Denom, // Unwound to native
 			BaseDenom:        token.Denom,
 			OriginChain:      toChainID,
+			Symbol:           token.Symbol,
 			Decimals:         token.Exponent,
 		})
 		seen[ibcDenomOnOurChain] = true
@@ -271,6 +273,7 @@ func (rb *RouteBuilder) buildAllowedTokensForRoute(
 			DestinationDenom: destDenom,
 			BaseDenom:        token.OriginDenom,
 			OriginChain:      token.OriginChain,
+			Symbol:           token.Symbol,
 			Decimals:         token.Exponent,
 		})
 		seen[token.Denom] = true

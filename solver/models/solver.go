@@ -55,14 +55,55 @@ type IndirectRoute struct {
 	PFMMemo       string    `json:"pfm_memo,omitempty"`        // IBC memo for PFM forwarding
 }
 
-// BrokerRoute represents a route that requires a swap on a broker chain
+// BrokerRoute represents a route that requires a swap on a broker chain.
+// Supports various scenarios:
+// - Same-chain swap: InboundLeg=nil, OutboundLegs=[] (e.g., osmosis ATOM -> osmosis OSMO)
+// - Swap from broker: InboundLeg=nil (e.g., osmosis USDC -> juno JUNO)
+// - Standard 3-chain: InboundLeg set, len(OutboundLegs)=1
+// - Multi-hop outbound: InboundLeg set, len(OutboundLegs)>1 (e.g., cosmos ATOM -> swap -> noble USDC -> juno USDC)
 type BrokerRoute struct {
-	Path                []string   `json:"path"`                        // Chain IDs in order: [sourceChain, brokerChain, destChain]
-	InboundLeg          *IBCLeg    `json:"inbound_leg"`                 // Source -> Broker
-	Swap                *SwapQuote `json:"swap"`                        // Swap on broker
-	OutboundLeg         *IBCLeg    `json:"outbound_leg"`                // Broker -> Destination
-	OutboundSupportsPFM bool       `json:"outbound_supports_pfm"`       // Can broker forward to destination via PFM
-	OutboundPFMMemo     string     `json:"outbound_pfm_memo,omitempty"` // PFM memo if supported
+	// Chain IDs in order (all chains involved)
+	Path []string `json:"path"`
+
+	// IBC transfer to reach broker (nil if starting from broker)
+	InboundLeg *IBCLeg `json:"inbound_leg,omitempty"`
+
+	// Swap on broker chain
+	Swap *SwapQuote `json:"swap"`
+
+	// IBC transfers after swap (empty if destination is broker)
+	// Can be multiple for multi-hop forwarding (e.g., broker -> noble -> juno)
+	OutboundLegs []*IBCLeg `json:"outbound_legs"`
+
+	// Can use PFM for outbound legs
+	OutboundSupportsPFM bool `json:"outbound_supports_pfm"`
+
+	// Execution data - ready-to-use for transaction building
+	Execution *BrokerExecutionData `json:"execution,omitempty"`
+}
+
+// BrokerExecutionData contains ready-to-use transaction data for broker swap routes
+type BrokerExecutionData struct {
+	// The IBC memo to use with the inbound MsgTransfer
+	// This contains the wasm swap_and_action or PFM forward instructions
+	Memo string `json:"memo"`
+
+	// Receiver address for the inbound MsgTransfer
+	// For wasm swaps, this is the entry point contract address
+	IBCReceiver string `json:"ibc_receiver"`
+
+	// Recovery/refund address on the broker chain
+	// If the swap or forward fails, funds are sent here
+	RecoverAddress string `json:"recover_address"`
+
+	// Minimum output amount after slippage (default 1% slippage)
+	MinOutputAmount string `json:"min_output_amount"`
+
+	// Whether this uses wasm ibc-hooks (vs simple PFM)
+	UsesWasm bool `json:"uses_wasm"`
+
+	// Human-readable description of the execution
+	Description string `json:"description"`
 }
 
 // RouteResponse - unified response for all route types (informative, not prescriptive)
