@@ -1,6 +1,6 @@
 [chain]
 name = "Cosmos Hub"
-id = "cosmoshub-1"
+id = "cosmoshub-4"
 type = "cosmos"
 registry = "cosmoshub"
 explorer_url = "https://mintscan.io/cosmoshub"

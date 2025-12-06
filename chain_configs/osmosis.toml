@@ -47,3 +47,30 @@ symbol = "OSMO"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png"
 coingecko_id = "osmosis"
+
+[[token]]
+denom = "factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc"
+name = "Wrapped BTC (Osmosis)"
+symbol = "WBTC"
+exponent = 8
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/wbtc.png"
+coingecko_id = "wrapped-bitcoin"
+allowed_destinations = ["cosmoshub-4"] # no allowed destinations for this token
+
+[[token]]
+denom = "factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC"
+name = "Alloyed BTC (Osmosis)"
+symbol = "allBTC"
+exponent = 8
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/allbtc.png"
+coingecko_id = "wrapped-bitcoin"
+allowed_destinations = ["stargaze-1"]
+
+[[token]]
+denom = "factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH"
+name = "Alloyed ETH (Osmosis)"
+symbol = "allETH"
+exponent = 18
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/alleth.png"
+coingecko_id = "wrapped-ethereum"
+allowed_destinations = ["stargaze-1"]
