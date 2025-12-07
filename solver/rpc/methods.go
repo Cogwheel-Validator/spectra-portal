@@ -610,7 +610,7 @@ func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo, sortBySymbol
 	protoTokenInfos := make(map[string]*v1.TokenInfo, len(tokenInfo))
 	if *sortBySymbol {
 		for _, tokenInfo := range tokenInfo {
-			protoTokenInfos[tokenInfo.Symbol] = &v1.TokenInfo{
+			protoTokenInfos[tokenInfo.Symbol + "@" + tokenInfo.OriginChain] = &v1.TokenInfo{
 				ChainDenom:  tokenInfo.ChainDenom,
 				IbcDenom:    tokenInfo.IbcDenom,
 				BaseDenom:   tokenInfo.BaseDenom,
