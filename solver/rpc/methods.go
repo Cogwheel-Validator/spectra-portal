@@ -290,7 +290,7 @@ func (s *SolverServer) GetChainInfo(
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 	return connect.NewResponse(&v1.ChainInfoResponse{
-		ChainInfo: convertToProtoChainInfo(&chain),
+		ChainInfo: convertToProtoChainInfo(&chain, &req.Msg.SortBySymbol),
 	}), nil
 }
 
@@ -581,17 +581,17 @@ func convertOsmosisRouteData(data *router.OsmosisRouteData) *v1.OsmosisRouteData
 	}
 }
 
-func convertToProtoChainInfo(chain *router.SolverChain) *v1.ChainInfo {
+func convertToProtoChainInfo(chain *router.SolverChain, sortBySymbol *bool) *v1.ChainInfo {
 	return &v1.ChainInfo{
 		ChainId:   chain.Id,
 		ChainName: chain.Name,
 		HasPfm:    chain.HasPFM,
 		IsBroker:  chain.Broker,
-		Routes:    convertToProtoBasicRoute(chain.Routes),
+		Routes:    convertToProtoBasicRoute(chain.Routes, sortBySymbol),
 	}
 }
 
-func convertToProtoBasicRoute(routes []router.BasicRoute) []*v1.BasicRoute {
+func convertToProtoBasicRoute(routes []router.BasicRoute, sortBySymbol *bool) []*v1.BasicRoute {
 	protoRoutes := make([]*v1.BasicRoute, len(routes))
 	for i := range routes {
 		protoRoutes[i] = &v1.BasicRoute{
@@ -600,21 +600,35 @@ func convertToProtoBasicRoute(routes []router.BasicRoute) []*v1.BasicRoute {
 			ConnectionId:  routes[i].ConnectionId,
 			ChannelId:     routes[i].ChannelId,
 			PortId:        routes[i].PortId,
-			AllowedTokens: convertToProtoTokenInfo(routes[i].AllowedTokens),
+			AllowedTokens: convertToProtoTokenInfo(routes[i].AllowedTokens, sortBySymbol),
 		}
 	}
 	return protoRoutes
 }
 
-func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo) map[string]*v1.TokenInfo {
+func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo, sortBySymbol *bool) map[string]*v1.TokenInfo {
 	protoTokenInfos := make(map[string]*v1.TokenInfo, len(tokenInfo))
-	for denom, tokenInfo := range tokenInfo {
-		protoTokenInfos[denom] = &v1.TokenInfo{
-			ChainDenom:  tokenInfo.ChainDenom,
-			IbcDenom:    tokenInfo.IbcDenom,
-			BaseDenom:   tokenInfo.BaseDenom,
-			OriginChain: tokenInfo.OriginChain,
-			Decimals:    int32(tokenInfo.Decimals),
+	if *sortBySymbol {
+		for _, tokenInfo := range tokenInfo {
+			protoTokenInfos[tokenInfo.Symbol] = &v1.TokenInfo{
+				ChainDenom:  tokenInfo.ChainDenom,
+				IbcDenom:    tokenInfo.IbcDenom,
+				BaseDenom:   tokenInfo.BaseDenom,
+				OriginChain: tokenInfo.OriginChain,
+				Decimals:    int32(tokenInfo.Decimals),
+				Symbol:      tokenInfo.Symbol,
+			}
+		}
+	} else {
+		for denom, tokenInfo := range tokenInfo {
+			protoTokenInfos[denom] = &v1.TokenInfo{
+				ChainDenom:  tokenInfo.ChainDenom,
+				IbcDenom:    tokenInfo.IbcDenom,
+				BaseDenom:   tokenInfo.BaseDenom,
+				OriginChain: tokenInfo.OriginChain,
+				Decimals:    int32(tokenInfo.Decimals),
+				Symbol:      tokenInfo.Symbol,
+			}
 		}
 	}
 	return protoTokenInfos

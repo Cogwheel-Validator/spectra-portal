@@ -147,8 +147,8 @@ func buildServerConfig(cfg *config.RPCSolverConfig) *rpc.ServerConfig {
 	if cfg.RatePerMinute > 0 {
 		serverConfig.RatePerMinute = &cfg.RatePerMinute
 	}
-	if cfg.Burst > 0 {
-		serverConfig.Burst = &cfg.Burst
+	if cfg.MaxConcurrentRequests > 0 {
+		serverConfig.MaxConcurrentRequests = &cfg.MaxConcurrentRequests
 	}
 
 	// Set OpenTelemetry configuration if any telemetry is enabled

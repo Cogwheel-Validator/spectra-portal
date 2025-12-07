@@ -10,8 +10,8 @@ type RPCSolverConfig struct {
 	EnableReflection bool     `toml:"enable_reflection"`
 
 	// rate limiting configs
-	RatePerMinute int `toml:"rate_per_minute"`
-	Burst         int `toml:"burst"`
+	RatePerMinute         int `toml:"rate_per_minute"`
+	MaxConcurrentRequests int `toml:"max_concurrent_requests"`
 
 	// OpenTelemetry configs
 	ServiceName    string `toml:"service_name"`

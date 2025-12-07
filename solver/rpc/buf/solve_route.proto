@@ -299,7 +299,8 @@ message SolverSupportedChainsResponse {
 }
 
 message ChainInfoRequest {
-    string chain_id = 1;
+    string chain_id = 1 [(buf.validate.field).required = true];
+    bool sort_by_symbol = 2;
 }
 
 message ChainInfoResponse {
@@ -320,6 +321,7 @@ message TokenInfo {
     string base_denom = 3;
     string origin_chain = 4;
     int32 decimals = 5;
+    string symbol = 6;
 }
 
 message BasicRoute {

@@ -199,8 +199,8 @@ enable_reflection = true
 # Maximum requests per IP per minute
 rate_per_minute = 100
 
-# Burst limit (maximum concurrent requests per IP)
-burst = 200
+# Set the amount of possible concurrent request possible to the RPC
+max_concurrent_requests = 200
 
 # =============================================================================
 # Osmosis SQS Configuration

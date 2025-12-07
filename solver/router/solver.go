@@ -40,13 +40,13 @@ type SwapResult struct {
 
 // Solver orchestrates route finding and integrates with broker DEX APIs
 type Solver struct {
-	chainsMap        map[string]SolverChain // mapped chainId -> SolverChain
-	routeIndex       *RouteIndex // routeIndex from which all routes are found
+	chainsMap        map[string]SolverChain  // mapped chainId -> SolverChain
+	routeIndex       *RouteIndex             // routeIndex from which all routes are found
 	brokerClients    map[string]BrokerClient // mapped brokerId -> broker client interface
-	denomResolver    *DenomResolver // denomResolver for resolving denoms across chains
-	addressConverter *AddressConverter // addressConverter for converting addresses across chains
-	maxRetries       int // maximum number of retries for broker queries
-	retryDelay       time.Duration // delay between retries for broker queries
+	denomResolver    *DenomResolver          // denomResolver for resolving denoms across chains
+	addressConverter *AddressConverter       // addressConverter for converting addresses across chains
+	maxRetries       int                     // maximum number of retries for broker queries
+	retryDelay       time.Duration           // delay between retries for broker queries
 }
 
 // NewSolver creates a new Solver with the given route index and broker clients
@@ -618,12 +618,12 @@ func (s *Solver) buildSwapOnlyExecution(
 	// Build wasm memo
 	memoBuilder := NewWasmMemoBuilder(brokerChain.IBCHooksContract)
 	memo, err := memoBuilder.BuildSwapMemo(SwapMemoParams{
-		TokenInDenom:    hopInfo.TokenIn.IbcDenom,
-		TokenOutDenom:   hopInfo.TokenOutOnBroker.ChainDenom,
-		MinOutputAmount: minOutput,
-		RouteData:       routeData,
+		TokenInDenom:     hopInfo.TokenIn.IbcDenom,
+		TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
+		MinOutputAmount:  minOutput,
+		RouteData:        routeData,
 		TimeoutTimestamp: DefaultTimeoutTimestamp(),
-		RecoverAddress:  addresses.BrokerAddress,
+		RecoverAddress:   addresses.BrokerAddress,
 		PostSwapAction: PostSwapAction{
 			TransferTo: addresses.DestinationAddress, // For swap-only, receiver is on broker chain
 		},

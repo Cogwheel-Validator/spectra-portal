@@ -36,29 +36,29 @@ func zerologMiddleware(next http.Handler) http.Handler {
 // realIPMiddleware sets the remote address to the real IP address of the client
 // This is useful for logging and rate limiting
 func realIPMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        // Check CF-Connecting-IP first (most reliable with Cloudflare)
-        if ip := r.Header.Get("CF-Connecting-IP"); ip != "" {
-            r.RemoteAddr = ip
-            next.ServeHTTP(w, r)
-            return
-        }
-        
-        // Fall back to X-Forwarded-For
-        if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-            // X-Forwarded-For can contain multiple IPs, take the first one
-            ips := strings.Split(xff, ",")
-            if len(ips) > 0 {
-                ip := strings.TrimSpace(ips[0])
-                r.RemoteAddr = ip
-                next.ServeHTTP(w, r)
-                return
-            }
-        }
-        
-        // No proxy headers found, use original RemoteAddr
-        next.ServeHTTP(w, r)
-    })
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check CF-Connecting-IP first (most reliable with Cloudflare)
+		if ip := r.Header.Get("CF-Connecting-IP"); ip != "" {
+			r.RemoteAddr = ip
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Fall back to X-Forwarded-For
+		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			// X-Forwarded-For can contain multiple IPs, take the first one
+			ips := strings.Split(xff, ",")
+			if len(ips) > 0 {
+				ip := strings.TrimSpace(ips[0])
+				r.RemoteAddr = ip
+				next.ServeHTTP(w, r)
+				return
+			}
+		}
+
+		// No proxy headers found, use original RemoteAddr
+		next.ServeHTTP(w, r)
+	})
 }
 
 // zerologRecoverer recovers from panics and logs with zerolog

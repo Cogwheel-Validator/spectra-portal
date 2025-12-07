@@ -78,11 +78,11 @@ type SwapAndAction struct {
 
 // SwapAndActionInner contains the swap details
 type SwapAndActionInner struct {
-	UserSwap         *UserSwap         `json:"user_swap"`
-	MinAsset         *MinAsset         `json:"min_asset"`
-	TimeoutTimestamp int64             `json:"timeout_timestamp"`
+	UserSwap         *UserSwap          `json:"user_swap"`
+	MinAsset         *MinAsset          `json:"min_asset"`
+	TimeoutTimestamp int64              `json:"timeout_timestamp"`
 	PostSwapAction   *PostSwapActionMsg `json:"post_swap_action"`
-	Affiliates       []interface{}     `json:"affiliates"`
+	Affiliates       []interface{}      `json:"affiliates"`
 }
 
 // UserSwap contains the swap route
@@ -285,4 +285,3 @@ func CalculateMinOutput(expectedOutput string, slippageBps int) (string, error) 
 
 	return strconv.FormatInt(minOutput, 10), nil
 }
-

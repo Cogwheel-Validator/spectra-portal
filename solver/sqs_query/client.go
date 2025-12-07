@@ -59,11 +59,11 @@ func DefaultFailoverConfig() FailoverConfig {
 
 // healthChecker periodically checks if the primary endpoint is healthy
 type healthChecker struct {
-	client     *SqsQueryClient
-	stopCh     chan struct{}
-	stoppedCh  chan struct{}
-	isRunning  bool
-	mu         sync.Mutex
+	client    *SqsQueryClient
+	stopCh    chan struct{}
+	stoppedCh chan struct{}
+	isRunning bool
+	mu        sync.Mutex
 }
 
 // NewSqsQueryClient creates a new SqsQueryClient with a single endpoint (backward compatible)

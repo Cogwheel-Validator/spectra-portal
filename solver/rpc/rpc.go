@@ -35,27 +35,27 @@ func SetLogger(l zerolog.Logger) {
 
 // ServerConfig holds configuration for the RPC server
 type ServerConfig struct {
-	Address          string
-	AllowedOrigins   []string
-	EnableReflection bool
-	EnableMetrics    bool
-	RatePerMinute    *int
-	Burst            *int
-	OTelConfig       *OTelConfig // OpenTelemetry configuration
+	Address               string
+	AllowedOrigins        []string
+	EnableReflection      bool
+	EnableMetrics         bool
+	RatePerMinute         *int
+	MaxConcurrentRequests *int
+	OTelConfig            *OTelConfig // OpenTelemetry configuration
 }
 
 // DefaultServerConfig returns a default server configuration
 func DefaultServerConfig() *ServerConfig {
-	rateLimit := 100
-	burst := 200
+	rateLimit := 0
+	maxConcurrentRequests := 200
 	return &ServerConfig{
-		Address:          "localhost:8080",
-		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:8080"},
-		EnableReflection: true,
-		EnableMetrics:    true,
-		RatePerMinute:    &rateLimit,
-		Burst:            &burst,
-		OTelConfig:       DefaultOTelConfig(),
+		Address:               "localhost:8080",
+		AllowedOrigins:        []string{"http://localhost:3000", "http://localhost:8080"},
+		EnableReflection:      true,
+		EnableMetrics:         true,
+		RatePerMinute:         &rateLimit,
+		MaxConcurrentRequests: &maxConcurrentRequests,
+		OTelConfig:            DefaultOTelConfig(),
 	}
 }
 
@@ -104,6 +104,7 @@ func NewServer(
 	mux.Use(middleware.RealIP)
 	mux.Use(middleware.Compress(5))
 	mux.Use(middleware.Timeout(60 * time.Second))
+	mux.Use(realIPMiddleware)
 
 	// Add OpenTelemetry HTTP instrumentation if tracing is enabled
 	if config.OTelConfig != nil && config.OTelConfig.EnableTracing {
@@ -114,8 +115,8 @@ func NewServer(
 	if config.RatePerMinute != nil && *config.RatePerMinute > 0 {
 		mux.Use(httprate.LimitByIP(*config.RatePerMinute, 1*time.Minute))
 	}
-	if config.Burst != nil && *config.Burst > 0 {
-		mux.Use(middleware.Throttle(*config.Burst))
+	if config.MaxConcurrentRequests != nil && *config.MaxConcurrentRequests > 0 {
+		mux.Use(middleware.Throttle(*config.MaxConcurrentRequests))
 	}
 
 	// Prometheus metrics endpoint - enabled by separate flag or OTel config
