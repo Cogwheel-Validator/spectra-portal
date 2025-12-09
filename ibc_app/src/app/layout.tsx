@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Expletus_Sans, Roboto } from "next/font/google";
 import "./globals.css";
-import MenuInterface from "@/components/menu/menuInterface";
+import FooterInterface from "@/components/ui/footer/footerInterface";
+import MenuInterface from "@/components/ui/menu/menuInterface";
 
 const expletusSans = Expletus_Sans({
     variable: "--font-expletus-sans",
@@ -28,6 +29,7 @@ export default function RootLayout({
             <body className={`${expletusSans.variable} ${robotoFont.variable} antialiased`}>
                 <MenuInterface />
                 {children}
+                <FooterInterface />
             </body>
         </html>
     );

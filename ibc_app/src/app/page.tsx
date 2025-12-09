@@ -5,7 +5,7 @@ import { Particles } from "@/components/ui/particles";
 
 export default function Home() {
     return (
-        <div className="relative min-h-screen bg-blend-soft-light bg-radial-[at_50%_65%] from-slate-800 via-blue-950 to-indigo-950 to-90%">
+        <div className="relative min-h-[80dvh] bg-blend-soft-light bg-radial-[at_50%_65%] from-slate-800 via-blue-950 to-indigo-950 to-90%">
             <Particles className="absolute inset-0 z-0" />
             <div className="relative z-10 flex max-w-5xl mx-auto flex-col items-center justify-center min-h-screen">
                 <div className="flex flex-col items-center justify-center space-y-4 text-base-content">
