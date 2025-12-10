@@ -10,7 +10,7 @@ export default function MenuInterface(): JSX.Element {
         { label: "About Spectra IBC", href: "/about" },
         { label: "Docs", href: "https://docs.cogwheel.zone/spectra-ibc", newTab: true },
     ];
-    
+
     return (
         <>
             {/* Show phone menu on small and medium screens */}

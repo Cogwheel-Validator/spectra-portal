@@ -6,15 +6,32 @@ import type { MenuItem } from "./types";
 export default function MenuPC({ menuItems }: { menuItems: MenuItem[] }): JSX.Element {
     return (
         <div className="navbar items-center align-baseline fixed z-20 space-x-4">
-            <Image src="/logo.png" alt="Spectra Logo" width={521} height={126} className="w-40" loading="eager" />
+            <Image
+                src="/logo.png"
+                alt="Spectra Logo"
+                width={521}
+                height={126}
+                className="w-40"
+                loading="eager"
+            />
             <div className="flex flex-row rounded-box backdrop-blur-sm">
                 {menuItems.map((item, index) => (
-                    <button type="button" 
-                    className={`btn btn-primary btn-soft btn-md border-accent border ${
-                        index === 0 ? "rounded-none rounded-l-box" : 
-                        index === menuItems.length - 1 ? "rounded-none rounded-r-box" :
-                        "rounded-none"}`} key={item.label}>
-                        <Link href={item.href} target={item.newTab ? "_blank" : undefined} rel={item.newTab ? "noopener noreferrer" : undefined}>
+                    <button
+                        type="button"
+                        className={`btn btn-primary btn-soft btn-md border-accent border ${
+                            index === 0
+                                ? "rounded-none rounded-l-box"
+                                : index === menuItems.length - 1
+                                  ? "rounded-none rounded-r-box"
+                                  : "rounded-none"
+                        }`}
+                        key={item.label}
+                    >
+                        <Link
+                            href={item.href}
+                            target={item.newTab ? "_blank" : undefined}
+                            rel={item.newTab ? "noopener noreferrer" : undefined}
+                        >
                             {item.label}
                         </Link>
                     </button>
