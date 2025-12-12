@@ -2,4 +2,5 @@ export type MenuItem = {
     label: string;
     href: string;
     newTab?: boolean;
+    icon?: React.ReactNode;
 };

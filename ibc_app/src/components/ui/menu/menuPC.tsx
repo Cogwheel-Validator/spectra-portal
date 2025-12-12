@@ -18,7 +18,7 @@ export default function MenuPC({ menuItems }: { menuItems: MenuItem[] }): JSX.El
                 {menuItems.map((item, index) => (
                     <button
                         type="button"
-                        className={`btn btn-primary btn-soft btn-md border-accent border ${
+                        className={`btn btn-primary btn-soft btn-md border-accent border items-center ${
                             index === 0
                                 ? "rounded-none rounded-l-box"
                                 : index === menuItems.length - 1
@@ -27,6 +27,7 @@ export default function MenuPC({ menuItems }: { menuItems: MenuItem[] }): JSX.El
                         }`}
                         key={item.label}
                     >
+                        {item.icon && <span>{item.icon as React.ReactNode}</span>}
                         <Link
                             href={item.href}
                             target={item.newTab ? "_blank" : undefined}

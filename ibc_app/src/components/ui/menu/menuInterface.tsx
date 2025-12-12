@@ -1,14 +1,17 @@
 import type { JSX } from "react";
+import { BiTransfer } from "react-icons/bi";
+import { FaChartBar, FaInfo } from "react-icons/fa";
+import { SiGoogledocs } from "react-icons/si";
 import MenuPC from "./menuPC";
 import MenuPhone from "./menuPhone";
 import type { MenuItem } from "./types";
 
 export default function MenuInterface(): JSX.Element {
     const menuItems: MenuItem[] = [
-        { label: "IBC Send", href: "/ibc" },
-        { label: "Chain Status", href: "/status" },
-        { label: "About Spectra IBC", href: "/about" },
-        { label: "Docs", href: "https://docs.cogwheel.zone/spectra-ibc", newTab: true },
+        { label: "IBC Send", href: "/ibc", icon: <BiTransfer className="size-6" /> },
+        { label: "Chain Status", href: "/status", icon: <FaChartBar className="size-6" /> },
+        { label: "About Spectra IBC", href: "/about", icon: <FaInfo className="size-6" /> },
+        { label: "Docs", href: "https://docs.cogwheel.zone/spectra-ibc", newTab: true, icon: <SiGoogledocs className="size-6" /> },
     ];
 
     return (

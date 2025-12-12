@@ -23,7 +23,7 @@ func main() {
 	// Define command-line flags
 	inputDir := flag.String("input", "./chain_configs", "Directory containing human-readable chain configs")
 	solverOutput := flag.String("solver-output", "./generated/solver_config.toml", "Output path for solver config")
-	clientOutput := flag.String("client-output", "./generated/client_config.json", "Output path for client config")
+	clientOutput := flag.String("client-output", "./generated/client_config.toml", "Output path for client config")
 	solverFormat := flag.String("solver-format", "auto", "Solver output format: auto, toml, json")
 	clientFormat := flag.String("client-format", "auto", "Client output format: auto, toml, json")
 	registryCache := flag.String("registry-cache", "", "Path to cache IBC registry data (optional)")

@@ -29,8 +29,9 @@ function generateJSXMenuSelection(items: MenuItem[]): JSX.Element[] {
             href={item.href}
             target={item.newTab ? "_blank" : undefined}
             rel={item.newTab ? "noopener noreferrer" : undefined}
-            className="btn btn-primary btn-soft btn-sm border-accent border rounded-xl w-full"
+            className="btn btn-primary btn-soft btn-sm border-accent border rounded-xl w-full items-center"
         >
+            {item.icon && <span>{item.icon as React.ReactNode}</span>}
             {item.label}
         </Link>
     ));
