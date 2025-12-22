@@ -3,6 +3,7 @@ package output
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/enriched"
@@ -12,6 +13,8 @@ import (
 type ClientConverter struct {
 	// Optional: base URL for chain logos if not specified per-chain
 	chainLogoBaseURL string
+	// Whether to copy the icons to the public/icons directory
+	copyIcons bool
 }
 
 // ClientConverterOption configures the client converter.
@@ -21,6 +24,14 @@ type ClientConverterOption func(*ClientConverter)
 func WithChainLogoBaseURL(url string) ClientConverterOption {
 	return func(c *ClientConverter) {
 		c.chainLogoBaseURL = url
+	}
+}
+
+// WithIconCopy sets whether to copy the icons to the public/icons directory.
+// If true, the icons will be copied to the public/icons directory.
+func WithIconCopy(copy bool) ClientConverterOption {
+	return func(c *ClientConverter) {
+		c.copyIcons = copy
 	}
 }
 
@@ -89,7 +100,7 @@ func (c *ClientConverter) convertChain(
 			Name:        token.Name,
 			Symbol:      token.Symbol,
 			Decimals:    token.Decimals,
-			Icon:        token.Icon,
+			Icon:        c.convertUrlToIcon(token.Icon),
 			OriginChain: chain.ID,
 			CoinGeckoID: token.CoinGeckoID,
 			IsNative:    true,
@@ -97,8 +108,7 @@ func (c *ClientConverter) convertChain(
 		clientChain.NativeTokens = append(clientChain.NativeTokens, clientToken)
 
 		// Track for AllTokens
-		c.trackToken(tokenTracker, token.Denom, token.Name, token.Symbol,
-			token.Icon, chain.ID, chain.Name, token.CoinGeckoID, chain.ID)
+		c.trackToken(tokenTracker, &clientToken)
 	}
 
 	// Convert IBC tokens
@@ -114,7 +124,7 @@ func (c *ClientConverter) convertChain(
 			Name:            token.Name,
 			Symbol:          token.Symbol,
 			Decimals:        token.Decimals,
-			Icon:            token.Icon,
+			Icon:            c.convertUrlToIcon(token.Icon),
 			OriginChain:     token.OriginChain,
 			OriginChainName: originChainName,
 			IsNative:        false,
@@ -123,8 +133,7 @@ func (c *ClientConverter) convertChain(
 		clientChain.IBCTokens = append(clientChain.IBCTokens, clientToken)
 
 		// Track for AllTokens
-		c.trackToken(tokenTracker, token.BaseDenom, token.Name, token.Symbol,
-			token.Icon, token.OriginChain, originChainName, "", chain.ID)
+		c.trackToken(tokenTracker, &clientToken)
 	}
 
 	// Build connected chains info
@@ -155,26 +164,26 @@ func (c *ClientConverter) getChainLogo(chain *enriched.ChainConfig) string {
 
 func (c *ClientConverter) trackToken(
 	tracker map[string]*ClientTokenSummary,
-	baseDenom, name, symbol, icon, originChain, originChainName, coinGeckoID, availableOnChain string,
+	clientToken *ClientToken,
 ) {
-	key := fmt.Sprintf("%s:%s", originChain, baseDenom)
+	key := fmt.Sprintf("%s:%s", clientToken.OriginChain, clientToken.Denom)
 
 	if existing, exists := tracker[key]; exists {
 		// Add this chain to availableOn if not already there
-		found := slices.Contains(existing.AvailableOn, availableOnChain)
+		found := slices.Contains(existing.AvailableOn, clientToken.OriginChain)
 		if !found {
-			existing.AvailableOn = append(existing.AvailableOn, availableOnChain)
+			existing.AvailableOn = append(existing.AvailableOn, clientToken.OriginChain)
 		}
 	} else {
 		tracker[key] = &ClientTokenSummary{
-			BaseDenom:       baseDenom,
-			Symbol:          symbol,
-			Name:            name,
-			Icon:            icon,
-			OriginChain:     originChain,
-			OriginChainName: originChainName,
-			CoinGeckoID:     coinGeckoID,
-			AvailableOn:     []string{availableOnChain},
+			BaseDenom:       clientToken.Denom,
+			Symbol:          clientToken.Symbol,
+			Name:            clientToken.Name,
+			Icon:            clientToken.Icon,
+			OriginChain:     clientToken.OriginChain,
+			OriginChainName: clientToken.OriginChainName,
+			CoinGeckoID:     clientToken.CoinGeckoID,
+			AvailableOn:     []string{clientToken.OriginChain},
 		}
 	}
 }
@@ -213,4 +222,29 @@ func (c *ClientConverter) buildConnectedChains(
 	}
 
 	return connected
+}
+
+// Convert the URL of icon to make a path to the icon within the
+// public/icons directory within the frontend project
+// Example: https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png
+// becomes /icons/osmosis/osmo.png
+//
+// It will only work if the option to copy this data is enabled.
+//
+// Parameters:
+// - url: The URL of the icon
+//
+// Returns:
+//
+// - The path: to the icon within the public/icons directory
+// - The original URL: if the option to copy this data is disabled
+func (c *ClientConverter) convertUrlToIcon(url string) string {
+	if c.copyIcons {
+		// Get the last part of the URL
+		splitUrl := strings.Split(url, "/")
+		iconPath := strings.Join(splitUrl[len(splitUrl)-2:], "/")
+		// Return the path to the icon within the public/icons directory
+		return fmt.Sprintf("/icons/%s", iconPath)
+	}
+	return url
 }

@@ -303,7 +303,14 @@ func (rb *RouteBuilder) computeIBCDenom(port, channel, denom string) string {
 }
 
 func (rb *RouteBuilder) isTokenAllowedToChain(token *input.TokenMeta, toChainID string) bool {
-	if len(token.AllowedDestinations) == 0 {
+	sliceLength := len(token.AllowedDestinations)
+	if slices.Contains(token.AllowedDestinations, "none") && sliceLength == 1 {
+		// If there is none it means the token is not allowed to be sent to any chain
+		// Usually allowed only on Osmosis for tokens that are meant to be traded via
+		// the DEX broker
+		return false 
+	}
+	if sliceLength == 0 {
 		return true // No restrictions
 	}
 	return slices.Contains(token.AllowedDestinations, toChainID)

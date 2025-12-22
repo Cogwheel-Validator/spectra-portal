@@ -22,7 +22,8 @@ generate-proto:
 generate-config:
 	@echo "Generating config file for the client app and solver backend..."
 	go run config_manager/cmd/generate/main.go \
-		-input ./chain_configs 
+		-input ./chain_configs
+		-copy-icons ./ibc_app/public/
 
 # Generate the config file for the client app and sovler using the already cached ibc registry
 generate-config-c:
@@ -30,7 +31,8 @@ generate-config-c:
 	go run config_manager/cmd/generate/main.go \
 		-input ./chain_configs \
 		-registry-cache ./ibc-registry \
-		-use-cache 
+		-use-cache
+		-copy-icons ./ibc_app/public/
 
 # Validate the config files for the client app and solver backend
 validate-config:
@@ -97,3 +99,9 @@ vulncheck-go:
 	@echo "Vulnerability checking go files..."
 	govulncheck ./...
 	@echo "Go files vulnerability checked successfully!"
+
+# This check requires the snyk cli to be installed
+snyk-local:
+	@echo "Vulnerability checking all files with snyk..."
+	snyk test
+	@echo "All files vulnerability checked successfully with snyk!"

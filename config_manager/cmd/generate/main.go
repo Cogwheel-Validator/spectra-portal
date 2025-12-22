@@ -31,6 +31,8 @@ func main() {
 	skipNetwork := flag.Bool("skip-network", false, "Skip network validation of endpoints")
 	useCache := flag.Bool("use-cache", false, "Use cached registry data instead of downloading fresh")
 	validate := flag.Bool("validate-only", false, "Only validate configs, don't generate")
+	// If the path is set for this option the program will assume this is enabled and will try to copy the icons.
+	copyIconsPath := flag.String("copy-icons", "", "Copy icons to the public/icons directory")
 
 	flag.Parse()
 
@@ -50,6 +52,7 @@ func main() {
 		ChainLogoBaseURL:      *chainLogoBase,
 		SkipNetworkValidation: *skipNetwork,
 		UseRegistryCache:      *useCache,
+		CopyIconsPath:         *copyIconsPath,
 	}
 
 	if *validate {

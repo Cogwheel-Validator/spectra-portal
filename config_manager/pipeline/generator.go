@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/cp"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/enriched"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/output"
@@ -54,6 +55,9 @@ type GeneratorConfig struct {
 
 	// Skip downloading fresh registry data (use cache)
 	UseRegistryCache bool
+
+	// If the path is set for this option the program will assume this is enabled and will try to copy the icons.
+	CopyIconsPath string
 }
 
 // Generator is the main config generation pipeline.
@@ -77,6 +81,10 @@ func NewGenerator(config GeneratorConfig) *Generator {
 	var builderOpts []enriched.BuilderOption
 	if config.SkipNetworkValidation {
 		builderOpts = append(builderOpts, enriched.WithSkipNetworkCheck(true))
+	}
+
+	if config.CopyIconsPath != "" {
+		clientConvOpts = append(clientConvOpts, output.WithIconCopy(true))
 	}
 
 	return &Generator{
@@ -189,6 +197,14 @@ func (g *Generator) Generate() (*GenerateResult, error) {
 		log.Printf("Written to %s", g.config.ClientOutputPath)
 	}
 
+	// Step 7 (Optional): Copy icons to the public/icons directory
+	if g.config.CopyIconsPath != "" {
+		if err := g.copyChainImages(inputConfigs, enrichedReg); err != nil {
+			return nil, fmt.Errorf("failed to copy icons: %w", err)
+		}
+		log.Printf("Copied icons to %s/icons", g.config.CopyIconsPath)
+	}
+	
 	log.Println("Config generation complete!")
 	return result, nil
 }
@@ -225,6 +241,64 @@ func (g *Generator) fetchIBCRegistry(inputConfigs map[string]*input.ChainInput) 
 	}
 
 	return ibcData, nil
+}
+
+// copyChainImages copies all chain images from the images directory to the public directory
+func (g *Generator) copyChainImages(inputConfigs map[string]*input.ChainInput, enrichedReg *enriched.RegistryConfig) error {
+	// Get absolute path to images directory (relative to current working directory)
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+	
+	// Resolve images directory to absolute path
+	imagesDir := filepath.Join(currentDir, "images")
+	imagesDir, err = filepath.Abs(imagesDir)
+	if err != nil {
+		return fmt.Errorf("failed to resolve images directory: %w", err)
+	}
+	
+	// Ensure images directory exists
+	if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
+		return fmt.Errorf("images directory does not exist: %s", imagesDir)
+	}
+
+	// Resolve public directory to absolute path
+	publicDir := g.config.CopyIconsPath
+	if !filepath.IsAbs(publicDir) {
+		publicDir = filepath.Join(currentDir, publicDir)
+	}
+	publicDir, err = filepath.Abs(publicDir)
+	if err != nil {
+		return fmt.Errorf("failed to resolve public directory: %w", err)
+	}
+
+	// Ensure public directory exists (or create it)
+	if err := os.MkdirAll(publicDir, 0755); err != nil {
+		return fmt.Errorf("failed to create public directory: %w", err)
+	}
+
+	// Copy images for each chain
+	for chainID, chainConfig := range enrichedReg.Chains {
+		// Get registry name from the chain config (e.g., "osmosis", "noble")
+		registryName := chainConfig.Registry
+		if registryName == "" {
+			// Fallback: try to get from input config
+			if inputConfig, exists := inputConfigs[chainID]; exists {
+				registryName = inputConfig.Chain.Registry
+			}
+			if registryName == "" {
+				log.Printf("Warning: no registry name for chain %s, skipping image copy", chainID)
+				continue
+			}
+		}
+
+		if err := cp.CopyChainImages(imagesDir, publicDir, registryName); err != nil {
+			return fmt.Errorf("failed to copy images for chain %s: %w", registryName, err)
+		}
+	}
+
+	return nil
 }
 
 func (g *Generator) writeSolverConfig(config *output.SolverConfig) error {

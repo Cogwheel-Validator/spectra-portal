@@ -158,6 +158,9 @@ func (v *Validator) validateRequired(config *ChainInput, result *ValidationResul
 		if token.Icon == "" {
 			result.Errors = append(result.Errors, &ValidationError{prefix + ".icon", "is required"})
 		}
+		if len(token.AllowedDestinations) > 1 && slices.Contains(token.AllowedDestinations, "none") {
+			result.Errors = append(result.Errors, &ValidationError{prefix + ".allowed_destinations", "cannot contain none if more than one destination is specified"})
+		}
 	}
 }
 
