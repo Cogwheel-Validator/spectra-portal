@@ -11,11 +11,12 @@
 	vulncheck-js 
 	vulncheck-go
 
-# Generate the protobuf files for the rpc server
+# Generate the protobuf files for the RPC server and client app
 generate-proto:
 	@echo "Generating protobuf files for the rpc server..."
-	cd solver/rpc/buf && \
+	cd proto && \
 	buf generate 
+	@echo "Protobuf files generated successfully!"
 
 
 # Generate the config files for the client app and solver backend
