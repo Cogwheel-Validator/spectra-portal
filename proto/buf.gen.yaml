@@ -4,7 +4,7 @@ plugins:
     out: ../solver/rpc/v1
     opt: paths=source_relative
   - local: protoc-gen-connect-go
-    out: ../v1
+    out: ../solver/rpc/v1
     opt:
       - paths=source_relative
   - local: protoc-gen-es

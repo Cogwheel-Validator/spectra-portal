@@ -2,17 +2,18 @@ import SendUI from '@/components/ui/send/senderUi';
 import { LoadConfig } from '@/lib/config';
 
 interface TransferPageProps {
-  searchParams: {
+  searchParams: Promise<{
     from_chain: string;
     to_chain: string;
     send_asset: string;
     receive_asset: string;
     amount: string;
-  };
+  }>;
 }
 
-export default async function TransferPage({ searchParams }: TransferPageProps) {
-  // Load config at build/request time (cached)
+export default async function TransferPage(props: TransferPageProps) {
+  const searchParams = await props.searchParams;
+  // TODO: maybe as some other way to specify what should app load (toml or json)
   const config = await LoadConfig('toml');
   if (!config) {
     return <div>Error loading config</div>;
