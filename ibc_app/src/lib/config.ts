@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs";
 import { join } from "node:path";
+import * as TOML from "smol-toml";
 import type { ClientChain, ClientConfig, ClientToken, ClientTokenSummary, ConnectedChainInfo } from "@/components/modules/tomlTypes";
 
 /**
@@ -8,51 +8,61 @@ import type { ClientChain, ClientConfig, ClientToken, ClientTokenSummary, Connec
  * 
  * The config file is located one level above the Next.js app in generated/client_config.json
  * or in the public directory as config.json (copied during build)
+ * 
+ * @param format - The format of the config file: 'toml' or 'json'. If not provided, will auto-detect from file extension.
  */
-export async function LoadConfig(format: string): Promise<FullClientConfig> {
-  if (format !== "toml" && format !== "json") {
+export async function LoadConfig(format?: string): Promise<FullClientConfig> {
+  if (format && format !== "toml" && format !== "json") {
     throw new Error("Invalid format. Must be 'toml' or 'json'");
   }
 
-  let possiblePaths: string[] = [];
-
-  if (format === "toml") {
-  // Try multiple paths to find the config
-  possiblePaths = [
-    // Path relative to Next.js app root (one level up)
-    join(process.cwd(), "..", "generated", "client_config.toml"),
-    // Absolute path fallback (if process.cwd() is the project root)
-    join(process.cwd(), "generated", "client_config.toml"),
-    // Path like the config is placed in the root of the Next.js app(for Docker)
-    join(process.cwd(), "client_config.toml"),
-  ];
-  } else {
-    possiblePaths = [
-      join(process.cwd(), "..", "generated", "client_config.json"),
-      join(process.cwd(), "generated", "client_config.json"),
-      join(process.cwd(), "client_config.json"),
+  // Try both formats if format is not specified
+  const formatsToTry = format ? [format] : ["toml", "json"];
+  
+  for (const fmt of formatsToTry) {
+    const possiblePaths = [
+      // Path relative to Next.js app root (one level up)
+      join(process.cwd(), "..", "generated", `client_config.${fmt}`),
+      // Absolute path fallback (if process.cwd() is the project root)
+      join(process.cwd(), "generated", `client_config.${fmt}`),
+      // Path like the config is placed in the root of the Next.js app (for Docker)
+      join(process.cwd(), `client_config.${fmt}`),
     ];
-  }
 
-  for (const configPath of possiblePaths) {
-    if (existsSync(configPath)) {
-        // bun should be able to import the config file directly
-        const config: ClientConfig = await import(configPath);
-        return new FullClientConfig(config);
+    for (const configPath of possiblePaths) {
+        const file = Bun.file(configPath);
+        if (await file.exists()) {
+          const text = await file.text();
+          let parsedConfig: ClientConfig;
+          
+          if (fmt === "toml") {
+            parsedConfig = TOML.parse(text) as ClientConfig;
+          } else {
+            parsedConfig = JSON.parse(text) as ClientConfig;
+          }
+          
+          return new FullClientConfig(parsedConfig);
+        }
     }
   }
-  throw new Error(`Client config not found. Tried paths: ${possiblePaths.join(", ")}\nPlease run 'make generate-config' to generate the config file, or ensure it's copied to public/config.json`);
+
+  throw new Error(
+    `Client config not found. Tried paths for formats: ${formatsToTry.join(", ")}\n` +
+    `Please run 'make generate-config' to generate the config file, or ensure it's copied to the expected location.`
+  );
 }
 
 class FullClientConfig {
   private chains: Map<string, ClientChain> = new Map();
   private tokenSummaries: Map<string, ClientTokenSummary> = new Map();
   private chainLogos: Map<string, string | undefined> = new Map();
+  public config: ClientConfig;
 
   constructor(config: ClientConfig) {
     this.chains = new Map(config.chains.map((chain) => [chain.id, chain]));
     this.tokenSummaries = new Map(config.all_tokens.map((token) => [token.base_denom, token]));
     this.chainLogos = new Map(config.chains.map((chain) => [chain.id, chain.chain_logo]));
+    this.config = config;
   }
 
   public getChainById(chainId: string): ClientChain | undefined {
