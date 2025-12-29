@@ -45,7 +45,7 @@ icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/mai
 coingecko_id = "monerium-eur-money"
 
 [[token]]
-denom = "usdc"
+denom = "uusdc"
 name = "USDC"
 symbol = "USDC"
 exponent = 6
@@ -53,7 +53,7 @@ icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/mai
 coingecko_id = "usd-coin"
 
 [[token]]
-denom = "usdn"
+denom = "uusdn"
 name = "USDN"
 symbol = "USDN"
 exponent = 6
@@ -61,9 +61,9 @@ icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/mai
 coingecko_id = "neutrino-dollar"
 
 [[token]]
-denom = "uusdc"
-name = "USDC"
-symbol = "USDC"
-exponent = 6
-icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdc.png"
-coingecko_id = "noble-dollar-usdn"
+denom = "ausdy"
+name = "USDY"
+symbol = "USDY"
+exponent = 18
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdy.png"
+coingecko_id = "ondo-us-dollar-yield"

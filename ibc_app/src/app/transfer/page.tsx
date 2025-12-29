@@ -1,3 +1,4 @@
+import { Particles } from '@/components/ui/particles';
 import SendUI from '@/components/ui/send/senderUi';
 import { LoadConfig } from '@/lib/config';
 
@@ -20,13 +21,16 @@ export default async function TransferPage(props: TransferPageProps) {
   }
 
   return (
-    <SendUI
-      config={config.config}
-      sendChain={searchParams.from_chain}
-      receiveChain={searchParams.to_chain}
-      sendToken={searchParams.send_asset}
-      receiveToken={searchParams.receive_asset}
-      amount={searchParams.amount}
-    />
+    <div className="relative w-full min-h-screen bg-blend-soft-light bg-radial-[at_50%_65%] from-slate-800 via-blue-950 to-indigo-950 to-90%">
+      <Particles className="absolute inset-0 z-0" />
+      <SendUI
+        config={config.config}
+        sendChain={searchParams.from_chain}
+        receiveChain={searchParams.to_chain}
+        sendToken={searchParams.send_asset}
+        receiveToken={searchParams.receive_asset}
+        amount={searchParams.amount}
+      />
+    </div>
   );
 }

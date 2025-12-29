@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import type { ClientChain, ClientConfig, ClientToken } from "@/components/modules/tomlTypes";
+import ChainSection from "@/components/ui/send/chainSection";
 import { type SolveRouteResponse, solverClient } from "@/lib/solver-client";
 
 interface SendUIOptimizedProps {
@@ -44,7 +44,6 @@ export default function SendUIOptimized({
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
 
-  // Helper functions using the config prop (no API calls!)
   const getChainById = useCallback((chainId: string): ClientChain | undefined => {
     return config.chains.find((chain) => chain.id === chainId);
   }, [config]);
@@ -61,35 +60,20 @@ export default function SendUIOptimized({
     return chain.connected_chains;
   }, [getChainById]);
 
-  const getSendableTokens = useCallback((fromChainId: string, toChainId: string): string[] => {
-    const fromChain = getChainById(fromChainId);
-    if (!fromChain) return [];
-    
-    const connectedChain = fromChain.connected_chains.find(
-      (chain) => chain.id === toChainId
-    );
-    if (!connectedChain) return [];
-    
-    return connectedChain.sendable_tokens;
-  }, [getChainById]);
-
-  // Memoized derived data (all from static config)
+  // Memoized derived data for route calculation and available chains
   const sendChainData = useMemo(() => getChainById(sendChain), [sendChain, getChainById]);
   const receiveChainData = useMemo(() => getChainById(receiveChain), [receiveChain, getChainById]);
+  
+  // Convert ConnectedChainInfo[] to ClientChain[] by looking up full chain data
+  const availableReceiveChains = useMemo(() => {
+    const connectedChains = getConnectedChains(sendChain);
+    return connectedChains
+      .map((connectedChain) => getChainById(connectedChain.id))
+      .filter((chain): chain is ClientChain => chain !== undefined);
+  }, [sendChain, getConnectedChains, getChainById]);
+  
+  // Get selected token for route calculation
   const availableSendTokens = useMemo(() => getTokensForChain(sendChain), [sendChain, getTokensForChain]);
-  const availableReceiveChains = useMemo(() => getConnectedChains(sendChain), [sendChain, getConnectedChains]);
-  const sendableTokens = useMemo(() => getSendableTokens(sendChain, receiveChain), [sendChain, receiveChain, getSendableTokens]);
-  const filteredSendTokens = useMemo(() => {
-    if (!sendableTokens.length) return availableSendTokens;
-    return availableSendTokens.filter((token) =>
-      sendableTokens.includes(token.symbol)
-    );
-  }, [availableSendTokens, sendableTokens]);
-  const availableReceiveTokens = useMemo(() => getTokensForChain(receiveChain), [receiveChain, getTokensForChain]);
-
-
-  console.log(sendChainData)
-  // Get selected token objects
   const selectedSendToken = useMemo(
     () => availableSendTokens.find((t) => t.symbol === sendToken),
     [availableSendTokens, sendToken]
@@ -208,138 +192,34 @@ export default function SendUIOptimized({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto py-20 space-y-6">
       <h1 className="text-3xl font-bold text-center">Transfer Assets</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Send Chain Selection */}
-        <div className="card bg-base-200 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title">From Chain</h2>
-            {sendChainData ? (
-              <div className="flex items-center justify-center gap-2">
-                <Image
-                  src={sendChainData.chain_logo || "/unknown.jpg"}
-                  alt={sendChainData.name}
-                  width={100}
-                  height={100}
-                  className="rounded-full"
-                />
-                <span>{sendChainData.name}</span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center gap-2">
-                <Image
-                  src={"/unknown.jpg"}
-                  alt="No Chain Selected"
-                  width={100}
-                  height={100}
-                  className="rounded-full"
-                />
-              </div>
-            )}
-            <select
-              className="select select-bordered w-full"
-              value={sendChain}
-              onChange={(e) => handleSendChainChange(e.target.value)}
-              disabled={isPending}
-            >
-              <option value="">Select source chain</option>
-              {config.chains.map((chain) => (
-                <option key={chain.id} value={chain.id}>
-                  {chain.name}
-                </option>
-              ))}
-            </select>
-            {sendChainData && (
-              <div className="mt-2 text-sm text-base-content/70">
-                <p>Chain ID: {sendChainData.id}</p>
-                <p>Explorer: <a href={sendChainData.explorer_url} target="_blank" rel="noopener noreferrer" className="link">{sendChainData.explorer_url}</a></p>
-              </div>
-            )}
-          </div>
-        </div>
+        {/* From Chain Section with chain + token selection */}
+        <ChainSection
+          config={config}
+          isPending={isPending}
+          chainId={sendChain}
+          tokenSymbol={sendToken}
+          onChainChange={handleSendChainChange}
+          onTokenChange={handleSendTokenChange}
+          isFromChain={true}
+          otherChainId={receiveChain}
+        />
 
-        {/* Receive Chain Selection */}
-        <div className="card bg-base-200 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title">To Chain</h2>
-            <select
-              className="select select-bordered w-full"
-              value={receiveChain}
-              onChange={(e) => handleReceiveChainChange(e.target.value)}
-              disabled={isPending || !sendChain}
-            >
-              <option value="">Select destination chain</option>
-              {availableReceiveChains.map((chain) => (
-                <option key={chain.id} value={chain.id}>
-                  {chain.name}
-                </option>
-              ))}
-            </select>
-            {receiveChainData && (
-              <div className="mt-2 text-sm text-base-content/70">
-                <p>Chain ID: {receiveChainData.id}</p>
-                <p>Explorer: <a href={receiveChainData.explorer_url} target="_blank" rel="noopener noreferrer" className="link">{receiveChainData.explorer_url}</a></p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Send Token Selection */}
-        <div className="card bg-base-200 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title">Send Asset</h2>
-            <select
-              className="select select-bordered w-full"
-              value={sendToken}
-              onChange={(e) => handleSendTokenChange(e.target.value)}
-              disabled={isPending || !sendChain}
-            >
-              <option value="">Select token to send</option>
-              {filteredSendTokens.map((token) => (
-                <option key={token.denom} value={token.symbol}>
-                  {token.symbol} - {token.name}
-                </option>
-              ))}
-            </select>
-            {selectedSendToken && (
-              <div className="mt-2 text-sm text-base-content/70">
-                <p>Denom: {selectedSendToken.denom}</p>
-                <p>Decimals: {selectedSendToken.decimals}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Receive Token Selection */}
-        <div className="card bg-base-200 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title">Receive Asset</h2>
-            <select
-              className="select select-bordered w-full"
-              value={receiveToken}
-              onChange={(e) => handleReceiveTokenChange(e.target.value)}
-              disabled={isPending || !receiveChain}
-            >
-              <option value="">Select token to receive (optional)</option>
-              {availableReceiveTokens.map((token) => (
-                <option key={token.denom} value={token.symbol}>
-                  {token.symbol} - {token.name}
-                </option>
-              ))}
-            </select>
-            {receiveToken && (() => {
-              const token = availableReceiveTokens.find((t) => t.symbol === receiveToken);
-              return token ? (
-                <div className="mt-2 text-sm text-base-content/70">
-                  <p>Denom: {token.denom}</p>
-                  <p>Decimals: {token.decimals}</p>
-                </div>
-              ) : null;
-            })()}
-          </div>
-        </div>
+        {/* To Chain Section with chain + token selection */}
+        <ChainSection
+          config={config}
+          isPending={isPending}
+          chainId={receiveChain}
+          tokenSymbol={receiveToken}
+          onChainChange={handleReceiveChainChange}
+          onTokenChange={handleReceiveTokenChange}
+          isFromChain={false}
+          otherChainId={sendChain}
+          availableChains={availableReceiveChains}
+        />
       </div>
 
       {/* Amount Input */}
