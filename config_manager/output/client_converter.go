@@ -11,21 +11,12 @@ import (
 
 // ClientConverter converts enriched configs to frontend-compatible format.
 type ClientConverter struct {
-	// Optional: base URL for chain logos if not specified per-chain
-	chainLogoBaseURL string
 	// Whether to copy the icons to the public/icons directory
 	copyIcons bool
 }
 
 // ClientConverterOption configures the client converter.
 type ClientConverterOption func(*ClientConverter)
-
-// WithChainLogoBaseURL sets the base URL for chain logos.
-func WithChainLogoBaseURL(url string) ClientConverterOption {
-	return func(c *ClientConverter) {
-		c.chainLogoBaseURL = url
-	}
-}
 
 // WithIconCopy sets whether to copy the icons to the public/icons directory.
 // If true, the icons will be copied to the public/icons directory.
@@ -156,8 +147,10 @@ func (c *ClientConverter) convertEndpoints(endpoints []enriched.Endpoint) []Clie
 }
 
 func (c *ClientConverter) getChainLogo(chain *enriched.ChainConfig) string {
-	if c.chainLogoBaseURL != "" {
-		return fmt.Sprintf("%s/%s/logo.png", c.chainLogoBaseURL, chain.Registry)
+	// If copy icons option is enabled the program should assume that there is also a logo
+	// in the public/icons directory within the frontend project.
+	if c.copyIcons {
+		return fmt.Sprintf("/icons/%s/logo.png", chain.Registry)
 	}
 	return ""
 }

@@ -47,9 +47,6 @@ type GeneratorConfig struct {
 	// Path to cache the IBC registry data (optional)
 	RegistryCachePath string
 
-	// Base URL for chain logos in client config
-	ChainLogoBaseURL string
-
 	// Skip network validation of endpoints
 	SkipNetworkValidation bool
 
@@ -73,9 +70,7 @@ type Generator struct {
 // NewGenerator creates a new pipeline generator with the given configuration.
 func NewGenerator(config GeneratorConfig) *Generator {
 	var clientConvOpts []output.ClientConverterOption
-	if config.ChainLogoBaseURL != "" {
-		clientConvOpts = append(clientConvOpts, output.WithChainLogoBaseURL(config.ChainLogoBaseURL))
-	}
+	// Leave empty for now, it might be needed later on...
 
 	// Builder handles all network validation (version consensus, height sync, tx indexer)
 	var builderOpts []enriched.BuilderOption

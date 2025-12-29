@@ -86,10 +86,11 @@ func (b *Builder) BuildRegistry(
 		return nil, fmt.Errorf("no input configurations provided")
 	}
 
+	generationTime := time.Now().UTC()
 	reg := &RegistryConfig{
 		// Use date as a version
-		Version:     "v" + strings.ReplaceAll(time.Now().UTC().Format(time.DateOnly), "-", ""),
-		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
+		Version:     "v1-" + strings.ReplaceAll(generationTime.Format(time.DateOnly), "-", ""),
+		GeneratedAt: generationTime.Format(time.RFC3339),
 		Chains:      make(map[string]*ChainConfig),
 	}
 
