@@ -8,5 +8,5 @@ plugins:
     opt:
       - paths=source_relative
   - local: protoc-gen-es
-    out: ../ibc_app/src/lib/generated
+    out: ../ibc_app/src/lib/generated/pathfinder
     
