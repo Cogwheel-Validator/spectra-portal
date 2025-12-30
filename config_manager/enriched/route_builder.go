@@ -308,7 +308,7 @@ func (rb *RouteBuilder) isTokenAllowedToChain(token *input.TokenMeta, toChainID 
 		// If there is none it means the token is not allowed to be sent to any chain
 		// Usually allowed only on Osmosis for tokens that are meant to be traded via
 		// the DEX broker
-		return false 
+		return false
 	}
 	if sliceLength == 0 {
 		return true // No restrictions

@@ -40,13 +40,13 @@ type SwapResult struct {
 
 // Pathfinder orchestrates route finding and integrates with broker DEX APIs
 type Pathfinder struct {
-	chainsMap        map[string]PathfinderChain  // mapped chainId -> PathfinderChain
-	routeIndex       *RouteIndex             // routeIndex from which all routes are found
-	brokerClients    map[string]BrokerClient // mapped brokerId -> broker client interface
-	denomResolver    *DenomResolver          // denomResolver for resolving denoms across chains
-	addressConverter *AddressConverter       // addressConverter for converting addresses across chains
-	maxRetries       int                     // maximum number of retries for broker queries
-	retryDelay       time.Duration           // delay between retries for broker queries
+	chainsMap        map[string]PathfinderChain // mapped chainId -> PathfinderChain
+	routeIndex       *RouteIndex                // routeIndex from which all routes are found
+	brokerClients    map[string]BrokerClient    // mapped brokerId -> broker client interface
+	denomResolver    *DenomResolver             // denomResolver for resolving denoms across chains
+	addressConverter *AddressConverter          // addressConverter for converting addresses across chains
+	maxRetries       int                        // maximum number of retries for broker queries
+	retryDelay       time.Duration              // delay between retries for broker queries
 }
 
 // NewPathfinder creates a new Pathfinder with the given route index and broker clients

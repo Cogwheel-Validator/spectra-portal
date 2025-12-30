@@ -42,15 +42,15 @@ func main() {
 	}
 
 	config := pipeline.GeneratorConfig{
-		InputDir:              *inputDir,
-		PathfinderOutputPath:      *pathfinderOutput,
-		ClientOutputPath:      *clientOutput,
-		PathfinderOutputFormat:    parseFormat(*pathfinderFormat),
-		ClientOutputFormat:    parseFormat(*clientFormat),
-		RegistryCachePath:     *registryCache,
-		SkipNetworkValidation: *skipNetwork,
-		UseRegistryCache:      *useCache,
-		CopyIconsPath:         *copyIconsPath,
+		InputDir:               *inputDir,
+		PathfinderOutputPath:   *pathfinderOutput,
+		ClientOutputPath:       *clientOutput,
+		PathfinderOutputFormat: parseFormat(*pathfinderFormat),
+		ClientOutputFormat:     parseFormat(*clientFormat),
+		RegistryCachePath:      *registryCache,
+		SkipNetworkValidation:  *skipNetwork,
+		UseRegistryCache:       *useCache,
+		CopyIconsPath:          *copyIconsPath,
 	}
 
 	if *validate {

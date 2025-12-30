@@ -63,7 +63,7 @@ type Generator struct {
 	inputLoader    *input.Loader
 	inputValidator *input.Validator
 	enrichBuilder  *enriched.Builder
-	pathfinderConv     *output.PathfinderConverter
+	pathfinderConv *output.PathfinderConverter
 	clientConv     *output.ClientConverter
 }
 
@@ -87,7 +87,7 @@ func NewGenerator(config GeneratorConfig) *Generator {
 		inputLoader:    input.NewLoader(),
 		inputValidator: input.NewValidator(),
 		enrichBuilder:  enriched.NewBuilder(builderOpts...),
-		pathfinderConv:     output.NewPathfinderConverter(),
+		pathfinderConv: output.NewPathfinderConverter(),
 		clientConv:     output.NewClientConverter(clientConvOpts...),
 	}
 }
@@ -199,7 +199,7 @@ func (g *Generator) Generate() (*GenerateResult, error) {
 		}
 		log.Printf("Copied icons to %s/icons", g.config.CopyIconsPath)
 	}
-	
+
 	log.Println("Config generation complete!")
 	return result, nil
 }
@@ -245,14 +245,14 @@ func (g *Generator) copyChainImages(inputConfigs map[string]*input.ChainInput, e
 	if err != nil {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
-	
+
 	// Resolve images directory to absolute path
 	imagesDir := filepath.Join(currentDir, "images")
 	imagesDir, err = filepath.Abs(imagesDir)
 	if err != nil {
 		return fmt.Errorf("failed to resolve images directory: %w", err)
 	}
-	
+
 	// Ensure images directory exists
 	if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
 		return fmt.Errorf("images directory does not exist: %s", imagesDir)

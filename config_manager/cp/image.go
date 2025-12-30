@@ -16,7 +16,7 @@ import (
 func CopyChainImages(imagesDir, publicDir string, registryName string) error {
 	// Build source path: images/{registry}/
 	srcPath := filepath.Join(imagesDir, registryName)
-	
+
 	// Check if source directory exists
 	srcInfo, err := os.Stat(srcPath)
 	if os.IsNotExist(err) {
@@ -32,7 +32,7 @@ func CopyChainImages(imagesDir, publicDir string, registryName string) error {
 
 	// Build destination path: public/icons/{chain_id}/
 	destPath := filepath.Join(publicDir, "icons", registryName)
-	
+
 	// Create destination directory
 	if err := os.MkdirAll(destPath, 0755); err != nil {
 		return fmt.Errorf("failed to create destination directory %s: %w", destPath, err)
