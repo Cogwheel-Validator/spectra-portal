@@ -41,9 +41,9 @@ export function MenuSelectionClient({ elements }: { elements: JSX.Element[] }): 
                     <GiHamburgerMenu className="w-6 h-6 transition-transform duration-300" />
                 )}
             </button>
-            
+
             {isOpen && (
-                <div 
+                <div
                     role="menu"
                     className="absolute top-full right-0 mt-2 flex flex-col gap-2 p-3 rounded-box backdrop-blur-sm bg-base-100 shadow-lg border border-accent min-w-[200px]"
                     onClick={() => setIsOpen(false)}

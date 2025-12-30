@@ -91,7 +91,7 @@ func (s *PathfinderServer) FindPath(
 		ReceiverAddress: req.Msg.ReceiverAddress,
 	}
 
-	// Step 4: Call solver with resolved denoms
+	// Step 4: Call pathfinder with resolved denoms
 	internalResp := s.pathfinder.FindPath(internalReq)
 
 	// Step 5: Convert to proto response
@@ -101,7 +101,7 @@ func (s *PathfinderServer) FindPath(
 	return connect.NewResponse(protoResp), nil
 }
 
-// validateSolveRouteRequest validates the request parameters
+// validateFindPathRequest validates the request parameters
 // Returns a ConnectRPC error (which translates to HTTP 400) for invalid input
 func (s *PathfinderServer) validateFindPathRequest(req *v1.FindPathRequest) error {
 	// Validate chain IDs exist and get chain info for prefix validation

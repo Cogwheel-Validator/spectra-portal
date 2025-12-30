@@ -3,7 +3,7 @@ export type ClientConfig = {
     generated_at: string;
     chains: ClientChain[];
     all_tokens: ClientTokenSummary[];
-}
+};
 
 export type ClientChain = {
     name: string;
@@ -18,12 +18,12 @@ export type ClientChain = {
     native_tokens: ClientToken[];
     ibc_tokens: ClientToken[];
     connected_chains: ConnectedChainInfo[];
-}
+};
 
 export type ClientEndpoint = {
     url: string;
     provider?: string;
-}
+};
 
 export type ClientToken = {
     denom: string;
@@ -36,14 +36,14 @@ export type ClientToken = {
     coingecko_id?: string;
     is_native: boolean;
     base_denom?: string;
-}
+};
 
 export type ConnectedChainInfo = {
     id: string;
     name: string;
     logo?: string;
     sendable_tokens: string[];
-}
+};
 
 export type ClientTokenSummary = {
     base_denom: string;
@@ -54,4 +54,4 @@ export type ClientTokenSummary = {
     origin_chain_name: string;
     available_on: string[];
     coingecko_id?: string;
-}
+};

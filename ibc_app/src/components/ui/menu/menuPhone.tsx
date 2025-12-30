@@ -6,7 +6,7 @@ import type { MenuItem } from "./types";
 
 export default function MenuPhone({ menuItems }: { menuItems: MenuItem[] }): JSX.Element {
     const menuElements: JSX.Element[] = generateJSXMenuSelection(menuItems);
-    
+
     return (
         <div className="navbar items-center justify-between align-baseline fixed z-20 space-x-4">
             <Image

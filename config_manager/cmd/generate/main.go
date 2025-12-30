@@ -1,12 +1,12 @@
 // Command generate runs the config generation pipeline to transform
-// human-readable chain configs into generated configs for the solver backend
+// human-readable chain configs into generated configs for the pathfinder backend
 // and frontend client.
 //
 // Usage:
 //
 //	go run ./config_manager/cmd/generate \
 //	  --input ./chain_configs \
-//	  --solver-output ./generated/solver_config.toml \
+//	  --pathfinder-output ./generated/pathfinder_config.toml \
 //	  --client-output ./generated/client_config.json
 package main
 

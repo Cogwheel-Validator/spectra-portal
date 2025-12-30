@@ -25,57 +25,57 @@ export declare const file_pathfinder_route: GenFile;
  * @generated from message rpc.v1.FindPathRequest
  */
 export declare type FindPathRequest = Message<"rpc.v1.FindPathRequest"> & {
-  /**
-   * Source chain ID (e.g., "osmosis-1", "atomone-1")
-   *
-   * @generated from field: string chain_from = 1;
-   */
-  chainFrom: string;
+    /**
+     * Source chain ID (e.g., "osmosis-1", "atomone-1")
+     *
+     * @generated from field: string chain_from = 1;
+     */
+    chainFrom: string;
 
-  /**
-   * Token denom on source chain - can be human-readable (e.g., "uatone") 
-   * or IBC denom (e.g., "ibc/...")
-   *
-   * @generated from field: string token_from_denom = 2;
-   */
-  tokenFromDenom: string;
+    /**
+     * Token denom on source chain - can be human-readable (e.g., "uatone")
+     * or IBC denom (e.g., "ibc/...")
+     *
+     * @generated from field: string token_from_denom = 2;
+     */
+    tokenFromDenom: string;
 
-  /**
-   * Amount to transfer/swap (in base units)
-   *
-   * @generated from field: string amount_in = 3;
-   */
-  amountIn: string;
+    /**
+     * Amount to transfer/swap (in base units)
+     *
+     * @generated from field: string amount_in = 3;
+     */
+    amountIn: string;
 
-  /**
-   * Destination chain ID
-   *
-   * @generated from field: string chain_to = 4;
-   */
-  chainTo: string;
+    /**
+     * Destination chain ID
+     *
+     * @generated from field: string chain_to = 4;
+     */
+    chainTo: string;
 
-  /**
-   * Token denom you want to receive on destination chain
-   * Can be human-readable (e.g., "uosmo") or IBC denom
-   * If empty, assumes same token as token_from (bridging without swap)
-   *
-   * @generated from field: string token_to_denom = 5;
-   */
-  tokenToDenom: string;
+    /**
+     * Token denom you want to receive on destination chain
+     * Can be human-readable (e.g., "uosmo") or IBC denom
+     * If empty, assumes same token as token_from (bridging without swap)
+     *
+     * @generated from field: string token_to_denom = 5;
+     */
+    tokenToDenom: string;
 
-  /**
-   * Sender address on source chain
-   *
-   * @generated from field: string sender_address = 6;
-   */
-  senderAddress: string;
+    /**
+     * Sender address on source chain
+     *
+     * @generated from field: string sender_address = 6;
+     */
+    senderAddress: string;
 
-  /**
-   * Receiver address on destination chain
-   *
-   * @generated from field: string receiver_address = 7;
-   */
-  receiverAddress: string;
+    /**
+     * Receiver address on destination chain
+     *
+     * @generated from field: string receiver_address = 7;
+     */
+    receiverAddress: string;
 };
 
 /**
@@ -88,38 +88,42 @@ export declare const FindPathRequestSchema: GenMessage<FindPathRequest>;
  * @generated from message rpc.v1.FindPathResponse
  */
 export declare type FindPathResponse = Message<"rpc.v1.FindPathResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+    /**
+     * @generated from field: bool success = 1;
+     */
+    success: boolean;
 
-  /**
-   * @generated from field: string error_message = 2;
-   */
-  errorMessage: string;
+    /**
+     * @generated from field: string error_message = 2;
+     */
+    errorMessage: string;
 
-  /**
-   * @generated from oneof rpc.v1.FindPathResponse.route
-   */
-  route: {
     /**
-     * @generated from field: rpc.v1.DirectRoute direct = 3;
+     * @generated from oneof rpc.v1.FindPathResponse.route
      */
-    value: DirectRoute;
-    case: "direct";
-  } | {
-    /**
-     * @generated from field: rpc.v1.IndirectRoute indirect = 4;
-     */
-    value: IndirectRoute;
-    case: "indirect";
-  } | {
-    /**
-     * @generated from field: rpc.v1.BrokerSwapRoute broker_swap = 5;
-     */
-    value: BrokerSwapRoute;
-    case: "brokerSwap";
-  } | { case: undefined; value?: undefined };
+    route:
+        | {
+              /**
+               * @generated from field: rpc.v1.DirectRoute direct = 3;
+               */
+              value: DirectRoute;
+              case: "direct";
+          }
+        | {
+              /**
+               * @generated from field: rpc.v1.IndirectRoute indirect = 4;
+               */
+              value: IndirectRoute;
+              case: "indirect";
+          }
+        | {
+              /**
+               * @generated from field: rpc.v1.BrokerSwapRoute broker_swap = 5;
+               */
+              value: BrokerSwapRoute;
+              case: "brokerSwap";
+          }
+        | { case: undefined; value?: undefined };
 };
 
 /**
@@ -132,10 +136,10 @@ export declare const FindPathResponseSchema: GenMessage<FindPathResponse>;
  * @generated from message rpc.v1.DirectRoute
  */
 export declare type DirectRoute = Message<"rpc.v1.DirectRoute"> & {
-  /**
-   * @generated from field: rpc.v1.IBCLeg transfer = 1;
-   */
-  transfer?: IBCLeg;
+    /**
+     * @generated from field: rpc.v1.IBCLeg transfer = 1;
+     */
+    transfer?: IBCLeg;
 };
 
 /**
@@ -148,30 +152,30 @@ export declare const DirectRouteSchema: GenMessage<DirectRoute>;
  * @generated from message rpc.v1.IndirectRoute
  */
 export declare type IndirectRoute = Message<"rpc.v1.IndirectRoute"> & {
-  /**
-   * @generated from field: repeated string path = 1;
-   */
-  path: string[];
+    /**
+     * @generated from field: repeated string path = 1;
+     */
+    path: string[];
 
-  /**
-   * @generated from field: repeated rpc.v1.IBCLeg legs = 2;
-   */
-  legs: IBCLeg[];
+    /**
+     * @generated from field: repeated rpc.v1.IBCLeg legs = 2;
+     */
+    legs: IBCLeg[];
 
-  /**
-   * @generated from field: bool supports_pfm = 3;
-   */
-  supportsPfm: boolean;
+    /**
+     * @generated from field: bool supports_pfm = 3;
+     */
+    supportsPfm: boolean;
 
-  /**
-   * @generated from field: string pfm_start_chain = 4;
-   */
-  pfmStartChain: string;
+    /**
+     * @generated from field: string pfm_start_chain = 4;
+     */
+    pfmStartChain: string;
 
-  /**
-   * @generated from field: string pfm_memo = 5;
-   */
-  pfmMemo: string;
+    /**
+     * @generated from field: string pfm_memo = 5;
+     */
+    pfmMemo: string;
 };
 
 /**
@@ -191,48 +195,48 @@ export declare const IndirectRouteSchema: GenMessage<IndirectRoute>;
  * @generated from message rpc.v1.BrokerSwapRoute
  */
 export declare type BrokerSwapRoute = Message<"rpc.v1.BrokerSwapRoute"> & {
-  /**
-   * All chain IDs in order
-   *
-   * @generated from field: repeated string path = 1;
-   */
-  path: string[];
+    /**
+     * All chain IDs in order
+     *
+     * @generated from field: repeated string path = 1;
+     */
+    path: string[];
 
-  /**
-   * IBC transfer to reach broker (absent if starting from broker)
-   *
-   * @generated from field: rpc.v1.IBCLeg inbound_leg = 2;
-   */
-  inboundLeg?: IBCLeg;
+    /**
+     * IBC transfer to reach broker (absent if starting from broker)
+     *
+     * @generated from field: rpc.v1.IBCLeg inbound_leg = 2;
+     */
+    inboundLeg?: IBCLeg;
 
-  /**
-   * The swap operation on the broker chain
-   *
-   * @generated from field: rpc.v1.SwapQuote swap = 3;
-   */
-  swap?: SwapQuote;
+    /**
+     * The swap operation on the broker chain
+     *
+     * @generated from field: rpc.v1.SwapQuote swap = 3;
+     */
+    swap?: SwapQuote;
 
-  /**
-   * IBC transfers after swap (empty if destination is broker)
-   * Can be multiple for multi-hop forwarding via PFM
-   *
-   * @generated from field: repeated rpc.v1.IBCLeg outbound_legs = 4;
-   */
-  outboundLegs: IBCLeg[];
+    /**
+     * IBC transfers after swap (empty if destination is broker)
+     * Can be multiple for multi-hop forwarding via PFM
+     *
+     * @generated from field: repeated rpc.v1.IBCLeg outbound_legs = 4;
+     */
+    outboundLegs: IBCLeg[];
 
-  /**
-   * Can use PFM for outbound legs
-   *
-   * @generated from field: bool outbound_supports_pfm = 5;
-   */
-  outboundSupportsPfm: boolean;
+    /**
+     * Can use PFM for outbound legs
+     *
+     * @generated from field: bool outbound_supports_pfm = 5;
+     */
+    outboundSupportsPfm: boolean;
 
-  /**
-   * Execution data for building transactions
-   *
-   * @generated from field: rpc.v1.BrokerExecutionData execution = 6;
-   */
-  execution?: BrokerExecutionData;
+    /**
+     * Execution data for building transactions
+     *
+     * @generated from field: rpc.v1.BrokerExecutionData execution = 6;
+     */
+    execution?: BrokerExecutionData;
 };
 
 /**
@@ -247,47 +251,47 @@ export declare const BrokerSwapRouteSchema: GenMessage<BrokerSwapRoute>;
  * @generated from message rpc.v1.BrokerExecutionData
  */
 export declare type BrokerExecutionData = Message<"rpc.v1.BrokerExecutionData"> & {
-  /**
-   * The IBC memo to use with MsgTransfer (contains wasm swap_and_action)
-   *
-   * @generated from field: string memo = 1;
-   */
-  memo: string;
+    /**
+     * The IBC memo to use with MsgTransfer (contains wasm swap_and_action)
+     *
+     * @generated from field: string memo = 1;
+     */
+    memo: string;
 
-  /**
-   * Receiver address for MsgTransfer (the ibc-hooks contract)
-   *
-   * @generated from field: string ibc_receiver = 2;
-   */
-  ibcReceiver: string;
+    /**
+     * Receiver address for MsgTransfer (the ibc-hooks contract)
+     *
+     * @generated from field: string ibc_receiver = 2;
+     */
+    ibcReceiver: string;
 
-  /**
-   * Recovery address on broker chain (where funds go if swap/forward fails)
-   *
-   * @generated from field: string recover_address = 3;
-   */
-  recoverAddress: string;
+    /**
+     * Recovery address on broker chain (where funds go if swap/forward fails)
+     *
+     * @generated from field: string recover_address = 3;
+     */
+    recoverAddress: string;
 
-  /**
-   * Minimum output amount after slippage (1% default)
-   *
-   * @generated from field: string min_output_amount = 4;
-   */
-  minOutputAmount: string;
+    /**
+     * Minimum output amount after slippage (1% default)
+     *
+     * @generated from field: string min_output_amount = 4;
+     */
+    minOutputAmount: string;
 
-  /**
-   * True if using wasm ibc-hooks (vs simple PFM)
-   *
-   * @generated from field: bool uses_wasm = 5;
-   */
-  usesWasm: boolean;
+    /**
+     * True if using wasm ibc-hooks (vs simple PFM)
+     *
+     * @generated from field: bool uses_wasm = 5;
+     */
+    usesWasm: boolean;
 
-  /**
-   * Human-readable description
-   *
-   * @generated from field: string description = 6;
-   */
-  description: string;
+    /**
+     * Human-readable description
+     *
+     * @generated from field: string description = 6;
+     */
+    description: string;
 };
 
 /**
@@ -300,35 +304,35 @@ export declare const BrokerExecutionDataSchema: GenMessage<BrokerExecutionData>;
  * @generated from message rpc.v1.IBCLeg
  */
 export declare type IBCLeg = Message<"rpc.v1.IBCLeg"> & {
-  /**
-   * @generated from field: string from_chain = 1;
-   */
-  fromChain: string;
+    /**
+     * @generated from field: string from_chain = 1;
+     */
+    fromChain: string;
 
-  /**
-   * @generated from field: string to_chain = 2;
-   */
-  toChain: string;
+    /**
+     * @generated from field: string to_chain = 2;
+     */
+    toChain: string;
 
-  /**
-   * @generated from field: string channel = 3;
-   */
-  channel: string;
+    /**
+     * @generated from field: string channel = 3;
+     */
+    channel: string;
 
-  /**
-   * @generated from field: string port = 4;
-   */
-  port: string;
+    /**
+     * @generated from field: string port = 4;
+     */
+    port: string;
 
-  /**
-   * @generated from field: rpc.v1.TokenMapping token = 5;
-   */
-  token?: TokenMapping;
+    /**
+     * @generated from field: rpc.v1.TokenMapping token = 5;
+     */
+    token?: TokenMapping;
 
-  /**
-   * @generated from field: string amount = 6;
-   */
-  amount: string;
+    /**
+     * @generated from field: string amount = 6;
+     */
+    amount: string;
 };
 
 /**
@@ -341,33 +345,33 @@ export declare const IBCLegSchema: GenMessage<IBCLeg>;
  * @generated from message rpc.v1.TokenMapping
  */
 export declare type TokenMapping = Message<"rpc.v1.TokenMapping"> & {
-  /**
-   * The denom as it appears on the current chain (native or IBC)
-   *
-   * @generated from field: string chain_denom = 1;
-   */
-  chainDenom: string;
+    /**
+     * The denom as it appears on the current chain (native or IBC)
+     *
+     * @generated from field: string chain_denom = 1;
+     */
+    chainDenom: string;
 
-  /**
-   * The base/native denom on the token's origin chain
-   *
-   * @generated from field: string base_denom = 2;
-   */
-  baseDenom: string;
+    /**
+     * The base/native denom on the token's origin chain
+     *
+     * @generated from field: string base_denom = 2;
+     */
+    baseDenom: string;
 
-  /**
-   * The chain ID where this token is native
-   *
-   * @generated from field: string origin_chain = 3;
-   */
-  originChain: string;
+    /**
+     * The chain ID where this token is native
+     *
+     * @generated from field: string origin_chain = 3;
+     */
+    originChain: string;
 
-  /**
-   * True if this is the token's native chain
-   *
-   * @generated from field: bool is_native = 4;
-   */
-  isNative: boolean;
+    /**
+     * True if this is the token's native chain
+     *
+     * @generated from field: bool is_native = 4;
+     */
+    isNative: boolean;
 };
 
 /**
@@ -382,55 +386,57 @@ export declare const TokenMappingSchema: GenMessage<TokenMapping>;
  * @generated from message rpc.v1.SwapQuote
  */
 export declare type SwapQuote = Message<"rpc.v1.SwapQuote"> & {
-  /**
-   * @generated from field: string broker = 1;
-   */
-  broker: string;
-
-  /**
-   * @generated from field: rpc.v1.TokenMapping token_in = 2;
-   */
-  tokenIn?: TokenMapping;
-
-  /**
-   * @generated from field: rpc.v1.TokenMapping token_out = 3;
-   */
-  tokenOut?: TokenMapping;
-
-  /**
-   * @generated from field: string amount_in = 4;
-   */
-  amountIn: string;
-
-  /**
-   * @generated from field: string amount_out = 5;
-   */
-  amountOut: string;
-
-  /**
-   * @generated from field: string price_impact = 6;
-   */
-  priceImpact: string;
-
-  /**
-   * @generated from field: string effective_fee = 7;
-   */
-  effectiveFee: string;
-
-  /**
-   * Broker-specific route data using oneof for type safety
-   *
-   * @generated from oneof rpc.v1.SwapQuote.route_data
-   */
-  routeData: {
     /**
-     * Future brokers can be added here without breaking existing clients
-     *
-     * @generated from field: rpc.v1.OsmosisRouteData osmosis_route_data = 8;
+     * @generated from field: string broker = 1;
      */
-    value: OsmosisRouteData;
-    case: "osmosisRouteData";
-  } | { case: undefined; value?: undefined };
+    broker: string;
+
+    /**
+     * @generated from field: rpc.v1.TokenMapping token_in = 2;
+     */
+    tokenIn?: TokenMapping;
+
+    /**
+     * @generated from field: rpc.v1.TokenMapping token_out = 3;
+     */
+    tokenOut?: TokenMapping;
+
+    /**
+     * @generated from field: string amount_in = 4;
+     */
+    amountIn: string;
+
+    /**
+     * @generated from field: string amount_out = 5;
+     */
+    amountOut: string;
+
+    /**
+     * @generated from field: string price_impact = 6;
+     */
+    priceImpact: string;
+
+    /**
+     * @generated from field: string effective_fee = 7;
+     */
+    effectiveFee: string;
+
+    /**
+     * Broker-specific route data using oneof for type safety
+     *
+     * @generated from oneof rpc.v1.SwapQuote.route_data
+     */
+    routeData:
+        | {
+              /**
+               * Future brokers can be added here without breaking existing clients
+               *
+               * @generated from field: rpc.v1.OsmosisRouteData osmosis_route_data = 8;
+               */
+              value: OsmosisRouteData;
+              case: "osmosisRouteData";
+          }
+        | { case: undefined; value?: undefined };
 };
 
 /**
@@ -445,20 +451,20 @@ export declare const SwapQuoteSchema: GenMessage<SwapQuote>;
  * @generated from message rpc.v1.OsmosisRouteData
  */
 export declare type OsmosisRouteData = Message<"rpc.v1.OsmosisRouteData"> & {
-  /**
-   * @generated from field: repeated rpc.v1.OsmosisRoute routes = 1;
-   */
-  routes: OsmosisRoute[];
+    /**
+     * @generated from field: repeated rpc.v1.OsmosisRoute routes = 1;
+     */
+    routes: OsmosisRoute[];
 
-  /**
-   * @generated from field: string liquidity_cap = 2;
-   */
-  liquidityCap: string;
+    /**
+     * @generated from field: string liquidity_cap = 2;
+     */
+    liquidityCap: string;
 
-  /**
-   * @generated from field: bool liquidity_cap_overflow = 3;
-   */
-  liquidityCapOverflow: boolean;
+    /**
+     * @generated from field: bool liquidity_cap_overflow = 3;
+     */
+    liquidityCapOverflow: boolean;
 };
 
 /**
@@ -471,25 +477,25 @@ export declare const OsmosisRouteDataSchema: GenMessage<OsmosisRouteData>;
  * @generated from message rpc.v1.OsmosisRoute
  */
 export declare type OsmosisRoute = Message<"rpc.v1.OsmosisRoute"> & {
-  /**
-   * @generated from field: repeated rpc.v1.OsmosisPool pools = 1;
-   */
-  pools: OsmosisPool[];
+    /**
+     * @generated from field: repeated rpc.v1.OsmosisPool pools = 1;
+     */
+    pools: OsmosisPool[];
 
-  /**
-   * @generated from field: bool has_cw_pool = 2;
-   */
-  hasCwPool: boolean;
+    /**
+     * @generated from field: bool has_cw_pool = 2;
+     */
+    hasCwPool: boolean;
 
-  /**
-   * @generated from field: string out_amount = 3;
-   */
-  outAmount: string;
+    /**
+     * @generated from field: string out_amount = 3;
+     */
+    outAmount: string;
 
-  /**
-   * @generated from field: string in_amount = 4;
-   */
-  inAmount: string;
+    /**
+     * @generated from field: string in_amount = 4;
+     */
+    inAmount: string;
 };
 
 /**
@@ -502,35 +508,35 @@ export declare const OsmosisRouteSchema: GenMessage<OsmosisRoute>;
  * @generated from message rpc.v1.OsmosisPool
  */
 export declare type OsmosisPool = Message<"rpc.v1.OsmosisPool"> & {
-  /**
-   * @generated from field: int32 id = 1;
-   */
-  id: number;
+    /**
+     * @generated from field: int32 id = 1;
+     */
+    id: number;
 
-  /**
-   * @generated from field: int32 type = 2;
-   */
-  type: number;
+    /**
+     * @generated from field: int32 type = 2;
+     */
+    type: number;
 
-  /**
-   * @generated from field: string spread_factor = 3;
-   */
-  spreadFactor: string;
+    /**
+     * @generated from field: string spread_factor = 3;
+     */
+    spreadFactor: string;
 
-  /**
-   * @generated from field: string token_out_denom = 4;
-   */
-  tokenOutDenom: string;
+    /**
+     * @generated from field: string token_out_denom = 4;
+     */
+    tokenOutDenom: string;
 
-  /**
-   * @generated from field: string taker_fee = 5;
-   */
-  takerFee: string;
+    /**
+     * @generated from field: string taker_fee = 5;
+     */
+    takerFee: string;
 
-  /**
-   * @generated from field: string liquidity_cap = 6;
-   */
-  liquidityCap: string;
+    /**
+     * @generated from field: string liquidity_cap = 6;
+     */
+    liquidityCap: string;
 };
 
 /**
@@ -548,15 +554,15 @@ export declare const OsmosisPoolSchema: GenMessage<OsmosisPool>;
  * @generated from message rpc.v1.LookupDenomRequest
  */
 export declare type LookupDenomRequest = Message<"rpc.v1.LookupDenomRequest"> & {
-  /**
-   * @generated from field: string chain_id = 1;
-   */
-  chainId: string;
+    /**
+     * @generated from field: string chain_id = 1;
+     */
+    chainId: string;
 
-  /**
-   * @generated from field: string denom = 2;
-   */
-  denom: string;
+    /**
+     * @generated from field: string denom = 2;
+     */
+    denom: string;
 };
 
 /**
@@ -569,52 +575,52 @@ export declare const LookupDenomRequestSchema: GenMessage<LookupDenomRequest>;
  * @generated from message rpc.v1.LookupDenomResponse
  */
 export declare type LookupDenomResponse = Message<"rpc.v1.LookupDenomResponse"> & {
-  /**
-   * @generated from field: bool found = 1;
-   */
-  found: boolean;
+    /**
+     * @generated from field: bool found = 1;
+     */
+    found: boolean;
 
-  /**
-   * The denom as it appears on this chain
-   *
-   * @generated from field: string chain_denom = 2;
-   */
-  chainDenom: string;
+    /**
+     * The denom as it appears on this chain
+     *
+     * @generated from field: string chain_denom = 2;
+     */
+    chainDenom: string;
 
-  /**
-   * The base/native denom
-   *
-   * @generated from field: string base_denom = 3;
-   */
-  baseDenom: string;
+    /**
+     * The base/native denom
+     *
+     * @generated from field: string base_denom = 3;
+     */
+    baseDenom: string;
 
-  /**
-   * Where this token is native
-   *
-   * @generated from field: string origin_chain = 4;
-   */
-  originChain: string;
+    /**
+     * Where this token is native
+     *
+     * @generated from field: string origin_chain = 4;
+     */
+    originChain: string;
 
-  /**
-   * True if this is the token's native chain
-   *
-   * @generated from field: bool is_native = 5;
-   */
-  isNative: boolean;
+    /**
+     * True if this is the token's native chain
+     *
+     * @generated from field: bool is_native = 5;
+     */
+    isNative: boolean;
 
-  /**
-   * IBC path if this is an IBC token (e.g., "transfer/channel-75")
-   *
-   * @generated from field: string ibc_path = 6;
-   */
-  ibcPath: string;
+    /**
+     * IBC path if this is an IBC token (e.g., "transfer/channel-75")
+     *
+     * @generated from field: string ibc_path = 6;
+     */
+    ibcPath: string;
 
-  /**
-   * Denoms on other chains where this token is available
-   *
-   * @generated from field: repeated rpc.v1.ChainDenom available_on = 7;
-   */
-  availableOn: ChainDenom[];
+    /**
+     * Denoms on other chains where this token is available
+     *
+     * @generated from field: repeated rpc.v1.ChainDenom available_on = 7;
+     */
+    availableOn: ChainDenom[];
 };
 
 /**
@@ -629,25 +635,25 @@ export declare const LookupDenomResponseSchema: GenMessage<LookupDenomResponse>;
  * @generated from message rpc.v1.ChainDenom
  */
 export declare type ChainDenom = Message<"rpc.v1.ChainDenom"> & {
-  /**
-   * @generated from field: string chain_id = 1;
-   */
-  chainId: string;
+    /**
+     * @generated from field: string chain_id = 1;
+     */
+    chainId: string;
 
-  /**
-   * @generated from field: string chain_name = 2;
-   */
-  chainName: string;
+    /**
+     * @generated from field: string chain_name = 2;
+     */
+    chainName: string;
 
-  /**
-   * @generated from field: string denom = 3;
-   */
-  denom: string;
+    /**
+     * @generated from field: string denom = 3;
+     */
+    denom: string;
 
-  /**
-   * @generated from field: bool is_native = 4;
-   */
-  isNative: boolean;
+    /**
+     * @generated from field: bool is_native = 4;
+     */
+    isNative: boolean;
 };
 
 /**
@@ -663,26 +669,26 @@ export declare const ChainDenomSchema: GenMessage<ChainDenom>;
  * @generated from message rpc.v1.GetTokenDenomsRequest
  */
 export declare type GetTokenDenomsRequest = Message<"rpc.v1.GetTokenDenomsRequest"> & {
-  /**
-   * The base denom (e.g., "uatone", "uosmo", "ustars")
-   *
-   * @generated from field: string base_denom = 1;
-   */
-  baseDenom: string;
+    /**
+     * The base denom (e.g., "uatone", "uosmo", "ustars")
+     *
+     * @generated from field: string base_denom = 1;
+     */
+    baseDenom: string;
 
-  /**
-   * The chain where this token is native (e.g., "atomone-1", "osmosis-1")
-   *
-   * @generated from field: string origin_chain = 2;
-   */
-  originChain: string;
+    /**
+     * The chain where this token is native (e.g., "atomone-1", "osmosis-1")
+     *
+     * @generated from field: string origin_chain = 2;
+     */
+    originChain: string;
 
-  /**
-   * Optional: Filter to a specific chain. If empty, returns denoms on all chains
-   *
-   * @generated from field: string on_chain_id = 3;
-   */
-  onChainId: string;
+    /**
+     * Optional: Filter to a specific chain. If empty, returns denoms on all chains
+     *
+     * @generated from field: string on_chain_id = 3;
+     */
+    onChainId: string;
 };
 
 /**
@@ -695,27 +701,27 @@ export declare const GetTokenDenomsRequestSchema: GenMessage<GetTokenDenomsReque
  * @generated from message rpc.v1.GetTokenDenomsResponse
  */
 export declare type GetTokenDenomsResponse = Message<"rpc.v1.GetTokenDenomsResponse"> & {
-  /**
-   * @generated from field: bool found = 1;
-   */
-  found: boolean;
+    /**
+     * @generated from field: bool found = 1;
+     */
+    found: boolean;
 
-  /**
-   * @generated from field: string base_denom = 2;
-   */
-  baseDenom: string;
+    /**
+     * @generated from field: string base_denom = 2;
+     */
+    baseDenom: string;
 
-  /**
-   * @generated from field: string origin_chain = 3;
-   */
-  originChain: string;
+    /**
+     * @generated from field: string origin_chain = 3;
+     */
+    originChain: string;
 
-  /**
-   * All chains where this token is available and what denom it has
-   *
-   * @generated from field: repeated rpc.v1.ChainDenom denoms = 4;
-   */
-  denoms: ChainDenom[];
+    /**
+     * All chains where this token is available and what denom it has
+     *
+     * @generated from field: repeated rpc.v1.ChainDenom denoms = 4;
+     */
+    denoms: ChainDenom[];
 };
 
 /**
@@ -730,10 +736,10 @@ export declare const GetTokenDenomsResponseSchema: GenMessage<GetTokenDenomsResp
  * @generated from message rpc.v1.GetChainTokensRequest
  */
 export declare type GetChainTokensRequest = Message<"rpc.v1.GetChainTokensRequest"> & {
-  /**
-   * @generated from field: string chain_id = 1;
-   */
-  chainId: string;
+    /**
+     * @generated from field: string chain_id = 1;
+     */
+    chainId: string;
 };
 
 /**
@@ -746,29 +752,29 @@ export declare const GetChainTokensRequestSchema: GenMessage<GetChainTokensReque
  * @generated from message rpc.v1.GetChainTokensResponse
  */
 export declare type GetChainTokensResponse = Message<"rpc.v1.GetChainTokensResponse"> & {
-  /**
-   * @generated from field: string chain_id = 1;
-   */
-  chainId: string;
+    /**
+     * @generated from field: string chain_id = 1;
+     */
+    chainId: string;
 
-  /**
-   * @generated from field: string chain_name = 2;
-   */
-  chainName: string;
+    /**
+     * @generated from field: string chain_name = 2;
+     */
+    chainName: string;
 
-  /**
-   * Native tokens on this chain
-   *
-   * @generated from field: repeated rpc.v1.TokenDetails native_tokens = 3;
-   */
-  nativeTokens: TokenDetails[];
+    /**
+     * Native tokens on this chain
+     *
+     * @generated from field: repeated rpc.v1.TokenDetails native_tokens = 3;
+     */
+    nativeTokens: TokenDetails[];
 
-  /**
-   * IBC tokens received on this chain
-   *
-   * @generated from field: repeated rpc.v1.TokenDetails ibc_tokens = 4;
-   */
-  ibcTokens: TokenDetails[];
+    /**
+     * IBC tokens received on this chain
+     *
+     * @generated from field: repeated rpc.v1.TokenDetails ibc_tokens = 4;
+     */
+    ibcTokens: TokenDetails[];
 };
 
 /**
@@ -783,47 +789,47 @@ export declare const GetChainTokensResponseSchema: GenMessage<GetChainTokensResp
  * @generated from message rpc.v1.TokenDetails
  */
 export declare type TokenDetails = Message<"rpc.v1.TokenDetails"> & {
-  /**
-   * Denom on this chain (native or IBC hash)
-   *
-   * @generated from field: string denom = 1;
-   */
-  denom: string;
+    /**
+     * Denom on this chain (native or IBC hash)
+     *
+     * @generated from field: string denom = 1;
+     */
+    denom: string;
 
-  /**
-   * Human-readable symbol (e.g., "ATONE", "OSMO")
-   *
-   * @generated from field: string symbol = 2;
-   */
-  symbol: string;
+    /**
+     * Human-readable symbol (e.g., "ATONE", "OSMO")
+     *
+     * @generated from field: string symbol = 2;
+     */
+    symbol: string;
 
-  /**
-   * Base denom on origin chain
-   *
-   * @generated from field: string base_denom = 3;
-   */
-  baseDenom: string;
+    /**
+     * Base denom on origin chain
+     *
+     * @generated from field: string base_denom = 3;
+     */
+    baseDenom: string;
 
-  /**
-   * Chain where token is native
-   *
-   * @generated from field: string origin_chain = 4;
-   */
-  originChain: string;
+    /**
+     * Chain where token is native
+     *
+     * @generated from field: string origin_chain = 4;
+     */
+    originChain: string;
 
-  /**
-   * Number of decimals
-   *
-   * @generated from field: int32 decimals = 5;
-   */
-  decimals: number;
+    /**
+     * Number of decimals
+     *
+     * @generated from field: int32 decimals = 5;
+     */
+    decimals: number;
 
-  /**
-   * True if native to this chain
-   *
-   * @generated from field: bool is_native = 6;
-   */
-  isNative: boolean;
+    /**
+     * True if native to this chain
+     *
+     * @generated from field: bool is_native = 6;
+     */
+    isNative: boolean;
 };
 
 /**
@@ -835,12 +841,13 @@ export declare const TokenDetailsSchema: GenMessage<TokenDetails>;
 /**
  * @generated from message rpc.v1.PathfinderSupportedChainsResponse
  */
-export declare type PathfinderSupportedChainsResponse = Message<"rpc.v1.PathfinderSupportedChainsResponse"> & {
-  /**
-   * @generated from field: repeated string chain_ids = 1;
-   */
-  chainIds: string[];
-};
+export declare type PathfinderSupportedChainsResponse =
+    Message<"rpc.v1.PathfinderSupportedChainsResponse"> & {
+        /**
+         * @generated from field: repeated string chain_ids = 1;
+         */
+        chainIds: string[];
+    };
 
 /**
  * Describes the message rpc.v1.PathfinderSupportedChainsResponse.
@@ -852,15 +859,15 @@ export declare const PathfinderSupportedChainsResponseSchema: GenMessage<Pathfin
  * @generated from message rpc.v1.ChainInfoRequest
  */
 export declare type ChainInfoRequest = Message<"rpc.v1.ChainInfoRequest"> & {
-  /**
-   * @generated from field: string chain_id = 1;
-   */
-  chainId: string;
+    /**
+     * @generated from field: string chain_id = 1;
+     */
+    chainId: string;
 
-  /**
-   * @generated from field: bool sort_by_symbol = 2;
-   */
-  sortBySymbol: boolean;
+    /**
+     * @generated from field: bool sort_by_symbol = 2;
+     */
+    sortBySymbol: boolean;
 };
 
 /**
@@ -873,10 +880,10 @@ export declare const ChainInfoRequestSchema: GenMessage<ChainInfoRequest>;
  * @generated from message rpc.v1.ChainInfoResponse
  */
 export declare type ChainInfoResponse = Message<"rpc.v1.ChainInfoResponse"> & {
-  /**
-   * @generated from field: rpc.v1.ChainInfo chain_info = 1;
-   */
-  chainInfo?: ChainInfo;
+    /**
+     * @generated from field: rpc.v1.ChainInfo chain_info = 1;
+     */
+    chainInfo?: ChainInfo;
 };
 
 /**
@@ -889,30 +896,30 @@ export declare const ChainInfoResponseSchema: GenMessage<ChainInfoResponse>;
  * @generated from message rpc.v1.ChainInfo
  */
 export declare type ChainInfo = Message<"rpc.v1.ChainInfo"> & {
-  /**
-   * @generated from field: string chain_id = 1;
-   */
-  chainId: string;
+    /**
+     * @generated from field: string chain_id = 1;
+     */
+    chainId: string;
 
-  /**
-   * @generated from field: string chain_name = 2;
-   */
-  chainName: string;
+    /**
+     * @generated from field: string chain_name = 2;
+     */
+    chainName: string;
 
-  /**
-   * @generated from field: bool has_pfm = 3;
-   */
-  hasPfm: boolean;
+    /**
+     * @generated from field: bool has_pfm = 3;
+     */
+    hasPfm: boolean;
 
-  /**
-   * @generated from field: bool is_broker = 4;
-   */
-  isBroker: boolean;
+    /**
+     * @generated from field: bool is_broker = 4;
+     */
+    isBroker: boolean;
 
-  /**
-   * @generated from field: repeated rpc.v1.BasicRoute routes = 5;
-   */
-  routes: BasicRoute[];
+    /**
+     * @generated from field: repeated rpc.v1.BasicRoute routes = 5;
+     */
+    routes: BasicRoute[];
 };
 
 /**
@@ -925,35 +932,35 @@ export declare const ChainInfoSchema: GenMessage<ChainInfo>;
  * @generated from message rpc.v1.TokenInfo
  */
 export declare type TokenInfo = Message<"rpc.v1.TokenInfo"> & {
-  /**
-   * @generated from field: string chain_denom = 1;
-   */
-  chainDenom: string;
+    /**
+     * @generated from field: string chain_denom = 1;
+     */
+    chainDenom: string;
 
-  /**
-   * @generated from field: string ibc_denom = 2;
-   */
-  ibcDenom: string;
+    /**
+     * @generated from field: string ibc_denom = 2;
+     */
+    ibcDenom: string;
 
-  /**
-   * @generated from field: string base_denom = 3;
-   */
-  baseDenom: string;
+    /**
+     * @generated from field: string base_denom = 3;
+     */
+    baseDenom: string;
 
-  /**
-   * @generated from field: string origin_chain = 4;
-   */
-  originChain: string;
+    /**
+     * @generated from field: string origin_chain = 4;
+     */
+    originChain: string;
 
-  /**
-   * @generated from field: int32 decimals = 5;
-   */
-  decimals: number;
+    /**
+     * @generated from field: int32 decimals = 5;
+     */
+    decimals: number;
 
-  /**
-   * @generated from field: string symbol = 6;
-   */
-  symbol: string;
+    /**
+     * @generated from field: string symbol = 6;
+     */
+    symbol: string;
 };
 
 /**
@@ -966,35 +973,35 @@ export declare const TokenInfoSchema: GenMessage<TokenInfo>;
  * @generated from message rpc.v1.BasicRoute
  */
 export declare type BasicRoute = Message<"rpc.v1.BasicRoute"> & {
-  /**
-   * @generated from field: string to_chain = 1;
-   */
-  toChain: string;
+    /**
+     * @generated from field: string to_chain = 1;
+     */
+    toChain: string;
 
-  /**
-   * @generated from field: string to_chain_id = 2;
-   */
-  toChainId: string;
+    /**
+     * @generated from field: string to_chain_id = 2;
+     */
+    toChainId: string;
 
-  /**
-   * @generated from field: string connection_id = 3;
-   */
-  connectionId: string;
+    /**
+     * @generated from field: string connection_id = 3;
+     */
+    connectionId: string;
 
-  /**
-   * @generated from field: string channel_id = 4;
-   */
-  channelId: string;
+    /**
+     * @generated from field: string channel_id = 4;
+     */
+    channelId: string;
 
-  /**
-   * @generated from field: string port_id = 5;
-   */
-  portId: string;
+    /**
+     * @generated from field: string port_id = 5;
+     */
+    portId: string;
 
-  /**
-   * @generated from field: map<string, rpc.v1.TokenInfo> allowed_tokens = 6;
-   */
-  allowedTokens: { [key: string]: TokenInfo };
+    /**
+     * @generated from field: map<string, rpc.v1.TokenInfo> allowed_tokens = 6;
+     */
+    allowedTokens: { [key: string]: TokenInfo };
 };
 
 /**
@@ -1009,69 +1016,68 @@ export declare const BasicRouteSchema: GenMessage<BasicRoute>;
  * @generated from service rpc.v1.PathfinderService
  */
 export declare const PathfinderService: GenService<{
-  /**
-   * FindPath finds and validates a route between two chains
-   * Supports human-readable denoms (e.g., "uatone") or IBC denoms
-   *
-   * @generated from rpc rpc.v1.PathfinderService.FindPath
-   */
-  findPath: {
-    methodKind: "unary";
-    input: typeof FindPathRequestSchema;
-    output: typeof FindPathResponseSchema;
-  },
-  /**
-   * LookupDenom resolves denom information on a specific chain
-   * Accepts human-readable base denoms or IBC denom hashes
-   *
-   * @generated from rpc rpc.v1.PathfinderService.LookupDenom
-   */
-  lookupDenom: {
-    methodKind: "unary";
-    input: typeof LookupDenomRequestSchema;
-    output: typeof LookupDenomResponseSchema;
-  },
-  /**
-   * GetTokenDenoms returns all IBC denoms for a token across supported chains
-   * Use this to discover what denom a token has on different chains
-   *
-   * @generated from rpc rpc.v1.PathfinderService.GetTokenDenoms
-   */
-  getTokenDenoms: {
-    methodKind: "unary";
-    input: typeof GetTokenDenomsRequestSchema;
-    output: typeof GetTokenDenomsResponseSchema;
-  },
-  /**
-   * GetChainInfo returns information about a specific chain
-   *
-   * @generated from rpc rpc.v1.PathfinderService.GetChainInfo
-   */
-  getChainInfo: {
-    methodKind: "unary";
-    input: typeof ChainInfoRequestSchema;
-    output: typeof ChainInfoResponseSchema;
-  },
-  /**
-   * GetPathfinderSupportedChains returns a list of supported chains
-   *
-   * @generated from rpc rpc.v1.PathfinderService.GetPathfinderSupportedChains
-   */
-  getPathfinderSupportedChains: {
-    methodKind: "unary";
-    input: typeof EmptySchema;
-    output: typeof PathfinderSupportedChainsResponseSchema;
-  },
-  /**
-   * GetChainTokens returns all tokens available on a specific chain
-   * Includes both native tokens and IBC tokens with their denoms
-   *
-   * @generated from rpc rpc.v1.PathfinderService.GetChainTokens
-   */
-  getChainTokens: {
-    methodKind: "unary";
-    input: typeof GetChainTokensRequestSchema;
-    output: typeof GetChainTokensResponseSchema;
-  },
+    /**
+     * FindPath finds and validates a route between two chains
+     * Supports human-readable denoms (e.g., "uatone") or IBC denoms
+     *
+     * @generated from rpc rpc.v1.PathfinderService.FindPath
+     */
+    findPath: {
+        methodKind: "unary";
+        input: typeof FindPathRequestSchema;
+        output: typeof FindPathResponseSchema;
+    };
+    /**
+     * LookupDenom resolves denom information on a specific chain
+     * Accepts human-readable base denoms or IBC denom hashes
+     *
+     * @generated from rpc rpc.v1.PathfinderService.LookupDenom
+     */
+    lookupDenom: {
+        methodKind: "unary";
+        input: typeof LookupDenomRequestSchema;
+        output: typeof LookupDenomResponseSchema;
+    };
+    /**
+     * GetTokenDenoms returns all IBC denoms for a token across supported chains
+     * Use this to discover what denom a token has on different chains
+     *
+     * @generated from rpc rpc.v1.PathfinderService.GetTokenDenoms
+     */
+    getTokenDenoms: {
+        methodKind: "unary";
+        input: typeof GetTokenDenomsRequestSchema;
+        output: typeof GetTokenDenomsResponseSchema;
+    };
+    /**
+     * GetChainInfo returns information about a specific chain
+     *
+     * @generated from rpc rpc.v1.PathfinderService.GetChainInfo
+     */
+    getChainInfo: {
+        methodKind: "unary";
+        input: typeof ChainInfoRequestSchema;
+        output: typeof ChainInfoResponseSchema;
+    };
+    /**
+     * GetPathfinderSupportedChains returns a list of supported chains
+     *
+     * @generated from rpc rpc.v1.PathfinderService.GetPathfinderSupportedChains
+     */
+    getPathfinderSupportedChains: {
+        methodKind: "unary";
+        input: typeof EmptySchema;
+        output: typeof PathfinderSupportedChainsResponseSchema;
+    };
+    /**
+     * GetChainTokens returns all tokens available on a specific chain
+     * Includes both native tokens and IBC tokens with their denoms
+     *
+     * @generated from rpc rpc.v1.PathfinderService.GetChainTokens
+     */
+    getChainTokens: {
+        methodKind: "unary";
+        input: typeof GetChainTokensRequestSchema;
+        output: typeof GetChainTokensResponseSchema;
+    };
 }>;
-

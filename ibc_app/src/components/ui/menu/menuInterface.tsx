@@ -11,7 +11,12 @@ export default function MenuInterface(): JSX.Element {
         { label: "IBC Send", href: "/ibc", icon: <BiTransfer className="size-6" /> },
         { label: "Chain Status", href: "/status", icon: <FaChartBar className="size-6" /> },
         { label: "About Spectra IBC", href: "/about", icon: <FaInfo className="size-6" /> },
-        { label: "Docs", href: "https://docs.cogwheel.zone/spectra-ibc", newTab: true, icon: <SiGoogledocs className="size-6" /> },
+        {
+            label: "Docs",
+            href: "https://docs.cogwheel.zone/spectra-ibc",
+            newTab: true,
+            icon: <SiGoogledocs className="size-6" />,
+        },
     ];
 
     return (

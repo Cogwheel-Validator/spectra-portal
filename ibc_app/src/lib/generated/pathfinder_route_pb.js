@@ -9,196 +9,174 @@ import { file_google_protobuf_empty } from "@bufbuild/protobuf/wkt";
 /**
  * Describes the file pathfinder_route.proto.
  */
-export const file_pathfinder_route = /*@__PURE__*/
-  fileDesc("ChZwYXRoZmluZGVyX3JvdXRlLnByb3RvEgZycGMudjEi+wEKD0ZpbmRQYXRoUmVxdWVzdBIaCgpjaGFpbl9mcm9tGAEgASgJQga6SAPIAQESJwoQdG9rZW5fZnJvbV9kZW5vbRgCIAEoCUINukgKyAEBcgUQARiAARIZCglhbW91bnRfaW4YAyABKAlCBrpIA8gBARIYCghjaGFpbl90bxgEIAEoCUIGukgDyAEBEiAKDnRva2VuX3RvX2Rlbm9tGAUgASgJQgi6SAVyAxiAARIkCg5zZW5kZXJfYWRkcmVzcxgGIAEoCUIMukgJyAEBcgQQJhhEEiYKEHJlY2VpdmVyX2FkZHJlc3MYByABKAlCDLpICcgBAXIEECYYRCLFAQoQRmluZFBhdGhSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSJQoGZGlyZWN0GAMgASgLMhMucnBjLnYxLkRpcmVjdFJvdXRlSAASKQoIaW5kaXJlY3QYBCABKAsyFS5ycGMudjEuSW5kaXJlY3RSb3V0ZUgAEi4KC2Jyb2tlcl9zd2FwGAUgASgLMhcucnBjLnYxLkJyb2tlclN3YXBSb3V0ZUgAQgcKBXJvdXRlIi8KC0RpcmVjdFJvdXRlEiAKCHRyYW5zZmVyGAEgASgLMg4ucnBjLnYxLklCQ0xlZyJ8Cg1JbmRpcmVjdFJvdXRlEgwKBHBhdGgYASADKAkSHAoEbGVncxgCIAMoCzIOLnJwYy52MS5JQkNMZWcSFAoMc3VwcG9ydHNfcGZtGAMgASgIEhcKD3BmbV9zdGFydF9jaGFpbhgEIAEoCRIQCghwZm1fbWVtbxgFIAEoCSLbAQoPQnJva2VyU3dhcFJvdXRlEgwKBHBhdGgYASADKAkSIwoLaW5ib3VuZF9sZWcYAiABKAsyDi5ycGMudjEuSUJDTGVnEh8KBHN3YXAYAyABKAsyES5ycGMudjEuU3dhcFF1b3RlEiUKDW91dGJvdW5kX2xlZ3MYBCADKAsyDi5ycGMudjEuSUJDTGVnEh0KFW91dGJvdW5kX3N1cHBvcnRzX3BmbRgFIAEoCBIuCglleGVjdXRpb24YBiABKAsyGy5ycGMudjEuQnJva2VyRXhlY3V0aW9uRGF0YSKVAQoTQnJva2VyRXhlY3V0aW9uRGF0YRIMCgRtZW1vGAEgASgJEhQKDGliY19yZWNlaXZlchgCIAEoCRIXCg9yZWNvdmVyX2FkZHJlc3MYAyABKAkSGQoRbWluX291dHB1dF9hbW91bnQYBCABKAkSEQoJdXNlc193YXNtGAUgASgIEhMKC2Rlc2NyaXB0aW9uGAYgASgJIoIBCgZJQkNMZWcSEgoKZnJvbV9jaGFpbhgBIAEoCRIQCgh0b19jaGFpbhgCIAEoCRIPCgdjaGFubmVsGAMgASgJEgwKBHBvcnQYBCABKAkSIwoFdG9rZW4YBSABKAsyFC5ycGMudjEuVG9rZW5NYXBwaW5nEg4KBmFtb3VudBgGIAEoCSJgCgxUb2tlbk1hcHBpbmcSEwoLY2hhaW5fZGVub20YASABKAkSEgoKYmFzZV9kZW5vbRgCIAEoCRIUCgxvcmlnaW5fY2hhaW4YAyABKAkSEQoJaXNfbmF0aXZlGAQgASgIIoYCCglTd2FwUXVvdGUSDgoGYnJva2VyGAEgASgJEiYKCHRva2VuX2luGAIgASgLMhQucnBjLnYxLlRva2VuTWFwcGluZxInCgl0b2tlbl9vdXQYAyABKAsyFC5ycGMudjEuVG9rZW5NYXBwaW5nEhEKCWFtb3VudF9pbhgEIAEoCRISCgphbW91bnRfb3V0GAUgASgJEhQKDHByaWNlX2ltcGFjdBgGIAEoCRIVCg1lZmZlY3RpdmVfZmVlGAcgASgJEjYKEm9zbW9zaXNfcm91dGVfZGF0YRgIIAEoCzIYLnJwYy52MS5Pc21vc2lzUm91dGVEYXRhSABCDAoKcm91dGVfZGF0YSJvChBPc21vc2lzUm91dGVEYXRhEiQKBnJvdXRlcxgBIAMoCzIULnJwYy52MS5Pc21vc2lzUm91dGUSFQoNbGlxdWlkaXR5X2NhcBgCIAEoCRIeChZsaXF1aWRpdHlfY2FwX292ZXJmbG93GAMgASgIIm4KDE9zbW9zaXNSb3V0ZRIiCgVwb29scxgBIAMoCzITLnJwYy52MS5Pc21vc2lzUG9vbBITCgtoYXNfY3dfcG9vbBgCIAEoCBISCgpvdXRfYW1vdW50GAMgASgJEhEKCWluX2Ftb3VudBgEIAEoCSKBAQoLT3Ntb3Npc1Bvb2wSCgoCaWQYASABKAUSDAoEdHlwZRgCIAEoBRIVCg1zcHJlYWRfZmFjdG9yGAMgASgJEhcKD3Rva2VuX291dF9kZW5vbRgEIAEoCRIRCgl0YWtlcl9mZWUYBSABKAkSFQoNbGlxdWlkaXR5X2NhcBgGIAEoCSJMChJMb29rdXBEZW5vbVJlcXVlc3QSGAoIY2hhaW5faWQYASABKAlCBrpIA8gBARIcCgVkZW5vbRgCIAEoCUINukgKyAEBcgUQARiAASKyAQoTTG9va3VwRGVub21SZXNwb25zZRINCgVmb3VuZBgBIAEoCBITCgtjaGFpbl9kZW5vbRgCIAEoCRISCgpiYXNlX2Rlbm9tGAMgASgJEhQKDG9yaWdpbl9jaGFpbhgEIAEoCRIRCglpc19uYXRpdmUYBSABKAgSEAoIaWJjX3BhdGgYBiABKAkSKAoMYXZhaWxhYmxlX29uGAcgAygLMhIucnBjLnYxLkNoYWluRGVub20iVAoKQ2hhaW5EZW5vbRIQCghjaGFpbl9pZBgBIAEoCRISCgpjaGFpbl9uYW1lGAIgASgJEg0KBWRlbm9tGAMgASgJEhEKCWlzX25hdGl2ZRgEIAEoCCJmChVHZXRUb2tlbkRlbm9tc1JlcXVlc3QSGgoKYmFzZV9kZW5vbRgBIAEoCUIGukgDyAEBEhwKDG9yaWdpbl9jaGFpbhgCIAEoCUIGukgDyAEBEhMKC29uX2NoYWluX2lkGAMgASgJInUKFkdldFRva2VuRGVub21zUmVzcG9uc2USDQoFZm91bmQYASABKAgSEgoKYmFzZV9kZW5vbRgCIAEoCRIUCgxvcmlnaW5fY2hhaW4YAyABKAkSIgoGZGVub21zGAQgAygLMhIucnBjLnYxLkNoYWluRGVub20iMQoVR2V0Q2hhaW5Ub2tlbnNSZXF1ZXN0EhgKCGNoYWluX2lkGAEgASgJQga6SAPIAQEilQEKFkdldENoYWluVG9rZW5zUmVzcG9uc2USEAoIY2hhaW5faWQYASABKAkSEgoKY2hhaW5fbmFtZRgCIAEoCRIrCg1uYXRpdmVfdG9rZW5zGAMgAygLMhQucnBjLnYxLlRva2VuRGV0YWlscxIoCgppYmNfdG9rZW5zGAQgAygLMhQucnBjLnYxLlRva2VuRGV0YWlscyJ8CgxUb2tlbkRldGFpbHMSDQoFZGVub20YASABKAkSDgoGc3ltYm9sGAIgASgJEhIKCmJhc2VfZGVub20YAyABKAkSFAoMb3JpZ2luX2NoYWluGAQgASgJEhAKCGRlY2ltYWxzGAUgASgFEhEKCWlzX25hdGl2ZRgGIAEoCCI+CiFQYXRoZmluZGVyU3VwcG9ydGVkQ2hhaW5zUmVzcG9uc2USGQoJY2hhaW5faWRzGAEgAygJQga6SAPIAQEiRAoQQ2hhaW5JbmZvUmVxdWVzdBIYCghjaGFpbl9pZBgBIAEoCUIGukgDyAEBEhYKDnNvcnRfYnlfc3ltYm9sGAIgASgIIjoKEUNoYWluSW5mb1Jlc3BvbnNlEiUKCmNoYWluX2luZm8YASABKAsyES5ycGMudjEuQ2hhaW5JbmZvInkKCUNoYWluSW5mbxIQCghjaGFpbl9pZBgBIAEoCRISCgpjaGFpbl9uYW1lGAIgASgJEg8KB2hhc19wZm0YAyABKAgSEQoJaXNfYnJva2VyGAQgASgIEiIKBnJvdXRlcxgFIAMoCzISLnJwYy52MS5CYXNpY1JvdXRlIn8KCVRva2VuSW5mbxITCgtjaGFpbl9kZW5vbRgBIAEoCRIRCglpYmNfZGVub20YAiABKAkSEgoKYmFzZV9kZW5vbRgDIAEoCRIUCgxvcmlnaW5fY2hhaW4YBCABKAkSEAoIZGVjaW1hbHMYBSABKAUSDgoGc3ltYm9sGAYgASgJIvcBCgpCYXNpY1JvdXRlEhAKCHRvX2NoYWluGAEgASgJEhMKC3RvX2NoYWluX2lkGAIgASgJEhUKDWNvbm5lY3Rpb25faWQYAyABKAkSEgoKY2hhbm5lbF9pZBgEIAEoCRIPCgdwb3J0X2lkGAUgASgJEj0KDmFsbG93ZWRfdG9rZW5zGAYgAygLMiUucnBjLnYxLkJhc2ljUm91dGUuQWxsb3dlZFRva2Vuc0VudHJ5GkcKEkFsbG93ZWRUb2tlbnNFbnRyeRILCgNrZXkYASABKAkSIAoFdmFsdWUYAiABKAsyES5ycGMudjEuVG9rZW5JbmZvOgI4ATKCBAoRUGF0aGZpbmRlclNlcnZpY2USQgoIRmluZFBhdGgSFy5ycGMudjEuRmluZFBhdGhSZXF1ZXN0GhgucnBjLnYxLkZpbmRQYXRoUmVzcG9uc2UiA5ACARJLCgtMb29rdXBEZW5vbRIaLnJwYy52MS5Mb29rdXBEZW5vbVJlcXVlc3QaGy5ycGMudjEuTG9va3VwRGVub21SZXNwb25zZSIDkAIBElQKDkdldFRva2VuRGVub21zEh0ucnBjLnYxLkdldFRva2VuRGVub21zUmVxdWVzdBoeLnJwYy52MS5HZXRUb2tlbkRlbm9tc1Jlc3BvbnNlIgOQAgESSAoMR2V0Q2hhaW5JbmZvEhgucnBjLnYxLkNoYWluSW5mb1JlcXVlc3QaGS5ycGMudjEuQ2hhaW5JbmZvUmVzcG9uc2UiA5ACARJmChxHZXRQYXRoZmluZGVyU3VwcG9ydGVkQ2hhaW5zEhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5GikucnBjLnYxLlBhdGhmaW5kZXJTdXBwb3J0ZWRDaGFpbnNSZXNwb25zZSIDkAIBElQKDkdldENoYWluVG9rZW5zEh0ucnBjLnYxLkdldENoYWluVG9rZW5zUmVxdWVzdBoeLnJwYy52MS5HZXRDaGFpblRva2Vuc1Jlc3BvbnNlIgOQAgFCQVo/Z2l0aHViLmNvbS9Db2d3aGVlbC1WYWxpZGF0b3Ivc3BlY3RyYS1pYmMtaHViL3BhdGhmaW5kZXIvcnBjL3YxYgZwcm90bzM", [file_buf_validate_validate, file_google_protobuf_empty]);
+export const file_pathfinder_route =
+    /*@__PURE__*/
+    fileDesc(
+        "ChZwYXRoZmluZGVyX3JvdXRlLnByb3RvEgZycGMudjEi+wEKD0ZpbmRQYXRoUmVxdWVzdBIaCgpjaGFpbl9mcm9tGAEgASgJQga6SAPIAQESJwoQdG9rZW5fZnJvbV9kZW5vbRgCIAEoCUINukgKyAEBcgUQARiAARIZCglhbW91bnRfaW4YAyABKAlCBrpIA8gBARIYCghjaGFpbl90bxgEIAEoCUIGukgDyAEBEiAKDnRva2VuX3RvX2Rlbm9tGAUgASgJQgi6SAVyAxiAARIkCg5zZW5kZXJfYWRkcmVzcxgGIAEoCUIMukgJyAEBcgQQJhhEEiYKEHJlY2VpdmVyX2FkZHJlc3MYByABKAlCDLpICcgBAXIEECYYRCLFAQoQRmluZFBhdGhSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSJQoGZGlyZWN0GAMgASgLMhMucnBjLnYxLkRpcmVjdFJvdXRlSAASKQoIaW5kaXJlY3QYBCABKAsyFS5ycGMudjEuSW5kaXJlY3RSb3V0ZUgAEi4KC2Jyb2tlcl9zd2FwGAUgASgLMhcucnBjLnYxLkJyb2tlclN3YXBSb3V0ZUgAQgcKBXJvdXRlIi8KC0RpcmVjdFJvdXRlEiAKCHRyYW5zZmVyGAEgASgLMg4ucnBjLnYxLklCQ0xlZyJ8Cg1JbmRpcmVjdFJvdXRlEgwKBHBhdGgYASADKAkSHAoEbGVncxgCIAMoCzIOLnJwYy52MS5JQkNMZWcSFAoMc3VwcG9ydHNfcGZtGAMgASgIEhcKD3BmbV9zdGFydF9jaGFpbhgEIAEoCRIQCghwZm1fbWVtbxgFIAEoCSLbAQoPQnJva2VyU3dhcFJvdXRlEgwKBHBhdGgYASADKAkSIwoLaW5ib3VuZF9sZWcYAiABKAsyDi5ycGMudjEuSUJDTGVnEh8KBHN3YXAYAyABKAsyES5ycGMudjEuU3dhcFF1b3RlEiUKDW91dGJvdW5kX2xlZ3MYBCADKAsyDi5ycGMudjEuSUJDTGVnEh0KFW91dGJvdW5kX3N1cHBvcnRzX3BmbRgFIAEoCBIuCglleGVjdXRpb24YBiABKAsyGy5ycGMudjEuQnJva2VyRXhlY3V0aW9uRGF0YSKVAQoTQnJva2VyRXhlY3V0aW9uRGF0YRIMCgRtZW1vGAEgASgJEhQKDGliY19yZWNlaXZlchgCIAEoCRIXCg9yZWNvdmVyX2FkZHJlc3MYAyABKAkSGQoRbWluX291dHB1dF9hbW91bnQYBCABKAkSEQoJdXNlc193YXNtGAUgASgIEhMKC2Rlc2NyaXB0aW9uGAYgASgJIoIBCgZJQkNMZWcSEgoKZnJvbV9jaGFpbhgBIAEoCRIQCgh0b19jaGFpbhgCIAEoCRIPCgdjaGFubmVsGAMgASgJEgwKBHBvcnQYBCABKAkSIwoFdG9rZW4YBSABKAsyFC5ycGMudjEuVG9rZW5NYXBwaW5nEg4KBmFtb3VudBgGIAEoCSJgCgxUb2tlbk1hcHBpbmcSEwoLY2hhaW5fZGVub20YASABKAkSEgoKYmFzZV9kZW5vbRgCIAEoCRIUCgxvcmlnaW5fY2hhaW4YAyABKAkSEQoJaXNfbmF0aXZlGAQgASgIIoYCCglTd2FwUXVvdGUSDgoGYnJva2VyGAEgASgJEiYKCHRva2VuX2luGAIgASgLMhQucnBjLnYxLlRva2VuTWFwcGluZxInCgl0b2tlbl9vdXQYAyABKAsyFC5ycGMudjEuVG9rZW5NYXBwaW5nEhEKCWFtb3VudF9pbhgEIAEoCRISCgphbW91bnRfb3V0GAUgASgJEhQKDHByaWNlX2ltcGFjdBgGIAEoCRIVCg1lZmZlY3RpdmVfZmVlGAcgASgJEjYKEm9zbW9zaXNfcm91dGVfZGF0YRgIIAEoCzIYLnJwYy52MS5Pc21vc2lzUm91dGVEYXRhSABCDAoKcm91dGVfZGF0YSJvChBPc21vc2lzUm91dGVEYXRhEiQKBnJvdXRlcxgBIAMoCzIULnJwYy52MS5Pc21vc2lzUm91dGUSFQoNbGlxdWlkaXR5X2NhcBgCIAEoCRIeChZsaXF1aWRpdHlfY2FwX292ZXJmbG93GAMgASgIIm4KDE9zbW9zaXNSb3V0ZRIiCgVwb29scxgBIAMoCzITLnJwYy52MS5Pc21vc2lzUG9vbBITCgtoYXNfY3dfcG9vbBgCIAEoCBISCgpvdXRfYW1vdW50GAMgASgJEhEKCWluX2Ftb3VudBgEIAEoCSKBAQoLT3Ntb3Npc1Bvb2wSCgoCaWQYASABKAUSDAoEdHlwZRgCIAEoBRIVCg1zcHJlYWRfZmFjdG9yGAMgASgJEhcKD3Rva2VuX291dF9kZW5vbRgEIAEoCRIRCgl0YWtlcl9mZWUYBSABKAkSFQoNbGlxdWlkaXR5X2NhcBgGIAEoCSJMChJMb29rdXBEZW5vbVJlcXVlc3QSGAoIY2hhaW5faWQYASABKAlCBrpIA8gBARIcCgVkZW5vbRgCIAEoCUINukgKyAEBcgUQARiAASKyAQoTTG9va3VwRGVub21SZXNwb25zZRINCgVmb3VuZBgBIAEoCBITCgtjaGFpbl9kZW5vbRgCIAEoCRISCgpiYXNlX2Rlbm9tGAMgASgJEhQKDG9yaWdpbl9jaGFpbhgEIAEoCRIRCglpc19uYXRpdmUYBSABKAgSEAoIaWJjX3BhdGgYBiABKAkSKAoMYXZhaWxhYmxlX29uGAcgAygLMhIucnBjLnYxLkNoYWluRGVub20iVAoKQ2hhaW5EZW5vbRIQCghjaGFpbl9pZBgBIAEoCRISCgpjaGFpbl9uYW1lGAIgASgJEg0KBWRlbm9tGAMgASgJEhEKCWlzX25hdGl2ZRgEIAEoCCJmChVHZXRUb2tlbkRlbm9tc1JlcXVlc3QSGgoKYmFzZV9kZW5vbRgBIAEoCUIGukgDyAEBEhwKDG9yaWdpbl9jaGFpbhgCIAEoCUIGukgDyAEBEhMKC29uX2NoYWluX2lkGAMgASgJInUKFkdldFRva2VuRGVub21zUmVzcG9uc2USDQoFZm91bmQYASABKAgSEgoKYmFzZV9kZW5vbRgCIAEoCRIUCgxvcmlnaW5fY2hhaW4YAyABKAkSIgoGZGVub21zGAQgAygLMhIucnBjLnYxLkNoYWluRGVub20iMQoVR2V0Q2hhaW5Ub2tlbnNSZXF1ZXN0EhgKCGNoYWluX2lkGAEgASgJQga6SAPIAQEilQEKFkdldENoYWluVG9rZW5zUmVzcG9uc2USEAoIY2hhaW5faWQYASABKAkSEgoKY2hhaW5fbmFtZRgCIAEoCRIrCg1uYXRpdmVfdG9rZW5zGAMgAygLMhQucnBjLnYxLlRva2VuRGV0YWlscxIoCgppYmNfdG9rZW5zGAQgAygLMhQucnBjLnYxLlRva2VuRGV0YWlscyJ8CgxUb2tlbkRldGFpbHMSDQoFZGVub20YASABKAkSDgoGc3ltYm9sGAIgASgJEhIKCmJhc2VfZGVub20YAyABKAkSFAoMb3JpZ2luX2NoYWluGAQgASgJEhAKCGRlY2ltYWxzGAUgASgFEhEKCWlzX25hdGl2ZRgGIAEoCCI+CiFQYXRoZmluZGVyU3VwcG9ydGVkQ2hhaW5zUmVzcG9uc2USGQoJY2hhaW5faWRzGAEgAygJQga6SAPIAQEiRAoQQ2hhaW5JbmZvUmVxdWVzdBIYCghjaGFpbl9pZBgBIAEoCUIGukgDyAEBEhYKDnNvcnRfYnlfc3ltYm9sGAIgASgIIjoKEUNoYWluSW5mb1Jlc3BvbnNlEiUKCmNoYWluX2luZm8YASABKAsyES5ycGMudjEuQ2hhaW5JbmZvInkKCUNoYWluSW5mbxIQCghjaGFpbl9pZBgBIAEoCRISCgpjaGFpbl9uYW1lGAIgASgJEg8KB2hhc19wZm0YAyABKAgSEQoJaXNfYnJva2VyGAQgASgIEiIKBnJvdXRlcxgFIAMoCzISLnJwYy52MS5CYXNpY1JvdXRlIn8KCVRva2VuSW5mbxITCgtjaGFpbl9kZW5vbRgBIAEoCRIRCglpYmNfZGVub20YAiABKAkSEgoKYmFzZV9kZW5vbRgDIAEoCRIUCgxvcmlnaW5fY2hhaW4YBCABKAkSEAoIZGVjaW1hbHMYBSABKAUSDgoGc3ltYm9sGAYgASgJIvcBCgpCYXNpY1JvdXRlEhAKCHRvX2NoYWluGAEgASgJEhMKC3RvX2NoYWluX2lkGAIgASgJEhUKDWNvbm5lY3Rpb25faWQYAyABKAkSEgoKY2hhbm5lbF9pZBgEIAEoCRIPCgdwb3J0X2lkGAUgASgJEj0KDmFsbG93ZWRfdG9rZW5zGAYgAygLMiUucnBjLnYxLkJhc2ljUm91dGUuQWxsb3dlZFRva2Vuc0VudHJ5GkcKEkFsbG93ZWRUb2tlbnNFbnRyeRILCgNrZXkYASABKAkSIAoFdmFsdWUYAiABKAsyES5ycGMudjEuVG9rZW5JbmZvOgI4ATKCBAoRUGF0aGZpbmRlclNlcnZpY2USQgoIRmluZFBhdGgSFy5ycGMudjEuRmluZFBhdGhSZXF1ZXN0GhgucnBjLnYxLkZpbmRQYXRoUmVzcG9uc2UiA5ACARJLCgtMb29rdXBEZW5vbRIaLnJwYy52MS5Mb29rdXBEZW5vbVJlcXVlc3QaGy5ycGMudjEuTG9va3VwRGVub21SZXNwb25zZSIDkAIBElQKDkdldFRva2VuRGVub21zEh0ucnBjLnYxLkdldFRva2VuRGVub21zUmVxdWVzdBoeLnJwYy52MS5HZXRUb2tlbkRlbm9tc1Jlc3BvbnNlIgOQAgESSAoMR2V0Q2hhaW5JbmZvEhgucnBjLnYxLkNoYWluSW5mb1JlcXVlc3QaGS5ycGMudjEuQ2hhaW5JbmZvUmVzcG9uc2UiA5ACARJmChxHZXRQYXRoZmluZGVyU3VwcG9ydGVkQ2hhaW5zEhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5GikucnBjLnYxLlBhdGhmaW5kZXJTdXBwb3J0ZWRDaGFpbnNSZXNwb25zZSIDkAIBElQKDkdldENoYWluVG9rZW5zEh0ucnBjLnYxLkdldENoYWluVG9rZW5zUmVxdWVzdBoeLnJwYy52MS5HZXRDaGFpblRva2Vuc1Jlc3BvbnNlIgOQAgFCQVo/Z2l0aHViLmNvbS9Db2d3aGVlbC1WYWxpZGF0b3Ivc3BlY3RyYS1pYmMtaHViL3BhdGhmaW5kZXIvcnBjL3YxYgZwcm90bzM",
+        [file_buf_validate_validate, file_google_protobuf_empty],
+    );
 
 /**
  * Describes the message rpc.v1.FindPathRequest.
  * Use `create(FindPathRequestSchema)` to create a new message.
  */
-export const FindPathRequestSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 0);
+export const FindPathRequestSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 0);
 
 /**
  * Describes the message rpc.v1.FindPathResponse.
  * Use `create(FindPathResponseSchema)` to create a new message.
  */
-export const FindPathResponseSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 1);
+export const FindPathResponseSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 1);
 
 /**
  * Describes the message rpc.v1.DirectRoute.
  * Use `create(DirectRouteSchema)` to create a new message.
  */
-export const DirectRouteSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 2);
+export const DirectRouteSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 2);
 
 /**
  * Describes the message rpc.v1.IndirectRoute.
  * Use `create(IndirectRouteSchema)` to create a new message.
  */
-export const IndirectRouteSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 3);
+export const IndirectRouteSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 3);
 
 /**
  * Describes the message rpc.v1.BrokerSwapRoute.
  * Use `create(BrokerSwapRouteSchema)` to create a new message.
  */
-export const BrokerSwapRouteSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 4);
+export const BrokerSwapRouteSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 4);
 
 /**
  * Describes the message rpc.v1.BrokerExecutionData.
  * Use `create(BrokerExecutionDataSchema)` to create a new message.
  */
-export const BrokerExecutionDataSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 5);
+export const BrokerExecutionDataSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 5);
 
 /**
  * Describes the message rpc.v1.IBCLeg.
  * Use `create(IBCLegSchema)` to create a new message.
  */
-export const IBCLegSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 6);
+export const IBCLegSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 6);
 
 /**
  * Describes the message rpc.v1.TokenMapping.
  * Use `create(TokenMappingSchema)` to create a new message.
  */
-export const TokenMappingSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 7);
+export const TokenMappingSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 7);
 
 /**
  * Describes the message rpc.v1.SwapQuote.
  * Use `create(SwapQuoteSchema)` to create a new message.
  */
-export const SwapQuoteSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 8);
+export const SwapQuoteSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 8);
 
 /**
  * Describes the message rpc.v1.OsmosisRouteData.
  * Use `create(OsmosisRouteDataSchema)` to create a new message.
  */
-export const OsmosisRouteDataSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 9);
+export const OsmosisRouteDataSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 9);
 
 /**
  * Describes the message rpc.v1.OsmosisRoute.
  * Use `create(OsmosisRouteSchema)` to create a new message.
  */
-export const OsmosisRouteSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 10);
+export const OsmosisRouteSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 10);
 
 /**
  * Describes the message rpc.v1.OsmosisPool.
  * Use `create(OsmosisPoolSchema)` to create a new message.
  */
-export const OsmosisPoolSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 11);
+export const OsmosisPoolSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 11);
 
 /**
  * Describes the message rpc.v1.LookupDenomRequest.
  * Use `create(LookupDenomRequestSchema)` to create a new message.
  */
-export const LookupDenomRequestSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 12);
+export const LookupDenomRequestSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 12);
 
 /**
  * Describes the message rpc.v1.LookupDenomResponse.
  * Use `create(LookupDenomResponseSchema)` to create a new message.
  */
-export const LookupDenomResponseSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 13);
+export const LookupDenomResponseSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 13);
 
 /**
  * Describes the message rpc.v1.ChainDenom.
  * Use `create(ChainDenomSchema)` to create a new message.
  */
-export const ChainDenomSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 14);
+export const ChainDenomSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 14);
 
 /**
  * Describes the message rpc.v1.GetTokenDenomsRequest.
  * Use `create(GetTokenDenomsRequestSchema)` to create a new message.
  */
-export const GetTokenDenomsRequestSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 15);
+export const GetTokenDenomsRequestSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 15);
 
 /**
  * Describes the message rpc.v1.GetTokenDenomsResponse.
  * Use `create(GetTokenDenomsResponseSchema)` to create a new message.
  */
-export const GetTokenDenomsResponseSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 16);
+export const GetTokenDenomsResponseSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 16);
 
 /**
  * Describes the message rpc.v1.GetChainTokensRequest.
  * Use `create(GetChainTokensRequestSchema)` to create a new message.
  */
-export const GetChainTokensRequestSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 17);
+export const GetChainTokensRequestSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 17);
 
 /**
  * Describes the message rpc.v1.GetChainTokensResponse.
  * Use `create(GetChainTokensResponseSchema)` to create a new message.
  */
-export const GetChainTokensResponseSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 18);
+export const GetChainTokensResponseSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 18);
 
 /**
  * Describes the message rpc.v1.TokenDetails.
  * Use `create(TokenDetailsSchema)` to create a new message.
  */
-export const TokenDetailsSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 19);
+export const TokenDetailsSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 19);
 
 /**
  * Describes the message rpc.v1.PathfinderSupportedChainsResponse.
  * Use `create(PathfinderSupportedChainsResponseSchema)` to create a new message.
  */
-export const PathfinderSupportedChainsResponseSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 20);
+export const PathfinderSupportedChainsResponseSchema =
+    /*@__PURE__*/
+    messageDesc(file_pathfinder_route, 20);
 
 /**
  * Describes the message rpc.v1.ChainInfoRequest.
  * Use `create(ChainInfoRequestSchema)` to create a new message.
  */
-export const ChainInfoRequestSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 21);
+export const ChainInfoRequestSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 21);
 
 /**
  * Describes the message rpc.v1.ChainInfoResponse.
  * Use `create(ChainInfoResponseSchema)` to create a new message.
  */
-export const ChainInfoResponseSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 22);
+export const ChainInfoResponseSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 22);
 
 /**
  * Describes the message rpc.v1.ChainInfo.
  * Use `create(ChainInfoSchema)` to create a new message.
  */
-export const ChainInfoSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 23);
+export const ChainInfoSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 23);
 
 /**
  * Describes the message rpc.v1.TokenInfo.
  * Use `create(TokenInfoSchema)` to create a new message.
  */
-export const TokenInfoSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 24);
+export const TokenInfoSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 24);
 
 /**
  * Describes the message rpc.v1.BasicRoute.
  * Use `create(BasicRouteSchema)` to create a new message.
  */
-export const BasicRouteSchema = /*@__PURE__*/
-  messageDesc(file_pathfinder_route, 25);
+export const BasicRouteSchema = /*@__PURE__*/ messageDesc(file_pathfinder_route, 25);
 
 /**
  * PathfinderService provides route discovery and validation for IBC transfers and swaps
  *
  * @generated from service rpc.v1.PathfinderService
  */
-export const PathfinderService = /*@__PURE__*/
-  serviceDesc(file_pathfinder_route, 0);
-
+export const PathfinderService = /*@__PURE__*/ serviceDesc(file_pathfinder_route, 0);

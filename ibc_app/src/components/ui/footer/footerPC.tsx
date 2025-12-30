@@ -47,9 +47,9 @@ export default function FooterPC(): JSX.Element {
                     >
                         <FaSquareGithub className="size-10 text-base-content" />
                     </Link>
-                    <Link 
-                        href="https://cogwheel.zone" 
-                        target="_blank" 
+                    <Link
+                        href="https://cogwheel.zone"
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="tooltip"
                         data-tip="Visit our website"

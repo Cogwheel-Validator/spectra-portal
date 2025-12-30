@@ -348,12 +348,12 @@ func setupTestPathfinder() (*router.Pathfinder, *router.RouteIndex) {
 		},
 	}
 
-	solver := router.NewPathfinder(chains, routeIndex, brokerClients)
-	return solver, routeIndex
+	pathfinder := router.NewPathfinder(chains, routeIndex, brokerClients)
+	return pathfinder, routeIndex
 }
 
-func TestSolver_DirectRoute(t *testing.T) {
-	solver, _ := setupTestPathfinder()
+func TestPathfinder_DirectRoute(t *testing.T) {
+	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
 		ChainFrom:       "cosmoshub-4",
@@ -365,7 +365,7 @@ func TestSolver_DirectRoute(t *testing.T) {
 		ReceiverAddress: "osmo1receiver",
 	}
 
-	response := solver.FindPath(req)
+	response := pathfinder.FindPath(req)
 
 	t.Logf("Response: %+v", response)
 	assert.True(t, response.Success)
@@ -387,8 +387,8 @@ func TestSolver_DirectRoute(t *testing.T) {
 	t.Logf("Direct route test passed")
 }
 
-func TestSolver_BrokerSwapRoute(t *testing.T) {
-	solver, _ := setupTestPathfinder()
+func TestPathfinder_BrokerSwapRoute(t *testing.T) {
+	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
 		ChainFrom:       "cosmoshub-4",
@@ -400,7 +400,7 @@ func TestSolver_BrokerSwapRoute(t *testing.T) {
 		ReceiverAddress: "juno1receiver",
 	}
 
-	response := solver.FindPath(req)
+	response := pathfinder.FindPath(req)
 
 	t.Logf("Response: %+v", response)
 	assert.True(t, response.Success)
@@ -450,8 +450,8 @@ func TestSolver_BrokerSwapRoute(t *testing.T) {
 	t.Logf("Broker swap route test passed")
 }
 
-func TestSolver_IndirectRoute(t *testing.T) {
-	solver, _ := setupTestPathfinder()
+func TestPathfinder_IndirectRoute(t *testing.T) {
+	pathfinder, _ := setupTestPathfinder()
 
 	// Test USDC from Juno -> Noble -> Osmosis (indirect route without swap)
 	req := models.RouteRequest{
@@ -464,7 +464,7 @@ func TestSolver_IndirectRoute(t *testing.T) {
 		ReceiverAddress: "osmo1receiver",
 	}
 
-	response := solver.FindPath(req)
+	response := pathfinder.FindPath(req)
 
 	t.Logf("Response: %+v", response)
 	assert.True(t, response.Success)
@@ -501,8 +501,8 @@ func TestSolver_IndirectRoute(t *testing.T) {
 	t.Logf("Indirect route test passed - USDC routes through Noble with PFM!")
 }
 
-func TestSolver_ImpossibleRoute(t *testing.T) {
-	solver, _ := setupTestPathfinder()
+func TestPathfinder_ImpossibleRoute(t *testing.T) {
+	pathfinder, _ := setupTestPathfinder()
 
 	// Try to route to a non-existent chain
 	req := models.RouteRequest{
@@ -515,7 +515,7 @@ func TestSolver_ImpossibleRoute(t *testing.T) {
 		ReceiverAddress: "nonexist1receiver",
 	}
 
-	response := solver.FindPath(req)
+	response := pathfinder.FindPath(req)
 
 	t.Logf("Response: %+v", response)
 	assert.False(t, response.Success)
@@ -528,8 +528,8 @@ func TestSolver_ImpossibleRoute(t *testing.T) {
 	t.Logf("Impossible route test passed")
 }
 
-func TestSolver_AllChainPairs(t *testing.T) {
-	solver, _ := setupTestPathfinder()
+func TestPathfinder_AllChainPairs(t *testing.T) {
+	pathfinder, _ := setupTestPathfinder()
 
 	testCases := []struct {
 		name        string
@@ -593,7 +593,7 @@ func TestSolver_AllChainPairs(t *testing.T) {
 				ReceiverAddress: "receiver456",
 			}
 
-			response := solver.FindPath(req)
+			response := pathfinder.FindPath(req)
 
 			t.Logf("%s: RouteType=%s, Success=%v", tc.name, response.RouteType, response.Success)
 
@@ -610,11 +610,11 @@ func TestSolver_AllChainPairs(t *testing.T) {
 	t.Logf("All chain pairs test passed")
 }
 
-func TestSolver_GetChainInfo(t *testing.T) {
-	solver, _ := setupTestPathfinder()
+func TestPathfinder_GetChainInfo(t *testing.T) {
+	pathfinder, _ := setupTestPathfinder()
 
 	// Test getting valid chain info
-	chain, err := solver.GetChainInfo("cosmoshub-4")
+	chain, err := pathfinder.GetChainInfo("cosmoshub-4")
 	assert.NoError(t, err)
 	assert.Equal(t, chain.Name, "Cosmos Hub")
 	assert.Equal(t, chain.Id, "cosmoshub-4")
@@ -622,24 +622,24 @@ func TestSolver_GetChainInfo(t *testing.T) {
 	assert.False(t, chain.Broker)
 
 	// Test getting broker chain info
-	brokerChain, err := solver.GetChainInfo("osmosis-1")
+	brokerChain, err := pathfinder.GetChainInfo("osmosis-1")
 	assert.NoError(t, err)
 	assert.Equal(t, brokerChain.Name, "Osmosis")
 	assert.True(t, brokerChain.Broker)
 	assert.Equal(t, brokerChain.BrokerId, "osmosis")
 
 	// Test non-existent chain
-	_, err = solver.GetChainInfo("nonexistent-1")
+	_, err = pathfinder.GetChainInfo("nonexistent-1")
 	assert.Error(t, err)
 
 	// if all goes well
 	t.Logf("GetChainInfo test passed")
 }
 
-func TestSolver_GetAllChains(t *testing.T) {
-	solver, _ := setupTestPathfinder()
+func TestPathfinder_GetAllChains(t *testing.T) {
+	pathfinder, _ := setupTestPathfinder()
 
-	chains := solver.GetAllChains()
+	chains := pathfinder.GetAllChains()
 
 	t.Logf("All chains: %v", chains)
 	assert.True(t, len(chains) == 5)
@@ -661,8 +661,8 @@ func TestSolver_GetAllChains(t *testing.T) {
 }
 
 // Benchmark tests
-func BenchmarkSolver_DirectRoute(b *testing.B) {
-	solver, _ := setupTestPathfinder()
+func BenchmarkPathfinder_DirectRoute(b *testing.B) {
+	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
 		ChainFrom:       "cosmoshub-4",
@@ -675,12 +675,12 @@ func BenchmarkSolver_DirectRoute(b *testing.B) {
 	}
 
 	for b.Loop() {
-		solver.FindPath(req)
+		pathfinder.FindPath(req)
 	}
 }
 
-func BenchmarkSolver_BrokerSwapRoute(b *testing.B) {
-	solver, _ := setupTestPathfinder()
+func BenchmarkPathfinder_BrokerSwapRoute(b *testing.B) {
+	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
 		ChainFrom:       "cosmoshub-4",
@@ -693,12 +693,12 @@ func BenchmarkSolver_BrokerSwapRoute(b *testing.B) {
 	}
 
 	for b.Loop() {
-		solver.FindPath(req)
+		pathfinder.FindPath(req)
 	}
 }
 
-func BenchmarkSolver_IndirectRoute(b *testing.B) {
-	solver, _ := setupTestPathfinder()
+func BenchmarkPathfinder_IndirectRoute(b *testing.B) {
+	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
 		ChainFrom:      "juno-1",
@@ -708,6 +708,6 @@ func BenchmarkSolver_IndirectRoute(b *testing.B) {
 	}
 
 	for b.Loop() {
-		solver.FindPath(req)
+		pathfinder.FindPath(req)
 	}
 }
