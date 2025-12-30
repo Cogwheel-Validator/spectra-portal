@@ -1,11 +1,10 @@
 # Config Manager
 
-The Config Manager is responsible for transforming human-readable chain configurations into generated configurations used by the solver backend and frontend client applications.
+The Config Manager is responsible for transforming human-readable chain configurations into generated configurations used by the pathfinder backend and frontend client applications.
 
-## Data Flow
+## Configuration Flow
 
 The human readable config should strictly conist of TOML files. The generated files can be of type TOML or JSON if desired. The default output is `generated` directory.
-
 
 ## Writing Chain Configs
 
@@ -81,10 +80,10 @@ See `chain_configs/osmosis.toml` for a complete example.
 ### Using the CLI
 
 ```bash
-# Generate both solver and client configs
+# Generate both pathfinder and client configs
 go run ./config_manager/cmd/generate \
   -input ./chain_configs \
-  -solver-output ./generated/solver_config.toml \
+  -pathfinder-output ./generated/pathfinder_config.toml \
   -client-output ./generated/client_config.json
 
 # Validate only (no output)
@@ -96,14 +95,14 @@ go run ./config_manager/cmd/generate \
 go run ./config_manager/cmd/generate \
   --input ./chain_configs \
   --skip-network \
-  --solver-output ./generated/solver_config.toml
+  --pathfinder-output ./generated/pathfinder_config.toml
 
 # If you need output in a different format, you can use the following flags:
 go run ./config_manager/cmd/generate \
   --input ./chain_configs \
-  --solver-output ./generated/solver_config.toml \
+  --pathfinder-output ./generated/pathfinder_config.toml \
   --client-output ./generated/client_config.json \
-  --solver-format toml \
+  --pathfinder-format toml \
   --client-format json
 
 # If you need to use a cached registry data, you can use the following flag:
@@ -138,7 +137,7 @@ import (
 
 config := pipeline.GeneratorConfig{
     InputDir:         "./chain_configs",
-    SolverOutputPath: "./generated/solver_config.toml",
+    PathfinderOutputPath: "./generated/pathfinder_config.toml",
     ClientOutputPath: "./generated/client_config.json",
 }
 
@@ -148,26 +147,26 @@ result, err := generator.Generate()
 
 ## Generated Configs
 
-### Solver Config (Backend)
+### Pathfinder Config (Backend)
 
-The solver config is used by the routing solver to build the route index:
+The pathfinder config is used by the routing pathfinder to build the route index:
 
 ```go
 import (
-    "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/config"
-    "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/router"
+    "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/config"
+    "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
 )
 
 loader := config.NewChainConfigLoader()
 
-// Load and initialize the solver
-solver, err := loader.InitializeSolver(
-    "./generated/solver_config.toml",
+// Load and initialize the pathfinder
+pathfinder, err := loader.InitializePathfinder(
+    "./generated/pathfinder_config.toml",
     brokerClients, // map[string]router.BrokerClient
 )
 
-// Use the solver
-response := solver.Solve(routeRequest)
+// Use the pathfinder
+response := pathfinder.FindPath(routeRequest)
 ```
 
 ### Client Config (Frontend)
@@ -202,7 +201,7 @@ console.log('ATOM available on:', atomToken.available_on);
 3. **Registry Fetch**: IBC channel data is fetched from cosmos/chain-registry
 4. **Endpoint Verification**: RPC/REST endpoints are health-checked
 5. **Enrichment**: Input config is enriched with IBC routes and token mappings
-6. **Conversion**: Enriched config is converted to solver and client formats
+6. **Conversion**: Enriched config is converted to pathfinder and client formats
 7. **Output**: Generated configs are written to disk
 
 ## Adding a New Chain
@@ -225,4 +224,3 @@ Check that your RPC/REST URLs are correct and accessible. Use `--skip-network` f
 ### "Duplicate chain ID"
 
 Each chain config must have a unique `chain.id`. Check for duplicates in your config files.
-

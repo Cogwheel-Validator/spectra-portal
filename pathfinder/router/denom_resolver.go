@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	models "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/models"
+	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
 )
 
 // DenomResolver helps resolve token denoms across chains and tracks token origins.
@@ -14,7 +14,7 @@ import (
 // - Token availability discovery
 type DenomResolver struct {
 	routeIndex *RouteIndex
-	chains     map[string]SolverChain
+	chains     map[string]PathfinderChain
 
 	// Lookup maps for efficient resolution
 	baseDenomToChains map[string]map[string]*TokenInfo // baseDenom:originChain -> chainID -> TokenInfo
@@ -24,7 +24,7 @@ type DenomResolver struct {
 func NewDenomResolver(routeIndex *RouteIndex) *DenomResolver {
 	dr := &DenomResolver{
 		routeIndex:        routeIndex,
-		chains:            make(map[string]SolverChain),
+		chains:            make(map[string]PathfinderChain),
 		baseDenomToChains: make(map[string]map[string]*TokenInfo),
 	}
 	dr.buildLookupMaps()
@@ -32,7 +32,7 @@ func NewDenomResolver(routeIndex *RouteIndex) *DenomResolver {
 }
 
 // SetChains sets the chain information for the resolver
-func (dr *DenomResolver) SetChains(chains []SolverChain) {
+func (dr *DenomResolver) SetChains(chains []PathfinderChain) {
 	for _, chain := range chains {
 		dr.chains[chain.Id] = chain
 	}

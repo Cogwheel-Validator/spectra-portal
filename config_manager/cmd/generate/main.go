@@ -22,9 +22,9 @@ import (
 func main() {
 	// Define command-line flags
 	inputDir := flag.String("input", "./chain_configs", "Directory containing human-readable chain configs")
-	solverOutput := flag.String("solver-output", "./generated/solver_config.toml", "Output path for solver config")
+	pathfinderOutput := flag.String("pathfinder-output", "./generated/pathfinder_config.toml", "Output path for pathfinder config")
 	clientOutput := flag.String("client-output", "./generated/client_config.toml", "Output path for client config")
-	solverFormat := flag.String("solver-format", "auto", "Solver output format: auto, toml, json")
+	pathfinderFormat := flag.String("pathfinder-format", "auto", "Pathfinder output format: auto, toml, json")
 	clientFormat := flag.String("client-format", "auto", "Client output format: auto, toml, json")
 	registryCache := flag.String("registry-cache", "", "Path to cache IBC registry data (optional)")
 	skipNetwork := flag.Bool("skip-network", false, "Skip network validation of endpoints")
@@ -43,9 +43,9 @@ func main() {
 
 	config := pipeline.GeneratorConfig{
 		InputDir:              *inputDir,
-		SolverOutputPath:      *solverOutput,
+		PathfinderOutputPath:      *pathfinderOutput,
 		ClientOutputPath:      *clientOutput,
-		SolverOutputFormat:    parseFormat(*solverFormat),
+		PathfinderOutputFormat:    parseFormat(*pathfinderFormat),
 		ClientOutputFormat:    parseFormat(*clientFormat),
 		RegistryCachePath:     *registryCache,
 		SkipNetworkValidation: *skipNetwork,
@@ -54,7 +54,7 @@ func main() {
 	}
 
 	if *validate {
-		config.SolverOutputPath = ""
+		config.PathfinderOutputPath = ""
 		config.ClientOutputPath = ""
 	}
 
@@ -95,8 +95,8 @@ func main() {
 
 	if !*validate {
 		log.Printf("Output files:")
-		if result.SolverConfigPath != "" {
-			log.Printf("\tSolver: %s", result.SolverConfigPath)
+		if result.PathfinderConfigPath != "" {
+			log.Printf("\tPathfinder: %s", result.PathfinderConfigPath)
 		}
 		if result.ClientConfigPath != "" {
 			log.Printf("\tClient: %s", result.ClientConfigPath)

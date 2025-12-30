@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/output"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/router"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
 	"github.com/pelletier/go-toml/v2"
 )
 
-// ChainConfigLoader loads generated solver chain configurations and converts
-// them to the router types used by the solver.
+// ChainConfigLoader loads generated pathfinder chain configurations and converts
+// them to the router types used by the pathfinder.
 type ChainConfigLoader struct{}
 
 // NewChainConfigLoader creates a new chain config loader.
@@ -20,49 +20,49 @@ func NewChainConfigLoader() *ChainConfigLoader {
 	return &ChainConfigLoader{}
 }
 
-// LoadFromFile loads a solver config from a file and returns router-compatible types.
-func (l *ChainConfigLoader) LoadFromFile(filePath string) ([]router.SolverChain, error) {
+// LoadFromFile loads a pathfinder config from a file and returns router-compatible types.
+func (l *ChainConfigLoader) LoadFromFile(filePath string) ([]router.PathfinderChain, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read chain config file: %w", err)
 	}
 
-	var solverConfig output.SolverConfig
+	var pathfinderConfig output.PathfinderConfig
 
 	if strings.HasSuffix(filePath, ".json") {
-		if err := json.Unmarshal(data, &solverConfig); err != nil {
+		if err := json.Unmarshal(data, &pathfinderConfig); err != nil {
 			return nil, fmt.Errorf("failed to parse JSON config: %w", err)
 		}
 	} else {
-		if err := toml.Unmarshal(data, &solverConfig); err != nil {
+		if err := toml.Unmarshal(data, &pathfinderConfig); err != nil {
 			return nil, fmt.Errorf("failed to parse TOML config: %w", err)
 		}
 	}
 
-	return l.ConvertToRouterTypes(&solverConfig)
+	return l.ConvertToRouterTypes(&pathfinderConfig)
 }
 
-// ConvertToRouterTypes converts a SolverConfig to the router.SolverChain type.
-func (l *ChainConfigLoader) ConvertToRouterTypes(config *output.SolverConfig) ([]router.SolverChain, error) {
+// ConvertToRouterTypes converts a PathfinderConfig to the router.PathfinderChain type.
+func (l *ChainConfigLoader) ConvertToRouterTypes(config *output.PathfinderConfig) ([]router.PathfinderChain, error) {
 	if config == nil || len(config.Chains) == 0 {
 		return nil, fmt.Errorf("no chains in config")
 	}
 
-	chains := make([]router.SolverChain, len(config.Chains))
+	chains := make([]router.PathfinderChain, len(config.Chains))
 
-	for i, solverChain := range config.Chains {
-		chains[i] = router.SolverChain{
-			Name:             solverChain.Name,
-			Id:               solverChain.ID,
-			HasPFM:           solverChain.HasPFM,
-			Broker:           solverChain.Broker,
-			BrokerId:         solverChain.BrokerID,
-			IBCHooksContract: solverChain.IBCHooksContract,
-			Bech32Prefix:     solverChain.Bech32Prefix,
-			Routes:           make([]router.BasicRoute, len(solverChain.Routes)),
+	for i, pathfinderChain := range config.Chains {
+		chains[i] = router.PathfinderChain{
+			Name:             pathfinderChain.Name,
+			Id:               pathfinderChain.ID,
+			HasPFM:           pathfinderChain.HasPFM,
+			Broker:           pathfinderChain.Broker,
+			BrokerId:         pathfinderChain.BrokerID,
+			IBCHooksContract: pathfinderChain.IBCHooksContract,
+			Bech32Prefix:     pathfinderChain.Bech32Prefix,
+			Routes:           make([]router.BasicRoute, len(pathfinderChain.Routes)),
 		}
 
-		for j, route := range solverChain.Routes {
+		for j, route := range pathfinderChain.Routes {
 			chains[i].Routes[j] = router.BasicRoute{
 				ToChain:       route.ToChain,
 				ToChainId:     route.ToChainID,
@@ -88,12 +88,12 @@ func (l *ChainConfigLoader) ConvertToRouterTypes(config *output.SolverConfig) ([
 	return chains, nil
 }
 
-// InitializeSolver creates a fully initialized Solver from a config file.
+// InitializePathfinder creates a fully initialized Pathfinder from a config file.
 // brokerClients should contain configured broker clients (e.g., Osmosis SQS client).
-func (l *ChainConfigLoader) InitializeSolver(
+func (l *ChainConfigLoader) InitializePathfinder(
 	configPath string,
 	brokerClients map[string]router.BrokerClient,
-) (*router.Solver, error) {
+) (*router.Pathfinder, error) {
 	chains, err := l.LoadFromFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load chain config: %w", err)
@@ -105,7 +105,7 @@ func (l *ChainConfigLoader) InitializeSolver(
 		return nil, fmt.Errorf("failed to build route index: %w", err)
 	}
 
-	// Create and return the solver
-	solver := router.NewSolver(chains, routeIndex, brokerClients)
-	return solver, nil
+	// Create and return the pathfinder
+	pathfinder := router.NewPathfinder(chains, routeIndex, brokerClients)
+	return pathfinder, nil
 }

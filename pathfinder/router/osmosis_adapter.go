@@ -1,7 +1,7 @@
 package router
 
 import (
-	sqsquery "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/sqs_query"
+	sqsquery "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/sqs_query"
 )
 
 // OsmosisRouteData is a Go struct that matches the proto definition

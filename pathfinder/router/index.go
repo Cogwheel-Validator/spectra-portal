@@ -4,7 +4,7 @@ import (
 	"container/list"
 	"fmt"
 
-	models "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/models"
+	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
 )
 
 type ChainMapId map[string]int
@@ -31,9 +31,9 @@ func (cmi *ChainMapId) GetChain(id int) string {
 }
 
 /*
-Solver Chain is a type that represents one unit in the Solver Graph.
+Pathfinder Chain is a type that represents one unit in the Pathfinder Graph.
 */
-type SolverChain struct {
+type PathfinderChain struct {
 	Name string
 	Id   string
 	// if the chain is a broker, example: Osmosis, this will be true and the BrokerId will be the id of the broker
@@ -85,7 +85,7 @@ type RouteIndex struct {
 	chainRoutes         map[string]map[string]*BasicRoute // chainId -> toChainId -> BasicRoute (all routes from a chain)
 }
 
-func (ri *RouteIndex) BuildIndex(chains []SolverChain) error {
+func (ri *RouteIndex) BuildIndex(chains []PathfinderChain) error {
 	if len(chains) == 0 {
 		return fmt.Errorf("no chains to build index for")
 	}
@@ -330,7 +330,7 @@ func (ri *RouteIndex) FindMultiHopRoute(req models.RouteRequest) []*MultiHopInfo
 			continue // Should not happen, but defensive check
 		}
 
-		solverLog.Debug().
+		pathfinderLog.Debug().
 			Str("brokerId", brokerId).
 			Str("brokerChainId", brokerChainId).
 			Str("chainFrom", req.ChainFrom).
@@ -344,7 +344,7 @@ func (ri *RouteIndex) FindMultiHopRoute(req models.RouteRequest) []*MultiHopInfo
 		if sourceIsBroker && destIsBroker {
 			multiHopInfo := ri.findSameChainSwapRoute(req, brokerId, brokerChainId)
 			if multiHopInfo != nil {
-				solverLog.Debug().Msg("Found same-chain swap route")
+				pathfinderLog.Debug().Msg("Found same-chain swap route")
 				multiHopInfos = append(multiHopInfos, multiHopInfo)
 			}
 			continue
@@ -354,7 +354,7 @@ func (ri *RouteIndex) FindMultiHopRoute(req models.RouteRequest) []*MultiHopInfo
 		if destIsBroker && !sourceIsBroker {
 			multiHopInfo := ri.findSwapOnlyRoute(req, brokerId, brokerChainId)
 			if multiHopInfo != nil {
-				solverLog.Debug().Msg("Found swap-only route (destination is broker)")
+				pathfinderLog.Debug().Msg("Found swap-only route (destination is broker)")
 				multiHopInfos = append(multiHopInfos, multiHopInfo)
 			}
 			continue
@@ -364,7 +364,7 @@ func (ri *RouteIndex) FindMultiHopRoute(req models.RouteRequest) []*MultiHopInfo
 		if sourceIsBroker && !destIsBroker {
 			multiHopInfo := ri.findBrokerAsSourceRoute(req, brokerId, brokerChainId)
 			if multiHopInfo != nil {
-				solverLog.Debug().Msg("Found broker-as-source route")
+				pathfinderLog.Debug().Msg("Found broker-as-source route")
 				multiHopInfos = append(multiHopInfos, multiHopInfo)
 			}
 			continue
@@ -373,12 +373,12 @@ func (ri *RouteIndex) FindMultiHopRoute(req models.RouteRequest) []*MultiHopInfo
 		// Case 4: Full broker route (source → broker → destination)
 		multiHopInfo := ri.findFullBrokerRoute(req, brokerId, brokerChainId)
 		if multiHopInfo != nil {
-			solverLog.Debug().Msg("Found full broker route")
+			pathfinderLog.Debug().Msg("Found full broker route")
 			multiHopInfos = append(multiHopInfos, multiHopInfo)
 		}
 	}
 
-	solverLog.Debug().Int("count", len(multiHopInfos)).Msg("Found multi-hop routes")
+	pathfinderLog.Debug().Int("count", len(multiHopInfos)).Msg("Found multi-hop routes")
 	return multiHopInfos
 }
 
@@ -387,28 +387,28 @@ func (ri *RouteIndex) findSwapOnlyRoute(req models.RouteRequest, brokerId, broke
 	// Can we reach broker from source?
 	inboundRoute := ri.chainToBrokerRoutes[req.ChainFrom][brokerId]
 	if inboundRoute == nil {
-		solverLog.Debug().Str("chainFrom", req.ChainFrom).Str("brokerId", brokerId).Msg("No inbound route to broker")
+		pathfinderLog.Debug().Str("chainFrom", req.ChainFrom).Str("brokerId", brokerId).Msg("No inbound route to broker")
 		return nil
 	}
 
 	// Is input token allowed on inbound route?
 	tokenIn, tokenAllowed := inboundRoute.AllowedTokens[req.TokenFromDenom]
 	if !tokenAllowed {
-		solverLog.Debug().Str("tokenFromDenom", req.TokenFromDenom).Msg("Input token not allowed on inbound route")
+		pathfinderLog.Debug().Str("tokenFromDenom", req.TokenFromDenom).Msg("Input token not allowed on inbound route")
 		return nil
 	}
 
 	// Is output token available on the broker chain?
 	tokenOut := ri.denomToTokenInfo[brokerChainId][req.TokenToDenom]
 	if tokenOut == nil {
-		solverLog.Debug().
+		pathfinderLog.Debug().
 			Str("tokenToDenom", req.TokenToDenom).
 			Str("brokerChainId", brokerChainId).
 			Msg("Output token not found on broker chain")
 		return nil
 	}
 
-	solverLog.Debug().
+	pathfinderLog.Debug().
 		Str("tokenIn", tokenIn.ChainDenom).
 		Str("tokenOut", tokenOut.ChainDenom).
 		Msg("Swap-only route validated")
@@ -430,7 +430,7 @@ func (ri *RouteIndex) findSameChainSwapRoute(req models.RouteRequest, brokerId, 
 	// Is input token available on the broker chain?
 	tokenIn := ri.denomToTokenInfo[brokerChainId][req.TokenFromDenom]
 	if tokenIn == nil {
-		solverLog.Debug().
+		pathfinderLog.Debug().
 			Str("tokenFromDenom", req.TokenFromDenom).
 			Str("brokerChainId", brokerChainId).
 			Msg("Input token not found on broker chain for same-chain swap")
@@ -440,14 +440,14 @@ func (ri *RouteIndex) findSameChainSwapRoute(req models.RouteRequest, brokerId, 
 	// Is output token available on the broker chain?
 	tokenOut := ri.denomToTokenInfo[brokerChainId][req.TokenToDenom]
 	if tokenOut == nil {
-		solverLog.Debug().
+		pathfinderLog.Debug().
 			Str("tokenToDenom", req.TokenToDenom).
 			Str("brokerChainId", brokerChainId).
 			Msg("Output token not found on broker chain for same-chain swap")
 		return nil
 	}
 
-	solverLog.Debug().
+	pathfinderLog.Debug().
 		Str("tokenIn", tokenIn.ChainDenom).
 		Str("tokenOut", tokenOut.ChainDenom).
 		Msg("Same-chain swap route validated")
@@ -470,7 +470,7 @@ func (ri *RouteIndex) findBrokerAsSourceRoute(req models.RouteRequest, brokerId,
 	// Is input token available on the broker chain?
 	tokenIn := ri.denomToTokenInfo[brokerChainId][req.TokenFromDenom]
 	if tokenIn == nil {
-		solverLog.Debug().
+		pathfinderLog.Debug().
 			Str("tokenFromDenom", req.TokenFromDenom).
 			Str("brokerChainId", brokerChainId).
 			Msg("Input token not found on broker chain")
@@ -480,14 +480,14 @@ func (ri *RouteIndex) findBrokerAsSourceRoute(req models.RouteRequest, brokerId,
 	// Can broker reach destination?
 	outboundRoute := ri.brokerRoutes[brokerId][req.ChainTo]
 	if outboundRoute == nil {
-		solverLog.Debug().Str("brokerId", brokerId).Str("chainTo", req.ChainTo).Msg("No outbound route from broker")
+		pathfinderLog.Debug().Str("brokerId", brokerId).Str("chainTo", req.ChainTo).Msg("No outbound route from broker")
 		return nil
 	}
 
 	// Is output token available on destination?
 	tokenOut := ri.denomToTokenInfo[req.ChainTo][req.TokenToDenom]
 	if tokenOut == nil {
-		solverLog.Debug().Str("tokenToDenom", req.TokenToDenom).Str("chainTo", req.ChainTo).Msg("Output token not found on destination")
+		pathfinderLog.Debug().Str("tokenToDenom", req.TokenToDenom).Str("chainTo", req.ChainTo).Msg("Output token not found on destination")
 		return nil
 	}
 
@@ -501,11 +501,11 @@ func (ri *RouteIndex) findBrokerAsSourceRoute(req models.RouteRequest, brokerId,
 	}
 
 	if matchingToken == nil {
-		solverLog.Debug().Str("tokenToDenom", req.TokenToDenom).Msg("No matching token in outbound route AllowedTokens")
+		pathfinderLog.Debug().Str("tokenToDenom", req.TokenToDenom).Msg("No matching token in outbound route AllowedTokens")
 		return nil
 	}
 
-	solverLog.Debug().
+	pathfinderLog.Debug().
 		Str("tokenIn", tokenIn.ChainDenom).
 		Str("tokenOutOnBroker", matchingToken.ChainDenom).
 		Str("tokenOutOnDest", tokenOut.ChainDenom).
@@ -530,21 +530,21 @@ func (ri *RouteIndex) findFullBrokerRoute(req models.RouteRequest, brokerId, bro
 	// Can we reach broker from source?
 	inboundRoute := ri.chainToBrokerRoutes[req.ChainFrom][brokerId]
 	if inboundRoute == nil {
-		solverLog.Debug().Str("chainFrom", req.ChainFrom).Str("brokerId", brokerId).Msg("No inbound route to broker")
+		pathfinderLog.Debug().Str("chainFrom", req.ChainFrom).Str("brokerId", brokerId).Msg("No inbound route to broker")
 		return nil
 	}
 
 	// Is input token allowed?
 	tokenIn, tokenAllowed := inboundRoute.AllowedTokens[req.TokenFromDenom]
 	if !tokenAllowed {
-		solverLog.Debug().Str("tokenFromDenom", req.TokenFromDenom).Msg("Input token not allowed on inbound route")
+		pathfinderLog.Debug().Str("tokenFromDenom", req.TokenFromDenom).Msg("Input token not allowed on inbound route")
 		return nil
 	}
 
 	// Is output token available on destination?
 	tokenOut := ri.denomToTokenInfo[req.ChainTo][req.TokenToDenom]
 	if tokenOut == nil {
-		solverLog.Debug().Str("tokenToDenom", req.TokenToDenom).Str("chainTo", req.ChainTo).Msg("Output token not found on destination")
+		pathfinderLog.Debug().Str("tokenToDenom", req.TokenToDenom).Str("chainTo", req.ChainTo).Msg("Output token not found on destination")
 		return nil
 	}
 
@@ -555,7 +555,7 @@ func (ri *RouteIndex) findFullBrokerRoute(req models.RouteRequest, brokerId, bro
 		// Check if the desired token can be sent directly
 		for _, tokenInfo := range directOutbound.AllowedTokens {
 			if tokenInfo.IbcDenom == req.TokenToDenom {
-				solverLog.Debug().
+				pathfinderLog.Debug().
 					Str("tokenIn", tokenIn.ChainDenom).
 					Str("tokenOutOnBroker", tokenInfo.ChainDenom).
 					Str("tokenOutOnDest", tokenOut.ChainDenom).
@@ -581,7 +581,7 @@ func (ri *RouteIndex) findFullBrokerRoute(req models.RouteRequest, brokerId, bro
 	// Route: source -> broker -> noble (unwind) -> juno (forward)
 	originChain := tokenOut.OriginChain
 	if originChain != brokerChainId && originChain != req.ChainTo {
-		solverLog.Debug().
+		pathfinderLog.Debug().
 			Str("originChain", originChain).
 			Str("brokerChain", brokerChainId).
 			Str("destChain", req.ChainTo).
@@ -590,7 +590,7 @@ func (ri *RouteIndex) findFullBrokerRoute(req models.RouteRequest, brokerId, bro
 		// Check if broker can reach the origin chain
 		brokerToOrigin := ri.brokerRoutes[brokerId][originChain]
 		if brokerToOrigin == nil {
-			solverLog.Debug().Msg("No route from broker to token origin chain")
+			pathfinderLog.Debug().Msg("No route from broker to token origin chain")
 			return nil
 		}
 
@@ -604,14 +604,14 @@ func (ri *RouteIndex) findFullBrokerRoute(req models.RouteRequest, brokerId, bro
 			}
 		}
 		if tokenOnBroker == nil {
-			solverLog.Debug().Msg("Token cannot be sent from broker to origin")
+			pathfinderLog.Debug().Msg("Token cannot be sent from broker to origin")
 			return nil
 		}
 
 		// Check if origin chain can reach destination
 		originToDest := ri.findRouteFromChain(originChain, req.ChainTo)
 		if originToDest == nil {
-			solverLog.Debug().Msg("No route from origin to destination")
+			pathfinderLog.Debug().Msg("No route from origin to destination")
 			return nil
 		}
 
@@ -624,11 +624,11 @@ func (ri *RouteIndex) findFullBrokerRoute(req models.RouteRequest, brokerId, bro
 			}
 		}
 		if tokenOnOrigin == nil {
-			solverLog.Debug().Msg("Token cannot be forwarded from origin to destination")
+			pathfinderLog.Debug().Msg("Token cannot be forwarded from origin to destination")
 			return nil
 		}
 
-		solverLog.Debug().
+		pathfinderLog.Debug().
 			Str("tokenIn", tokenIn.ChainDenom).
 			Str("tokenOutOnBroker", tokenOnBroker.ChainDenom).
 			Str("tokenOnOrigin", tokenOnOrigin.ChainDenom).
@@ -648,7 +648,7 @@ func (ri *RouteIndex) findFullBrokerRoute(req models.RouteRequest, brokerId, bro
 		}
 	}
 
-	solverLog.Debug().Str("tokenToDenom", req.TokenToDenom).Msg("No valid broker route found")
+	pathfinderLog.Debug().Str("tokenToDenom", req.TokenToDenom).Msg("No valid broker route found")
 	return nil
 }
 

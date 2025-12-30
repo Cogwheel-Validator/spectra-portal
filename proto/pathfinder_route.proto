@@ -5,13 +5,13 @@ package rpc.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1";
+option go_package = "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc/v1";
 
-// SolverService provides route discovery and validation for IBC transfers and swaps
-service SolverService {
-    // SolveRoute finds and validates a route between two chains
+// PathfinderService provides route discovery and validation for IBC transfers and swaps
+service PathfinderService {
+    // FindPath finds and validates a route between two chains
     // Supports human-readable denoms (e.g., "uatone") or IBC denoms
-    rpc SolveRoute(SolveRouteRequest) returns (SolveRouteResponse) {
+    rpc FindPath(FindPathRequest) returns (FindPathResponse) {
         option idempotency_level = NO_SIDE_EFFECTS;
     }
     
@@ -32,8 +32,8 @@ service SolverService {
         option idempotency_level = NO_SIDE_EFFECTS;
     }
 
-    // GetSolverSupportedChains returns a list of supported chains
-    rpc GetSolverSupportedChains(google.protobuf.Empty) returns (SolverSupportedChainsResponse) {
+    // GetPathfinderSupportedChains returns a list of supported chains
+    rpc GetPathfinderSupportedChains(google.protobuf.Empty) returns (PathfinderSupportedChainsResponse) {
         option idempotency_level = NO_SIDE_EFFECTS;
     }
 
@@ -44,16 +44,16 @@ service SolverService {
     }
 }
 
-// SolveRouteRequest - Find a route between chains
+// FindPathRequest - Find a route between chains
 // 
 // For token_from_denom and token_to_denom, you can use:
 // - Human-readable denom (e.g., "uatone", "uosmo", "ustars")
 // - Full IBC denom (e.g., "ibc/ABC123...")
 //
-// The solver will automatically resolve human-readable denoms.
-// If token_to_denom is empty, the solver assumes you want the same token
+// The pathfinder will automatically resolve human-readable denoms.
+// If token_to_denom is empty, the pathfinder assumes you want the same token
 // on the destination chain (useful for bridging without swapping).
-message SolveRouteRequest {
+message FindPathRequest {
     // Source chain ID (e.g., "osmosis-1", "atomone-1")
     string chain_from = 1 [(buf.validate.field).required = true];
     
@@ -88,7 +88,7 @@ message SolveRouteRequest {
         (buf.validate.field).string.max_len = 68];
 }
 
-message SolveRouteResponse {
+message FindPathResponse {
     bool success = 1;
     string error_message = 2;
     oneof route {
@@ -294,7 +294,7 @@ message TokenDetails {
     bool is_native = 6;
 }
 
-message SolverSupportedChainsResponse {
+message PathfinderSupportedChainsResponse {
     repeated string chain_ids = 1 [(buf.validate.field).required = true];
 }
 

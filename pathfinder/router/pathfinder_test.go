@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	models "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/models"
-	router "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/router"
+	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
+	router "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
 	"github.com/zeebo/assert"
 )
 
-var chains = []router.SolverChain{
+var chains = []router.PathfinderChain{
 	{
 		Name:     "Osmosis",
 		Id:       "osmosis-1",
@@ -319,8 +319,8 @@ func (m *MockBrokerClient) GetBrokerType() string {
 	return m.brokerType
 }
 
-// setupTestSolver creates a solver with test chains and a mock broker client
-func setupTestSolver() (*router.Solver, *router.RouteIndex) {
+// setupTestPathfinder creates a solver with test chains and a mock broker client
+func setupTestPathfinder() (*router.Pathfinder, *router.RouteIndex) {
 	// Build index with test chains
 	routeIndex := router.NewRouteIndex()
 	err := routeIndex.BuildIndex(chains)
@@ -348,12 +348,12 @@ func setupTestSolver() (*router.Solver, *router.RouteIndex) {
 		},
 	}
 
-	solver := router.NewSolver(chains, routeIndex, brokerClients)
+	solver := router.NewPathfinder(chains, routeIndex, brokerClients)
 	return solver, routeIndex
 }
 
 func TestSolver_DirectRoute(t *testing.T) {
-	solver, _ := setupTestSolver()
+	solver, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
 		ChainFrom:       "cosmoshub-4",
@@ -365,7 +365,7 @@ func TestSolver_DirectRoute(t *testing.T) {
 		ReceiverAddress: "osmo1receiver",
 	}
 
-	response := solver.Solve(req)
+	response := solver.FindPath(req)
 
 	t.Logf("Response: %+v", response)
 	assert.True(t, response.Success)
@@ -388,7 +388,7 @@ func TestSolver_DirectRoute(t *testing.T) {
 }
 
 func TestSolver_BrokerSwapRoute(t *testing.T) {
-	solver, _ := setupTestSolver()
+	solver, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
 		ChainFrom:       "cosmoshub-4",
@@ -400,7 +400,7 @@ func TestSolver_BrokerSwapRoute(t *testing.T) {
 		ReceiverAddress: "juno1receiver",
 	}
 
-	response := solver.Solve(req)
+	response := solver.FindPath(req)
 
 	t.Logf("Response: %+v", response)
 	assert.True(t, response.Success)
@@ -451,7 +451,7 @@ func TestSolver_BrokerSwapRoute(t *testing.T) {
 }
 
 func TestSolver_IndirectRoute(t *testing.T) {
-	solver, _ := setupTestSolver()
+	solver, _ := setupTestPathfinder()
 
 	// Test USDC from Juno -> Noble -> Osmosis (indirect route without swap)
 	req := models.RouteRequest{
@@ -464,7 +464,7 @@ func TestSolver_IndirectRoute(t *testing.T) {
 		ReceiverAddress: "osmo1receiver",
 	}
 
-	response := solver.Solve(req)
+	response := solver.FindPath(req)
 
 	t.Logf("Response: %+v", response)
 	assert.True(t, response.Success)
@@ -502,7 +502,7 @@ func TestSolver_IndirectRoute(t *testing.T) {
 }
 
 func TestSolver_ImpossibleRoute(t *testing.T) {
-	solver, _ := setupTestSolver()
+	solver, _ := setupTestPathfinder()
 
 	// Try to route to a non-existent chain
 	req := models.RouteRequest{
@@ -515,7 +515,7 @@ func TestSolver_ImpossibleRoute(t *testing.T) {
 		ReceiverAddress: "nonexist1receiver",
 	}
 
-	response := solver.Solve(req)
+	response := solver.FindPath(req)
 
 	t.Logf("Response: %+v", response)
 	assert.False(t, response.Success)
@@ -529,7 +529,7 @@ func TestSolver_ImpossibleRoute(t *testing.T) {
 }
 
 func TestSolver_AllChainPairs(t *testing.T) {
-	solver, _ := setupTestSolver()
+	solver, _ := setupTestPathfinder()
 
 	testCases := []struct {
 		name        string
@@ -593,7 +593,7 @@ func TestSolver_AllChainPairs(t *testing.T) {
 				ReceiverAddress: "receiver456",
 			}
 
-			response := solver.Solve(req)
+			response := solver.FindPath(req)
 
 			t.Logf("%s: RouteType=%s, Success=%v", tc.name, response.RouteType, response.Success)
 
@@ -611,7 +611,7 @@ func TestSolver_AllChainPairs(t *testing.T) {
 }
 
 func TestSolver_GetChainInfo(t *testing.T) {
-	solver, _ := setupTestSolver()
+	solver, _ := setupTestPathfinder()
 
 	// Test getting valid chain info
 	chain, err := solver.GetChainInfo("cosmoshub-4")
@@ -637,7 +637,7 @@ func TestSolver_GetChainInfo(t *testing.T) {
 }
 
 func TestSolver_GetAllChains(t *testing.T) {
-	solver, _ := setupTestSolver()
+	solver, _ := setupTestPathfinder()
 
 	chains := solver.GetAllChains()
 
@@ -662,7 +662,7 @@ func TestSolver_GetAllChains(t *testing.T) {
 
 // Benchmark tests
 func BenchmarkSolver_DirectRoute(b *testing.B) {
-	solver, _ := setupTestSolver()
+	solver, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
 		ChainFrom:       "cosmoshub-4",
@@ -675,12 +675,12 @@ func BenchmarkSolver_DirectRoute(b *testing.B) {
 	}
 
 	for b.Loop() {
-		solver.Solve(req)
+		solver.FindPath(req)
 	}
 }
 
 func BenchmarkSolver_BrokerSwapRoute(b *testing.B) {
-	solver, _ := setupTestSolver()
+	solver, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
 		ChainFrom:       "cosmoshub-4",
@@ -693,12 +693,12 @@ func BenchmarkSolver_BrokerSwapRoute(b *testing.B) {
 	}
 
 	for b.Loop() {
-		solver.Solve(req)
+		solver.FindPath(req)
 	}
 }
 
 func BenchmarkSolver_IndirectRoute(b *testing.B) {
-	solver, _ := setupTestSolver()
+	solver, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
 		ChainFrom:      "juno-1",
@@ -708,6 +708,6 @@ func BenchmarkSolver_IndirectRoute(b *testing.B) {
 	}
 
 	for b.Loop() {
-		solver.Solve(req)
+		solver.FindPath(req)
 	}
 }

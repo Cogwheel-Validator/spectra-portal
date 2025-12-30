@@ -3,7 +3,7 @@
 	generate-config 
 	generate-config-c 
 	validate-config 
-	build-solver 
+	build-pathfinder 
 	vulncheck-all 
 	lint-all 
 	lint-go 
@@ -19,34 +19,34 @@ generate-proto:
 	@echo "Protobuf files generated successfully!"
 
 
-# Generate the config files for the client app and solver backend
+# Generate the config files for the client app and pathfinder backend
 generate-config:
-	@echo "Generating config file for the client app and solver backend..."
+	@echo "Generating config file for the client app and pathfinder backend..."
 	go run config_manager/cmd/generate/main.go \
 		-input ./chain_configs \
 		-copy-icons ./ibc_app/public/ 
 
-# Generate the config file for the client app and sovler using the already cached ibc registry
+# Generate the config file for the client app and pathfinder using the already cached ibc registry
 generate-config-c:
-	@echo "Generating config file for the client app and solver backend using the already cached ibc registry..."
+	@echo "Generating config file for the client app and pathfinder backend using the already cached ibc registry..."
 	go run config_manager/cmd/generate/main.go \
 		-input ./chain_configs \
 		-registry-cache ./ibc-registry \
 		-use-cache \
 		-copy-icons ./ibc_app/public/
 
-# Validate the config files for the client app and solver backend
+# Validate the config files for the client app and pathfinder backend
 validate-config:
 	@echo "Validating chain configs..."
 	go run config_manager/cmd/generate/main.go \
 		-input ./chain_configs \
 		-validate-only
 
-# Build the solver rpc binary
-build-solver:
-	@echo "Building solver rpc binary..."
-	go build -ldflags="-s -w" -o build/solver-rpc ./solver/cmd/main.go
-	@echo "Solver rpc binary built successfully!"
+# Build the pathfinder rpc binary
+build-pathfinder:
+	@echo "Building pathfinder rpc binary..."
+	go build -ldflags="-s -w" -o build/pathfinder-rpc ./pathfinder/cmd/main.go
+	@echo "Pathfinder rpc binary built successfully!"
 
 # This check requires the golangci-lint cli to be installed
 lint-all:

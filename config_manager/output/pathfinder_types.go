@@ -1,10 +1,10 @@
 // Package output defines the generated configuration types for both the
-// backend (Solver) and frontend (Client) applications.
+// backend (Pathfinder) and frontend (Client) applications.
 package output
 
-// SolverConfig contains all configuration needed by the solver backend.
+// PathfinderConfig contains all configuration needed by the pathfinder backend.
 // This is the top-level config that gets loaded at startup.
-type SolverConfig struct {
+type PathfinderConfig struct {
 	// Version of the config format
 	Version string `json:"version" toml:"version"`
 
@@ -12,12 +12,12 @@ type SolverConfig struct {
 	GeneratedAt string `json:"generated_at" toml:"generated_at"`
 
 	// All chains available for routing
-	Chains []SolverChain `json:"chains" toml:"chains"`
+	Chains []PathfinderChain `json:"chains" toml:"chains"`
 }
 
-// SolverChain represents a chain in the solver's routing graph.
-// This maps directly to the router.SolverChain type.
-type SolverChain struct {
+// PathfinderChain represents a chain in the pathfinder's routing graph.
+// This maps directly to the router.PathfinderChain type.
+type PathfinderChain struct {
 	// Human-readable chain name
 	Name string `json:"name" toml:"name"`
 
@@ -41,12 +41,12 @@ type SolverChain struct {
 	Bech32Prefix string `json:"bech32_prefix,omitempty" toml:"bech32_prefix,omitempty"`
 
 	// Available IBC routes from this chain
-	Routes []SolverRoute `json:"routes" toml:"routes"`
+	Routes []PathfinderRoute `json:"routes" toml:"routes"`
 }
 
-// SolverRoute represents an IBC route in the solver's routing graph.
+// PathfinderRoute represents an IBC route in the pathfinder's routing graph.
 // This maps directly to the router.BasicRoute type.
-type SolverRoute struct {
+type PathfinderRoute struct {
 	// Destination chain name
 	ToChain string `json:"to_chain" toml:"to_chain"`
 
@@ -63,12 +63,12 @@ type SolverRoute struct {
 	PortID string `json:"port_id" toml:"port_id"`
 
 	// Tokens that can be transferred on this route
-	AllowedTokens map[string]SolverTokenInfo `json:"allowed_tokens" toml:"allowed_tokens"`
+	AllowedTokens map[string]PathfinderTokenInfo `json:"allowed_tokens" toml:"allowed_tokens"`
 }
 
-// SolverTokenInfo contains token information for routing decisions.
+// PathfinderTokenInfo contains token information for routing decisions.
 // This maps directly to the router.TokenInfo type.
-type SolverTokenInfo struct {
+type PathfinderTokenInfo struct {
 	// Denom on the source chain in the route context
 	ChainDenom string `json:"chain_denom" toml:"chain_denom"`
 

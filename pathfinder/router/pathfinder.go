@@ -5,15 +5,15 @@ import (
 	"os"
 	"time"
 
-	models "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/models"
+	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
 	"github.com/rs/zerolog"
 )
 
-var solverLog zerolog.Logger
+var pathfinderLog zerolog.Logger
 
 func init() {
 	out := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
-	solverLog = zerolog.New(out).With().Timestamp().Str("component", "solver").Logger()
+	pathfinderLog = zerolog.New(out).With().Timestamp().Str("component", "pathfinder").Logger()
 }
 
 // BrokerClient is an interface for querying different DEX protocols on broker chains
@@ -38,9 +38,9 @@ type SwapResult struct {
 	RouteData    interface{} // Broker-specific route data (pools, hops, etc.)
 }
 
-// Solver orchestrates route finding and integrates with broker DEX APIs
-type Solver struct {
-	chainsMap        map[string]SolverChain  // mapped chainId -> SolverChain
+// Pathfinder orchestrates route finding and integrates with broker DEX APIs
+type Pathfinder struct {
+	chainsMap        map[string]PathfinderChain  // mapped chainId -> PathfinderChain
 	routeIndex       *RouteIndex             // routeIndex from which all routes are found
 	brokerClients    map[string]BrokerClient // mapped brokerId -> broker client interface
 	denomResolver    *DenomResolver          // denomResolver for resolving denoms across chains
@@ -49,13 +49,13 @@ type Solver struct {
 	retryDelay       time.Duration           // delay between retries for broker queries
 }
 
-// NewSolver creates a new Solver with the given route index and broker clients
-func NewSolver(chains []SolverChain, routeIndex *RouteIndex, brokerClients map[string]BrokerClient) *Solver {
-	chainMap := make(map[string]SolverChain, len(chains))
+// NewPathfinder creates a new Pathfinder with the given route index and broker clients
+func NewPathfinder(chains []PathfinderChain, routeIndex *RouteIndex, brokerClients map[string]BrokerClient) *Pathfinder {
+	chainMap := make(map[string]PathfinderChain, len(chains))
 	for _, chain := range chains {
 		chainMap[chain.Id] = chain
 	}
-	return &Solver{
+	return &Pathfinder{
 		chainsMap:        chainMap,
 		routeIndex:       routeIndex,
 		brokerClients:    brokerClients,
@@ -66,10 +66,10 @@ func NewSolver(chains []SolverChain, routeIndex *RouteIndex, brokerClients map[s
 	}
 }
 
-// Solve attempts to find a route for the given request and returns execution details
+// FindPath attempts to find a route for the given request and returns execution details
 // Priority order: 1) Direct route, 2) Indirect route (no swap), 3) Broker swap route
-func (s *Solver) Solve(req models.RouteRequest) models.RouteResponse {
-	solverLog.Info().
+func (s *Pathfinder) FindPath(req models.RouteRequest) models.RouteResponse {
+	pathfinderLog.Info().
 		Str("chainFrom", req.ChainFrom).
 		Str("chainTo", req.ChainTo).
 		Str("tokenFrom", req.TokenFromDenom).
@@ -80,23 +80,23 @@ func (s *Solver) Solve(req models.RouteRequest) models.RouteResponse {
 	// First, try to find a direct IBC route (no swap needed)
 	directRoute := s.routeIndex.FindDirectRoute(req)
 	if directRoute != nil {
-		solverLog.Info().Msg("Found direct route")
+		pathfinderLog.Info().Msg("Found direct route")
 		return s.buildDirectResponse(req, directRoute)
 	}
-	solverLog.Debug().Msg("No direct route found")
+	pathfinderLog.Debug().Msg("No direct route found")
 
 	// Second, try to find an indirect route (multi-hop without swap)
 	indirectRoute := s.routeIndex.FindIndirectRoute(req)
 	if indirectRoute != nil {
-		solverLog.Info().Int("hops", len(indirectRoute.Path)-1).Msg("Found indirect route")
+		pathfinderLog.Info().Int("hops", len(indirectRoute.Path)-1).Msg("Found indirect route")
 		return s.buildIndirectResponse(req, indirectRoute)
 	}
-	solverLog.Debug().Msg("No indirect route found")
+	pathfinderLog.Debug().Msg("No indirect route found")
 
 	// Third, try multi-hop routes through brokers with swap
 	brokerRoutes := s.routeIndex.FindMultiHopRoute(req)
 	if len(brokerRoutes) == 0 {
-		solverLog.Warn().Msg("No route found")
+		pathfinderLog.Warn().Msg("No route found")
 		return models.RouteResponse{
 			Success:      false,
 			RouteType:    "impossible",
@@ -104,12 +104,12 @@ func (s *Solver) Solve(req models.RouteRequest) models.RouteResponse {
 		}
 	}
 
-	solverLog.Info().Int("candidates", len(brokerRoutes)).Msg("Found broker route candidates")
+	pathfinderLog.Info().Int("candidates", len(brokerRoutes)).Msg("Found broker route candidates")
 
 	// Try each broker route and query the broker for swap details
 	var lastErr error
 	for i, hopInfo := range brokerRoutes {
-		solverLog.Debug().
+		pathfinderLog.Debug().
 			Int("attempt", i+1).
 			Str("broker", hopInfo.BrokerChain).
 			Bool("swapOnly", hopInfo.SwapOnly).
@@ -117,11 +117,11 @@ func (s *Solver) Solve(req models.RouteRequest) models.RouteResponse {
 
 		response, err := s.buildBrokerSwapResponse(req, hopInfo)
 		if err == nil {
-			solverLog.Info().Str("broker", hopInfo.BrokerChain).Msg("Broker route succeeded")
+			pathfinderLog.Info().Str("broker", hopInfo.BrokerChain).Msg("Broker route succeeded")
 			return response
 		}
 		lastErr = err
-		solverLog.Debug().Err(err).Str("broker", hopInfo.BrokerChain).Msg("Broker route failed, trying next")
+		pathfinderLog.Debug().Err(err).Str("broker", hopInfo.BrokerChain).Msg("Broker route failed, trying next")
 	}
 
 	// All brokers failed or returned no valid route
@@ -129,7 +129,7 @@ func (s *Solver) Solve(req models.RouteRequest) models.RouteResponse {
 	if lastErr != nil {
 		errMsg = fmt.Sprintf("Broker swap route found but query failed: %v", lastErr)
 	}
-	solverLog.Warn().Err(lastErr).Msg("All broker routes failed")
+	pathfinderLog.Warn().Err(lastErr).Msg("All broker routes failed")
 	return models.RouteResponse{
 		Success:      false,
 		RouteType:    "impossible",
@@ -138,7 +138,7 @@ func (s *Solver) Solve(req models.RouteRequest) models.RouteResponse {
 }
 
 // buildDirectResponse creates a RouteResponse for a direct IBC transfer
-func (s *Solver) buildDirectResponse(req models.RouteRequest, route *BasicRoute) models.RouteResponse {
+func (s *Pathfinder) buildDirectResponse(req models.RouteRequest, route *BasicRoute) models.RouteResponse {
 	// Create token mapping for the source token
 	tokenMapping, err := s.denomResolver.CreateTokenMapping(req.ChainFrom, req.TokenFromDenom)
 	if err != nil {
@@ -170,7 +170,7 @@ func (s *Solver) buildDirectResponse(req models.RouteRequest, route *BasicRoute)
 }
 
 // buildIndirectResponse creates a RouteResponse for a multi-hop route without swaps
-func (s *Solver) buildIndirectResponse(req models.RouteRequest, routeInfo *IndirectRouteInfo) models.RouteResponse {
+func (s *Pathfinder) buildIndirectResponse(req models.RouteRequest, routeInfo *IndirectRouteInfo) models.RouteResponse {
 	// Build IBC legs for each hop
 	legs := []*models.IBCLeg{}
 	currentDenom := req.TokenFromDenom
@@ -242,7 +242,7 @@ func (s *Solver) buildIndirectResponse(req models.RouteRequest, routeInfo *Indir
 
 // checkPFMSupport checks if all intermediate chains in the path support PFM
 // For a path A -> B -> C, only B needs PFM support (the forwarding chain)
-func (s *Solver) checkPFMSupport(path []string) bool {
+func (s *Pathfinder) checkPFMSupport(path []string) bool {
 	if len(path) <= 2 {
 		return false // No intermediate chains
 	}
@@ -260,7 +260,7 @@ func (s *Solver) checkPFMSupport(path []string) bool {
 // generatePFMMemo generates an IBC memo for PFM forwarding
 // Format: {"forward":{"receiver":"<addr>","port":"transfer","channel":"<channel>"}}
 // For multi-hop, we nest the forward messages
-func (s *Solver) generatePFMMemo(legs []*models.IBCLeg, finalReceiver string) string {
+func (s *Pathfinder) generatePFMMemo(legs []*models.IBCLeg, finalReceiver string) string {
 	if len(legs) == 0 {
 		return ""
 	}
@@ -293,14 +293,14 @@ func (s *Solver) generatePFMMemo(legs []*models.IBCLeg, finalReceiver string) st
 }
 
 // buildBrokerSwapResponse creates a RouteResponse for a broker swap route
-func (s *Solver) buildBrokerSwapResponse(
+func (s *Pathfinder) buildBrokerSwapResponse(
 	req models.RouteRequest,
 	hopInfo *MultiHopInfo,
 ) (models.RouteResponse, error) {
 	// Get the broker client for this broker chain
 	brokerClient, exists := s.brokerClients[hopInfo.BrokerChain]
 	if !exists {
-		solverLog.Error().
+		pathfinderLog.Error().
 			Str("brokerId", hopInfo.BrokerChain).
 			Strs("availableBrokers", getMapKeys(s.brokerClients)).
 			Msg("No client configured for broker")
@@ -319,7 +319,7 @@ func (s *Solver) buildBrokerSwapResponse(
 	// For the output token: use TokenOutOnBroker.ChainDenom (the denom on the broker chain)
 	tokenOutDenomOnBroker := hopInfo.TokenOutOnBroker.ChainDenom
 
-	solverLog.Debug().
+	pathfinderLog.Debug().
 		Str("tokenIn", tokenInDenomOnBroker).
 		Str("tokenOut", tokenOutDenomOnBroker).
 		Str("amount", req.AmountIn).
@@ -330,7 +330,7 @@ func (s *Solver) buildBrokerSwapResponse(
 	// Query with retry logic
 	swapResult, err := s.queryBrokerWithRetry(brokerClient, req.AmountIn, tokenInDenomOnBroker, tokenOutDenomOnBroker)
 	if err != nil {
-		solverLog.Error().Err(err).Msg("Broker query failed")
+		pathfinderLog.Error().Err(err).Msg("Broker query failed")
 		return models.RouteResponse{}, fmt.Errorf("broker query failed: %w", err)
 	}
 
@@ -357,7 +357,7 @@ func getMapKeys(m map[string]BrokerClient) []string {
 }
 
 // queryBrokerWithRetry queries any broker DEX with exponential backoff retry logic
-func (s *Solver) queryBrokerWithRetry(
+func (s *Pathfinder) queryBrokerWithRetry(
 	client BrokerClient,
 	amountIn string,
 	tokenInDenom string,
@@ -390,7 +390,7 @@ func (s *Solver) queryBrokerWithRetry(
 // - Source is broker: no inbound legs
 // - Destination is broker: no outbound legs
 // - Full route: both inbound and outbound legs
-func (s *Solver) buildBrokerRoute(
+func (s *Pathfinder) buildBrokerRoute(
 	req models.RouteRequest,
 	hopInfo *MultiHopInfo,
 	swapResult *SwapResult,
@@ -544,7 +544,7 @@ func (s *Solver) buildBrokerRoute(
 
 	if hopInfo.SourceIsBroker && hopInfo.SwapOnly {
 		// Same-chain swap - just need swap data, no IBC memo
-		solverLog.Debug().Msg("Building same-chain swap route (no IBC)")
+		pathfinderLog.Debug().Msg("Building same-chain swap route (no IBC)")
 		execution = &models.BrokerExecutionData{
 			UsesWasm:        false,
 			Description:     "Same-chain swap on " + hopInfo.BrokerChainId,
@@ -552,7 +552,7 @@ func (s *Solver) buildBrokerRoute(
 		}
 	} else if hopInfo.SourceIsBroker {
 		// Source is broker - need swap + outbound IBC
-		solverLog.Debug().Msg("Building broker-as-source route (swap + outbound)")
+		pathfinderLog.Debug().Msg("Building broker-as-source route (swap + outbound)")
 		// For now, use swap-only execution since no ibc-hooks needed when starting from broker
 		execution = &models.BrokerExecutionData{
 			UsesWasm:        false,
@@ -561,17 +561,17 @@ func (s *Solver) buildBrokerRoute(
 		}
 	} else if hopInfo.SwapOnly {
 		// Destination is broker - need inbound IBC + swap
-		solverLog.Debug().Msg("Building swap-only route (inbound + swap)")
+		pathfinderLog.Debug().Msg("Building swap-only route (inbound + swap)")
 		execution, err = s.buildSwapOnlyExecution(req, hopInfo, swapResult, brokerChain, brokerExists)
 		if err != nil {
-			solverLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
+			pathfinderLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
 		}
 	} else {
 		// Full route - need inbound IBC + swap + outbound IBC
-		solverLog.Debug().Int("outboundHops", len(outboundLegs)).Msg("Building full broker route (inbound + swap + outbound)")
+		pathfinderLog.Debug().Int("outboundHops", len(outboundLegs)).Msg("Building full broker route (inbound + swap + outbound)")
 		execution, err = s.buildSwapAndForwardExecution(req, hopInfo, swapResult, outboundLegs, brokerChain, brokerExists)
 		if err != nil {
-			solverLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
+			pathfinderLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
 		}
 	}
 
@@ -586,11 +586,11 @@ func (s *Solver) buildBrokerRoute(
 }
 
 // buildSwapOnlyExecution builds execution data for swap-only routes (destination is broker)
-func (s *Solver) buildSwapOnlyExecution(
+func (s *Pathfinder) buildSwapOnlyExecution(
 	req models.RouteRequest,
 	hopInfo *MultiHopInfo,
 	swapResult *SwapResult,
-	brokerChain SolverChain,
+	brokerChain PathfinderChain,
 	brokerExists bool,
 ) (*models.BrokerExecutionData, error) {
 	if !brokerExists || brokerChain.IBCHooksContract == "" {
@@ -644,12 +644,12 @@ func (s *Solver) buildSwapOnlyExecution(
 
 // buildSwapAndForwardExecution builds execution data for swap+forward routes
 // Supports multi-hop outbound via nested PFM memos
-func (s *Solver) buildSwapAndForwardExecution(
+func (s *Pathfinder) buildSwapAndForwardExecution(
 	req models.RouteRequest,
 	hopInfo *MultiHopInfo,
 	swapResult *SwapResult,
 	outboundLegs []*models.IBCLeg,
-	brokerChain SolverChain,
+	brokerChain PathfinderChain,
 	brokerExists bool,
 ) (*models.BrokerExecutionData, error) {
 	if !brokerExists || brokerChain.IBCHooksContract == "" {
@@ -684,7 +684,7 @@ func (s *Solver) buildSwapAndForwardExecution(
 	if len(outboundLegs) > 1 {
 		// Build nested forward memo from the last hop backwards
 		forwardMemo = s.buildNestedForwardMemo(outboundLegs[1:], req.ReceiverAddress)
-		solverLog.Debug().Str("forwardMemo", forwardMemo).Msg("Built nested forward memo for multi-hop")
+		pathfinderLog.Debug().Str("forwardMemo", forwardMemo).Msg("Built nested forward memo for multi-hop")
 	}
 
 	// Determine the receiver for the first IBC transfer (after swap)
@@ -697,7 +697,7 @@ func (s *Solver) buildSwapAndForwardExecution(
 		intermediateAddr, err := s.addressConverter.ConvertAddress(req.ReceiverAddress, intermediateChain)
 		if err != nil {
 			// Fallback to destination address (PFM will use it anyway)
-			solverLog.Warn().Err(err).Str("chain", intermediateChain).Msg("Failed to derive intermediate address")
+			pathfinderLog.Warn().Err(err).Str("chain", intermediateChain).Msg("Failed to derive intermediate address")
 			intermediateAddr = addresses.DestinationAddress
 		}
 		firstHopReceiver = intermediateAddr
@@ -744,7 +744,7 @@ func (s *Solver) buildSwapAndForwardExecution(
 
 // buildNestedForwardMemo builds a nested PFM forward memo for multi-hop forwarding
 // legs should be the remaining legs after the first hop (from intermediate chains onwards)
-func (s *Solver) buildNestedForwardMemo(legs []*models.IBCLeg, finalReceiver string) string {
+func (s *Pathfinder) buildNestedForwardMemo(legs []*models.IBCLeg, finalReceiver string) string {
 	if len(legs) == 0 {
 		return ""
 	}
@@ -778,13 +778,13 @@ Parameters:
 - chainId: the id of the chain to get information for
 
 Returns:
-- SolverChain: the information about the chain
+- PathfinderChain: the information about the chain
 - error: if the chain is not found
 */
-func (s *Solver) GetChainInfo(chainId string) (SolverChain, error) {
+func (s *Pathfinder) GetChainInfo(chainId string) (PathfinderChain, error) {
 	chain, exists := s.chainsMap[chainId]
 	if !exists {
-		return SolverChain{}, fmt.Errorf("chain %s not found", chainId)
+		return PathfinderChain{}, fmt.Errorf("chain %s not found", chainId)
 	}
 	return chain, nil
 }
@@ -795,7 +795,7 @@ GetAllChains returns the list of all chains
 Returns:
 - []string: the list of all chain ids
 */
-func (s *Solver) GetAllChains() []string {
+func (s *Pathfinder) GetAllChains() []string {
 	chains := make([]string, 0, len(s.chainsMap))
 	for chainId := range s.chainsMap {
 		chains = append(chains, chainId)

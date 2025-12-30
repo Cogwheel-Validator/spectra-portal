@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/config"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/router"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/config"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc"
 	"github.com/rs/zerolog"
 )
 
@@ -28,16 +28,16 @@ func init() {
 func main() {
 	// Parse command line flags
 	configRpc := flag.String("config-rpc", "./rpc-config.toml", "config file for the rpc server")
-	configChains := flag.String("config-chains", "generated/solver_config.toml", "config file for the chains")
+	configChains := flag.String("config-chains", "generated/pathfinder_config.toml", "config file for the chains")
 	flag.Parse()
 
 	log.Info().
 		Str("rpc_config", *configRpc).
 		Str("chains_config", *configChains).
-		Msg("Starting Spectra IBC Hub Solver")
+		Msg("Starting Spectra IBC Hub Pathfinder")
 
 	// Load RPC server configuration
-	rpcConfig, err := config.NewDefaultRPCSolverConfigLoader().LoadRPCSolverConfig(*configRpc)
+	rpcConfig, err := config.NewDefaultRPCPathfinderConfigLoader().LoadRPCPathfinderConfig(*configRpc)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load RPC config")
 	}
@@ -81,8 +81,8 @@ func main() {
 		brokerClients["osmosis-sqs"] = osmosisBroker
 	}
 
-	// Create the solver
-	solver := router.NewSolver(chains, routeIndex, brokerClients)
+	// Create the pathfinder
+	pathfinder := router.NewPathfinder(chains, routeIndex, brokerClients)
 
 	// Create denom resolver for the RPC server
 	denomResolver := router.NewDenomResolver(routeIndex)
@@ -96,7 +96,7 @@ func main() {
 	defer cancel()
 
 	// Create the RPC server
-	server, err := rpc.NewServer(ctx, serverConfig, solver, denomResolver)
+	server, err := rpc.NewServer(ctx, serverConfig, pathfinder, denomResolver)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create RPC server")
 	}
@@ -134,8 +134,8 @@ func main() {
 	}
 }
 
-// buildServerConfig converts the loaded RPCSolverConfig to rpc.ServerConfig
-func buildServerConfig(cfg *config.RPCSolverConfig) *rpc.ServerConfig {
+// buildServerConfig converts the loaded RPCPathfinderConfig to rpc.ServerConfig
+func buildServerConfig(cfg *config.RPCPathfinderConfig) *rpc.ServerConfig {
 	serverConfig := &rpc.ServerConfig{
 		Address:          cfg.Host + ":" + itoa(cfg.Port),
 		AllowedOrigins:   cfg.AllowedOrigins,

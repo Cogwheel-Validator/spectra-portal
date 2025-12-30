@@ -6,32 +6,32 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/models"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/router"
-	v1 "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1"
-	v1connect "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1/v1connect"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
+	v1 "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc/v1"
+	v1connect "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc/v1/v1connect"
 	"github.com/btcsuite/btcutil/bech32"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// SolverServer implements the ConnectRPC SolverServiceHandler interface
-type SolverServer struct {
-	solver        *router.Solver
+// PathfinderServer implements the ConnectRPC PathfinderServiceHandler interface
+type PathfinderServer struct {
+	pathfinder    *router.Pathfinder
 	denomResolver *router.DenomResolver
 }
 
-// Verify that SolverServer implements the interface
-var _ v1connect.SolverServiceHandler = (*SolverServer)(nil)
+// Verify that PathfinderServer implements the interface
+var _ v1connect.PathfinderServiceHandler = (*PathfinderServer)(nil)
 
-// NewSolverServer creates a new SolverServer
-func NewSolverServer(solver *router.Solver, denomResolver *router.DenomResolver) *SolverServer {
-	return &SolverServer{
-		solver:        solver,
+// NewPathfinderServer creates a new PathfinderServer
+func NewPathfinderServer(pathfinder *router.Pathfinder, denomResolver *router.DenomResolver) *PathfinderServer {
+	return &PathfinderServer{
+		pathfinder:    pathfinder,
 		denomResolver: denomResolver,
 	}
 }
 
-// SolveRoute implements the ConnectRPC handler for solving routes.
+// FindPath implements the ConnectRPC handler for finding paths.
 // Supports:
 // - Human-readable denoms (e.g., "uatone") which are resolved automatically
 // - Empty token_to_denom which defaults to the same token (bridging without swap)
@@ -40,12 +40,12 @@ func NewSolverServer(solver *router.Solver, denomResolver *router.DenomResolver)
 // - 400 Bad Request: Invalid input (bad address format, unknown chain, etc.)
 // - 200 OK with success=false: Valid query but no route exists
 // - 200 OK with success=true: Route found
-func (s *SolverServer) SolveRoute(
+func (s *PathfinderServer) FindPath(
 	ctx context.Context,
-	req *connect.Request[v1.SolveRouteRequest],
-) (*connect.Response[v1.SolveRouteResponse], error) {
+	req *connect.Request[v1.FindPathRequest],
+) (*connect.Response[v1.FindPathResponse], error) {
 	// Step 0: Validate input parameters (returns 400 for validation errors)
-	if err := s.validateSolveRouteRequest(req.Msg); err != nil {
+	if err := s.validateFindPathRequest(req.Msg); err != nil {
 		return nil, err
 	}
 
@@ -92,7 +92,7 @@ func (s *SolverServer) SolveRoute(
 	}
 
 	// Step 4: Call solver with resolved denoms
-	internalResp := s.solver.Solve(internalReq)
+	internalResp := s.pathfinder.FindPath(internalReq)
 
 	// Step 5: Convert to proto response
 	// Note: "No route found" returns 200 with success=false (valid query, valid answer)
@@ -103,14 +103,14 @@ func (s *SolverServer) SolveRoute(
 
 // validateSolveRouteRequest validates the request parameters
 // Returns a ConnectRPC error (which translates to HTTP 400) for invalid input
-func (s *SolverServer) validateSolveRouteRequest(req *v1.SolveRouteRequest) error {
+func (s *PathfinderServer) validateFindPathRequest(req *v1.FindPathRequest) error {
 	// Validate chain IDs exist and get chain info for prefix validation
-	sourceChain, err := s.solver.GetChainInfo(req.ChainFrom)
+	sourceChain, err := s.pathfinder.GetChainInfo(req.ChainFrom)
 	if err != nil {
 		return connect.NewError(connect.CodeInvalidArgument,
 			fmt.Errorf("unknown source chain: %s", req.ChainFrom))
 	}
-	destChain, err := s.solver.GetChainInfo(req.ChainTo)
+	destChain, err := s.pathfinder.GetChainInfo(req.ChainTo)
 	if err != nil {
 		return connect.NewError(connect.CodeInvalidArgument,
 			fmt.Errorf("unknown destination chain: %s", req.ChainTo))
@@ -156,7 +156,7 @@ func (s *SolverServer) validateSolveRouteRequest(req *v1.SolveRouteRequest) erro
 // LookupDenom implements the ConnectRPC handler for denom lookup.
 // Accepts human-readable denoms (e.g., "uatone") or IBC denoms.
 // Returns the token info plus all chains where this token is available.
-func (s *SolverServer) LookupDenom(
+func (s *PathfinderServer) LookupDenom(
 	ctx context.Context,
 	req *connect.Request[v1.LookupDenomRequest],
 ) (*connect.Response[v1.LookupDenomResponse], error) {
@@ -192,7 +192,7 @@ func (s *SolverServer) LookupDenom(
 
 // GetTokenDenoms returns all denoms for a token across supported chains.
 // Use this to discover what denom a token has on different chains.
-func (s *SolverServer) GetTokenDenoms(
+func (s *PathfinderServer) GetTokenDenoms(
 	ctx context.Context,
 	req *connect.Request[v1.GetTokenDenomsRequest],
 ) (*connect.Response[v1.GetTokenDenomsResponse], error) {
@@ -230,7 +230,7 @@ func (s *SolverServer) GetTokenDenoms(
 
 // GetChainTokens returns all tokens available on a specific chain.
 // Includes both native tokens and IBC tokens with their denoms.
-func (s *SolverServer) GetChainTokens(
+func (s *PathfinderServer) GetChainTokens(
 	ctx context.Context,
 	req *connect.Request[v1.GetChainTokensRequest],
 ) (*connect.Response[v1.GetChainTokensResponse], error) {
@@ -281,11 +281,11 @@ Returns:
 - *v1.ChainInfo: the information about the chain
 - *connect.Error: if the chain is not found
 */
-func (s *SolverServer) GetChainInfo(
+func (s *PathfinderServer) GetChainInfo(
 	ctx context.Context,
 	req *connect.Request[v1.ChainInfoRequest],
 ) (*connect.Response[v1.ChainInfoResponse], error) {
-	chain, err := s.solver.GetChainInfo(req.Msg.ChainId)
+	chain, err := s.pathfinder.GetChainInfo(req.Msg.ChainId)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
@@ -295,17 +295,17 @@ func (s *SolverServer) GetChainInfo(
 }
 
 /*
-GetSolverSupportedChains returns the list of all supported chains
+GetPathfinderSupportedChains returns the list of all supported chains
 
 Returns:
 - []string: the list of all chain ids
 */
-func (s *SolverServer) GetSolverSupportedChains(
+func (s *PathfinderServer) GetPathfinderSupportedChains(
 	ctx context.Context,
 	req *connect.Request[emptypb.Empty],
-) (*connect.Response[v1.SolverSupportedChainsResponse], error) {
-	chains := s.solver.GetAllChains()
-	return connect.NewResponse(&v1.SolverSupportedChainsResponse{
+) (*connect.Response[v1.PathfinderSupportedChainsResponse], error) {
+	chains := s.pathfinder.GetAllChains()
+	return connect.NewResponse(&v1.PathfinderSupportedChainsResponse{
 		ChainIds: chains,
 	}), nil
 }
@@ -314,41 +314,41 @@ func (s *SolverServer) GetSolverSupportedChains(
 // These convert between internal models and protobuf types
 
 /*
-Converts internal models.RouteResponse to v1.SolveRouteResponse
+Converts internal models.RouteResponse to v1.FindPathResponse
 It uses the protobuf oneof to represent the different route types.
 
 Parameters:
 - resp: *models.RouteResponse
 
 Returns:
-- *v1.SolveRouteResponse
+- *v1.FindPathResponse
 
 Errors:
 - None
 */
-func convertToProtoResponse(resp *models.RouteResponse) *v1.SolveRouteResponse {
-	protoResp := &v1.SolveRouteResponse{
+func convertToProtoResponse(resp *models.RouteResponse) *v1.FindPathResponse {
+	protoResp := &v1.FindPathResponse{
 		Success:      resp.Success,
 		ErrorMessage: resp.ErrorMessage,
 	}
 
 	// Convert Direct route if present (using protobuf oneof)
 	if resp.Direct != nil {
-		protoResp.Route = &v1.SolveRouteResponse_Direct{
+		protoResp.Route = &v1.FindPathResponse_Direct{
 			Direct: convertToProtoDirectRoute(resp.Direct),
 		}
 	}
 
 	// Convert Indirect route if present (using protobuf oneof)
 	if resp.Indirect != nil {
-		protoResp.Route = &v1.SolveRouteResponse_Indirect{
+		protoResp.Route = &v1.FindPathResponse_Indirect{
 			Indirect: convertToProtoIndirectRoute(resp.Indirect),
 		}
 	}
 
 	// Convert BrokerSwap route if present (using protobuf oneof)
 	if resp.BrokerSwap != nil {
-		protoResp.Route = &v1.SolveRouteResponse_BrokerSwap{
+		protoResp.Route = &v1.FindPathResponse_BrokerSwap{
 			BrokerSwap: convertToProtoBrokerSwapRoute(resp.BrokerSwap),
 		}
 	}
@@ -581,7 +581,7 @@ func convertOsmosisRouteData(data *router.OsmosisRouteData) *v1.OsmosisRouteData
 	}
 }
 
-func convertToProtoChainInfo(chain *router.SolverChain, sortBySymbol *bool) *v1.ChainInfo {
+func convertToProtoChainInfo(chain *router.PathfinderChain, sortBySymbol *bool) *v1.ChainInfo {
 	return &v1.ChainInfo{
 		ChainId:   chain.Id,
 		ChainName: chain.Name,

@@ -9,40 +9,40 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
-// LoadSolverConfig loads a solver configuration from a file.
+// LoadPathfinderConfig loads a pathfinder configuration from a file.
 // Supports both TOML and JSON formats based on file extension.
-func LoadSolverConfig(filePath string) (*SolverConfig, error) {
+func LoadPathfinderConfig(filePath string) (*PathfinderConfig, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read solver config: %w", err)
+		return nil, fmt.Errorf("failed to read pathfinder config: %w", err)
 	}
 
-	var config SolverConfig
+	var config PathfinderConfig
 
 	if strings.HasSuffix(filePath, ".json") {
 		if err := json.Unmarshal(data, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse JSON solver config: %w", err)
+			return nil, fmt.Errorf("failed to parse JSON pathfinder config: %w", err)
 		}
 	} else {
 		if err := toml.Unmarshal(data, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse TOML solver config: %w", err)
+			return nil, fmt.Errorf("failed to parse TOML pathfinder config: %w", err)
 		}
 	}
 
 	return &config, nil
 }
 
-// ToRouterTypes converts the output solver types to the types expected by
-// the solver/router package. This bridges the config_manager output to
+// ToRouterTypes converts the output pathfinder types to the types expected by
+// the pathfinder/router package. This bridges the config_manager output to
 // the runtime router structures.
 //
 // Usage:
 //
-//	config, _ := output.LoadSolverConfig("path/to/solver_config.toml")
+//	config, _ := output.LoadPathfinderConfig("path/to/pathfinder_config.toml")
 //	chains, err := config.ToRouterTypes()
 //	routeIndex := router.NewRouteIndex()
 //	routeIndex.BuildIndex(chains)
-//	solver := router.NewSolver(chains, routeIndex, brokerClients)
+//	pathfinder := router.NewPathfinder(chains, routeIndex, brokerClients)
 type RouterChain struct {
 	Name     string
 	ID       string
@@ -70,24 +70,24 @@ type RouterTokenInfo struct {
 	Decimals    int
 }
 
-// ToRouterTypes converts the solver config to router-compatible types.
-func (c *SolverConfig) ToRouterTypes() ([]RouterChain, error) {
+// ToRouterTypes converts the pathfinder config to router-compatible types.
+func (c *PathfinderConfig) ToRouterTypes() ([]RouterChain, error) {
 	if c == nil || len(c.Chains) == 0 {
-		return nil, fmt.Errorf("no chains in solver config")
+		return nil, fmt.Errorf("no chains in pathfinder config")
 	}
 
 	chains := make([]RouterChain, len(c.Chains))
-	for i, solverChain := range c.Chains {
+	for i, pathfinderChain := range c.Chains {
 		chains[i] = RouterChain{
-			Name:     solverChain.Name,
-			ID:       solverChain.ID,
-			HasPFM:   solverChain.HasPFM,
-			Broker:   solverChain.Broker,
-			BrokerID: solverChain.BrokerID,
-			Routes:   make([]RouterRoute, len(solverChain.Routes)),
+			Name:     pathfinderChain.Name,
+			ID:       pathfinderChain.ID,
+			HasPFM:   pathfinderChain.HasPFM,
+			Broker:   pathfinderChain.Broker,
+			BrokerID: pathfinderChain.BrokerID,
+			Routes:   make([]RouterRoute, len(pathfinderChain.Routes)),
 		}
 
-		for j, route := range solverChain.Routes {
+		for j, route := range pathfinderChain.Routes {
 			chains[i].Routes[j] = RouterRoute{
 				ToChain:       route.ToChain,
 				ToChainID:     route.ToChainID,

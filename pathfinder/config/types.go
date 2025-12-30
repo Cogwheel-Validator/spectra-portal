@@ -1,6 +1,6 @@
 package config
 
-type RPCSolverConfig struct {
+type RPCPathfinderConfig struct {
 	// rpc configs
 	Port int    `toml:"port"`
 	Host string `toml:"host"`

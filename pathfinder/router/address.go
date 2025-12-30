@@ -13,7 +13,7 @@ type AddressConverter struct {
 }
 
 // NewAddressConverter creates a new address converter with the given chain prefix mappings
-func NewAddressConverter(chains []SolverChain) *AddressConverter {
+func NewAddressConverter(chains []PathfinderChain) *AddressConverter {
 	prefixes := make(map[string]string)
 	for _, chain := range chains {
 		if chain.Bech32Prefix != "" {

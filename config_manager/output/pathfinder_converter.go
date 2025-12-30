@@ -7,36 +7,36 @@ import (
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/enriched"
 )
 
-// SolverConverter converts enriched configs to solver-compatible format.
-type SolverConverter struct{}
+// PathfinderConverter converts enriched configs to pathfinder-compatible format.
+type PathfinderConverter struct{}
 
-// NewSolverConverter creates a new solver converter.
-func NewSolverConverter() *SolverConverter {
-	return &SolverConverter{}
+// NewPathfinderConverter creates a new pathfinder converter.
+func NewPathfinderConverter() *PathfinderConverter {
+	return &PathfinderConverter{}
 }
 
-// Convert transforms an enriched registry config into a solver config.
-func (c *SolverConverter) Convert(reg *enriched.RegistryConfig) (*SolverConfig, error) {
+// Convert transforms an enriched registry config into a pathfinder config.
+func (c *PathfinderConverter) Convert(reg *enriched.RegistryConfig) (*PathfinderConfig, error) {
 	if reg == nil || len(reg.Chains) == 0 {
 		return nil, fmt.Errorf("no chains to convert")
 	}
 
-	config := &SolverConfig{
+	config := &PathfinderConfig{
 		Version:     reg.Version,
 		GeneratedAt: time.Now().UTC().Format(time.RFC3339),
-		Chains:      make([]SolverChain, 0, len(reg.Chains)),
+		Chains:      make([]PathfinderChain, 0, len(reg.Chains)),
 	}
 
 	for _, chainConfig := range reg.Chains {
-		solverChain := c.convertChain(chainConfig)
-		config.Chains = append(config.Chains, solverChain)
+		pathfinderChain := c.convertChain(chainConfig)
+		config.Chains = append(config.Chains, pathfinderChain)
 	}
 
 	return config, nil
 }
 
-func (c *SolverConverter) convertChain(chain *enriched.ChainConfig) SolverChain {
-	solverChain := SolverChain{
+func (c *PathfinderConverter) convertChain(chain *enriched.ChainConfig) PathfinderChain {
+	pathfinderChain := PathfinderChain{
 		Name:             chain.Name,
 		ID:               chain.ID,
 		HasPFM:           chain.HasPFM,
@@ -44,25 +44,25 @@ func (c *SolverConverter) convertChain(chain *enriched.ChainConfig) SolverChain 
 		BrokerID:         chain.BrokerID,
 		IBCHooksContract: chain.IBCHooksContract,
 		Bech32Prefix:     chain.Bech32Prefix,
-		Routes:           make([]SolverRoute, 0, len(chain.Routes)),
+		Routes:           make([]PathfinderRoute, 0, len(chain.Routes)),
 	}
 
 	for _, route := range chain.Routes {
-		solverRoute := c.convertRoute(route)
-		solverChain.Routes = append(solverChain.Routes, solverRoute)
+		pathfinderRoute := c.convertRoute(route)
+		pathfinderChain.Routes = append(pathfinderChain.Routes, pathfinderRoute)
 	}
 
-	return solverChain
+	return pathfinderChain
 }
 
-func (c *SolverConverter) convertRoute(route enriched.RouteConfig) SolverRoute {
-	solverRoute := SolverRoute{
+func (c *PathfinderConverter) convertRoute(route enriched.RouteConfig) PathfinderRoute {
+	pathfinderRoute := PathfinderRoute{
 		ToChain:       route.ToChainName,
 		ToChainID:     route.ToChainID,
 		ConnectionID:  route.ConnectionID,
 		ChannelID:     route.ChannelID,
 		PortID:        route.PortID,
-		AllowedTokens: make(map[string]SolverTokenInfo),
+		AllowedTokens: make(map[string]PathfinderTokenInfo),
 	}
 
 	// Use the pre-computed AllowedTokens from the route builder
@@ -71,7 +71,7 @@ func (c *SolverConverter) convertRoute(route enriched.RouteConfig) SolverRoute {
 	// 2. Tokens originating from the destination (unwinding)
 	// 3. Routable IBC tokens explicitly configured for this destination
 	for _, token := range route.AllowedTokens {
-		solverRoute.AllowedTokens[token.SourceDenom] = SolverTokenInfo{
+		pathfinderRoute.AllowedTokens[token.SourceDenom] = PathfinderTokenInfo{
 			ChainDenom:  token.SourceDenom,
 			IBCDenom:    token.DestinationDenom,
 			BaseDenom:   token.BaseDenom,
@@ -81,5 +81,5 @@ func (c *SolverConverter) convertRoute(route enriched.RouteConfig) SolverRoute {
 		}
 	}
 
-	return solverRoute
+	return pathfinderRoute
 }

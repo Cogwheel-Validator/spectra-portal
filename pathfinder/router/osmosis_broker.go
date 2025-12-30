@@ -6,7 +6,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	sqsquery "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/sqs_query"
+	sqsquery "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/sqs_query"
 )
 
 var log zerolog.Logger

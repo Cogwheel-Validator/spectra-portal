@@ -32,14 +32,14 @@ type GeneratorConfig struct {
 	// Path to the directory containing human-readable chain configs
 	InputDir string
 
-	// Path to output the generated solver config
-	SolverOutputPath string
+	// Path to output the generated pathfinder config
+	PathfinderOutputPath string
 
 	// Path to output the generated client config
 	ClientOutputPath string
 
-	// Output format for solver config (default: auto from extension)
-	SolverOutputFormat OutputFormat
+	// Output format for pathfinder config (default: auto from extension)
+	PathfinderOutputFormat OutputFormat
 
 	// Output format for client config (default: auto from extension)
 	ClientOutputFormat OutputFormat
@@ -63,7 +63,7 @@ type Generator struct {
 	inputLoader    *input.Loader
 	inputValidator *input.Validator
 	enrichBuilder  *enriched.Builder
-	solverConv     *output.SolverConverter
+	pathfinderConv     *output.PathfinderConverter
 	clientConv     *output.ClientConverter
 }
 
@@ -87,7 +87,7 @@ func NewGenerator(config GeneratorConfig) *Generator {
 		inputLoader:    input.NewLoader(),
 		inputValidator: input.NewValidator(),
 		enrichBuilder:  enriched.NewBuilder(builderOpts...),
-		solverConv:     output.NewSolverConverter(),
+		pathfinderConv:     output.NewPathfinderConverter(),
 		clientConv:     output.NewClientConverter(clientConvOpts...),
 	}
 }
@@ -100,8 +100,8 @@ type GenerateResult struct {
 	// Validation results for each chain
 	ValidationResults map[string]*input.ValidationResult
 
-	// Path where solver config was written
-	SolverConfigPath string
+	// Path where pathfinder config was written
+	PathfinderConfigPath string
 
 	// Path where client config was written
 	ClientConfigPath string
@@ -162,19 +162,19 @@ func (g *Generator) Generate() (*GenerateResult, error) {
 	}
 	result.ChainsProcessed = len(enrichedReg.Chains)
 
-	// Step 5: Generate solver config
-	log.Println("Generating solver config...")
-	solverConfig, err := g.solverConv.Convert(enrichedReg)
+	// Step 5: Generate pathfinder config
+	log.Println("Generating pathfinder config...")
+	pathfinderConfig, err := g.pathfinderConv.Convert(enrichedReg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert to solver config: %w", err)
+		return nil, fmt.Errorf("failed to convert to pathfinder config: %w", err)
 	}
 
-	if g.config.SolverOutputPath != "" {
-		if err := g.writeSolverConfig(solverConfig); err != nil {
-			return nil, fmt.Errorf("failed to write solver config: %w", err)
+	if g.config.PathfinderOutputPath != "" {
+		if err := g.writePathfinderConfig(pathfinderConfig); err != nil {
+			return nil, fmt.Errorf("failed to write pathfinder config: %w", err)
 		}
-		result.SolverConfigPath = g.config.SolverOutputPath
-		log.Printf("Written to %s", g.config.SolverOutputPath)
+		result.PathfinderConfigPath = g.config.PathfinderOutputPath
+		log.Printf("Written to %s", g.config.PathfinderOutputPath)
 	}
 
 	// Step 6: Generate client config
@@ -296,15 +296,15 @@ func (g *Generator) copyChainImages(inputConfigs map[string]*input.ChainInput, e
 	return nil
 }
 
-func (g *Generator) writeSolverConfig(config *output.SolverConfig) error {
-	dir := filepath.Dir(g.config.SolverOutputPath)
+func (g *Generator) writePathfinderConfig(config *output.PathfinderConfig) error {
+	dir := filepath.Dir(g.config.PathfinderOutputPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
-	format := g.config.SolverOutputFormat
+	format := g.config.PathfinderOutputFormat
 	if format == FormatAuto || format == "" {
-		format = formatFromExtension(g.config.SolverOutputPath)
+		format = formatFromExtension(g.config.PathfinderOutputPath)
 	}
 
 	var data []byte
@@ -318,10 +318,10 @@ func (g *Generator) writeSolverConfig(config *output.SolverConfig) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to marshal solver config: %w", err)
+		return fmt.Errorf("failed to marshal pathfinder config: %w", err)
 	}
 
-	return os.WriteFile(g.config.SolverOutputPath, data, 0644)
+	return os.WriteFile(g.config.PathfinderOutputPath, data, 0644)
 }
 
 func (g *Generator) writeClientConfig(config *output.ClientConfig) error {
@@ -366,8 +366,8 @@ func formatFromExtension(path string) OutputFormat {
 	}
 }
 
-// GenerateSolverOnly generates only the solver configuration.
-func (g *Generator) GenerateSolverOnly() (*output.SolverConfig, error) {
+// GeneratePathfinderOnly generates only the pathfinder configuration.
+func (g *Generator) GeneratePathfinderOnly() (*output.PathfinderConfig, error) {
 	inputConfigs, err := g.inputLoader.LoadAllConfigs(g.config.InputDir)
 	if err != nil {
 		return nil, err
@@ -383,7 +383,7 @@ func (g *Generator) GenerateSolverOnly() (*output.SolverConfig, error) {
 		return nil, err
 	}
 
-	return g.solverConv.Convert(enrichedReg)
+	return g.pathfinderConv.Convert(enrichedReg)
 }
 
 // GenerateClientOnly generates only the client configuration.

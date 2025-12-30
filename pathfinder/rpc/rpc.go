@@ -10,8 +10,8 @@ import (
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
 	"connectrpc.com/otelconnect"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/solver/router"
-	v1connect "github.com/Cogwheel-Validator/spectra-ibc-hub/solver/rpc/v1/v1connect"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
+	v1connect "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc/v1/v1connect"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
@@ -71,7 +71,7 @@ type Server struct {
 func NewServer(
 	ctx context.Context,
 	config *ServerConfig,
-	solver *router.Solver,
+	pathfinder *router.Pathfinder,
 	denomResolver *router.DenomResolver,
 ) (*Server, error) {
 	if config == nil {
@@ -130,7 +130,7 @@ func NewServer(
 	mux.HandleFunc("/server/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"healthy","service":"solver-rpc"}`))
+		_, _ = w.Write([]byte(`{"status":"healthy","service":"pathfinder-rpc"}`))
 	})
 
 	// Readiness probe
@@ -140,8 +140,8 @@ func NewServer(
 		_, _ = w.Write([]byte(`{"status":"ready"}`))
 	})
 
-	// Create the SolverServer implementation
-	solverServer := NewSolverServer(solver, denomResolver)
+	// Create the PathfinderServer implementation
+	pathfinderServer := NewPathfinderServer(pathfinder, denomResolver)
 
 	// Configure connect options
 	connectOpts := []connect.HandlerOption{
@@ -162,14 +162,14 @@ func NewServer(
 		}
 	}
 
-	// Register the SolverService handler
-	path, handler := v1connect.NewSolverServiceHandler(solverServer, connectOpts...)
+	// Register the PathfinderService handler
+	path, handler := v1connect.NewPathfinderServiceHandler(pathfinderServer, connectOpts...)
 	mux.Handle(path+"*", handler)
 
 	// Add reflection endpoints (both v1 and v1alpha for compatibility)
 	if config.EnableReflection {
 		reflector := grpcreflect.NewStaticReflector(
-			v1connect.SolverServiceName,
+			v1connect.PathfinderServiceName,
 		)
 
 		// Register v1 reflection (newer clients)
@@ -227,7 +227,7 @@ func (s *Server) logServerInfo(protocol string) {
 		Msg("Spectra IBC Hub RPC Server starting")
 
 	Logger.Info().Msg("Available endpoints:")
-	Logger.Info().Msg("\tRPC: /rpc.v1.SolverService/*")
+	Logger.Info().Msg("\tRPC: /rpc.v1.PathfinderService/*")
 	Logger.Info().Msg("\tHealth: /server/health")
 	Logger.Info().Msg("\tReady: /server/ready")
 
