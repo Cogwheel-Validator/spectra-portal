@@ -7,6 +7,5 @@ plugins:
     out: ../pathfinder/rpc/v1
     opt:
       - paths=source_relative
-  - local: protoc-gen-es
+  - local: protoc-gen-ts_proto
     out: ../ibc_app/src/lib/generated/pathfinder
-    

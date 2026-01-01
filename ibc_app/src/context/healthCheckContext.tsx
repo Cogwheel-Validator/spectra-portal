@@ -44,8 +44,8 @@ interface HealthCheckProviderProps {
  * Wrap this around chain-specific routes or components to share health check results
  */
 export function HealthCheckProvider({ children, chainConfig }: HealthCheckProviderProps) {
-    const restEndpoints = chainConfig.rest_endpoints.map(endpoint => endpoint.url);
-    const rpcEndpoints = chainConfig.rpc_endpoints.map(endpoint => endpoint.url);
+    const restEndpoints = chainConfig.rest_endpoints.map((endpoint) => endpoint.url);
+    const rpcEndpoints = chainConfig.rpc_endpoints.map((endpoint) => endpoint.url);
     const { data, isLoading, isError, error } = useHealthyEndpoints(
         restEndpoints,
         rpcEndpoints,
@@ -60,9 +60,5 @@ export function HealthCheckProvider({ children, chainConfig }: HealthCheckProvid
         error: error as Error | null,
     };
 
-    return (
-        <HealthCheckContext.Provider value={value}>
-            {children}
-        </HealthCheckContext.Provider>
-    );
+    return <HealthCheckContext.Provider value={value}>{children}</HealthCheckContext.Provider>;
 }

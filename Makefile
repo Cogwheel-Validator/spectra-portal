@@ -15,7 +15,8 @@
 generate-proto:
 	@echo "Generating protobuf files for the rpc server..."
 	cd proto && \
-	buf generate 
+	buf generate && \
+	buf generate --template buf.gen.osmosis.yaml
 	@echo "Protobuf files generated successfully!"
 
 
