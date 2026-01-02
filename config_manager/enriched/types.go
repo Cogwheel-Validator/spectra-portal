@@ -4,6 +4,8 @@
 // human-readable configs and fetching all required blockchain data.
 package enriched
 
+import "github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
+
 // ChainConfig is the fully enriched chain configuration after processing.
 // It contains all data needed to generate both backend and frontend configs.
 type ChainConfig struct {
@@ -38,6 +40,9 @@ type ChainConfig struct {
 
 	// IBC routes to other chains
 	Routes []RouteConfig `json:"routes"`
+
+	// Keplr chain config used for client only
+	KeplrChainConfig keplr.KeplrChainConfig `json:"keplr_chain_config,omitempty"`
 }
 
 // Endpoint represents a verified RPC or REST endpoint.

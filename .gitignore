@@ -38,5 +38,6 @@ next-env.d.ts
 # generated
 /generated
 
-# ibc-registry
+# registires
 /ibc-registry
+/keplr-registry

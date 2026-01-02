@@ -6,6 +6,7 @@ registry = "atomone"
 explorer_url = "https://thespectra.io/atomone"
 slip44 = 118
 bech32_prefix = "atone"
+keplr_json = "atomone.json"
 
 # Packet Forward Middleware support
 has_pfm = false
@@ -13,12 +14,12 @@ has_pfm = false
 # RPC endpoints
 [[chain.rpcs]]
 url = "https://atomone-rpc.cogwheel.zone"
-provider = "Cogwheel"
+provider = "Cogwheel ⚙️"
 
 # REST endpoints
 [[chain.rest]]
 url = "https://atomone-api.cogwheel.zone"
-provider = "Cogwheel"
+provider = "Cogwheel ⚙️"
 
 [[token]]
 denom = "uatone"

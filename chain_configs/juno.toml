@@ -6,6 +6,7 @@ registry = "juno"
 explorer_url = "https://juno.valopers.com/"
 slip44 = 118
 bech32_prefix = "juno"
+keplr_json = "juno.json"
 
 # Packet Forward Middleware support
 has_pfm = true
@@ -13,7 +14,7 @@ has_pfm = true
 # RPC endpoints
 [[chain.rpcs]]
 url = "https://juno-rpc.cogwheel.zone"
-provider = "Cogwheel"
+provider = "Cogwheel ⚙️"
 
 [[chain.rpcs]]
 url = "https://juno-rpc.polkachu.com"
@@ -26,7 +27,7 @@ provider = "LavenderFive"
 # REST endpoints
 [[chain.rest]]
 url = "https://juno-api.cogwheel.zone"
-provider = "Cogwheel"
+provider = "Cogwheel ⚙️"
 
 [[chain.rest]]
 url = "https://juno-api.cogwheel.zone"

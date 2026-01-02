@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/query"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/registry"
 )
@@ -81,6 +82,7 @@ func NewBuilder(opts ...BuilderOption) *Builder {
 func (b *Builder) BuildRegistry(
 	inputConfigs map[string]*input.ChainInput,
 	ibcData []registry.ChainIbcData,
+	keplrConfigs []keplr.KeplrChainConfig,
 ) (*RegistryConfig, error) {
 	if len(inputConfigs) == 0 {
 		return nil, fmt.Errorf("no input configurations provided")
@@ -97,9 +99,14 @@ func (b *Builder) BuildRegistry(
 	// Create the route builder with all configs and IBC data
 	routeBuilder := NewRouteBuilder(inputConfigs, ibcData)
 
+	keplrData := make(map[string]keplr.KeplrChainConfig)
+	for _, keplrConfig := range keplrConfigs {
+		keplrData[keplrConfig.ChainID] = keplrConfig
+	}
+
 	// Build each chain config
 	for chainID, inputCfg := range inputConfigs {
-		chainConfig, err := b.buildChainConfig(inputCfg, routeBuilder)
+		chainConfig, err := b.buildChainConfig(inputCfg, routeBuilder, keplrData[chainID])
 		if err != nil {
 			log.Printf("Warning: failed to build config for chain %s: %v", chainID, err)
 			continue
@@ -118,6 +125,7 @@ func (b *Builder) BuildRegistry(
 func (b *Builder) buildChainConfig(
 	inputCfg *input.ChainInput,
 	routeBuilder *RouteBuilder,
+	keplrConfig keplr.KeplrChainConfig,
 ) (*ChainConfig, error) {
 	chain := inputCfg.Chain
 
@@ -132,6 +140,7 @@ func (b *Builder) buildChainConfig(
 		IsBroker:         chain.IsBroker,
 		BrokerID:         chain.BrokerID,
 		IBCHooksContract: chain.IBCHooksContract,
+		KeplrChainConfig: keplrConfig,
 	}
 
 	// Set PFM support (from input or default to false)

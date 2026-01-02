@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/registry"
 )
 
@@ -22,6 +23,7 @@ func createTestInputConfigs() map[string]*input.ChainInput {
 				Bech32Prefix: "atone",
 				RPCs:         []input.APIEndpoint{{URL: "https://atomone-rpc.example.com"}},
 				Rest:         []input.APIEndpoint{{URL: "https://atomone-api.example.com"}},
+				KeplrJSONFileName: &[]string{"atomone.json"}[0],
 			},
 			Tokens: []input.TokenMeta{
 				{Denom: "uatone", Name: "Atone", Symbol: "ATONE", Exponent: 6, Icon: "https://example.com/atone.png"},
@@ -42,6 +44,7 @@ func createTestInputConfigs() map[string]*input.ChainInput {
 				HasPFM:       &pfmTrue,
 				RPCs:         []input.APIEndpoint{{URL: "https://osmosis-rpc.example.com"}},
 				Rest:         []input.APIEndpoint{{URL: "https://osmosis-api.example.com"}},
+				KeplrJSONFileName: &[]string{"osmosis.json"}[0],
 			},
 			Tokens: []input.TokenMeta{
 				{Denom: "uosmo", Name: "Osmosis", Symbol: "OSMO", Exponent: 6, Icon: "https://example.com/osmo.png"},
@@ -89,6 +92,102 @@ func createTestInputConfigsWithMultiHop() map[string]*input.ChainInput {
 	})
 
 	return configs
+}
+
+func createTestKeplrConfigs() []keplr.KeplrChainConfig {
+	keplrConfigs := make([]keplr.KeplrChainConfig, 0)
+	atomoneKeplrConfig := &keplr.KeplrChainConfig{
+		ChainID: "atomone-1",
+		ChainName: "Atom One",
+		ChainSymbolImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
+		Bip44: keplr.Bip44{
+			CoinType: 118,
+		},
+		Bech32Config: keplr.Bech32Config{
+			Bech32PrefixAccAddr: "atone",
+			Bech32PrefixAccPub: "atonepub",
+			Bech32PrefixValAddr: "atoneval",
+			Bech32PrefixValPub: "atonevalpub",
+			Bech32PrefixConsAddr: "atonecons",
+			Bech32PrefixConsPub: "atoneconspub",
+		},
+		Currencies: []keplr.Currency{
+			{
+				CoinDenom: "ATONE",
+				CoinMinimalDenom: "uatone",
+				CoinDecimals: 6,
+				CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
+			},
+			{
+				CoinDenom: "PHOTON",
+				CoinMinimalDenom: "uphoton",
+				CoinDecimals: 6,
+				CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/photon.png",
+			},
+		},
+		FeeCurrencies: []keplr.FeeCurrency{
+			{
+				CoinDenom: "ATONE",
+				CoinMinimalDenom: "uatone",
+				CoinDecimals: 6,
+				CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
+			},
+			{
+				CoinDenom: "PHOTON",
+				CoinMinimalDenom: "uphoton",
+				CoinDecimals: 6,
+				CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/photon.png",
+			},
+		},
+		StakeCurrency: keplr.StakeCurrency{
+			CoinDenom: "ATONE",
+			CoinMinimalDenom: "uatone",
+			CoinDecimals: 6,
+			CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
+		},
+		Features: []string{},
+	}
+	osmosisKeplrConfig := &keplr.KeplrChainConfig{
+		ChainID: "osmosis-1",
+		ChainName: "Osmosis",
+		ChainSymbolImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
+		Bip44: keplr.Bip44{
+			CoinType: 118,
+		},
+		Bech32Config: keplr.Bech32Config{
+			Bech32PrefixAccAddr: "osmo",
+			Bech32PrefixAccPub: "osmopub",
+			Bech32PrefixValAddr: "osmoval",
+			Bech32PrefixValPub: "osmovalpub",
+			Bech32PrefixConsAddr: "osmocons",
+			Bech32PrefixConsPub: "osmoconspub",
+		},
+	Currencies: []keplr.Currency{
+		{
+			CoinDenom: "OSMO",
+			CoinMinimalDenom: "uosmo",
+			CoinDecimals: 6,
+			CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
+		},
+	},
+	FeeCurrencies: []keplr.FeeCurrency{
+		{
+			CoinDenom: "OSMO",
+			CoinMinimalDenom: "uosmo",
+			CoinDecimals: 6,
+			CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
+		},
+	},
+	StakeCurrency: keplr.StakeCurrency{
+		CoinDenom: "OSMO",
+		CoinMinimalDenom: "uosmo",
+		CoinDecimals: 6,
+		CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
+	},
+	Features: []string{"wasm"},
+	}
+	keplrConfigs = append(keplrConfigs, *atomoneKeplrConfig, *osmosisKeplrConfig)
+	return keplrConfigs
 }
 
 // createTestIBCData creates mock IBC registry data
@@ -170,8 +269,8 @@ func TestBuildRegistry(t *testing.T) {
 	builder := NewBuilder(WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
-
-	reg, err := builder.BuildRegistry(inputConfigs, ibcData)
+	
+	reg, err := builder.BuildRegistry(inputConfigs, ibcData, createTestKeplrConfigs())
 	if err != nil {
 		t.Fatalf("BuildRegistry() error = %v", err)
 	}
@@ -214,7 +313,7 @@ func TestBuildRoutes(t *testing.T) {
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
-	reg, err := builder.BuildRegistry(inputConfigs, ibcData)
+	reg, err := builder.BuildRegistry(inputConfigs, ibcData, createTestKeplrConfigs())
 	if err != nil {
 		t.Fatalf("BuildRegistry() error = %v", err)
 	}
@@ -259,7 +358,7 @@ func TestRouteAllowedTokens(t *testing.T) {
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
-	reg, err := builder.BuildRegistry(inputConfigs, ibcData)
+	reg, err := builder.BuildRegistry(inputConfigs, ibcData, createTestKeplrConfigs())
 	if err != nil {
 		t.Fatalf("BuildRegistry() error = %v", err)
 	}
@@ -315,7 +414,7 @@ func TestIBCTokensComputed(t *testing.T) {
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
-	reg, err := builder.BuildRegistry(inputConfigs, ibcData)
+	reg, err := builder.BuildRegistry(inputConfigs, ibcData, createTestKeplrConfigs())
 	if err != nil {
 		t.Fatalf("BuildRegistry() error = %v", err)
 	}
@@ -349,7 +448,7 @@ func TestRoutableIBCToken(t *testing.T) {
 	inputConfigs := createTestInputConfigsWithMultiHop()
 	ibcData := createTestIBCDataWithStargaze()
 
-	reg, err := builder.BuildRegistry(inputConfigs, ibcData)
+	reg, err := builder.BuildRegistry(inputConfigs, ibcData, createTestKeplrConfigs())
 	if err != nil {
 		t.Fatalf("BuildRegistry() error = %v", err)
 	}
@@ -457,7 +556,7 @@ func TestStatusCheck(t *testing.T) {
 
 			builder := NewBuilder(WithSkipNetworkCheck(true))
 			inputConfigs := createTestInputConfigs()
-			reg, err := builder.BuildRegistry(inputConfigs, ibcData)
+			reg, err := builder.BuildRegistry(inputConfigs, ibcData, createTestKeplrConfigs())
 
 			if err != nil {
 				t.Fatalf("BuildRegistry() error = %v", err)
@@ -475,7 +574,7 @@ func TestStatusCheck(t *testing.T) {
 
 func TestEmptyInputConfigs(t *testing.T) {
 	builder := NewBuilder(WithSkipNetworkCheck(true))
-	_, err := builder.BuildRegistry(map[string]*input.ChainInput{}, nil)
+	_, err := builder.BuildRegistry(map[string]*input.ChainInput{}, nil, nil)
 	if err == nil {
 		t.Error("BuildRegistry() should error with empty input configs")
 	}
@@ -491,7 +590,7 @@ func TestTokenAllowedDestinations(t *testing.T) {
 	builder := NewBuilder(WithSkipNetworkCheck(true))
 	ibcData := createTestIBCData()
 
-	reg, err := builder.BuildRegistry(configs, ibcData)
+	reg, err := builder.BuildRegistry(configs, ibcData, createTestKeplrConfigs())
 	if err != nil {
 		t.Fatalf("BuildRegistry() error = %v", err)
 	}

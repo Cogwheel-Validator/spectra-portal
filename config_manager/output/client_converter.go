@@ -77,6 +77,7 @@ func (c *ClientConverter) convertChain(
 		ExplorerURL:  chain.ExplorerURL,
 		IsDEX:        chain.IsBroker,
 		ChainLogo:    c.getChainLogo(chain),
+		KeplrChainConfig: chain.KeplrChainConfig,
 	}
 
 	// Convert healthy endpoints

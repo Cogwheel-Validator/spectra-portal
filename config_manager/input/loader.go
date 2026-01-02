@@ -97,3 +97,30 @@ func (l *Loader) GetRegistryKeywords(configs map[string]*ChainInput) []string {
 	}
 	return keywords
 }
+
+/*
+Extracts keplr json file name from loaded configs.
+
+Params:
+- configs: the loaded configs
+
+Returns:
+- []string: the keplr json file names
+- []string: the chains that do not have a keplr json file name, or have an overwrite keplr chain config
+*/
+func (l *Loader) GetKeplrJSONFileNames(configs map[string]*ChainInput) ([]string, []string) {
+	jsonFileNames := make([]string, 0, len(configs))
+	chainsWithoutKeplrJSONFileName := make([]string, 0, len(configs))
+	for _, config := range configs {
+		// If the keplr json file name is set and not empty and the keplr chain config is not set
+		// append json file name. else mark the chain to be processed with the overwrite keplr chain config
+		if config.Chain.KeplrJSONFileName != nil && 
+		*config.Chain.KeplrJSONFileName != "" && 
+		config.Chain.KeplrChainConfig == nil {
+			jsonFileNames = append(jsonFileNames, *config.Chain.KeplrJSONFileName)
+		} else {
+			chainsWithoutKeplrJSONFileName = append(chainsWithoutKeplrJSONFileName, config.Chain.ID)
+		}
+	}
+	return jsonFileNames, chainsWithoutKeplrJSONFileName
+}

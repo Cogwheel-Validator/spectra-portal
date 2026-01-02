@@ -4,6 +4,8 @@
 // by computing IBC denoms from the defined paths.
 package input
 
+import "github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
+
 // ChainInput is the human-readable chain configuration that developers write.
 // This is parsed from TOML files in the chain_configs/ directory.
 type ChainInput struct {
@@ -25,6 +27,15 @@ type ChainMeta struct {
 	// Required: Directory name in the cosmos chain-registry (e.g., "osmosis", "cosmoshub")
 	// Used to fetch IBC channel data from github.com/cosmos/chain-registry
 	Registry string `toml:"registry"`
+
+	// Required: Keplr json file name that is loacted in the chainapsis github repository 
+	// keplr-chain-registry/cosmos/chainname.json,
+	// it is requried to generate the config for the client config
+	//
+	// However in the events there is some need to overwrite keplr config, or it
+	// is not yet approved by the keplr team or pushed to the keplr github repo
+	// there will be a field that will allow  
+	KeplrJSONFileName *string `toml:"keplr_json"`
 
 	// Required: Block explorer URL for this chain
 	ExplorerURL string `toml:"explorer_url"`
@@ -52,6 +63,13 @@ type ChainMeta struct {
 	// RPC and REST endpoints
 	RPCs []APIEndpoint `toml:"rpcs"`
 	Rest []APIEndpoint `toml:"rest"`
+
+	// Optional: Keplr chain config that will be used to overwrite the existing keplr config if this is the case
+	//
+	// Usage:
+	//
+	// Mostly will be used for the adding custom chains to the wallets
+	KeplrChainConfig *keplr.KeplrChainConfig `toml:"keplr_chain_config,omitempty"`
 }
 
 // APIEndpoint represents an RPC or REST API endpoint.

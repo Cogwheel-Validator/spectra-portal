@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"slices"
 	"time"
 )
@@ -231,6 +232,50 @@ func (v *Validator) validateLogic(config *ChainInput, result *ValidationResult) 
 				fmt.Sprintf("chain.rest[%d].url", i),
 				"is required",
 			})
+		}
+	}
+
+	// Validate keplr json file name
+	if config.Chain.KeplrJSONFileName == nil || *config.Chain.KeplrJSONFileName == "" && config.Chain.KeplrChainConfig == nil {
+		result.Errors = append(result.Errors, &ValidationError{
+			"chain.keplr_chain_config",
+			"is required when chain.keplr_json is empty",
+		})
+	}
+
+	// Validate keplr chain config
+	if config.Chain.KeplrChainConfig != nil {
+		v.validateKeplrChainConfig(config, result)
+	}
+}
+
+func (v *Validator) validateKeplrChainConfig(config *ChainInput, result *ValidationResult) {
+	keplrConfig := config.Chain.KeplrChainConfig
+
+	// check all values that are not nil and are empty
+	validateStructs(reflect.ValueOf(keplrConfig), result)
+}
+
+func validateStructs(values reflect.Value, result *ValidationResult) {
+	valuesIter := reflect.ValueOf(values).MapRange()
+	for valuesIter.Next() {
+		key := valuesIter.Key()
+		value := valuesIter.Value()
+		if key.Kind() == reflect.String && value.Kind() == reflect.String && value.String() == "" {
+			result.Errors = append(result.Errors, &ValidationError{
+				"chain.keplr_chain_config." + key.String(),
+				"is required",
+			})
+		}
+		if value.Kind() == reflect.Int && value.Int() < 0 {
+			result.Errors = append(result.Errors, &ValidationError{
+				"chain.keplr_chain_config." + key.String(),
+				"must be non-negative",
+			})
+		}
+		// recursively validate the struct
+		if value.Kind() == reflect.Struct {
+			validateStructs(value, result)
 		}
 	}
 }

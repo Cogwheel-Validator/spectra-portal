@@ -80,8 +80,8 @@ func ProcessIbcRegistry(dst string, keywords []string) ([]ChainIbcData, error) {
 		// check only json files
 		// and check if they contain any kind of keyword
 		// split them by - in the name and verify if they are in the keyword
-		if strings.HasSuffix(name, ".json") {
-			name = strings.TrimSuffix(name, ".json")
+		if before, ok :=strings.CutSuffix(name, ".json"); ok  {
+			name = before
 			chainNames := strings.Split(name, "-")
 			if slices.Contains(keywords, chainNames[0]) && slices.Contains(keywords, chainNames[1]) {
 				// open the file and read the contents with untrimmed name

@@ -1,5 +1,7 @@
 package output
 
+import "github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
+
 // ClientConfig contains all configuration needed by the frontend client application.
 // This focuses on user-facing data like display names, icons, and explorer URLs.
 type ClientConfig struct {
@@ -50,6 +52,9 @@ type ClientChain struct {
 
 	// IBC tokens available on this chain
 	IBCTokens []ClientToken `json:"ibc_tokens" toml:"ibc_tokens"`
+
+	// Keplr data for wallets
+	KeplrChainConfig keplr.KeplrChainConfig `json:"keplr_chain_config" toml:"keplr_chain_config"`
 
 	// Chains this chain can send tokens to
 	ConnectedChains []ConnectedChainInfo `json:"connected_chains" toml:"connected_chains"`

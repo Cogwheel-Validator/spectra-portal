@@ -13,6 +13,7 @@ import (
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/cp"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/enriched"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/output"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/registry"
 	"github.com/pelletier/go-toml/v2"
@@ -47,11 +48,17 @@ type GeneratorConfig struct {
 	// Path to cache the IBC registry data (optional)
 	RegistryCachePath string
 
+	// Path to cache the Keplr registry data (optional)
+	KeplrCachePath string
+
 	// Skip network validation of endpoints
 	SkipNetworkValidation bool
 
 	// Skip downloading fresh registry data (use cache)
 	UseRegistryCache bool
+
+	// Skip downloading fresh keplr registry data (use cache)
+	UseKeplrCache bool
 
 	// If the path is set for this option the program will assume this is enabled and will try to copy the icons.
 	CopyIconsPath string
@@ -146,17 +153,23 @@ func (g *Generator) Generate() (*GenerateResult, error) {
 	}
 	log.Printf("%d/%d chains passed validation", validCount, len(inputConfigs))
 
-	// Step 3: Fetch IBC registry data
-	log.Println("Fetching IBC registry data...")
+	// Step 3: Fetch IBC registry data and Keplr registry data
+	log.Println("Fetching IBC and Keplr registry data...")
 	ibcData, err := g.fetchIBCRegistry(inputConfigs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch IBC registry: %w", err)
 	}
 	log.Printf("Found %d IBC connections", len(ibcData))
+	keplrConfigs, err := g.fetchKeplrRegistry(inputConfigs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch Keplr registry: %w", err)
+	}
+	log.Printf("Found %d Keplr chains", len(keplrConfigs))
+
 
 	// Step 4: Build enriched configs (IBC denoms computed from config)
 	log.Println("Building enriched configs...")
-	enrichedReg, err := g.enrichBuilder.BuildRegistry(inputConfigs, ibcData)
+	enrichedReg, err := g.enrichBuilder.BuildRegistry(inputConfigs, ibcData, keplrConfigs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build enriched config: %w", err)
 	}
@@ -236,6 +249,58 @@ func (g *Generator) fetchIBCRegistry(inputConfigs map[string]*input.ChainInput) 
 	}
 
 	return ibcData, nil
+}
+
+/*
+Fetch the keplr registry from the chainapsis github repository
+
+Params:
+- inputConfigs: the input configs
+
+Returns:
+- []keplr.KeplrChainConfig: the keplr chain configs
+- error: if the keplr registry cannot be fetched
+*/
+func (g *Generator) fetchKeplrRegistry(inputConfigs map[string]*input.ChainInput) ([]keplr.KeplrChainConfig, error) {
+	jsonFileNames, chainsWithoutKeplrJSONFileName := g.inputLoader.GetKeplrJSONFileNames(inputConfigs)
+	log.Printf("Looking for Keplr data matching: %v", jsonFileNames)
+	if len(chainsWithoutKeplrJSONFileName) > 0 {
+		log.Printf("Chains without keplr json file name: %v", chainsWithoutKeplrJSONFileName)
+	}
+
+	// Determine cache path
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current directory: %w", err)
+	}
+	cachePath := g.config.KeplrCachePath
+	if cachePath == "" {
+		cachePath = filepath.Join(currentDir, "keplr-registry")
+	}
+
+	if !g.config.UseKeplrCache {
+		if err := os.RemoveAll(cachePath); err != nil {
+			return nil, fmt.Errorf("failed to clear keplr cache: %w", err)
+		}
+	}
+	
+	if err := keplr.GetKeplrRegistry(cachePath); err != nil {
+		return nil, fmt.Errorf("failed to download Keplr registry: %w", err)
+	}
+
+	// Process the keplr registry
+	keplrConfigs, err := keplr.ProcessKeplrRegistry(cachePath, jsonFileNames)
+	if err != nil {
+		return nil, fmt.Errorf("failed to process Keplr registry: %w", err)
+	}
+	// Append the keplr chain configs that are not in the json file names
+	for _, chainID := range chainsWithoutKeplrJSONFileName {
+		if inputConfig, exists := inputConfigs[chainID]; exists {
+			keplrConfigs = append(keplrConfigs, *inputConfig.Chain.KeplrChainConfig)
+		}
+	}
+
+	return keplrConfigs, nil
 }
 
 // copyChainImages copies all chain images from the images directory to the public directory
@@ -373,12 +438,19 @@ func (g *Generator) GeneratePathfinderOnly() (*output.PathfinderConfig, error) {
 		return nil, err
 	}
 
+	// Fetch IBC registry data
 	ibcData, err := g.fetchIBCRegistry(inputConfigs)
 	if err != nil {
 		return nil, err
 	}
 
-	enrichedReg, err := g.enrichBuilder.BuildRegistry(inputConfigs, ibcData)
+	// Fetch Keplr registry data
+	keplrConfigs, err := g.fetchKeplrRegistry(inputConfigs)
+	if err != nil {
+		return nil, err
+	}
+
+	enrichedReg, err := g.enrichBuilder.BuildRegistry(inputConfigs, ibcData, keplrConfigs)
 	if err != nil {
 		return nil, err
 	}
@@ -393,12 +465,19 @@ func (g *Generator) GenerateClientOnly() (*output.ClientConfig, error) {
 		return nil, err
 	}
 
+	// Fetch IBC registry data
 	ibcData, err := g.fetchIBCRegistry(inputConfigs)
 	if err != nil {
 		return nil, err
 	}
 
-	enrichedReg, err := g.enrichBuilder.BuildRegistry(inputConfigs, ibcData)
+	// Fetch Keplr registry data
+	keplrConfigs, err := g.fetchKeplrRegistry(inputConfigs)
+	if err != nil {
+		return nil, err
+	}
+
+	enrichedReg, err := g.enrichBuilder.BuildRegistry(inputConfigs, ibcData, keplrConfigs)
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ registry = "cosmoshub"
 explorer_url = "https://mintscan.io/cosmoshub"
 slip44 = 118
 bech32_prefix = "cosmos"
+keplr_json = "cosmoshub.json"
 
 # Packet Forward Middleware support
 has_pfm = true

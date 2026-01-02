@@ -11,6 +11,8 @@ bech32_prefix = "stars"
 is_broker = false
 broker_id = ""
 
+keplr_json = "stargaze.json"
+
 has_pfm = false
 
 # RPC endpoints

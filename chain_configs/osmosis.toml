@@ -9,6 +9,7 @@ registry = "osmosis"
 explorer_url = "https://mintscan.io/osmosis"
 slip44 = 118
 bech32_prefix = "osmo"
+keplr_json = "osmosis.json"
 
 # Osmosis is a DEX broker
 is_broker = true
@@ -24,7 +25,7 @@ has_pfm = true
 # RPC endpoints
 [[chain.rpcs]]
 url = "https://osmosis-rpc.cogwheel.zone"
-provider = "Cogwheel"
+provider = "Cogwheel ⚙️"
 
 [[chain.rpcs]]
 url = "https://rpc.osmosis.zone"
@@ -33,7 +34,7 @@ provider = "Osmosis"
 # REST endpoints
 [[chain.rest]]
 url = "https://osmosis-api.cogwheel.zone"
-provider = "Cogwheel"
+provider = "Cogwheel ⚙️"
 
 [[chain.rest]]
 url = "https://lcd.osmosis.zone"

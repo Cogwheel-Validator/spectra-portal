@@ -6,6 +6,7 @@ registry = "noble"
 explorer_url = "https://mintscan.io/noble"
 slip44 = 118
 bech32_prefix = "noble"
+keplr_json = "noble.json"
 
 # Packet Forward Middleware support
 has_pfm = true
