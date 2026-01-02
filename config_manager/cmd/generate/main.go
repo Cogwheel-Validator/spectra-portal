@@ -22,8 +22,8 @@ import (
 func main() {
 	// Define command-line flags
 	inputDir := flag.String("input", "./chain_configs", "Directory containing human-readable chain configs")
-	pathfinderOutput := flag.String("pathfinder-output", "./generated/pathfinder_config.toml", "Output path for pathfinder config")
-	clientOutput := flag.String("client-output", "./generated/client_config.toml", "Output path for client config")
+	pathfinderOutput := flag.String("pathfinder-output", "./generated-configs/pathfinder_config.toml", "Output path for pathfinder config")
+	clientOutput := flag.String("client-output", "./generated-configs/client_config.toml", "Output path for client config")
 	pathfinderFormat := flag.String("pathfinder-format", "auto", "Pathfinder output format: auto, toml, json")
 	clientFormat := flag.String("client-format", "auto", "Client output format: auto, toml, json")
 	registryCache := flag.String("registry-cache", "", "Path to cache IBC registry data (optional)")

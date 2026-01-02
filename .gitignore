@@ -35,9 +35,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# generated
-/generated
-
 # registires
 /ibc-registry
 /keplr-registry

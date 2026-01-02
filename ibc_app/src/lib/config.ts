@@ -28,9 +28,9 @@ export async function LoadConfig(format?: string): Promise<FullClientConfig> {
     for (const fmt of formatsToTry) {
         const possiblePaths = [
             // Path relative to Next.js app root (one level up)
-            join(process.cwd(), "..", "generated", `client_config.${fmt}`),
+            join(process.cwd(), "..", "generated-configs", `client_config.${fmt}`),
             // Absolute path fallback (if process.cwd() is the project root)
-            join(process.cwd(), "generated", `client_config.${fmt}`),
+            join(process.cwd(), "generated-configs", `client_config.${fmt}`),
             // Path like the config is placed in the root of the Next.js app (for Docker)
             join(process.cwd(), `client_config.${fmt}`),
         ];
