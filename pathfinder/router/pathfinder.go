@@ -23,7 +23,8 @@ type BrokerClient interface {
 	// tokenInDenom: the denom of the input token on the broker chain (may be IBC denom)
 	// tokenInAmount: the amount of input tokens
 	// tokenOutDenom: the denom of the desired output token on the broker chain (may be IBC denom)
-	QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom string) (*SwapResult, error)
+	// singleRoute: if true, only return a single route, if false, return all possible routes
+	QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom string, singleRoute *bool) (*SwapResult, error)
 
 	// GetBrokerType returns the type of broker (e.g., "osmosis-sqs", "astroport", etc.)
 	GetBrokerType() string
@@ -328,7 +329,8 @@ func (s *Pathfinder) buildBrokerSwapResponse(
 		Msg("Querying broker for swap")
 
 	// Query with retry logic
-	swapResult, err := s.queryBrokerWithRetry(brokerClient, req.AmountIn, tokenInDenomOnBroker, tokenOutDenomOnBroker)
+	swapResult, err := s.queryBrokerWithRetry(
+		brokerClient, req.AmountIn, tokenInDenomOnBroker, tokenOutDenomOnBroker, req.SingleRoute)
 	if err != nil {
 		pathfinderLog.Error().Err(err).Msg("Broker query failed")
 		return models.RouteResponse{}, fmt.Errorf("broker query failed: %w", err)
@@ -362,6 +364,7 @@ func (s *Pathfinder) queryBrokerWithRetry(
 	amountIn string,
 	tokenInDenom string,
 	tokenOutDenom string,
+	singleRoute *bool,
 ) (*SwapResult, error) {
 	var lastErr error
 	delay := s.retryDelay
@@ -373,7 +376,7 @@ func (s *Pathfinder) queryBrokerWithRetry(
 		}
 
 		// Query broker for the swap route
-		result, err := client.QuerySwap(tokenInDenom, amountIn, tokenOutDenom)
+		result, err := client.QuerySwap(tokenInDenom, amountIn, tokenOutDenom, singleRoute)
 		if err == nil {
 			return result, nil
 		}

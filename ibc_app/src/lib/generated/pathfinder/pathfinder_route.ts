@@ -43,6 +43,8 @@ export interface FindPathRequest {
   senderAddress: string;
   /** Receiver address on destination chain */
   receiverAddress: string;
+  /** If true, only return a single route, if false, return all possible routes */
+  singleRoute: boolean;
 }
 
 export interface FindPathResponse {
@@ -306,6 +308,7 @@ function createBaseFindPathRequest(): FindPathRequest {
     tokenToDenom: "",
     senderAddress: "",
     receiverAddress: "",
+    singleRoute: false,
   };
 }
 
@@ -331,6 +334,9 @@ export const FindPathRequest: MessageFns<FindPathRequest> = {
     }
     if (message.receiverAddress !== "") {
       writer.uint32(58).string(message.receiverAddress);
+    }
+    if (message.singleRoute !== false) {
+      writer.uint32(64).bool(message.singleRoute);
     }
     return writer;
   },
@@ -398,6 +404,14 @@ export const FindPathRequest: MessageFns<FindPathRequest> = {
           message.receiverAddress = reader.string();
           continue;
         }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.singleRoute = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -416,6 +430,7 @@ export const FindPathRequest: MessageFns<FindPathRequest> = {
       tokenToDenom: isSet(object.tokenToDenom) ? globalThis.String(object.tokenToDenom) : "",
       senderAddress: isSet(object.senderAddress) ? globalThis.String(object.senderAddress) : "",
       receiverAddress: isSet(object.receiverAddress) ? globalThis.String(object.receiverAddress) : "",
+      singleRoute: isSet(object.singleRoute) ? globalThis.Boolean(object.singleRoute) : false,
     };
   },
 
@@ -442,6 +457,9 @@ export const FindPathRequest: MessageFns<FindPathRequest> = {
     if (message.receiverAddress !== "") {
       obj.receiverAddress = message.receiverAddress;
     }
+    if (message.singleRoute !== false) {
+      obj.singleRoute = message.singleRoute;
+    }
     return obj;
   },
 
@@ -457,6 +475,7 @@ export const FindPathRequest: MessageFns<FindPathRequest> = {
     message.tokenToDenom = object.tokenToDenom ?? "";
     message.senderAddress = object.senderAddress ?? "";
     message.receiverAddress = object.receiverAddress ?? "";
+    message.singleRoute = object.singleRoute ?? false;
     return message;
   },
 };

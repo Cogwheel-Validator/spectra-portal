@@ -89,6 +89,7 @@ func (s *PathfinderServer) FindPath(
 		TokenToDenom:    resolvedToDenom,
 		SenderAddress:   req.Msg.SenderAddress,
 		ReceiverAddress: req.Msg.ReceiverAddress,
+		SingleRoute:     &req.Msg.SingleRoute,
 	}
 
 	// Step 4: Call pathfinder with resolved denoms

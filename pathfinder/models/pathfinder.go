@@ -9,6 +9,7 @@ type RouteRequest struct {
 	TokenToDenom    string `json:"token_to_denom"`   // e.g., "uatom"
 	SenderAddress   string `json:"sender_address"`   // For validation
 	ReceiverAddress string `json:"receiver_address"` // e.g., "cosmos1234567890"
+	SingleRoute     *bool  `json:"single_route,omitempty"` // if true, only return a single route, if false, return all possible routes
 }
 
 // TokenMapping represents how a token transforms between chains

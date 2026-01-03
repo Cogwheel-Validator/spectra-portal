@@ -296,12 +296,12 @@ var chains = []router.PathfinderChain{
 // MockBrokerClient implements the BrokerClient interface for testing
 type MockBrokerClient struct {
 	brokerType string
-	swapFunc   func(tokenIn, amountIn, tokenOut string) (*router.SwapResult, error)
+	swapFunc   func(tokenIn, amountIn, tokenOut string, singleRoute *bool) (*router.SwapResult, error)
 }
 
-func (m *MockBrokerClient) QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom string) (*router.SwapResult, error) {
+func (m *MockBrokerClient) QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom string, singleRoute *bool) (*router.SwapResult, error) {
 	if m.swapFunc != nil {
-		return m.swapFunc(tokenInDenom, tokenInAmount, tokenOutDenom)
+		return m.swapFunc(tokenInDenom, tokenInAmount, tokenOutDenom, singleRoute)
 	}
 	// Fake swap, but in this case we will assume 1:1 swap with 0.3% fee and
 	// slipage can be anywhere from 0.1% to 0.9%, for this purpose and to ease testing
@@ -332,7 +332,7 @@ func setupTestPathfinder() (*router.Pathfinder, *router.RouteIndex) {
 	brokerClients := map[string]router.BrokerClient{
 		"osmosis": &MockBrokerClient{
 			brokerType: "osmosis-sqs",
-			swapFunc: func(tokenIn, amountIn, tokenOut string) (*router.SwapResult, error) {
+			swapFunc: func(tokenIn, amountIn, tokenOut string, singleRoute *bool) (*router.SwapResult, error) {
 				// Simulate realistic swap
 				return &router.SwapResult{
 					AmountIn:     amountIn,

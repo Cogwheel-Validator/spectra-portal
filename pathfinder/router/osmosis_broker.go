@@ -38,7 +38,10 @@ func NewOsmosisSqsBrokerWithFailover(primaryURL string, backupURLs []string) *Os
 }
 
 // QuerySwap implements BrokerClient interface for Osmosis SQS
-func (o *OsmosisSqsBroker) QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom string) (*SwapResult, error) {
+func (o *OsmosisSqsBroker) QuerySwap(
+	tokenInDenom, tokenInAmount, tokenOutDenom string,
+	singleRoute *bool,
+) (*SwapResult, error) {
 	log.Debug().
 		Str("tokenIn", tokenInDenom).
 		Str("amount", tokenInAmount).
@@ -52,8 +55,11 @@ func (o *OsmosisSqsBroker) QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom 
 	}
 
 	// Query SQS for the route
-	// singleRoute=false allows for split routes across multiple pools
-	response, err := o.client.GetRoute(tokenIn, nil, nil, &tokenOutDenom, false)
+	if singleRoute == nil {
+		singleRoute = new(bool)
+		*singleRoute = false
+	}
+	response, err := o.client.GetRoute(tokenIn, nil, nil, &tokenOutDenom, *singleRoute)
 	if err != nil {
 		log.Error().Err(err).
 			Str("tokenIn", tokenInDenom).

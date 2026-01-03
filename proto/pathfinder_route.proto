@@ -86,6 +86,9 @@ message FindPathRequest {
         (buf.validate.field).required = true, 
         (buf.validate.field).string.min_len = 38, 
         (buf.validate.field).string.max_len = 68];
+    
+    // If true, only return a single route, if false, return all possible routes
+    bool single_route = 8;
 }
 
 message FindPathResponse {
