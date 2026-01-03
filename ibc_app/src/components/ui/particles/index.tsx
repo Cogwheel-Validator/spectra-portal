@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useWindowSize } from "@/components/hooks/windowSize";
+import { useWindowSize } from "@/hooks/windowSize";
 import { cn } from "@/lib/utils";
 
 interface MousePosition {
