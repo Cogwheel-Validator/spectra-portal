@@ -1,6 +1,6 @@
 import { Particles } from "@/components/ui/particles";
 import SendUI from "@/components/ui/send/senderUi";
-import { LoadConfig } from "@/lib/config";
+import { LoadConfig } from "@/lib/config/config";
 
 interface TransferPageProps {
     searchParams: Promise<{

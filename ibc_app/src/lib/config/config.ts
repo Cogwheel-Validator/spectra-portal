@@ -61,17 +61,15 @@ export async function LoadConfig(format?: string): Promise<FullClientConfig> {
 class FullClientConfig {
     private chains: Map<string, ClientChain> = new Map();
     private tokenSummaries: Map<string, ClientTokenSummary> = new Map();
-    private chainLogos: Map<string, string | undefined> = new Map();
     public config: ClientConfig;
 
     constructor(config: ClientConfig) {
         this.chains = new Map(config.chains.map((chain) => [chain.id, chain]));
         this.tokenSummaries = new Map(config.all_tokens.map((token) => [token.base_denom, token]));
-        this.chainLogos = new Map(config.chains.map((chain) => [chain.id, chain.chain_logo]));
         this.config = config;
-    }
+    }  
 
-    public getChainById(chainId: string): ClientChain | undefined {
+    private getChainById(chainId: string): ClientChain | undefined {
         return this.chains.get(chainId);
     }
 
@@ -120,5 +118,19 @@ class FullClientConfig {
         if (!chain) return undefined;
 
         return chain.chain_logo;
+    }
+
+    public getChainAPIs(chainId: string): string[] {
+        const chain = this.getChainById(chainId);
+        if (!chain) return [];
+
+        return chain.rest_endpoints.map((endpoint) => endpoint.url);
+    }
+
+    public getChainRPCs(chainId: string): string[] {
+        const chain = this.getChainById(chainId);
+        if (!chain) return [];
+
+        return chain.rpc_endpoints.map((endpoint) => endpoint.url);
     }
 }
