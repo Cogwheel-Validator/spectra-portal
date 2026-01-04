@@ -272,7 +272,7 @@ func DefaultTimeoutTimestamp() int64 {
 
 // CalculateMinOutput calculates minimum output with slippage tolerance
 // slippageBps is basis points (e.g., 100 = 1%)
-func CalculateMinOutput(expectedOutput string, slippageBps int) (string, error) {
+func CalculateMinOutput(expectedOutput string, slippageBps uint32) (string, error) {
 	// Parse the expected output
 	expected, err := strconv.ParseInt(expectedOutput, 10, 64)
 	if err != nil {

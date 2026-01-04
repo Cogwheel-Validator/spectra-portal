@@ -90,6 +90,7 @@ func (s *PathfinderServer) FindPath(
 		SenderAddress:   req.Msg.SenderAddress,
 		ReceiverAddress: req.Msg.ReceiverAddress,
 		SingleRoute:     &req.Msg.SingleRoute,
+		SlippageBps:     &req.Msg.SlippageBps,
 	}
 
 	// Step 4: Call pathfinder with resolved denoms

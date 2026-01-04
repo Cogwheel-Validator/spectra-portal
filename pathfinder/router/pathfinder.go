@@ -413,6 +413,15 @@ func (s *Pathfinder) buildBrokerRoute(
 		return nil, fmt.Errorf("swapResult is nil")
 	}
 
+	if req.SlippageBps == nil {
+		// It is only needed for the swaps but it is better to have some sort of default
+		*req.SlippageBps = 100
+	}
+
+	if *req.SlippageBps > 10000 {
+		return nil, fmt.Errorf("slippage bps must be less than 10000")
+	}
+
 	// Get broker chain info for ibc-hooks contract
 	brokerChain, brokerExists := s.chainsMap[hopInfo.BrokerChainId]
 
@@ -548,15 +557,33 @@ func (s *Pathfinder) buildBrokerRoute(
 	if hopInfo.SourceIsBroker && hopInfo.SwapOnly {
 		// Same-chain swap - just need swap data, no IBC memo
 		pathfinderLog.Debug().Msg("Building same-chain swap route (no IBC)")
+		// Calculate minimum output with slippage
+		if req.SlippageBps != nil {
+			minOutput, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+			if err != nil {
+				// If for some reason it does fail at least try to return some value
+				pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
+			}
+			swapResult.AmountOut = minOutput
+		}
 		execution = &models.BrokerExecutionData{
 			UsesWasm:        false,
 			Description:     "Same-chain swap on " + hopInfo.BrokerChainId,
-			MinOutputAmount: swapResult.AmountOut, // TODO: Apply slippage
+			MinOutputAmount: swapResult.AmountOut,
 		}
 	} else if hopInfo.SourceIsBroker {
 		// Source is broker - need swap + outbound IBC
 		pathfinderLog.Debug().Msg("Building broker-as-source route (swap + outbound)")
 		// For now, use swap-only execution since no ibc-hooks needed when starting from broker
+
+		// Calculate minimum output with slippage
+		if req.SlippageBps != nil {
+			minOutput, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+			if err != nil {
+				pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
+			}
+			swapResult.AmountOut = minOutput
+		}
 		execution = &models.BrokerExecutionData{
 			UsesWasm:        false,
 			Description:     "Swap on " + hopInfo.BrokerChainId + " then IBC to " + req.ChainTo,
@@ -606,10 +633,14 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 		return nil, fmt.Errorf("failed to derive addresses: %w", err)
 	}
 
-	// Calculate minimum output with 1% slippage
-	minOutput, err := CalculateMinOutput(swapResult.AmountOut, 100) // 100 bps = 1%
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate min output: %w", err)
+	// Calculate minimum output with slippage
+	if req.SlippageBps != nil {
+		minOutput, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+		if err != nil {
+			// If for some reason it does fail at least try to return some value
+			pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
+		}
+		swapResult.AmountOut = minOutput
 	}
 
 	// Get route data
@@ -623,7 +654,7 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 	memo, err := memoBuilder.BuildSwapMemo(SwapMemoParams{
 		TokenInDenom:     hopInfo.TokenIn.IbcDenom,
 		TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
-		MinOutputAmount:  minOutput,
+		MinOutputAmount:  swapResult.AmountOut,
 		RouteData:        routeData,
 		TimeoutTimestamp: DefaultTimeoutTimestamp(),
 		RecoverAddress:   addresses.BrokerAddress,
@@ -639,7 +670,7 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 		Memo:            memo,
 		IBCReceiver:     brokerChain.IBCHooksContract,
 		RecoverAddress:  addresses.BrokerAddress,
-		MinOutputAmount: minOutput,
+		MinOutputAmount: swapResult.AmountOut,
 		UsesWasm:        true,
 		Description:     fmt.Sprintf("IBC transfer with swap on %s", hopInfo.BrokerChainId),
 	}, nil
@@ -669,10 +700,14 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 		return nil, fmt.Errorf("failed to derive addresses: %w", err)
 	}
 
-	// Calculate minimum output with 1% slippage
-	minOutput, err := CalculateMinOutput(swapResult.AmountOut, 100) // 100 bps = 1%
-	if err != nil {
-		return nil, fmt.Errorf("failed to calculate min output: %w", err)
+	// Calculate minimum output with slippage
+	if req.SlippageBps != nil {
+		minOutput, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+		if err != nil {
+			// If for some reason it does fail at least try to return some value
+			pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
+		}
+		swapResult.AmountOut = minOutput
 	}
 
 	// Get route data
@@ -711,7 +746,7 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 	memo, err := memoBuilder.BuildSwapMemo(SwapMemoParams{
 		TokenInDenom:     hopInfo.TokenIn.IbcDenom,
 		TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
-		MinOutputAmount:  minOutput,
+		MinOutputAmount:  swapResult.AmountOut,
 		RouteData:        routeData,
 		TimeoutTimestamp: DefaultTimeoutTimestamp(),
 		RecoverAddress:   addresses.BrokerAddress,
@@ -739,7 +774,7 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 		Memo:            memo,
 		IBCReceiver:     brokerChain.IBCHooksContract,
 		RecoverAddress:  addresses.BrokerAddress,
-		MinOutputAmount: minOutput,
+		MinOutputAmount: swapResult.AmountOut,
 		UsesWasm:        true,
 		Description:     description,
 	}, nil

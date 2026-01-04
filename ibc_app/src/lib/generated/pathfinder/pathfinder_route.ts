@@ -45,6 +45,11 @@ export interface FindPathRequest {
   receiverAddress: string;
   /** If true, only return a single route, if false, return all possible routes */
   singleRoute: boolean;
+  /**
+   * Slippage in basis points (e.g., 100 = 1%, 1000 = 10%)
+   * Must be less than 10000
+   */
+  slippageBps: number;
 }
 
 export interface FindPathResponse {
@@ -309,6 +314,7 @@ function createBaseFindPathRequest(): FindPathRequest {
     senderAddress: "",
     receiverAddress: "",
     singleRoute: false,
+    slippageBps: 0,
   };
 }
 
@@ -337,6 +343,9 @@ export const FindPathRequest: MessageFns<FindPathRequest> = {
     }
     if (message.singleRoute !== false) {
       writer.uint32(64).bool(message.singleRoute);
+    }
+    if (message.slippageBps !== 0) {
+      writer.uint32(72).uint32(message.slippageBps);
     }
     return writer;
   },
@@ -412,6 +421,14 @@ export const FindPathRequest: MessageFns<FindPathRequest> = {
           message.singleRoute = reader.bool();
           continue;
         }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.slippageBps = reader.uint32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -431,6 +448,7 @@ export const FindPathRequest: MessageFns<FindPathRequest> = {
       senderAddress: isSet(object.senderAddress) ? globalThis.String(object.senderAddress) : "",
       receiverAddress: isSet(object.receiverAddress) ? globalThis.String(object.receiverAddress) : "",
       singleRoute: isSet(object.singleRoute) ? globalThis.Boolean(object.singleRoute) : false,
+      slippageBps: isSet(object.slippageBps) ? globalThis.Number(object.slippageBps) : 0,
     };
   },
 
@@ -460,6 +478,9 @@ export const FindPathRequest: MessageFns<FindPathRequest> = {
     if (message.singleRoute !== false) {
       obj.singleRoute = message.singleRoute;
     }
+    if (message.slippageBps !== 0) {
+      obj.slippageBps = Math.round(message.slippageBps);
+    }
     return obj;
   },
 
@@ -476,6 +497,7 @@ export const FindPathRequest: MessageFns<FindPathRequest> = {
     message.senderAddress = object.senderAddress ?? "";
     message.receiverAddress = object.receiverAddress ?? "";
     message.singleRoute = object.singleRoute ?? false;
+    message.slippageBps = object.slippageBps ?? 0;
     return message;
   },
 };

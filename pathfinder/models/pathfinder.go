@@ -2,14 +2,15 @@ package models
 
 // RouteRequest - POST body
 type RouteRequest struct {
-	ChainFrom       string `json:"chain_from"`             // e.g., "juno"
-	TokenFromDenom  string `json:"token_from_denom"`       // e.g., "ujuno"
-	AmountIn        string `json:"amount_in"`              // e.g., "1000000"
-	ChainTo         string `json:"chain_to"`               // e.g., "cosmoshub"
-	TokenToDenom    string `json:"token_to_denom"`         // e.g., "uatom"
-	SenderAddress   string `json:"sender_address"`         // For validation
-	ReceiverAddress string `json:"receiver_address"`       // e.g., "cosmos1234567890"
-	SingleRoute     *bool  `json:"single_route,omitempty"` // if true, only return a single route, if false, return all possible routes
+	ChainFrom       string  `json:"chain_from"`             // e.g., "juno"
+	TokenFromDenom  string  `json:"token_from_denom"`       // e.g., "ujuno"
+	AmountIn        string  `json:"amount_in"`              // e.g., "1000000"
+	ChainTo         string  `json:"chain_to"`               // e.g., "cosmoshub"
+	TokenToDenom    string  `json:"token_to_denom"`         // e.g., "uatom"
+	SenderAddress   string  `json:"sender_address"`         // For validation
+	ReceiverAddress string  `json:"receiver_address"`       // e.g., "cosmos1234567890"
+	SingleRoute     *bool   `json:"single_route,omitempty"` // if true, only return a single route, if false, return all possible routes
+	SlippageBps     *uint32 `json:"slippage_bps,omitempty"` // if not nil it will use specified value, else the default will be 100 (1%)
 }
 
 // TokenMapping represents how a token transforms between chains
