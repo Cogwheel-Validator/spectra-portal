@@ -70,13 +70,13 @@ func (c *ClientConverter) convertChain(
 	tokenTracker map[string]*ClientTokenSummary,
 ) ClientChain {
 	clientChain := ClientChain{
-		Name:         chain.Name,
-		ID:           chain.ID,
-		Bech32Prefix: chain.Bech32Prefix,
-		Slip44:       chain.Slip44,
-		ExplorerURL:  chain.ExplorerURL,
-		IsDEX:        chain.IsBroker,
-		ChainLogo:    c.getChainLogo(chain),
+		Name:             chain.Name,
+		ID:               chain.ID,
+		Bech32Prefix:     chain.Bech32Prefix,
+		Slip44:           chain.Slip44,
+		ExplorerURL:      chain.ExplorerURL,
+		IsDEX:            chain.IsBroker,
+		ChainLogo:        c.getChainLogo(chain),
 		KeplrChainConfig: chain.KeplrChainConfig,
 	}
 

@@ -364,7 +364,6 @@ func (c *SqsQueryClient) GetRoute(
 	if err != nil {
 		return RouteTokenResponse{}, err
 	}
-
 	var routeTokenResponse RouteTokenResponse
 	if err := json.Unmarshal(body, &routeTokenResponse); err != nil {
 		return RouteTokenResponse{}, fmt.Errorf("failed to parse route response: %w", err)

@@ -23,13 +23,13 @@ type Route struct {
 }
 
 type Pool struct {
-	ID            int32         `json:"id"`
-	Type          int32         `json:"type"`
-	Balances      []interface{} `json:"balances"`
-	SpreadFactor  string        `json:"spread_factor"`
-	TokenOutDenom string        `json:"token_out_denom"`
-	TakerFee      string        `json:"taker_fee"`
-	LiquidityCap  string        `json:"liquidity_cap"`
+	ID            int32  `json:"id"`
+	Type          int32  `json:"type"`
+	Balances      []any  `json:"balances"`
+	SpreadFactor  string `json:"spread_factor"`
+	TokenOutDenom string `json:"token_out_denom"`
+	TakerFee      string `json:"taker_fee"`
+	LiquidityCap  string `json:"liquidity_cap"`
 }
 
 type Token struct {

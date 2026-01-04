@@ -14,15 +14,15 @@ func createTestInputConfigs() map[string]*input.ChainInput {
 	return map[string]*input.ChainInput{
 		"atomone-1": {
 			Chain: input.ChainMeta{
-				Name:         "Atom One",
-				ID:           "atomone-1",
-				Type:         "cosmos",
-				Registry:     "atomone",
-				ExplorerURL:  "https://thespectra.io/atomone",
-				Slip44:       118,
-				Bech32Prefix: "atone",
-				RPCs:         []input.APIEndpoint{{URL: "https://atomone-rpc.example.com"}},
-				Rest:         []input.APIEndpoint{{URL: "https://atomone-api.example.com"}},
+				Name:              "Atom One",
+				ID:                "atomone-1",
+				Type:              "cosmos",
+				Registry:          "atomone",
+				ExplorerURL:       "https://thespectra.io/atomone",
+				Slip44:            118,
+				Bech32Prefix:      "atone",
+				RPCs:              []input.APIEndpoint{{URL: "https://atomone-rpc.example.com"}},
+				Rest:              []input.APIEndpoint{{URL: "https://atomone-api.example.com"}},
 				KeplrJSONFileName: &[]string{"atomone.json"}[0],
 			},
 			Tokens: []input.TokenMeta{
@@ -32,18 +32,18 @@ func createTestInputConfigs() map[string]*input.ChainInput {
 		},
 		"osmosis-1": {
 			Chain: input.ChainMeta{
-				Name:         "Osmosis",
-				ID:           "osmosis-1",
-				Type:         "cosmos",
-				Registry:     "osmosis",
-				ExplorerURL:  "https://mintscan.io/osmosis",
-				Slip44:       118,
-				Bech32Prefix: "osmo",
-				IsBroker:     true,
-				BrokerID:     "osmosis-sqs",
-				HasPFM:       &pfmTrue,
-				RPCs:         []input.APIEndpoint{{URL: "https://osmosis-rpc.example.com"}},
-				Rest:         []input.APIEndpoint{{URL: "https://osmosis-api.example.com"}},
+				Name:              "Osmosis",
+				ID:                "osmosis-1",
+				Type:              "cosmos",
+				Registry:          "osmosis",
+				ExplorerURL:       "https://mintscan.io/osmosis",
+				Slip44:            118,
+				Bech32Prefix:      "osmo",
+				IsBroker:          true,
+				BrokerID:          "osmosis-sqs",
+				HasPFM:            &pfmTrue,
+				RPCs:              []input.APIEndpoint{{URL: "https://osmosis-rpc.example.com"}},
+				Rest:              []input.APIEndpoint{{URL: "https://osmosis-api.example.com"}},
 				KeplrJSONFileName: &[]string{"osmosis.json"}[0],
 			},
 			Tokens: []input.TokenMeta{
@@ -97,94 +97,94 @@ func createTestInputConfigsWithMultiHop() map[string]*input.ChainInput {
 func createTestKeplrConfigs() []keplr.KeplrChainConfig {
 	keplrConfigs := make([]keplr.KeplrChainConfig, 0)
 	atomoneKeplrConfig := &keplr.KeplrChainConfig{
-		ChainID: "atomone-1",
-		ChainName: "Atom One",
+		ChainID:             "atomone-1",
+		ChainName:           "Atom One",
 		ChainSymbolImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
 		Bip44: keplr.Bip44{
 			CoinType: 118,
 		},
 		Bech32Config: keplr.Bech32Config{
-			Bech32PrefixAccAddr: "atone",
-			Bech32PrefixAccPub: "atonepub",
-			Bech32PrefixValAddr: "atoneval",
-			Bech32PrefixValPub: "atonevalpub",
+			Bech32PrefixAccAddr:  "atone",
+			Bech32PrefixAccPub:   "atonepub",
+			Bech32PrefixValAddr:  "atoneval",
+			Bech32PrefixValPub:   "atonevalpub",
 			Bech32PrefixConsAddr: "atonecons",
-			Bech32PrefixConsPub: "atoneconspub",
+			Bech32PrefixConsPub:  "atoneconspub",
 		},
 		Currencies: []keplr.Currency{
 			{
-				CoinDenom: "ATONE",
+				CoinDenom:        "ATONE",
 				CoinMinimalDenom: "uatone",
-				CoinDecimals: 6,
-				CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
+				CoinDecimals:     6,
+				CoinImageURL:     "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
 			},
 			{
-				CoinDenom: "PHOTON",
+				CoinDenom:        "PHOTON",
 				CoinMinimalDenom: "uphoton",
-				CoinDecimals: 6,
-				CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/photon.png",
+				CoinDecimals:     6,
+				CoinImageURL:     "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/photon.png",
 			},
 		},
 		FeeCurrencies: []keplr.FeeCurrency{
 			{
-				CoinDenom: "ATONE",
+				CoinDenom:        "ATONE",
 				CoinMinimalDenom: "uatone",
-				CoinDecimals: 6,
-				CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
+				CoinDecimals:     6,
+				CoinImageURL:     "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
 			},
 			{
-				CoinDenom: "PHOTON",
+				CoinDenom:        "PHOTON",
 				CoinMinimalDenom: "uphoton",
-				CoinDecimals: 6,
-				CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/photon.png",
+				CoinDecimals:     6,
+				CoinImageURL:     "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/photon.png",
 			},
 		},
 		StakeCurrency: keplr.StakeCurrency{
-			CoinDenom: "ATONE",
+			CoinDenom:        "ATONE",
 			CoinMinimalDenom: "uatone",
-			CoinDecimals: 6,
-			CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
+			CoinDecimals:     6,
+			CoinImageURL:     "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
 		},
 		Features: []string{},
 	}
 	osmosisKeplrConfig := &keplr.KeplrChainConfig{
-		ChainID: "osmosis-1",
-		ChainName: "Osmosis",
+		ChainID:             "osmosis-1",
+		ChainName:           "Osmosis",
 		ChainSymbolImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
 		Bip44: keplr.Bip44{
 			CoinType: 118,
 		},
 		Bech32Config: keplr.Bech32Config{
-			Bech32PrefixAccAddr: "osmo",
-			Bech32PrefixAccPub: "osmopub",
-			Bech32PrefixValAddr: "osmoval",
-			Bech32PrefixValPub: "osmovalpub",
+			Bech32PrefixAccAddr:  "osmo",
+			Bech32PrefixAccPub:   "osmopub",
+			Bech32PrefixValAddr:  "osmoval",
+			Bech32PrefixValPub:   "osmovalpub",
 			Bech32PrefixConsAddr: "osmocons",
-			Bech32PrefixConsPub: "osmoconspub",
+			Bech32PrefixConsPub:  "osmoconspub",
 		},
-	Currencies: []keplr.Currency{
-		{
-			CoinDenom: "OSMO",
+		Currencies: []keplr.Currency{
+			{
+				CoinDenom:        "OSMO",
+				CoinMinimalDenom: "uosmo",
+				CoinDecimals:     6,
+				CoinImageURL:     "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
+			},
+		},
+		FeeCurrencies: []keplr.FeeCurrency{
+			{
+				CoinDenom:        "OSMO",
+				CoinMinimalDenom: "uosmo",
+				CoinDecimals:     6,
+				CoinImageURL:     "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
+			},
+		},
+		StakeCurrency: keplr.StakeCurrency{
+			CoinDenom:        "OSMO",
 			CoinMinimalDenom: "uosmo",
-			CoinDecimals: 6,
-			CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
+			CoinDecimals:     6,
+			CoinImageURL:     "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
 		},
-	},
-	FeeCurrencies: []keplr.FeeCurrency{
-		{
-			CoinDenom: "OSMO",
-			CoinMinimalDenom: "uosmo",
-			CoinDecimals: 6,
-			CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
-		},
-	},
-	StakeCurrency: keplr.StakeCurrency{
-		CoinDenom: "OSMO",
-		CoinMinimalDenom: "uosmo",
-		CoinDecimals: 6,
-		CoinImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",
-	},
-	Features: []string{"wasm"},
+		Features: []string{"wasm"},
 	}
 	keplrConfigs = append(keplrConfigs, *atomoneKeplrConfig, *osmosisKeplrConfig)
 	return keplrConfigs
@@ -269,7 +269,7 @@ func TestBuildRegistry(t *testing.T) {
 	builder := NewBuilder(WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
-	
+
 	reg, err := builder.BuildRegistry(inputConfigs, ibcData, createTestKeplrConfigs())
 	if err != nil {
 		t.Fatalf("BuildRegistry() error = %v", err)

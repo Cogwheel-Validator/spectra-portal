@@ -523,7 +523,7 @@ func convertToProtoSwapQuote(swap *models.SwapQuote) *v1.SwapQuote {
 	// Convert broker-specific RouteData based on broker type
 	// This is the key part - converting interface{} to typed oneof
 	switch swap.Broker {
-	case "osmosis":
+	case "osmosis-sqs":
 		if osmosisData, ok := swap.RouteData.(*router.OsmosisRouteData); ok {
 			protoSwap.RouteData = &v1.SwapQuote_OsmosisRouteData{
 				OsmosisRouteData: convertOsmosisRouteData(osmosisData),

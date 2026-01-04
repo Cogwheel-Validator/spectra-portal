@@ -30,5 +30,8 @@
 		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"notebook.defaultFormatter": "biomejs.biome",
-	"editor.codeActions.triggerOnFocusChange": true
+	"editor.codeActions.triggerOnFocusChange": true,
+	"[go]": {
+		"editor.defaultFormatter": "golang.go"
+	}
 }

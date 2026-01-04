@@ -8,18 +8,18 @@ package keplr
 // 2. As a source for the events to overwrite the config that will be within the spectra ibc chain configs
 // in case the keplr chain config needs to be overwritten or it doesn't exists in the keplr chain registry
 type KeplrChainConfig struct {
-	RPC                 string `json:"rpc" toml:"rpc"`
-	Rest                string `json:"rest" toml:"rest"`
-	ChainID             string `json:"chainId" toml:"chain_id"`
-	ChainName           string `json:"chainName" toml:"chain_name"`
-	ChainSymbolImageURL string `json:"chainSymbolImageUrl" toml:"chain_symbol_image_url"`
-	Bip44               Bip44 `json:"bip44" toml:"bip44"`
-	WalletURLForStaking string `json:"walletUrlForStaking" toml:"wallet_url_for_staking"`
-	Bech32Config        Bech32Config `json:"bech32Config" toml:"bech32_config"`
-	Currencies []Currency `json:"currencies" toml:"currencies"`
-	FeeCurrencies []FeeCurrency `json:"feeCurrencies" toml:"fee_currencies"`
-	StakeCurrency StakeCurrency `json:"stakeCurrency" toml:"stake_currency"`
-	Features []string `json:"features" toml:"features"`
+	RPC                 string        `json:"rpc" toml:"rpc"`
+	Rest                string        `json:"rest" toml:"rest"`
+	ChainID             string        `json:"chainId" toml:"chain_id"`
+	ChainName           string        `json:"chainName" toml:"chain_name"`
+	ChainSymbolImageURL string        `json:"chainSymbolImageUrl" toml:"chain_symbol_image_url"`
+	Bip44               Bip44         `json:"bip44" toml:"bip44"`
+	WalletURLForStaking string        `json:"walletUrlForStaking" toml:"wallet_url_for_staking"`
+	Bech32Config        Bech32Config  `json:"bech32Config" toml:"bech32_config"`
+	Currencies          []Currency    `json:"currencies" toml:"currencies"`
+	FeeCurrencies       []FeeCurrency `json:"feeCurrencies" toml:"fee_currencies"`
+	StakeCurrency       StakeCurrency `json:"stakeCurrency" toml:"stake_currency"`
+	Features            []string      `json:"features" toml:"features"`
 }
 
 type Bip44 struct {
@@ -44,11 +44,11 @@ type Currency struct {
 }
 
 type FeeCurrency struct {
-	CoinDenom        string `json:"coinDenom" toml:"coin_denom"`
-	CoinMinimalDenom string `json:"coinMinimalDenom" toml:"coin_minimal_denom"`
-	CoinDecimals     int    `json:"coinDecimals" toml:"coin_decimals"`
-	CoinGeckoID      string `json:"coinGeckoId" toml:"coin_gecko_id"`
-	CoinImageURL     string `json:"coinImageUrl" toml:"coin_image_url"`
+	CoinDenom        string       `json:"coinDenom" toml:"coin_denom"`
+	CoinMinimalDenom string       `json:"coinMinimalDenom" toml:"coin_minimal_denom"`
+	CoinDecimals     int          `json:"coinDecimals" toml:"coin_decimals"`
+	CoinGeckoID      string       `json:"coinGeckoId" toml:"coin_gecko_id"`
+	CoinImageURL     string       `json:"coinImageUrl" toml:"coin_image_url"`
 	GasPriceStep     GasPriceStep `json:"gasPriceStep" toml:"gas_price_step"`
 }
 

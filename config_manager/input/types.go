@@ -28,13 +28,13 @@ type ChainMeta struct {
 	// Used to fetch IBC channel data from github.com/cosmos/chain-registry
 	Registry string `toml:"registry"`
 
-	// Required: Keplr json file name that is loacted in the chainapsis github repository 
+	// Required: Keplr json file name that is loacted in the chainapsis github repository
 	// keplr-chain-registry/cosmos/chainname.json,
 	// it is requried to generate the config for the client config
 	//
 	// However in the events there is some need to overwrite keplr config, or it
 	// is not yet approved by the keplr team or pushed to the keplr github repo
-	// there will be a field that will allow  
+	// there will be a field that will allow
 	KeplrJSONFileName *string `toml:"keplr_json"`
 
 	// Required: Block explorer URL for this chain

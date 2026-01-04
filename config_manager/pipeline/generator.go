@@ -166,7 +166,6 @@ func (g *Generator) Generate() (*GenerateResult, error) {
 	}
 	log.Printf("Found %d Keplr chains", len(keplrConfigs))
 
-
 	// Step 4: Build enriched configs (IBC denoms computed from config)
 	log.Println("Building enriched configs...")
 	enrichedReg, err := g.enrichBuilder.BuildRegistry(inputConfigs, ibcData, keplrConfigs)
@@ -283,7 +282,7 @@ func (g *Generator) fetchKeplrRegistry(inputConfigs map[string]*input.ChainInput
 			return nil, fmt.Errorf("failed to clear keplr cache: %w", err)
 		}
 	}
-	
+
 	if err := keplr.GetKeplrRegistry(cachePath); err != nil {
 		return nil, fmt.Errorf("failed to download Keplr registry: %w", err)
 	}
