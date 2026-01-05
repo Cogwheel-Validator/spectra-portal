@@ -41,6 +41,9 @@ type ClientChain struct {
 	// Whether this chain is a DEX (for UI hints)
 	IsDEX bool `json:"is_dex" toml:"is_dex"`
 
+	// Cosmos SDK version
+	CosmosSdkVersion string `json:"cosmos_sdk_version" toml:"cosmos_sdk_version"`
+
 	// RPC endpoints for wallet connections
 	RPCEndpoints []ClientEndpoint `json:"rpc_endpoints" toml:"rpc_endpoints"`
 

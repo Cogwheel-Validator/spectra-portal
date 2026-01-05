@@ -53,23 +53,23 @@ func getRestStatus(
 	// collect only the data the program needs
 	network := response.DefaultNodeInfo.Network
 	version := response.DefaultNodeInfo.Version
-	tx_index := response.DefaultNodeInfo.Other.TxIndex
-	application_version := response.ApplicationVersion
-	app_name := application_version.AppName
-	app_version := application_version.Version
-	git_commit := application_version.GitCommit
-	cosmos_sdk_version := application_version.CosmosSdkVersion
-	tx_indexer_bool := tx_index == "on"
+	txIndex := response.DefaultNodeInfo.Other.TxIndex
+	applicationVersion := response.ApplicationVersion
+	appName := applicationVersion.AppName
+	appVersion := applicationVersion.Version
+	gitCommit := applicationVersion.GitCommit
+	cosmosSdkVersion := applicationVersion.CosmosSdkVersion
+	txIndexerBool := txIndex == "on"
 	nodeStatus := NodeStatus{
 		BaseUrl:          endpoint.URL,
 		Provider:         endpoint.Provider,
 		Network:          network,
 		Version:          version,
-		TxIndexer:        tx_indexer_bool,
-		AppName:          app_name,
-		AppVersion:       app_version,
-		GitCommit:        git_commit,
-		CosmosSdkVersion: cosmos_sdk_version,
+		TxIndexer:        txIndexerBool,
+		AppName:          appName,
+		AppVersion:       appVersion,
+		GitCommit:        gitCommit,
+		CosmosSdkVersion: cosmosSdkVersion,
 	}
 
 	// return the node status
@@ -177,4 +177,38 @@ func ValidateRestEndpoints(
 	}
 
 	return healthyEndpoints
+}
+
+/*
+Get the Cosmos SDK version from the REST endpoint
+
+Parameters:
+
+- healthyRestEndpoint - the healthy REST endpoint to get the Cosmos SDK version from
+
+Returns:
+- the Cosmos SDK version
+- error if the request fails
+
+Only used within the client config generation for now
+*/
+func GetCosmosSdkVersion(healthyRestEndpoint string) (string, error) {
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
+	resp, err := client.Get(healthyRestEndpoint + "/cosmos/base/tendermint/v1beta1/node_info")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	var response NodeInfoResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return "", err
+	}
+	return response.ApplicationVersion.CosmosSdkVersion, nil
 }
