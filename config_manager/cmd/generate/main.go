@@ -32,6 +32,7 @@ func main() {
 	validate := flag.Bool("validate-only", false, "Only validate configs, don't generate")
 	// If the path is set for this option the program will assume this is enabled and will try to copy the icons.
 	copyIconsPath := flag.String("copy-icons", "", "Copy icons to the public/icons directory")
+	allowedExplorersPath := flag.String("allowed-explorers", "./explorers/allowed_explorers.toml", "Path to the allowed explorers file")
 
 	flag.Parse()
 
@@ -51,6 +52,7 @@ func main() {
 		SkipNetworkValidation:  *skipNetwork,
 		UseRegistryCache:       *useCache,
 		CopyIconsPath:          *copyIconsPath,
+		AllowedExplorersPath:   *allowedExplorersPath,
 	}
 
 	if *validate {

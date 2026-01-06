@@ -265,8 +265,27 @@ func createTestIBCDataWithStargaze() []registry.ChainIbcData {
 	return data
 }
 
+func createTestAllowedExplorers() []input.AllowedExplorer {
+	return []input.AllowedExplorer{
+		{
+			Name:              "mintscan",
+			BaseURL:           "https://mintscan.io",
+			MultiChainSupport: true,
+			AccountPath:       "/{chain_name}/account",
+			TransactionPath:   "/{chain_name}/txs",
+		},
+		{
+			Name:              "random explorer with no multichain support",
+			BaseURL:           "https://random-explorer.com",
+			MultiChainSupport: false,
+			AccountPath:       "/account",
+			TransactionPath:   "/txs",
+		},
+	}
+}
+
 func TestBuildRegistry(t *testing.T) {
-	builder := NewBuilder(WithSkipNetworkCheck(true))
+	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -309,7 +328,7 @@ func TestBuildRegistry(t *testing.T) {
 }
 
 func TestBuildRoutes(t *testing.T) {
-	builder := NewBuilder(WithSkipNetworkCheck(true))
+	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -354,7 +373,7 @@ func TestBuildRoutes(t *testing.T) {
 }
 
 func TestRouteAllowedTokens(t *testing.T) {
-	builder := NewBuilder(WithSkipNetworkCheck(true))
+	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -410,7 +429,7 @@ func TestRouteAllowedTokens(t *testing.T) {
 }
 
 func TestIBCTokensComputed(t *testing.T) {
-	builder := NewBuilder(WithSkipNetworkCheck(true))
+	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -444,7 +463,7 @@ func TestIBCTokensComputed(t *testing.T) {
 }
 
 func TestRoutableIBCToken(t *testing.T) {
-	builder := NewBuilder(WithSkipNetworkCheck(true))
+	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
 	inputConfigs := createTestInputConfigsWithMultiHop()
 	ibcData := createTestIBCDataWithStargaze()
 
@@ -554,7 +573,7 @@ func TestStatusCheck(t *testing.T) {
 				},
 			}
 
-			builder := NewBuilder(WithSkipNetworkCheck(true))
+			builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
 			inputConfigs := createTestInputConfigs()
 			reg, err := builder.BuildRegistry(inputConfigs, ibcData, createTestKeplrConfigs())
 
@@ -573,7 +592,7 @@ func TestStatusCheck(t *testing.T) {
 }
 
 func TestEmptyInputConfigs(t *testing.T) {
-	builder := NewBuilder(WithSkipNetworkCheck(true))
+	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
 	_, err := builder.BuildRegistry(map[string]*input.ChainInput{}, nil, nil)
 	if err == nil {
 		t.Error("BuildRegistry() should error with empty input configs")
@@ -587,7 +606,7 @@ func TestTokenAllowedDestinations(t *testing.T) {
 	// Restrict PHOTON to only Osmosis (which is the only connection anyway)
 	configs["atomone-1"].Tokens[1].AllowedDestinations = []string{"osmosis-1"}
 
-	builder := NewBuilder(WithSkipNetworkCheck(true))
+	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
 	ibcData := createTestIBCData()
 
 	reg, err := builder.BuildRegistry(configs, ibcData, createTestKeplrConfigs())

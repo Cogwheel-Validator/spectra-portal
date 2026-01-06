@@ -156,3 +156,22 @@ func (t *TokenMeta) IsNative() bool {
 func (t *TokenMeta) IsRoutableIBC() bool {
 	return t.OriginChain != ""
 }
+
+type ExplorerMeta struct {
+	AllowedExplorers []AllowedExplorer `toml:"allowed_explorers"`
+}
+
+type AllowedExplorer struct {
+	Name                 string `toml:"name"`
+	BaseURL              string `toml:"base_url"`
+	MultiChainSupport    bool   `toml:"multi_chain_support"`
+	TransactionPath      string `toml:"transaction_path"`
+	AccountPath          string `toml:"account_path"`
+	IsFork               bool   `toml:"is_fork"`
+	ForkName             string `toml:"fork_name"`
+	ForkGithubRepository string `toml:"fork_github_repository"`
+	ValidatorOrChainName string `toml:"validator_or_chain_name"`
+	WebsiteURL           string `toml:"website_url"`
+	ContactEmail         string `toml:"contact_email"`
+	GithubProfile        string `toml:"github_profile"`
+}

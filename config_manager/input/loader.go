@@ -124,3 +124,29 @@ func (l *Loader) GetKeplrJSONFileNames(configs map[string]*ChainInput) ([]string
 	}
 	return jsonFileNames, chainsWithoutKeplrJSONFileName
 }
+
+// LoadListOfAllowedExplorers loads the list of allowed explorers from a TOML file.
+//
+// Params:
+// - filePath: the path to the TOML file
+//
+// Returns:
+// - []AllowedExplorer: the list of allowed explorers
+// - error: if the file is not a TOML file or if the file cannot be read or parsed
+func (l *Loader) LoadListOfAllowedExplorers(filePath string) ([]AllowedExplorer, error) {
+	if !strings.HasSuffix(filePath, ".toml") {
+		return nil, fmt.Errorf("config file must be a .toml file: %s", filePath)
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file %s: %w", filePath, err)
+	}
+
+	var listOfAllowedExplorers ExplorerMeta
+	if err := toml.Unmarshal(data, &listOfAllowedExplorers); err != nil {
+		return nil, fmt.Errorf("failed to parse config file %s: %w", filePath, err)
+	}
+
+	return listOfAllowedExplorers.AllowedExplorers, nil
+}

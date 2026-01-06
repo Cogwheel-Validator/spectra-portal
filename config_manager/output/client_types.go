@@ -1,6 +1,9 @@
 package output
 
-import "github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
+import (
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/enriched"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
+)
 
 // ClientConfig contains all configuration needed by the frontend client application.
 // This focuses on user-facing data like display names, icons, and explorer URLs.
@@ -32,8 +35,8 @@ type ClientChain struct {
 	// SLIP-44 coin type
 	Slip44 int `json:"slip44" toml:"slip44"`
 
-	// Block explorer URL
-	ExplorerURL string `json:"explorer_url" toml:"explorer_url"`
+	// Block explorer details
+	ExplorerDetails enriched.ExplorerDetails `json:"explorer_details" toml:"explorer_details"`
 
 	// URL/path to chain logo
 	ChainLogo string `json:"chain_logo,omitempty" toml:"chain_logo,omitempty"`

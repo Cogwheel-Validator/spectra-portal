@@ -1,0 +1,58 @@
+[[allowed_explorers]]
+name = "Mintscan"
+base_url = "https://mintscan.io"
+multi_chain_support = true
+transaction_path = "{chain_name}/txs/{tx_hash}"
+account_path = "{chain_name}/address/{address}"
+is_fork = false
+fork_name = ""
+fork_github_repository = ""
+validator_or_chain_name = "Cosmostation"
+website_url = "https://cosmostation.io"
+contact_email = "support@cosmostation.io"
+github_profile = "https://github.com/cosmostation"
+
+[[allowed_explorers]]
+name = "Spectra"
+base_url = "https://thespectra.io"
+multi_chain_support = true
+transaction_path = "{chain_name}/transactions/{tx_hash}"
+account_path = "{chain_name}/account/{address}"
+is_fork = false
+fork_name = ""
+fork_github_repository = ""
+validator_or_chain_name = "Cogwheel Validator"
+website_url = "https://cogwheel.zone"
+contact_email = "info@cogwheel.zone"
+github_profile = "https://github.com/Cogwheel-Validator"
+
+
+# Pingpub is validator on like 1 or 2 chains, they are more tied to the development of the PingPub explorer
+# but for now treat them like a validator
+[[allowed_explorers]]
+name = "PingPub"
+base_url = "https://ping.pub"
+multi_chain_support = true
+transaction_path = "{chain_name}/tx/{tx_hash}"
+account_path = "{chain_name}/account/{address}"
+is_fork = false
+fork_name = ""
+fork_github_repository = ""
+validator_or_chain_name = "PingPub"
+website_url = "https://ping.pub"
+contact_email = "N/A"
+github_profile = "https://github.com/ping-pub/"
+
+[[allowed_explorers]]
+name = "PingPub Cogwheel"
+base_url = "https://explorer.cogwheel.zone"
+multi_chain_support = true
+transaction_path = "{chain_name}/tx/{tx_hash}"
+account_path = "{chain_name}/account/{address}"
+is_fork = true
+fork_name = "PingPub"
+fork_github_repository = "https://github.com/ping-pub/explorer"
+validator_or_chain_name = "Cogwheel Validator"
+website_url = "https://cogwheel.zone"
+contact_email = "info@cogwheel.zone"
+github_profile = "https://github.com/Cogwheel-Validator"

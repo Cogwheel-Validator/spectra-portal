@@ -10,11 +10,13 @@ import "github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
 // It contains all data needed to generate both backend and frontend configs.
 type ChainConfig struct {
 	// Basic chain identification (from input config)
-	Name         string `json:"name"`
-	ID           string `json:"id"`
-	Type         string `json:"type"`
-	Registry     string `json:"registry"`
-	ExplorerURL  string `json:"explorer_url"`
+	Name     string `json:"name"`
+	ID       string `json:"id"`
+	Type     string `json:"type"`
+	Registry string `json:"registry"`
+
+	ExplorerDetails ExplorerDetails `json:"explorer_details"`
+
 	Slip44       int    `json:"slip44"`
 	Bech32Prefix string `json:"bech32_prefix"`
 
@@ -173,4 +175,11 @@ type RegistryConfig struct {
 
 	// All chains in the registry
 	Chains map[string]*ChainConfig `json:"chains"`
+}
+
+// Explorer details for the client app such as url link to account and transaction
+type ExplorerDetails struct {
+	Url             string `json:"url"`
+	AccountPath     string `json:"account_path"`
+	TransactionPath string `json:"transaction_path"`
 }

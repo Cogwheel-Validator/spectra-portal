@@ -77,7 +77,7 @@ func (c *ClientConverter) convertChain(
 		ID:               chain.ID,
 		Bech32Prefix:     chain.Bech32Prefix,
 		Slip44:           chain.Slip44,
-		ExplorerURL:      chain.ExplorerURL,
+		ExplorerDetails:  chain.ExplorerDetails,
 		IsDEX:            chain.IsBroker,
 		ChainLogo:        c.getChainLogo(chain),
 		KeplrChainConfig: chain.KeplrChainConfig,

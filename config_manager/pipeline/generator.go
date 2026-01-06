@@ -62,6 +62,9 @@ type GeneratorConfig struct {
 
 	// If the path is set for this option the program will assume this is enabled and will try to copy the icons.
 	CopyIconsPath string
+
+	// Path to the allowed explorers file
+	AllowedExplorersPath string
 }
 
 // Generator is the main config generation pipeline.
@@ -89,11 +92,21 @@ func NewGenerator(config GeneratorConfig) *Generator {
 		clientConvOpts = append(clientConvOpts, output.WithIconCopy(true))
 	}
 
+	// init the input loader
+	inputLoader := input.NewLoader()
+
+	// init the input validator by calling upon the input loader to load the allowed explorers
+	allowedExplorers, err := inputLoader.LoadListOfAllowedExplorers(config.AllowedExplorersPath)
+	if err != nil {
+		log.Fatalf("failed to load allowed explorers: %v", err)
+	}
+	inputValidator := input.NewValidator(allowedExplorers)
+
 	return &Generator{
 		config:         config,
-		inputLoader:    input.NewLoader(),
-		inputValidator: input.NewValidator(),
-		enrichBuilder:  enriched.NewBuilder(builderOpts...),
+		inputLoader:    inputLoader,
+		inputValidator: inputValidator,
+		enrichBuilder:  enriched.NewBuilder(allowedExplorers, builderOpts...),
 		pathfinderConv: output.NewPathfinderConverter(),
 		clientConv:     output.NewClientConverter(clientConvOpts...),
 	}

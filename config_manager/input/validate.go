@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"slices"
+	"strings"
 	"time"
 )
 
@@ -33,8 +34,9 @@ type ValidationResult struct {
 // performs thorough endpoint validation (version consensus, height sync, tx indexer).
 // Use WithSkipNetworkCheck(false) to enable basic reachability checks here.
 type Validator struct {
-	httpClient   *http.Client
-	skipNetCheck bool
+	httpClient       *http.Client
+	skipNetCheck     bool
+	allowedExplorers []AllowedExplorer
 }
 
 // ValidatorOption configures the validator.
@@ -56,12 +58,13 @@ func WithSkipNetworkCheck(skip bool) ValidatorOption {
 
 // NewValidator creates a new configuration validator.
 // Network checks are skipped by default - use WithSkipNetworkCheck(false) to enable.
-func NewValidator(opts ...ValidatorOption) *Validator {
+func NewValidator(allowedExplorers []AllowedExplorer, opts ...ValidatorOption) *Validator {
 	v := &Validator{
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
-		skipNetCheck: true, // Skip by default - builder does thorough validation
+		skipNetCheck:     true, // Skip by default - builder does thorough validation
+		allowedExplorers: allowedExplorers,
 	}
 	for _, opt := range opts {
 		opt(v)
@@ -247,6 +250,14 @@ func (v *Validator) validateLogic(config *ChainInput, result *ValidationResult) 
 	if config.Chain.KeplrChainConfig != nil {
 		v.validateKeplrChainConfig(config, result)
 	}
+
+	// Validate explorer link
+	if !verifyExplorerLink(config.Chain.ExplorerURL, v.allowedExplorers) {
+		result.Errors = append(result.Errors, &ValidationError{
+			"chain.explorer_url",
+			"is not a valid allowed explorer link",
+		})
+	}
 }
 
 func (v *Validator) validateKeplrChainConfig(config *ChainInput, result *ValidationResult) {
@@ -339,4 +350,33 @@ func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult
 	if !restReachable && len(config.Chain.Rest) > 0 {
 		result.Warnings = append(result.Warnings, "no REST endpoints are currently reachable")
 	}
+}
+
+// verifyExplorerLink verifies if the explorer link is valid and allowed.
+//
+// Params:
+// - url: the explorer link to verify
+// - allowedExplorers: the list of allowed explorers
+//
+// Returns:
+// - bool: true if the explorer link is valid and allowed, false otherwise
+func verifyExplorerLink(url string, allowedExplorers []AllowedExplorer) bool {
+	if !strings.HasPrefix(url, "https://") {
+		return false
+	}
+
+	url = strings.TrimPrefix(url, "https://")
+	urlParts := strings.Split(url, "/")
+	domain := urlParts[0]
+
+	for _, explorer := range allowedExplorers {
+		// we also need to trim the baseURL to the domain
+		explorerBaseURL := strings.TrimPrefix(explorer.BaseURL, "https://")
+		explorerBaseURLParts := strings.Split(explorerBaseURL, "/")
+		explorerDomain := explorerBaseURLParts[0]
+		if explorerDomain == domain {
+			return true
+		}
+	}
+	return false
 }

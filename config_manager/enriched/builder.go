@@ -23,10 +23,11 @@ const (
 // without querying chain REST APIs. This ensures only "legitimate" tokens are included.
 // It also validates the network reachability of the chain fully.
 type Builder struct {
-	retryAttempts int
-	retryDelay    time.Duration
-	timeout       time.Duration
-	skipNetCheck  bool
+	retryAttempts    int
+	retryDelay       time.Duration
+	timeout          time.Duration
+	skipNetCheck     bool
+	allowedExplorers []input.AllowedExplorer
 }
 
 // BuilderOption configures the builder.
@@ -61,12 +62,13 @@ func WithSkipNetworkCheck(skip bool) BuilderOption {
 }
 
 // NewBuilder creates a new enriched config builder.
-func NewBuilder(opts ...BuilderOption) *Builder {
+func NewBuilder(allowedExplorers []input.AllowedExplorer, opts ...BuilderOption) *Builder {
 	b := &Builder{
-		retryAttempts: defaultRetryAttempts,
-		retryDelay:    defaultRetryDelay,
-		timeout:       defaultTimeout,
-		skipNetCheck:  false,
+		retryAttempts:    defaultRetryAttempts,
+		retryDelay:       defaultRetryDelay,
+		timeout:          defaultTimeout,
+		skipNetCheck:     false,
+		allowedExplorers: allowedExplorers,
 	}
 	for _, opt := range opts {
 		opt(b)
@@ -129,12 +131,17 @@ func (b *Builder) buildChainConfig(
 ) (*ChainConfig, error) {
 	chain := inputCfg.Chain
 
+	explorerDetails, err := b.findExplorerDetails(chain.ExplorerURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find explorer details for chain %s: %v", chain.ID, err)
+	}
+
 	config := &ChainConfig{
 		Name:             chain.Name,
 		ID:               chain.ID,
 		Type:             chain.Type,
 		Registry:         chain.Registry,
-		ExplorerURL:      chain.ExplorerURL,
+		ExplorerDetails:  explorerDetails,
 		Slip44:           chain.Slip44,
 		Bech32Prefix:     chain.Bech32Prefix,
 		IsBroker:         chain.IsBroker,
@@ -222,4 +229,35 @@ func (b *Builder) buildNativeTokens(tokens []input.TokenMeta, chainID string) []
 		})
 	}
 	return result
+}
+
+func (b *Builder) findExplorerDetails(explorerURL string) (ExplorerDetails, error) {
+	// If the explorer supports multi-chain support, we need to return the details of the explorer
+	// because usually the chain name or id is located at the end of the url the human dev should enter
+
+	urlParts := strings.Split(strings.TrimPrefix(explorerURL, "https://"), "/")
+	domain := urlParts[0]
+	for _, explorer := range b.allowedExplorers {
+		explorerBaseURL := strings.TrimPrefix(explorer.BaseURL, "https://")
+		explorerBaseURLParts := strings.Split(explorerBaseURL, "/")
+		explorerDomain := explorerBaseURLParts[0]
+		if explorerDomain == domain && explorer.MultiChainSupport {
+			// If this is the case than slice containing the urlParts the chain identifier should be on [1]
+			chainIdentifier := urlParts[1]
+			addressPath := strings.Replace(explorer.AccountPath, "{chain_name}", chainIdentifier, 1)
+			transactionPath := strings.Replace(explorer.TransactionPath, "{chain_name}", chainIdentifier, 1)
+			return ExplorerDetails{
+				Url:             explorer.BaseURL,
+				AccountPath:     addressPath,
+				TransactionPath: transactionPath,
+			}, nil
+		} else if explorerDomain == domain && !explorer.MultiChainSupport {
+			return ExplorerDetails{
+				Url:             explorer.BaseURL,
+				AccountPath:     explorer.AccountPath,
+				TransactionPath: explorer.TransactionPath,
+			}, nil
+		}
+	}
+	return ExplorerDetails{}, fmt.Errorf("explorer not found for chain %s", explorerURL)
 }
