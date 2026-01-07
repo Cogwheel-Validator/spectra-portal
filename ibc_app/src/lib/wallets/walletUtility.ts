@@ -3,7 +3,6 @@ import { type UnifiedWalletProvider, WalletType } from "./walletProvider";
  * Utility functions for detecting and accessing different Cosmos wallet providers
  */
 
-
 /**
  * Get the wallet provider from the window object based on wallet type
  * @param walletType The type of wallet to get

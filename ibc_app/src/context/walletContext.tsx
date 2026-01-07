@@ -16,7 +16,10 @@ import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import type { ClientChain } from "@/components/modules/tomlTypes";
 import { getRandomHealthyRpc } from "@/lib/apiQueries/featchHealthyEndpoint";
-import { MsgSplitRouteSwapExactAmountIn, MsgSwapExactAmountIn } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/tx";
+import {
+    MsgSplitRouteSwapExactAmountIn,
+    MsgSwapExactAmountIn,
+} from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/tx";
 import { type WalletConnectionState, WalletType } from "@/lib/wallets/walletProvider";
 import { getWalletProviderAsync } from "@/lib/wallets/walletUtility";
 
@@ -60,24 +63,24 @@ interface WalletContextType {
     isConnected: boolean;
     chains: ClientChain[];
     walletType: WalletType | null;
-    
+
     // Chain queries
     getAddress: (chainId: string) => string | null;
     getChainConfig: (chainId: string) => ClientChain | null;
     isConnectedToChain: (chainId: string) => boolean;
-    
+
     // Connection management
     connection: {
         connect: (chainConfigs: ClientChain[], walletType?: WalletType) => Promise<void>;
         disconnect: (chainIds?: string[]) => void;
         suggestChain: (chainConfigs: ClientChain[], walletType?: WalletType) => Promise<void>;
     };
-    
+
     // Generic transaction method - handles ALL transaction types
     sendTransaction: (
         chainId: string,
         messages: EncodeObject[],
-        options?: TransactionOptions
+        options?: TransactionOptions,
     ) => Promise<TransactionResult>;
 }
 
@@ -111,19 +114,28 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const chains = Array.from(connections.values()).map((conn) => conn.chainConfig);
 
     // Helper to get address for a specific chain
-    const getAddress = useCallback((chainId: string): string | null => {
-        return connections.get(chainId)?.address || null;
-    }, [connections]);
+    const getAddress = useCallback(
+        (chainId: string): string | null => {
+            return connections.get(chainId)?.address || null;
+        },
+        [connections],
+    );
 
     // Helper to get chain config for a specific chain
-    const getChainConfig = useCallback((chainId: string): ClientChain | null => {
-        return connections.get(chainId)?.chainConfig || null;
-    }, [connections]);
+    const getChainConfig = useCallback(
+        (chainId: string): ClientChain | null => {
+            return connections.get(chainId)?.chainConfig || null;
+        },
+        [connections],
+    );
 
     // Helper to check if connected to a specific chain
-    const isConnectedToChain = useCallback((chainId: string): boolean => {
-        return connections.has(chainId);
-    }, [connections]);
+    const isConnectedToChain = useCallback(
+        (chainId: string): boolean => {
+            return connections.has(chainId);
+        },
+        [connections],
+    );
 
     // Persist wallet connection state per chain
     const saveWalletState = (walletData: WalletConnectionState & { chainConfig: ClientChain }) => {
@@ -136,10 +148,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
     const loadAllWalletStates = useCallback(() => {
         if (typeof window === "undefined") return [];
-        
+
         const savedStates: (WalletConnectionState & { chainConfig: ClientChain })[] = [];
         const savedWalletType = localStorage.getItem("spectra_ibc_wallet_type");
-        
+
         if (!savedWalletType) return [];
 
         for (let i = 0; i < localStorage.length; i++) {
@@ -155,7 +167,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
         }
-        
+
         return savedStates;
     }, []);
 
@@ -193,7 +205,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     });
                     return next;
                 });
-                
+
                 if (!walletType) {
                     setWalletType(savedState.walletType);
                 }
@@ -215,7 +227,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 await Promise.allSettled(
-                    savedStates.map((savedState) => autoReconnectToChain(savedState))
+                    savedStates.map((savedState) => autoReconnectToChain(savedState)),
                 );
             } catch (error) {
                 console.log("Auto-reconnect failed:", error);
@@ -234,7 +246,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
             for (const chainConfig of chainConfigs) {
                 const keplr = chainConfig.keplr_chain_config;
-                
+
                 const keplrChainInfo = {
                     chainId: keplr.chain_id,
                     chainName: keplr.chain_name,
@@ -267,11 +279,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                             high: cur.gas_price_step.high,
                         },
                     })),
-                    stakeCurrency: keplr.currencies[0] ? {
-                        coinDenom: keplr.currencies[0].coin_denom,
-                        coinMinimalDenom: keplr.currencies[0].coin_minimal_denom,
-                        coinDecimals: keplr.currencies[0].coin_decimals,
-                    } : undefined,
+                    stakeCurrency: keplr.currencies[0]
+                        ? {
+                              coinDenom: keplr.currencies[0].coin_denom,
+                              coinMinimalDenom: keplr.currencies[0].coin_minimal_denom,
+                              coinDecimals: keplr.currencies[0].coin_decimals,
+                          }
+                        : undefined,
                 };
 
                 await wallet.experimentalSuggestChain(keplrChainInfo);
@@ -282,7 +296,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const connect = async (chainConfigs: ClientChain[], walletTypeParam: WalletType = WalletType.KEPLR) => {
+    const connect = async (
+        chainConfigs: ClientChain[],
+        walletTypeParam: WalletType = WalletType.KEPLR,
+    ) => {
         try {
             const existingWalletType = localStorage.getItem("spectra_ibc_wallet_type");
             if (existingWalletType && existingWalletType !== walletTypeParam) {
@@ -293,11 +310,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
             const wallet = await getWalletFromProvider(walletTypeParam);
             const newConnections = new Map(connections);
-            
+
             for (const chainConfig of chainConfigs) {
                 try {
                     const chainId = chainConfig.id;
-                    
+
                     try {
                         await wallet.enable(chainId);
                     } catch {
@@ -364,9 +381,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const sendTransaction = async (
         chainId: string,
         messages: EncodeObject[],
-        options: TransactionOptions = {}
+        options: TransactionOptions = {},
     ): Promise<TransactionResult> => {
-        const { fee = "auto", memo = "", gasAdjustment = 1.5, chainConfig: chainConfigParam } = options;
+        const {
+            fee = "auto",
+            memo = "",
+            gasAdjustment = 1.5,
+            chainConfig: chainConfigParam,
+        } = options;
 
         // Get connection for this chain
         const connection = connections.get(chainId);
@@ -478,4 +500,3 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         </WalletContext.Provider>
     );
 };
-

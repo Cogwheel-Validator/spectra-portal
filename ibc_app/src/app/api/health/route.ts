@@ -23,8 +23,10 @@ const HEALTH_CHECK_TIMEOUT = 2000;
 // Get the chain paths ( chain paths = chainId ) with it's own RPCs and APIs endpoints
 const chainPaths: Map<string, { apis: string[]; rpcs: string[] }> = new Map();
 fullClientConfig.config.chains.forEach((chain) => {
-    chainPaths.set(chain.id, 
-        { apis: fullClientConfig.getChainAPIs(chain.id), rpcs: fullClientConfig.getChainRPCs(chain.id) });
+    chainPaths.set(chain.id, {
+        apis: fullClientConfig.getChainAPIs(chain.id),
+        rpcs: fullClientConfig.getChainRPCs(chain.id),
+    });
 });
 /**
  * Check if an RPC endpoint is healthy
@@ -60,7 +62,8 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
     const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
 
     try {
-        const responses = await Promise.all([fetch(`${api}/cosmos/base/tendermint/v1beta1/node_info`, {
+        const responses = await Promise.all([
+            fetch(`${api}/cosmos/base/tendermint/v1beta1/node_info`, {
                 method: "GET",
                 signal: controller.signal,
                 headers: {
@@ -109,8 +112,11 @@ async function checkEndpointsHealth(
                 if (lastBlockHeight > highestBlockHeight) {
                     highestBlockHeight = lastBlockHeight;
                 }
-                const isHealthy = (
-                    version !== "" && abciAppName !== "" && lastBlockHeight > 0 && Math.abs(highestBlockHeight - lastBlockHeight) <= acceptableHeightDiff);
+                const isHealthy =
+                    version !== "" &&
+                    abciAppName !== "" &&
+                    lastBlockHeight > 0 &&
+                    Math.abs(highestBlockHeight - lastBlockHeight) <= acceptableHeightDiff;
                 if (isHealthy) {
                     healthyEndpoints[index] = endpoint;
                 }
@@ -124,10 +130,13 @@ async function checkEndpointsHealth(
         }),
     );
 
-    logger.info(`Checked ${endpoints.length} endpoints, ${healthyEndpoints.filter((r) => r !== undefined).length} healthy`, {
-        endpoints,
-        healthyEndpoints,
-    });
+    logger.info(
+        `Checked ${endpoints.length} endpoints, ${healthyEndpoints.filter((r) => r !== undefined).length} healthy`,
+        {
+            endpoints,
+            healthyEndpoints,
+        },
+    );
 
     return healthyEndpoints;
 }

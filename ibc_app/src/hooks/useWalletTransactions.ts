@@ -2,14 +2,17 @@ import type { EncodeObject } from "@cosmjs/proto-signing";
 import { useCallback } from "react";
 import type { TransactionOptions, TransactionResult } from "@/context/walletContext";
 import { useWallet } from "@/context/walletContext";
-import type { SwapAmountInRoute, SwapAmountInSplitRoute } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/swap_route";
-import type { 
-    MsgSplitRouteSwapExactAmountIn, 
-    MsgSwapExactAmountIn 
+import type {
+    SwapAmountInRoute,
+    SwapAmountInSplitRoute,
+} from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/swap_route";
+import type {
+    MsgSplitRouteSwapExactAmountIn,
+    MsgSwapExactAmountIn,
 } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/tx";
 /**
  * Hook for IBC transfers
- * TODO: this is only for simple IBC transfers, for anything that is more complex containing wasm and 
+ * TODO: this is only for simple IBC transfers, for anything that is more complex containing wasm and
  * PFM module needs to be refined to accept from the Pathfinder RPC
  */
 export const useIBCTransfer = () => {
@@ -25,18 +28,14 @@ export const useIBCTransfer = () => {
                 memo?: string;
                 timeoutMinutes?: number;
                 sourcePort?: string;
-            }
+            },
         ): Promise<TransactionResult> => {
             const sender = getAddress(sourceChainId);
             if (!sender) {
                 throw new Error(`Not connected to chain ${sourceChainId}`);
             }
 
-            const {
-                memo = "",
-                timeoutMinutes = 10,
-                sourcePort = "transfer",
-            } = options || {};
+            const { memo = "", timeoutMinutes = 10, sourcePort = "transfer" } = options || {};
 
             // Calculate timeout timestamp (current time + timeout minutes)
             const timeoutTimestamp = `${(Date.now() + timeoutMinutes * 60 * 1000).toString()}000000`;
@@ -58,9 +57,12 @@ export const useIBCTransfer = () => {
                 },
             };
 
-            return sendTransaction(sourceChainId, [msg], { memo: "Spectra IBC Transfer", ...options });
+            return sendTransaction(sourceChainId, [msg], {
+                memo: "Spectra IBC Transfer",
+                ...options,
+            });
         },
-        [sendTransaction, getAddress]
+        [sendTransaction, getAddress],
     );
 
     return { transfer };
@@ -77,11 +79,11 @@ export const useOsmosisSwap = () => {
             tokenIn: { denom: string; amount: string },
             routes: SwapAmountInRoute[],
             tokenOutMinAmount: string,
-            options?: TransactionOptions
+            options?: TransactionOptions,
         ): Promise<TransactionResult> => {
             const chainId = "osmosis-1";
             const sender = getAddress(chainId);
-            
+
             if (!sender) {
                 throw new Error("Not connected to Osmosis");
             }
@@ -103,7 +105,7 @@ export const useOsmosisSwap = () => {
                 ...options,
             });
         },
-        [sendTransaction, getAddress]
+        [sendTransaction, getAddress],
     );
 
     const swapSplitRoute = useCallback(
@@ -111,11 +113,11 @@ export const useOsmosisSwap = () => {
             tokenIn: { denom: string; amount: string },
             routes: SwapAmountInSplitRoute[],
             tokenOutMinAmount: string,
-            options?: TransactionOptions
+            options?: TransactionOptions,
         ): Promise<TransactionResult> => {
             const chainId = "osmosis-1";
             const sender = getAddress(chainId);
-            
+
             if (!sender) {
                 throw new Error("Not connected to Osmosis");
             }
@@ -137,11 +139,11 @@ export const useOsmosisSwap = () => {
                 ...options,
             });
         },
-        [sendTransaction, getAddress]
+        [sendTransaction, getAddress],
     );
 
-    return { 
-        swapExactAmountIn, 
+    return {
+        swapExactAmountIn,
         swapSplitRoute,
         isConnected: isConnectedToChain("osmosis-1"),
     };
@@ -159,7 +161,7 @@ export const useCosmosTransactions = () => {
             validatorAddress: string,
             amount: string,
             denom: string,
-            options?: TransactionOptions
+            options?: TransactionOptions,
         ): Promise<TransactionResult> => {
             const delegator = getAddress(chainId);
             if (!delegator) {
@@ -177,7 +179,7 @@ export const useCosmosTransactions = () => {
 
             return sendTransaction(chainId, [msg], options);
         },
-        [sendTransaction, getAddress]
+        [sendTransaction, getAddress],
     );
 
     const undelegate = useCallback(
@@ -186,7 +188,7 @@ export const useCosmosTransactions = () => {
             validatorAddress: string,
             amount: string,
             denom: string,
-            options?: TransactionOptions
+            options?: TransactionOptions,
         ): Promise<TransactionResult> => {
             const delegator = getAddress(chainId);
             if (!delegator) {
@@ -204,7 +206,7 @@ export const useCosmosTransactions = () => {
 
             return sendTransaction(chainId, [msg], options);
         },
-        [sendTransaction, getAddress]
+        [sendTransaction, getAddress],
     );
 
     const redelegate = useCallback(
@@ -214,7 +216,7 @@ export const useCosmosTransactions = () => {
             dstValidatorAddress: string,
             amount: string,
             denom: string,
-            options?: TransactionOptions
+            options?: TransactionOptions,
         ): Promise<TransactionResult> => {
             const delegator = getAddress(chainId);
             if (!delegator) {
@@ -233,14 +235,14 @@ export const useCosmosTransactions = () => {
 
             return sendTransaction(chainId, [msg], options);
         },
-        [sendTransaction, getAddress]
+        [sendTransaction, getAddress],
     );
 
     const withdrawRewards = useCallback(
         async (
             chainId: string,
             validatorAddresses: string[],
-            options?: TransactionOptions
+            options?: TransactionOptions,
         ): Promise<TransactionResult> => {
             const delegator = getAddress(chainId);
             if (!delegator) {
@@ -261,7 +263,7 @@ export const useCosmosTransactions = () => {
 
             return sendTransaction(chainId, msgs, options);
         },
-        [sendTransaction, getAddress]
+        [sendTransaction, getAddress],
     );
 
     const vote = useCallback(
@@ -269,7 +271,7 @@ export const useCosmosTransactions = () => {
             chainId: string,
             proposalId: string,
             option: number,
-            options?: TransactionOptions
+            options?: TransactionOptions,
         ): Promise<TransactionResult> => {
             const voter = getAddress(chainId);
             if (!voter) {
@@ -287,7 +289,7 @@ export const useCosmosTransactions = () => {
 
             return sendTransaction(chainId, [msg], options);
         },
-        [sendTransaction, getAddress]
+        [sendTransaction, getAddress],
     );
 
     return {
@@ -310,13 +312,12 @@ export const useCustomTransaction = () => {
         async (
             chainId: string,
             messages: EncodeObject[],
-            options?: TransactionOptions
+            options?: TransactionOptions,
         ): Promise<TransactionResult> => {
             return sendTransaction(chainId, messages, options);
         },
-        [sendTransaction]
+        [sendTransaction],
     );
 
     return { send };
 };
-
