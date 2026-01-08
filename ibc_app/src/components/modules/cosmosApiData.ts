@@ -49,12 +49,19 @@ export type TransactionRequestByEvents = {
 // Transaction Events Schema
 export const TransactionEventsSchema = z.object({
     type: z.string(),
-    attributes: z.array(
-        z.object({ key: z.string(), value: z.string(), index: z.boolean() }),
-    ),
-})
+    attributes: z.array(z.object({ key: z.string(), value: z.string(), index: z.boolean() })),
+});
 
 export type TransactionEvents = z.infer<typeof TransactionEventsSchema>;
+
+// Transaction Message Schema
+export const TransactionMessageSchema = z.object({
+    "@type": z.string(),
+    // there are more data depending on which message type it is
+    // will add more data if needed
+});
+
+export type TransactionMessage = z.infer<typeof TransactionMessageSchema>;
 
 // Transaction Response Schema
 export const TransactionResponseSchema = z.object({
@@ -71,23 +78,16 @@ export const TransactionResponseSchema = z.object({
             tx: z.object({
                 type_url: z.string(),
                 body: z.object({
-                    messages: z.array(
-                        z.object({
-                            "@type": z.string(),
-                        }),
-                    ),
+                    messages: z.array(TransactionMessageSchema),
                 }),
             }),
             timestamp: z.string(),
-            events: z.array(
-                TransactionEventsSchema,
-            ),
+            events: z.array(TransactionEventsSchema),
         }),
     ),
     pagination: z.object({ next_key: z.string(), total: z.string() }),
     total: z.string(),
 });
-
 
 export type TransactionResponse = z.infer<typeof TransactionResponseSchema>;
 
@@ -126,12 +126,12 @@ function getTransactionDataByHash(
 export function getTxMessages(
     tx: TransactionResponse,
     hash: string,
-): TransactionResponse["tx_responses"][number]["tx"]["body"]["messages"] | undefined {
+): TransactionMessage[] | undefined {
     const txData = getTransactionDataByHash(tx, hash);
     if (!txData) {
         return undefined;
     }
-    return txData.tx.body.messages;
+    return txData.tx.body.messages as TransactionMessage[];
 }
 
 /**
@@ -163,12 +163,12 @@ export function getTxTimestamp(tx: TransactionResponse): string {
 export function getTxEvents(
     tx: TransactionResponse,
     hash: string,
-): TransactionResponse["tx_responses"][number]["events"] | undefined {
+): TransactionEvents[] | undefined {
     const txData = getTransactionDataByHash(tx, hash);
     if (!txData) {
         return undefined;
     }
-    return txData.events;
+    return txData.events as TransactionEvents[];
 }
 
 /**
@@ -178,11 +178,11 @@ export function getTxEvents(
  * @returns The array containing the message types for the transaction, empty array if the transaction is not found
  */
 export function getTxMessageTypes(tx: TransactionResponse, hash: string): string[] {
-    const txData = getTransactionDataByHash(tx, hash);
+    const txData = getTxMessages(tx, hash);
     if (!txData) {
         return [];
     }
-    return txData.tx.body.messages.map((message) => message["@type"]);
+    return txData.map((message) => message["@type"]);
 }
 
 /**
@@ -190,7 +190,36 @@ export function getTxMessageTypes(tx: TransactionResponse, hash: string): string
  * @param events The events array
  * @returns The fungible token packet, undefined if the fungible token packet is not found
  */
-export function getFungibleTokenPacket(events: TransactionEvents[]): TransactionEvents | undefined  {
+export function getFungibleTokenPacket(events: TransactionEvents[]): TransactionEvents | undefined {
     // fungible token packet is the event that contains the fungible token packet data
-    return events.find((event) => event.type === "fungible_token_packet") ?? undefined;
+    return events.find((event) => event.type === "fungible_token_packet") as
+        | TransactionEvents
+        | undefined;
+}
+
+/**
+ * Get the acknowledge packet event from the events
+ *
+ * Used only if the tx message contains /ibc.core.client.v1.MsgUpdateClient message type and
+ * the /ibc.core.channel.v1.MsgAcknowledgement message type
+ * @param events The events array
+ * @returns The acknowledge packet event, undefined if the acknowledge packet event is not found
+ */
+export function getAcknowledgePacketEvent(
+    events: TransactionEvents[],
+): TransactionEvents | undefined {
+    // acknowledge_packet is usually tied to the IBC message acknowledgment
+    return events.find((event) => event.type === "acknowledge_packet") as
+        | TransactionEvents
+        | undefined;
+}
+
+/**
+ * Get the recv packet event from the events
+ * @param events The events array
+ * @returns The recv packet event, undefined if the recv packet event is not found
+ */
+export function getRecvPacketEvent(events: TransactionEvents[]): TransactionEvents | undefined {
+    // recv_packet is usually tied to the IBC message receive
+    return events.find((event) => event.type === "recv_packet") as TransactionEvents | undefined;
 }

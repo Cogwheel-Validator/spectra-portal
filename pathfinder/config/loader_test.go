@@ -38,7 +38,7 @@ func TestValidateInputConfig(t *testing.T) {
 		t.Fatalf("failed to load chain config: %v", err)
 	}
 
-	validator := input.NewValidator(input.WithSkipNetworkCheck(true))
+	validator := input.NewValidator([]input.AllowedExplorer{}, input.WithSkipNetworkCheck(true))
 	result := validator.Validate(chainConfig)
 
 	if !result.IsValid {
@@ -55,7 +55,7 @@ func TestBadChainConfigValidation(t *testing.T) {
 	}
 
 	// But validation should fail due to missing required fields
-	validator := input.NewValidator(input.WithSkipNetworkCheck(true))
+	validator := input.NewValidator([]input.AllowedExplorer{}, input.WithSkipNetworkCheck(true))
 	result := validator.Validate(chainConfig)
 
 	if result.IsValid {

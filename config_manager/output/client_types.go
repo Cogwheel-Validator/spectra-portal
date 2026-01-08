@@ -1,7 +1,6 @@
 package output
 
 import (
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/enriched"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
 )
 
@@ -36,7 +35,7 @@ type ClientChain struct {
 	Slip44 int `json:"slip44" toml:"slip44"`
 
 	// Block explorer details
-	ExplorerDetails enriched.ExplorerDetails `json:"explorer_details" toml:"explorer_details"`
+	ExplorerDetails ExplorerDetails `json:"explorer_details" toml:"explorer_details"`
 
 	// URL/path to chain logo
 	ChainLogo string `json:"chain_logo,omitempty" toml:"chain_logo,omitempty"`
@@ -64,6 +63,13 @@ type ClientChain struct {
 
 	// Chains this chain can send tokens to
 	ConnectedChains []ConnectedChainInfo `json:"connected_chains" toml:"connected_chains"`
+}
+
+// Explorer details for the client app such as url link to account and transaction
+type ExplorerDetails struct {
+	BaseUrl         string `json:"base_url" toml:"base_url"`
+	AccountPath     string `json:"account_path" toml:"account_path"`
+	TransactionPath string `json:"transaction_path" toml:"transaction_path"`
 }
 
 // ClientEndpoint represents an API endpoint for the frontend.

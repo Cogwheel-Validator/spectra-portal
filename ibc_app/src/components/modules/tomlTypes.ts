@@ -10,7 +10,8 @@ export type ClientChain = {
     id: string;
     bech32_prefix: string;
     slip44: number;
-    explorer_url: string;
+    explorer_details: ExplorerDetails;
+    cosmos_sdk_version: string;
     chain_logo?: string;
     is_dex: boolean;
     rpc_endpoints: ClientEndpoint[];
@@ -19,6 +20,12 @@ export type ClientChain = {
     ibc_tokens: ClientToken[];
     connected_chains: ConnectedChainInfo[];
     keplr_chain_config: KeplrChainConfig;
+};
+
+export type ExplorerDetails = {
+    base_url: string;
+    transaction_path: string;
+    account_path: string;
 };
 
 export type ClientEndpoint = {

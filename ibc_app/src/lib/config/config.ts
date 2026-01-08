@@ -67,7 +67,7 @@ class FullClientConfig {
         this.chains = new Map(config.chains.map((chain) => [chain.id, chain]));
         this.tokenSummaries = new Map(config.all_tokens.map((token) => [token.base_denom, token]));
         this.config = config;
-    }  
+    }
 
     private getChainById(chainId: string): ClientChain | undefined {
         return this.chains.get(chainId);
