@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { Coin } from "@/lib/generated/osmosis/cosmos/base/v1beta1/coin";
+import type { SwapAmountInRoute } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/swap_route";
 
 // ===================================================================
 // All of the necessary requests and responses for the Cosmos REST API
@@ -55,7 +57,7 @@ export const TransactionEventsSchema = z.object({
 export type TransactionEvents = z.infer<typeof TransactionEventsSchema>;
 
 // Transaction Message Schema
-export const TransactionMessageSchema = z.object({
+export const TransactionMessageSchema = z.looseObject({
     "@type": z.string(),
     // there are more data depending on which message type it is
     // will add more data if needed
@@ -222,4 +224,46 @@ export function getAcknowledgePacketEvent(
 export function getRecvPacketEvent(events: TransactionEvents[]): TransactionEvents | undefined {
     // recv_packet is usually tied to the IBC message receive
     return events.find((event) => event.type === "recv_packet") as TransactionEvents | undefined;
+}
+
+/**
+ * Get the swap in message from the messages array
+ * @param messages The messages array
+ * @returns The swap in message, undefined if the swap in message is not found
+ */
+export function getSwapInMessage(messages: TransactionMessage[]): TransactionMessage | undefined {
+    return messages.find(
+        (message) => message["@type"] === "/osmosis.poolmanager.v1beta1.MsgSwapExactAmountIn",
+    ) as TransactionMessage | undefined;
+}
+
+export type SwapInMessageDetails = {
+    sender: string;
+    routes: SwapAmountInRoute[];
+    tokenIn: Coin;
+    tokenOutMinAmount: string;
+};
+
+export function getSwapInMessageDetails(
+    messages: TransactionMessage[],
+): SwapInMessageDetails | undefined {
+    const swapInMessage = getSwapInMessage(messages);
+    if (!swapInMessage) {
+        return undefined;
+    }
+
+    const routes = swapInMessage.routes as { pool_id: string; token_out_denom: string }[];
+    const tokenIn = swapInMessage.token_in as { denom: string; amount: string };
+    return {
+        sender: swapInMessage.sender,
+        routes: routes.map((route) => ({
+            poolId: Number(route.pool_id),
+            tokenOutDenom: route.token_out_denom,
+        })),
+        tokenIn: {
+            denom: tokenIn.denom,
+            amount: tokenIn.amount,
+        },
+        tokenOutMinAmount: swapInMessage.token_out_min_amount,
+    } as SwapInMessageDetails;
 }
