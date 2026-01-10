@@ -4,6 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import type { ClientChain, ClientConfig, ClientToken } from "@/components/modules/tomlTypes";
 import ChainSection from "@/components/ui/send/chainSection";
+import WalletConnect from "@/components/ui/wallet/walletConnect";
+import { useWallet } from "@/context/walletContext";
 import { type SolveRouteResponse, solverClient } from "@/lib/solver-client";
 
 interface SendUIOptimizedProps {
@@ -32,6 +34,7 @@ export default function SendUIOptimized({
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
+    const { isConnectedToChain } = useWallet();
 
     const [sendChain, setSendChain] = useState(initialSendChain);
     const [receiveChain, setReceiveChain] = useState(initialReceiveChain);
@@ -197,6 +200,17 @@ export default function SendUIOptimized({
             return;
         }
 
+        // Check wallet connections
+        if (!isConnectedToChain(sendChain)) {
+            console.error("Not connected to send chain");
+            return;
+        }
+
+        if (!isConnectedToChain(receiveChain)) {
+            console.error("Not connected to receive chain");
+            return;
+        }
+
         // TODO: Implement transaction signing with route info
         console.log("Sign transaction with route:", {
             sendChain,
@@ -208,9 +222,31 @@ export default function SendUIOptimized({
         });
     };
 
+    // Get required chains for wallet connection
+    const requiredChains = useMemo(() => {
+        const chains: ClientChain[] = [];
+        if (sendChainData) chains.push(sendChainData);
+        if (receiveChainData && receiveChainData.id !== sendChainData?.id) {
+            chains.push(receiveChainData);
+        }
+        return chains;
+    }, [sendChainData, receiveChainData]);
+
+    // Check if wallet is connected to required chains
+    const isWalletReady = useMemo(() => {
+        if (!sendChain || !receiveChain) return false;
+        return isConnectedToChain(sendChain) && isConnectedToChain(receiveChain);
+    }, [sendChain, receiveChain, isConnectedToChain]);
+
     return (
         <div className="max-w-4xl mx-auto py-20 space-y-6">
-            <h1 className="text-3xl font-bold text-center">Transfer Assets</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold">Transfer Assets</h1>
+                <WalletConnect
+                    requiredChains={requiredChains}
+                    availableChains={config.chains}
+                />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* From Chain Section with chain + token selection */}
@@ -345,13 +381,22 @@ export default function SendUIOptimized({
                             </div>
                         </div>
                         <div className="card-actions justify-end mt-4">
+                            {!isWalletReady ? (
+                                <div className="text-warning text-sm">
+                                    ⚠ Please connect wallet to both chains
+                                </div>
+                            ) : null}
                             <button
                                 type="button"
                                 className="btn btn-secondary"
                                 onClick={handleSignTransaction}
-                                disabled={isPending || !routeInfo}
+                                disabled={isPending || !routeInfo || !isWalletReady}
                             >
-                                {isPending ? "Processing..." : "Sign Transaction"}
+                                {isPending
+                                    ? "Processing..."
+                                    : !isWalletReady
+                                      ? "Connect Wallet"
+                                      : "Sign Transaction"}
                             </button>
                         </div>
                     </div>

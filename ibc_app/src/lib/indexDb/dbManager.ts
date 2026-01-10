@@ -195,7 +195,7 @@ export function UpdateTransactionStatus(db: IDBDatabase, update: TransactionUpda
         };
 
         getRequest.onerror = () => {
-            console.error("Failed to fetch transaction for update", getRequest.error);
+            logger.error("Failed to fetch transaction for update", getRequest.error);
             reject(new Error("Failed to fetch transaction"));
         };
     });

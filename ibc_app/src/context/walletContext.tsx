@@ -56,18 +56,20 @@ export interface TransactionOptions {
 }
 
 /**
- * Simplified Wallet Context Interface - Only 6 core methods!
+ * Simplified Wallet Context Interface
  */
 interface WalletContextType {
     // State (read-only)
     isConnected: boolean;
     chains: ClientChain[];
     walletType: WalletType | null;
+    connectedChainIds: string[]; // Array of connected chain IDs
 
     // Chain queries
     getAddress: (chainId: string) => string | null;
     getChainConfig: (chainId: string) => ClientChain | null;
     isConnectedToChain: (chainId: string) => boolean;
+    getAllConnectedChains: () => ChainConnection[]; // Get all connection info
 
     // Connection management
     connection: {
@@ -112,6 +114,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     // Derived state
     const isConnected = connections.size > 0;
     const chains = Array.from(connections.values()).map((conn) => conn.chainConfig);
+    const connectedChainIds = Array.from(connections.keys());
 
     // Helper to get address for a specific chain
     const getAddress = useCallback(
@@ -136,6 +139,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         },
         [connections],
     );
+
+    // Get all connected chains info
+    const getAllConnectedChains = useCallback((): ChainConnection[] => {
+        return Array.from(connections.values());
+    }, [connections]);
 
     // Persist wallet connection state per chain
     const saveWalletState = (walletData: WalletConnectionState & { chainConfig: ClientChain }) => {
@@ -311,34 +319,82 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
             const wallet = await getWalletFromProvider(walletTypeParam);
             const newConnections = new Map(connections);
 
-            for (const chainConfig of chainConfigs) {
-                try {
-                    const chainId = chainConfig.id;
+            // Extract all chain IDs
+            const chainIds = chainConfigs.map(config => config.id);
+            
+            // Try to enable all chains at once
+            let chainsToSuggest: ClientChain[] = [];
+            try {
+                await wallet.enable(chainIds);
+            } catch {
+                console.log("Some chains not found, identifying which chains need suggesting...");
+                
+                // Test each chain individually to find which ones need suggesting
+                const enableResults = await Promise.allSettled(
+                    chainConfigs.map(async (config) => {
+                        try {
+                            await wallet.enable(config.id);
+                            return { success: true, chainConfig: config };
+                        } catch {
+                            return { success: false, chainConfig: config };
+                        }
+                    })
+                );
 
+                // Collect chains that failed and need to be suggested
+                chainsToSuggest = enableResults
+                    .filter(result => result.status === 'fulfilled' && !result.value.success)
+                    .map(result => result.status === 'fulfilled' ? result.value.chainConfig : null)
+                    .filter((config): config is ClientChain => config !== null);
+
+                if (chainsToSuggest.length > 0) {
+                    console.log(`Suggesting ${chainsToSuggest.length} chain(s)...`);
+                    // Suggest all missing chains at once
+                    await suggestChain(chainsToSuggest, walletTypeParam);
+                    
+                    // Enable the newly suggested chains (single popup for all)
+                    const newChainIds = chainsToSuggest.map(config => config.id);
+                    await wallet.enable(newChainIds);
+                }
+            }
+
+            // Get keys for all chains in parallel
+            const keyResults = await Promise.allSettled(
+                chainConfigs.map(async (chainConfig) => {
                     try {
-                        await wallet.enable(chainId);
-                    } catch {
-                        console.log("Chain not found, suggesting chain...");
-                        await suggestChain([chainConfig], walletTypeParam);
-                        await wallet.enable(chainId);
+                        const key = await wallet.getKey(chainConfig.id);
+                        return {
+                            chainId: chainConfig.id,
+                            address: key.bech32Address,
+                            chainConfig: chainConfig,
+                            key,
+                        };
+                    } catch (error) {
+                        console.error(`Failed to get key for chain ${chainConfig.id}:`, error);
+                        throw error;
                     }
+                })
+            );
 
-                    const key = await wallet.getKey(chainId);
-
+            // Process successful connections
+            for (const result of keyResults) {
+                if (result.status === 'fulfilled') {
+                    const { chainId, address, chainConfig } = result.value;
+                    
                     newConnections.set(chainId, {
-                        chainId: chainId,
-                        address: key.bech32Address,
-                        chainConfig: chainConfig,
+                        chainId,
+                        address,
+                        chainConfig,
                     });
 
                     saveWalletState({
                         walletType: walletTypeParam,
-                        address: key.bech32Address,
-                        chainId: chainId,
-                        chainConfig: chainConfig,
+                        address,
+                        chainId,
+                        chainConfig,
                     });
-                } catch (error) {
-                    console.error(`Failed to connect to chain ${chainConfig.id}:`, error);
+                } else {
+                    console.error('Failed to connect to chain:', result.reason);
                 }
             }
 
@@ -485,9 +541,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                 isConnected,
                 chains,
                 walletType,
+                connectedChainIds,
                 getAddress,
                 getChainConfig,
                 isConnectedToChain,
+                getAllConnectedChains,
                 connection: {
                     connect,
                     disconnect,

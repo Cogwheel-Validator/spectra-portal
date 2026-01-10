@@ -126,7 +126,7 @@ export default function ChainSection(props: ChainSelectionProps): ReactElement {
                         <h2 className="card-title">{title}</h2>
                         {chainData ? (
                             <Link
-                                href={chainData.explorer_url}
+                                href={chainData.explorer_details.base_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="tooltip"

@@ -3,6 +3,8 @@ import { Expletus_Sans, Roboto } from "next/font/google";
 import "./globals.css";
 import FooterInterface from "@/components/ui/footer/footerInterface";
 import MenuInterface from "@/components/ui/menu/menuInterface";
+import { TanstackProvider } from "@/context/tanstackProvider";
+import { WalletProvider } from "@/context/walletContext";
 
 const expletusSans = Expletus_Sans({
     variable: "--font-expletus-sans",
@@ -27,9 +29,13 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${expletusSans.variable} ${robotoFont.variable} antialiased`}>
-                <MenuInterface />
-                {children}
-                <FooterInterface />
+                <TanstackProvider>
+                    <WalletProvider>
+                        <MenuInterface />
+                            {children}
+                        <FooterInterface />
+                    </WalletProvider>
+                </TanstackProvider>
             </body>
         </html>
     );
