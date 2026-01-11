@@ -20,8 +20,7 @@ import {
     MsgSplitRouteSwapExactAmountIn,
     MsgSwapExactAmountIn,
 } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/tx";
-import { type WalletConnectionState, WalletType } from "@/lib/wallets/walletProvider";
-import { getWalletProviderAsync } from "@/lib/wallets/walletUtility";
+import { getWalletProviderAsync, type WalletConnectionState, WalletType } from "@/lib/wallets/walletUtility";
 
 // Polyfill Buffer for client-side usage
 if (typeof window !== "undefined") {
@@ -56,7 +55,22 @@ export interface TransactionOptions {
 }
 
 /**
- * Simplified Wallet Context Interface
+ * Wallet context type
+ * @interface WalletContextType
+ * @property {boolean} isConnected - True if connected to any chain
+ * @property {ClientChain[]} chains - All connected chain configs
+ * @property {WalletType | null} walletType - Current wallet (Keplr/Leap)
+ * @property {string[]} connectedChainIds - Array of connected chain IDs
+ * @property {function} getAddress - Get address for a specific chain
+ * @property {function} getChainConfig - Get chain config for a specific chain
+ * @property {function} isConnectedToChain - Check if connected to a specific chain
+ * @property {function} getAllConnectedChains - Get all connection info
+ * @property {object} connection - Connection management
+ * @property {function} connect - Connect to a chain
+ * @property {function} disconnect - Disconnect from a chain
+ * @property {function} suggestChain - Suggest a chain
+ * @property {function} sendTransaction - Send a transaction
+ * @returns {WalletContextType}
  */
 interface WalletContextType {
     // State (read-only)
@@ -320,15 +334,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
             const newConnections = new Map(connections);
 
             // Extract all chain IDs
-            const chainIds = chainConfigs.map(config => config.id);
-            
+            const chainIds = chainConfigs.map((config) => config.id);
+
             // Try to enable all chains at once
             let chainsToSuggest: ClientChain[] = [];
             try {
                 await wallet.enable(chainIds);
             } catch {
                 console.log("Some chains not found, identifying which chains need suggesting...");
-                
+
                 // Test each chain individually to find which ones need suggesting
                 const enableResults = await Promise.allSettled(
                     chainConfigs.map(async (config) => {
@@ -338,22 +352,24 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                         } catch {
                             return { success: false, chainConfig: config };
                         }
-                    })
+                    }),
                 );
 
                 // Collect chains that failed and need to be suggested
                 chainsToSuggest = enableResults
-                    .filter(result => result.status === 'fulfilled' && !result.value.success)
-                    .map(result => result.status === 'fulfilled' ? result.value.chainConfig : null)
+                    .filter((result) => result.status === "fulfilled" && !result.value.success)
+                    .map((result) =>
+                        result.status === "fulfilled" ? result.value.chainConfig : null,
+                    )
                     .filter((config): config is ClientChain => config !== null);
 
                 if (chainsToSuggest.length > 0) {
                     console.log(`Suggesting ${chainsToSuggest.length} chain(s)...`);
                     // Suggest all missing chains at once
                     await suggestChain(chainsToSuggest, walletTypeParam);
-                    
+
                     // Enable the newly suggested chains (single popup for all)
-                    const newChainIds = chainsToSuggest.map(config => config.id);
+                    const newChainIds = chainsToSuggest.map((config) => config.id);
                     await wallet.enable(newChainIds);
                 }
             }
@@ -373,14 +389,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                         console.error(`Failed to get key for chain ${chainConfig.id}:`, error);
                         throw error;
                     }
-                })
+                }),
             );
 
             // Process successful connections
             for (const result of keyResults) {
-                if (result.status === 'fulfilled') {
+                if (result.status === "fulfilled") {
                     const { chainId, address, chainConfig } = result.value;
-                    
+
                     newConnections.set(chainId, {
                         chainId,
                         address,
@@ -394,7 +410,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                         chainConfig,
                     });
                 } else {
-                    console.error('Failed to connect to chain:', result.reason);
+                    console.error("Failed to connect to chain:", result.reason);
                 }
             }
 

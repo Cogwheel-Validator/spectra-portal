@@ -32,7 +32,7 @@ export default function RootLayout({
                 <TanstackProvider>
                     <WalletProvider>
                         <MenuInterface />
-                            {children}
+                        {children}
                         <FooterInterface />
                     </WalletProvider>
                 </TanstackProvider>

@@ -242,10 +242,7 @@ export default function SendUIOptimized({
         <div className="max-w-4xl mx-auto py-20 space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold">Transfer Assets</h1>
-                <WalletConnect
-                    requiredChains={requiredChains}
-                    availableChains={config.chains}
-                />
+                <WalletConnect requiredChains={requiredChains} availableChains={config.chains} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -20,7 +20,8 @@ export default function WalletConnect({
 
     // Check if all required chains are connected
     const allRequiredConnected =
-        requiredChains.length === 0 || requiredChains.every((chain) => isConnectedToChain(chain.id));
+        requiredChains.length === 0 ||
+        requiredChains.every((chain) => isConnectedToChain(chain.id));
 
     // Get missing required chains
     const missingRequiredChains = requiredChains.filter((chain) => !isConnectedToChain(chain.id));

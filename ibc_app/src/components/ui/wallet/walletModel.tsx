@@ -6,8 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ClientChain } from "@/components/modules/tomlTypes";
 import { useWallet } from "@/context/walletContext";
-import { WALLET_INFO, WalletType } from "@/lib/wallets/walletProvider";
-import { getInstalledWallets } from "@/lib/wallets/walletUtility";
+import { getInstalledWallets, WALLET_INFO, WalletType } from "@/lib/wallets/walletUtility";
 
 interface WalletModalProps {
     isOpen: boolean;
@@ -35,7 +34,7 @@ export default function WalletModal({
     const [error, setError] = useState<string | null>(null);
     const [installedWallets, setInstalledWallets] = useState<WalletType[]>([]);
     const [selectedWallet, setSelectedWallet] = useState<WalletType | null>(null);
-    
+
     // Multi-chain selection state
     const [selectedChains, setSelectedChains] = useState<Set<string>>(new Set());
     const [showChainSelection, setShowChainSelection] = useState(false);
@@ -72,7 +71,7 @@ export default function WalletModal({
             // Get chain configs for selected chains
             const chainsToConnect: ClientChain[] = [];
             const allChains = [...requiredChains, ...availableChains];
-            
+
             for (const chainId of selectedChains) {
                 const chain = allChains.find((c) => c.id === chainId);
                 if (chain) {
@@ -128,14 +127,10 @@ export default function WalletModal({
     };
 
     // Check if all required chains are connected
-    const allRequiredConnected = requiredChains.every((chain) =>
-        isConnectedToChain(chain.id),
-    );
+    const allRequiredConnected = requiredChains.every((chain) => isConnectedToChain(chain.id));
 
     // Get missing required chains
-    const missingRequiredChains = requiredChains.filter(
-        (chain) => !isConnectedToChain(chain.id),
-    );
+    const missingRequiredChains = requiredChains.filter((chain) => !isConnectedToChain(chain.id));
 
     if (!isOpen) return null;
 
@@ -174,7 +169,9 @@ export default function WalletModal({
                             </p>
                             <ul className="text-xs space-y-1">
                                 {missingRequiredChains.map((chain) => (
-                                    <li className="list-disc list-inside" key={chain.id}>{chain.name}</li>
+                                    <li className="list-disc list-inside" key={chain.id}>
+                                        {chain.name}
+                                    </li>
                                 ))}
                             </ul>
                         </div>
@@ -225,7 +222,10 @@ export default function WalletModal({
                                                         </p>
                                                     </div>
                                                     {isConnected && (
-                                                        <span className="text-success text-xs inline-flex items-center"><Check className="mr-2 lg:mr-4" /> Connected</span>
+                                                        <span className="text-success text-xs inline-flex items-center">
+                                                            <Check className="mr-2 lg:mr-4" />{" "}
+                                                            Connected
+                                                        </span>
                                                     )}
                                                 </div>
                                             );
@@ -248,7 +248,9 @@ export default function WalletModal({
                                                 <button
                                                     key={chain.id}
                                                     type="button"
-                                                    onClick={() => handleChainToggle(chain.id, false)}
+                                                    onClick={() =>
+                                                        handleChainToggle(chain.id, false)
+                                                    }
                                                     className={`w-full p-3 bg-base-200 rounded-lg flex items-center gap-3 transition-colors hover:bg-base-100 ${
                                                         isConnected ? "ring-2 ring-success" : ""
                                                     }`}
@@ -276,7 +278,10 @@ export default function WalletModal({
                                                         </p>
                                                     </div>
                                                     {isConnected && (
-                                                        <span className="text-success text-xs inline-flex items-center"><Check className="mr-2 lg:mr-4" /> Connected</span>
+                                                        <span className="text-success text-xs inline-flex items-center">
+                                                            <Check className="mr-2 lg:mr-4" />{" "}
+                                                            Connected
+                                                        </span>
                                                     )}
                                                 </button>
                                             );
@@ -291,7 +296,8 @@ export default function WalletModal({
                                 className="w-full btn btn-primary"
                                 disabled={selectedChains.size === 0}
                             >
-                                Continue with {selectedChains.size} chain{selectedChains.size !== 1 ? "s" : ""}
+                                Continue with {selectedChains.size} chain
+                                {selectedChains.size !== 1 ? "s" : ""}
                             </button>
                         </div>
                     ) : (
@@ -317,7 +323,10 @@ export default function WalletModal({
                                         {Array.from(selectedChains).map((chainId) => {
                                             const chain = allChains.find((c) => c.id === chainId);
                                             return chain ? (
-                                                <div key={chainId} className="text-xs flex items-center gap-2">
+                                                <div
+                                                    key={chainId}
+                                                    className="text-xs flex items-center gap-2"
+                                                >
                                                     <Image
                                                         src={`${chain.chain_logo}`}
                                                         alt={chain.name}
@@ -360,7 +369,9 @@ export default function WalletModal({
                                                         loading="eager"
                                                     />
                                                     <div className="text-sm">
-                                                        <span className="font-semibold text-base-content">{info.name}</span>
+                                                        <span className="font-semibold text-base-content">
+                                                            {info.name}
+                                                        </span>
                                                         <span className="text-base-content/50 ml-2">
                                                             - Download
                                                         </span>
@@ -374,7 +385,8 @@ export default function WalletModal({
                                 <div className="space-y-3">
                                     {installedWallets.map((walletType) => {
                                         const info = WALLET_INFO[walletType];
-                                        const isConnectedWithThisWallet = connectedWalletType === walletType;
+                                        const isConnectedWithThisWallet =
+                                            connectedWalletType === walletType;
 
                                         return (
                                             <button
@@ -403,9 +415,12 @@ export default function WalletModal({
                                                     loading="eager"
                                                 />
                                                 <div className="flex-1 text-left">
-                                                    <h6 className="font-bold text-base-content">{info.name}</h6>
+                                                    <h6 className="font-bold text-base-content">
+                                                        {info.name}
+                                                    </h6>
                                                     <p className="text-sm text-base-content/70">
-                                                        {isConnecting && selectedWallet === walletType
+                                                        {isConnecting &&
+                                                        selectedWallet === walletType
                                                             ? "Connecting..."
                                                             : isConnectedWithThisWallet
                                                               ? `Connected to ${connectedChainIds.length} chain${connectedChainIds.length !== 1 ? "s" : ""}`
@@ -413,7 +428,9 @@ export default function WalletModal({
                                                     </p>
                                                 </div>
                                                 {isConnectedWithThisWallet && (
-                                                    <div className="text-success inline-flex items-center"><Check className="mr-2 lg:mr-4" /></div>
+                                                    <div className="text-success inline-flex items-center">
+                                                        <Check className="mr-2 lg:mr-4" />
+                                                    </div>
                                                 )}
                                             </button>
                                         );
@@ -442,13 +459,19 @@ export default function WalletModal({
                                     {/* Show connected chains with individual disconnect */}
                                     {connectedChainIds.length > 0 && (
                                         <div className="p-3 bg-base-200 rounded-lg">
-                                            <h6 className="font-semibold text- text-base-content mb-2">Connected Chains:</h6>
+                                            <h6 className="font-semibold text- text-base-content mb-2">
+                                                Connected Chains:
+                                            </h6>
                                             <div className="space-y-2">
                                                 {connectedChainIds.map((chainId) => {
-                                                    const chain = allChains.find((c) => c.id === chainId);
+                                                    const chain = allChains.find(
+                                                        (c) => c.id === chainId,
+                                                    );
                                                     const address = getAddress(chainId);
-                                                    const isRequired = requiredChains.some((c) => c.id === chainId);
-                                                    
+                                                    const isRequired = requiredChains.some(
+                                                        (c) => c.id === chainId,
+                                                    );
+
                                                     return (
                                                         <div
                                                             key={chainId}
@@ -469,12 +492,15 @@ export default function WalletModal({
                                                                     <p className="font-semibold text-xs">
                                                                         {chain?.name || chainId}
                                                                         {isRequired && (
-                                                                            <span className="text-error ml-1">*</span>
+                                                                            <span className="text-error ml-1">
+                                                                                *
+                                                                            </span>
                                                                         )}
                                                                     </p>
                                                                     {address && (
                                                                         <p className="text-xs text-base-content/70">
-                                                                            {address.slice(0, 10)}...{address.slice(-6)}
+                                                                            {address.slice(0, 10)}
+                                                                            ...{address.slice(-6)}
                                                                         </p>
                                                                     )}
                                                                 </div>
@@ -482,7 +508,11 @@ export default function WalletModal({
                                                             {!isRequired && (
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => handleDisconnectChain(chainId)}
+                                                                    onClick={() =>
+                                                                        handleDisconnectChain(
+                                                                            chainId,
+                                                                        )
+                                                                    }
                                                                     className="btn btn-ghost btn-xs text-error"
                                                                 >
                                                                     Disconnect

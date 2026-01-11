@@ -1,7 +1,83 @@
-import { type UnifiedWalletProvider, WalletType } from "./walletProvider";
 /**
- * Utility functions for detecting and accessing different Cosmos wallet providers
+ * Unified wallet provider types and interfaces for Cosmos wallets
+ * Supports Keplr, Leap, and Cosmostation wallets
  */
+
+import type { Keplr } from "@keplr-wallet/types";
+
+/**
+ * Supported wallet types
+ */
+export enum WalletType {
+    KEPLR = "keplr",
+    LEAP = "leap",
+    COSMOSTATION = "cosmostation",
+}
+
+/**
+ * Wallet metadata for display purposes
+ */
+export interface WalletInfo {
+    type: WalletType;
+    name: string;
+    logo: string;
+    downloadUrl: string;
+}
+
+/**
+ * Available wallet configurations
+ */
+export const WALLET_INFO: Record<WalletType, WalletInfo> = {
+    [WalletType.KEPLR]: {
+        type: WalletType.KEPLR,
+        name: "Keplr Wallet",
+        logo: "/Keplr_logo.png",
+        downloadUrl: "https://www.keplr.app/download",
+    },
+    [WalletType.LEAP]: {
+        type: WalletType.LEAP,
+        name: "Leap Wallet",
+        logo: "/Leap_logo.png",
+        downloadUrl: "https://www.leapwallet.io/download",
+    },
+    [WalletType.COSMOSTATION]: {
+        type: WalletType.COSMOSTATION,
+        name: "Cosmostation Wallet",
+        logo: "/Cosmostation_logo.png",
+        downloadUrl: "https://www.cosmostation.io/wallet",
+    },
+};
+
+/**
+ * Unified wallet provider interface
+ * All Cosmos wallets (Keplr, Leap, Cosmostation) implement similar interfaces
+ */
+export type UnifiedWalletProvider = Keplr;
+
+/**
+ * Window extensions for wallet providers
+ */
+declare global {
+    interface Window {
+        keplr?: UnifiedWalletProvider;
+        leap?: UnifiedWalletProvider;
+        cosmostation?: {
+            providers?: {
+                keplr?: UnifiedWalletProvider;
+            };
+        };
+    }
+}
+
+/**
+ * Wallet connection state stored in localStorage
+ */
+export interface WalletConnectionState {
+    walletType: WalletType;
+    address: string;
+    chainId: string;
+    chainConfig: unknown; // Will be typed as ChainConfig in the context
+}
 
 /**
  * Get the wallet provider from the window object based on wallet type
