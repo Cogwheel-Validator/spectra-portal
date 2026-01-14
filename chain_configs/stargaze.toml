@@ -32,3 +32,4 @@ symbol = "STARS"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/stargaze/stars.png"
 coingecko_id = "stargaze"
+allowed_destinations = ["osmosis-1"]

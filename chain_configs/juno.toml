@@ -44,6 +44,7 @@ symbol = "JUNO"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/juno/juno.png"
 coingecko_id = "juno-network"
+allowed_destinations = ["osmosis-1", "stargaze-1"]
 
 [[token]]
 denom = "cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr"
@@ -52,3 +53,4 @@ symbol = "NETA"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/juno/neta.png"
 coingecko_id = "neta"
+allowed_destinations = ["osmosis-1"]

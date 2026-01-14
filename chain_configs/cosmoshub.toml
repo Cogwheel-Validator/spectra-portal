@@ -27,3 +27,4 @@ name = "Atom"
 symbol = "ATOM"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/cosmoshub/atom.png"
+allowed_destinations = ["osmosis-1", "stargaze-1"]

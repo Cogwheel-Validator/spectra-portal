@@ -44,6 +44,7 @@ symbol = "EURe"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/eure.png"
 coingecko_id = "monerium-eur-money"
+allowed_destinations = ["osmosis-1"]
 
 [[token]]
 denom = "uusdc"
@@ -52,6 +53,7 @@ symbol = "USDC"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdc.png"
 coingecko_id = "usd-coin"
+allowed_destinations = ["cosmoshub-4", "juno-1", "stargaze-1", "osmosis-1"]
 
 [[token]]
 denom = "uusdn"
@@ -60,6 +62,7 @@ symbol = "USDN"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdn.png"
 coingecko_id = "neutrino-dollar"
+allowed_destinations = ["osmosis-1"]
 
 [[token]]
 denom = "ausdy"
@@ -68,3 +71,4 @@ symbol = "USDY"
 exponent = 18
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdy.png"
 coingecko_id = "ondo-us-dollar-yield"
+allowed_destinations = ["osmosis-1"]

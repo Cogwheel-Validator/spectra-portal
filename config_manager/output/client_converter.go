@@ -99,6 +99,10 @@ func (c *ClientConverter) convertChain(
 	}
 	clientChain.CosmosSdkVersion = cosmosSdkVersion
 
+	// Track all allowed tokens that can traverse to other chains via simple map tied to their on chain denom
+	// with their allowd chain destinations
+	tokenTrajectories := make(map[string][]string)
+
 	// Convert native tokens
 	clientChain.NativeTokens = make([]ClientToken, 0, len(chain.NativeTokens))
 	for _, token := range chain.NativeTokens {
@@ -116,14 +120,49 @@ func (c *ClientConverter) convertChain(
 
 		// Track for AllTokens
 		c.trackToken(tokenTracker, &clientToken)
+
+		// Track token trajectories
+		// but check if there is "none", it should be already checked but just to be sure
+		if len(token.AllowedDestinations) == 1 && slices.Contains(token.AllowedDestinations, "none") {
+			tokenTrajectories[token.Denom] = []string{}
+		} else {
+			tokenTrajectories[token.Denom] = token.AllowedDestinations
+		}
 	}
 
 	// Convert IBC tokens
-	clientChain.IBCTokens = make([]ClientToken, 0, len(chain.IBCTokens))
+	clientChain.IBCTokens = []ClientToken{} // no allocations needed, will be filled in below
+	// Only include tokens that are explicitly allowed to reach this chain
 	for _, token := range chain.IBCTokens {
 		originChainName := ""
 		if originChain, exists := reg.Chains[token.OriginChain]; exists {
 			originChainName = originChain.Name
+		}
+
+		// Check if the token from its origin chain is allowed to be sent to THIS chain
+		// Look up the original token definition on its origin chain
+		originChainConfig := reg.Chains[token.OriginChain]
+		if originChainConfig != nil {
+			tokenAllowed := false
+			// Check if this token (identified by baseDenom) is allowed to reach our chain
+			for _, nativeToken := range originChainConfig.NativeTokens {
+				if nativeToken.Denom == token.BaseDenom {
+					// Check if current chain is in the allowed destinations
+					// Empty list means allowed everywhere
+					if len(nativeToken.AllowedDestinations) == 0 {
+						tokenAllowed = true
+					} else if slices.Contains(nativeToken.AllowedDestinations, chain.ID) {
+						tokenAllowed = true
+					}
+					break
+				}
+			}
+
+			if !tokenAllowed {
+				log.Printf("Skipping IBC token %s on %s - not in allowed destinations from %s",
+					token.Symbol, chain.ID, token.OriginChain)
+				continue
+			}
 		}
 
 		clientToken := ClientToken{
@@ -209,14 +248,26 @@ func (c *ClientConverter) buildConnectedChains(
 			continue
 		}
 
-		// Collect sendable token symbols
+		// Collect sendable token symbols - check both native and IBC tokens
 		sendableTokens := make([]string, 0)
 		for _, token := range route.AllowedTokens {
-			// Find the token symbol
+			// First check native tokens
+			found := false
 			for _, nativeToken := range chain.NativeTokens {
 				if nativeToken.Denom == token.SourceDenom {
 					sendableTokens = append(sendableTokens, nativeToken.Symbol)
+					found = true
 					break
+				}
+			}
+
+			// If not found in native tokens, check IBC tokens
+			if !found {
+				for _, ibcToken := range chain.IBCTokens {
+					if ibcToken.IBCDenom == token.SourceDenom {
+						sendableTokens = append(sendableTokens, ibcToken.Symbol)
+						break
+					}
 				}
 			}
 		}

@@ -48,6 +48,7 @@ symbol = "OSMO"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png"
 coingecko_id = "osmosis"
+allowed_destinations = ["none"] # Osmosis only usable on it's own chain
 
 [[token]]
 denom = "factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc"

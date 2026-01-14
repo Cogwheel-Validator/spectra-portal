@@ -27,6 +27,7 @@ name = "Atone"
 symbol = "ATONE"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png"
+allowed_destinations = ["osmosis-1", "stargaze-1"]
 
 [[token]]
 denom = "uphoton"
@@ -34,3 +35,4 @@ name = "Photon"
 symbol = "PHOTON"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/photon.png"
+allowed_destinations = ["osmosis-1"]

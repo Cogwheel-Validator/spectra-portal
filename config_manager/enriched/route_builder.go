@@ -227,6 +227,14 @@ func (rb *RouteBuilder) buildAllowedTokensForRoute(
 	// If destination chain has native tokens, we might have received them via IBC.
 	// When we send them back, they unwind to native.
 	for _, token := range rb.nativeTokens[toChainID] {
+		// Check if this token from the destination chain is allowed to be sent to OUR chain.
+		// If it's not allowed to come here, we shouldn't allow sending it back
+		if !rb.isTokenAllowedToChain(token, fromChainID) {
+			log.Printf("\tSkipping unwind token %s - not allowed from %s to %s",
+				token.Denom, toChainID, fromChainID)
+			continue
+		}
+
 		// Compute IBC denom of this token ON OUR CHAIN
 		// When we RECEIVE from toChain: ibc/hash(transfer/OUR_CHANNEL/denom)
 		ibcDenomOnOurChain := rb.computeIBCDenom(channelInfo.PortID, channelInfo.ChannelID, token.Denom)
