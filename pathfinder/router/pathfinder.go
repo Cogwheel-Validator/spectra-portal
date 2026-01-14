@@ -190,6 +190,17 @@ func (s *Pathfinder) buildIndirectResponse(req models.RouteRequest, routeInfo *I
 		}
 
 		if tokenInfo == nil {
+
+			// Validate that routeInfo.Token is not nil before using it
+			if routeInfo.Token == nil {
+				pathfinderLog.Error().Msg("Token information missing in route")
+				return models.RouteResponse{
+					Success:      false,
+					RouteType:    "impossible",
+					ErrorMessage: "Token information missing in route",
+				}
+			}
+
 			// Fallback
 			tokenInfo = &TokenInfo{
 				ChainDenom:  currentDenom,
@@ -413,10 +424,16 @@ func (s *Pathfinder) buildBrokerRoute(
 		return nil, fmt.Errorf("swapResult is nil")
 	}
 
-	if req.SlippageBps == nil {
-		// It is only needed for the swaps but it is better to have some sort of default
-		*req.SlippageBps = 100
-	}
+	/*
+		Due to the nature of proto3 the slippage can never be nil, even if it is not specified
+		uint32 value will be 0 if not specified.
+		This code will be commented out because it is not needed.
+		However if there is some change in the underlying function, this code will be uncommented again.
+		if req.SlippageBps == nil {
+			defaultSlippage := uint32(100)
+			req.SlippageBps = &defaultSlippage
+		}
+	*/
 
 	if *req.SlippageBps > 10000 {
 		return nil, fmt.Errorf("slippage bps must be less than 10000")
@@ -559,12 +576,13 @@ func (s *Pathfinder) buildBrokerRoute(
 		pathfinderLog.Debug().Msg("Building same-chain swap route (no IBC)")
 		// Calculate minimum output with slippage
 		if req.SlippageBps != nil {
-			minOutput, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+			calculated, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
 			if err != nil {
 				// If for some reason it does fail at least try to return some value
 				pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
 			}
-			swapResult.AmountOut = minOutput
+			// If there is a slippage, overwrite the AmountOut value with the minimum output
+			swapResult.AmountOut = calculated
 		}
 		execution = &models.BrokerExecutionData{
 			UsesWasm:        false,
@@ -578,11 +596,12 @@ func (s *Pathfinder) buildBrokerRoute(
 
 		// Calculate minimum output with slippage
 		if req.SlippageBps != nil {
-			minOutput, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+			calculated, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
 			if err != nil {
 				pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
 			}
-			swapResult.AmountOut = minOutput
+			// If there is a slippage, overwrite the AmountOut value with the minimum output
+			swapResult.AmountOut = calculated
 		}
 		execution = &models.BrokerExecutionData{
 			UsesWasm:        false,
@@ -623,8 +642,13 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 	brokerChain PathfinderChain,
 	brokerExists bool,
 ) (*models.BrokerExecutionData, error) {
-	if !brokerExists || brokerChain.IBCHooksContract == "" {
-		return nil, fmt.Errorf("ibc-hooks contract not configured for broker")
+	if !brokerExists {
+		return nil, fmt.Errorf("broker chain %s not found", hopInfo.BrokerChainId)
+	}
+	// Check if there is IBC hook, only needed for now but when more "Broker Chains" are added
+	// some of these checks will need to be modified
+	if brokerChain.IBCHooksContract == "" {
+		return nil, fmt.Errorf("ibc-hooks contract not configured for broker %s", hopInfo.BrokerChainId)
 	}
 
 	// Derive addresses
@@ -635,12 +659,13 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 
 	// Calculate minimum output with slippage
 	if req.SlippageBps != nil {
-		minOutput, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+		calculated, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
 		if err != nil {
 			// If for some reason it does fail at least try to return some value
 			pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
 		}
-		swapResult.AmountOut = minOutput
+		// If there is a slippage, overwrite the AmountOut value with the minimum output
+		swapResult.AmountOut = calculated
 	}
 
 	// Get route data
@@ -702,12 +727,13 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 
 	// Calculate minimum output with slippage
 	if req.SlippageBps != nil {
-		minOutput, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+		calculated, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
 		if err != nil {
 			// If for some reason it does fail at least try to return some value
 			pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
 		}
-		swapResult.AmountOut = minOutput
+		// If there is a slippage, overwrite the AmountOut value with the minimum output
+		swapResult.AmountOut = calculated
 	}
 
 	// Get route data
@@ -790,6 +816,12 @@ func (s *Pathfinder) buildNestedForwardMemo(legs []*models.IBCLeg, finalReceiver
 	// Build from the last leg backwards
 	var buildForward func(legIndex int) string
 	buildForward = func(legIndex int) string {
+		// Safety check for bounds
+		if legIndex >= len(legs) {
+			pathfinderLog.Warn().Int("legIndex", legIndex).Int("legsLen", len(legs)).Msg("Index out of bounds in buildNestedForwardMemo")
+			return ""
+		}
+
 		leg := legs[legIndex]
 
 		if legIndex == len(legs)-1 {

@@ -10,7 +10,7 @@ type RouteRequest struct {
 	SenderAddress   string  `json:"sender_address"`         // For validation
 	ReceiverAddress string  `json:"receiver_address"`       // e.g., "cosmos1234567890"
 	SingleRoute     *bool   `json:"single_route,omitempty"` // if true, only return a single route, if false, return all possible routes
-	SlippageBps     *uint32 `json:"slippage_bps,omitempty"` // if not nil it will use specified value, else the default will be 100 (1%)
+	SlippageBps     *uint32 `json:"slippage_bps,omitempty"`
 }
 
 // TokenMapping represents how a token transforms between chains
