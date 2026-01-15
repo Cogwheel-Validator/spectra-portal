@@ -615,15 +615,66 @@ basic information about the chain.
 
 The request should contain the following fields:
 
-TODO This method requires naming change for the sort_by_symbol field. Leave for now but change it later!
-
 - chain_id: The chain ID of the chain.
-- sort_by_symbol: Whether to sort the denoms by symbol(optional, default is false).
+- show_symbols: Whether to show the symbols of the tokens on the chain(optional, default is false).
 
 #### GetChainInfo - Response
 
+Example for the Atom One chain:
+
 ```json
-TODO: The config manager requires some changes when making the routes for the chains. Leave for now but change it later!
+{
+  "chain_info": {
+    "chain_id": "atomone-1",
+    "chain_name": "Atom One",
+    "has_pfm": false,
+    "is_broker": false,
+    "routes": [
+      {
+        "to_chain": "Osmosis",
+        "to_chain_id": "osmosis-1",
+        "connection_id": "connection-2",
+        "channel_id": "channel-2",
+        "port_id": "transfer",
+        "allowed_tokens": {
+          "uatone": {
+            "chain_denom": "uatone",
+            "ibc_denom": "ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB",
+            "base_denom": "uatone",
+            "origin_chain": "atomone-1",
+            "decimals": 6,
+            "symbol": "ATONE"
+          },
+          "uphoton": {
+            "chain_denom": "uphoton",
+            "ibc_denom": "ibc/D6E02C5AE8A37FC2E3AB1FC8AC168878ADB870549383DFFEA9FD020C234520A7",
+            "base_denom": "uphoton",
+            "origin_chain": "atomone-1",
+            "decimals": 6,
+            "symbol": "PHOTON"
+          }
+        }
+      },
+      {
+        "to_chain": "Stargaze",
+        "to_chain_id": "stargaze-1",
+        "connection_id": "connection-7",
+        "channel_id": "channel-3",
+        "port_id": "transfer",
+        "allowed_tokens": {
+          "uatone": {
+            "chain_denom": "uatone",
+            "ibc_denom": "ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D",
+            "base_denom": "uatone",
+            "origin_chain": "atomone-1",
+            "decimals": 6,
+            "symbol": "ATONE"
+          }
+        }
+      }
+    ]
+  }
+}
 ```
 
 ### GetTokenDenoms
@@ -633,8 +684,6 @@ This method is used to get the information about a token. It will return the tok
 #### GetTokenDenoms - Request
 
 The request should contain the following fields:
-
-TODO: Implement the request with more restirctions for the request to check if all the fields are inserted.
 
 - base_denom: The base denom of the token.
 - origin_chain: The chain ID of the chain where the token is native.
@@ -686,8 +735,41 @@ The request should contain the following fields:
 
 #### GetChainTokens - Response
 
+Example response for Cosmoshub-4:
+
 ```json
-TODO: Make slight adjustment to the config and then return here and populate docs.
+{
+  "chain_id": "cosmoshub-4",
+  "chain_name": "Cosmos Hub",
+  "native_tokens": [
+    {
+      "denom": "uatom",
+      "symbol": "ATOM",
+      "base_denom": "uatom",
+      "origin_chain": "cosmoshub-4",
+      "decimals": 6,
+      "is_native": true
+    }
+  ],
+  "ibc_tokens": [
+    {
+      "denom": "ibc/F663521BF1836B00F5F177680F74BFB9A8B5654A694D0D2BC249E03CF2509013",
+      "symbol": "USDC",
+      "base_denom": "uusdc",
+      "origin_chain": "noble-1",
+      "decimals": 6,
+      "is_native": false
+    },
+    {
+      "denom": "ibc/99B00614DDBE6189AA03B77066FF8EB3F93680BD790C43CF56096B7F23542015",
+      "symbol": "WBTC",
+      "base_denom": "factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc",
+      "origin_chain": "osmosis-1",
+      "decimals": 8,
+      "is_native": false
+    }
+  ]
+}
 ```
 
 ### GetPathfinderSupportedChains
@@ -727,10 +809,41 @@ This method is used to get the information about a token. It will return the tok
 The request should contain the following fields:
 
 - chain_id: The chain ID of the chain to get the token information for.
-- denom: The denom of the token to get the information for.
+- denom: The denom of the token to get the information for. Can also use IBC denoms and native chain denom + @ origin_chain to get the information for the token on the origin chain.
 
 #### LookupDenom - Response
 
+Example response for the ATONE token on stargaze-1:
+
 ```json
-TODO: Alter the config manager for this then populate it.
+{
+  "found": true,
+  "chain_denom": "ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D",
+  "base_denom": "uatone",
+  "origin_chain": "atomone-1",
+  "is_native": false,
+  "ibc_path": "transfer/channel-448",
+  "available_on": [
+    {
+      "chain_id": "osmosis-1",
+      "chain_name": "Osmosis",
+      "denom": "ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB",
+      "is_native": false
+    },
+    {
+      "chain_id": "stargaze-1",
+      "chain_name": "Stargaze",
+      "denom": "ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D",
+      "is_native": false
+    },
+    {
+      "chain_id": "atomone-1",
+      "chain_name": "Atom One",
+      "denom": "uatone",
+      "is_native": true
+    }
+  ]
+}
 ```
+
+It shows more wide information about the token and the available chains where the token is available. This will stay like this for now but it might change later.
