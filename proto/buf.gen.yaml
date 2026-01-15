@@ -10,6 +10,7 @@ plugins:
   - local: protoc-gen-es
     out: ../ibc_app/src/lib/generated/pathfinder
     opt: target=ts
+    include_imports: true
   - local: protoc-gen-connect-es
     out: ../ibc_app/src/lib/generated/pathfinder
     opt: target=ts

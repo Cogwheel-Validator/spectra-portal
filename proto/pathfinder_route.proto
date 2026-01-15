@@ -310,8 +310,10 @@ message PathfinderSupportedChainsResponse {
 }
 
 message ChainInfoRequest {
+    // The chain id of the chain to get information for
     string chain_id = 1 [(buf.validate.field).required = true];
-    bool sort_by_symbol = 2;
+    // Whether to show the symbols of the tokens on the chain, default is false
+    bool show_symbols = 2;
 }
 
 message ChainInfoResponse {
