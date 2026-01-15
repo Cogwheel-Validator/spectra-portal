@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"time"
 
@@ -71,7 +72,11 @@ func ProcessKeplrRegistry(dst string, jsonNames []string) ([]KeplrChainConfig, e
 		if err != nil {
 			return nil, fmt.Errorf("failed to open file: %w", err)
 		}
-		defer jsonFile.Close()
+		defer func() {
+			if err := jsonFile.Close(); err != nil {
+				log.Fatalf("Failed to close file: %v", err)
+			}
+		}()
 		body, err := io.ReadAll(jsonFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read file: %w", err)
