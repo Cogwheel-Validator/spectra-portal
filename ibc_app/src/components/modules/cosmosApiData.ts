@@ -93,6 +93,33 @@ export const TransactionResponseSchema = z.object({
 
 export type TransactionResponse = z.infer<typeof TransactionResponseSchema>;
 
+export const IbcDenomTraceResponseSchema = z.object({
+    denom_trace: z.object({
+        path: z.string(),
+        base_denom: z.string(),
+    }),
+});
+
+export type IbcDenomTraceResponse = z.infer<typeof IbcDenomTraceResponseSchema>;
+
+/**
+ * IBC message transfer details
+ */
+export type IbcMsgTransferDetails = {
+    sourceChannel: string;
+    sourcePort: string;
+    sender: string;
+    receiver: string;
+    token: {
+        amount: string;
+        denom: string;
+    };
+    timeoutHeight: {
+        revisionHeight: string;
+        revisionNumber: string;
+    };
+};
+
 // ===================================================================
 // Utility functions to get the data from the responses
 // ===================================================================
@@ -237,6 +264,9 @@ export function getSwapInMessage(messages: TransactionMessage[]): TransactionMes
     ) as TransactionMessage | undefined;
 }
 
+/**
+ * Swap in message details
+ */
 export type SwapInMessageDetails = {
     sender: string;
     routes: SwapAmountInRoute[];
@@ -244,6 +274,11 @@ export type SwapInMessageDetails = {
     tokenOutMinAmount: string;
 };
 
+/**
+ * Get the swap in message details from the messages array
+ * @param messages The messages array
+ * @returns The swap in message details, undefined if the swap in message details is not found
+ */
 export function getSwapInMessageDetails(
     messages: TransactionMessage[],
 ): SwapInMessageDetails | undefined {
@@ -266,4 +301,40 @@ export function getSwapInMessageDetails(
         },
         tokenOutMinAmount: swapInMessage.token_out_min_amount,
     } as SwapInMessageDetails;
+}
+
+/**
+ * Get the IBC message transfer details from the messages array
+ * @param messages The messages array
+ * @returns The IBC message transfer details, undefined if the IBC message transfer details is not found
+ *
+ * This transaction is usually first sent before the relayers acknowladge and receive the packets
+ */
+export function getIbcMsgTransferDetails(
+    messages: TransactionMessage[],
+): IbcMsgTransferDetails | undefined {
+    const ibcMsgTransferMessage = messages.find(
+        (message) => message["@type"] === "/ibc.applications.transfer.v1.MsgTransfer",
+    ) as TransactionMessage | undefined;
+    if (!ibcMsgTransferMessage) {
+        return undefined;
+    }
+    const timeoutHeight = ibcMsgTransferMessage.timeout_height as {
+        revision_height: string;
+        revision_number: string;
+    };
+    return {
+        sender: ibcMsgTransferMessage.sender as string,
+        receiver: ibcMsgTransferMessage.receiver as string,
+        sourceChannel: ibcMsgTransferMessage.source_channel as string,
+        sourcePort: ibcMsgTransferMessage.source_port as string,
+        token: {
+            amount: ibcMsgTransferMessage.amount as string,
+            denom: ibcMsgTransferMessage.denom as string,
+        },
+        timeoutHeight: {
+            revisionHeight: timeoutHeight.revision_height as string,
+            revisionNumber: timeoutHeight.revision_number as string,
+        },
+    } as IbcMsgTransferDetails;
 }

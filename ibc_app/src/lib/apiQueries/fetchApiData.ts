@@ -7,6 +7,8 @@ import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import {
     type AddressSpendableBalanceResponse,
     AddressSpendableBalanceResponseSchema,
+    type IbcDenomTraceResponse,
+    IbcDenomTraceResponseSchema,
     type TransactionRequestByEvents,
     type TransactionRequestByHash,
     type TransactionResponse,
@@ -19,7 +21,12 @@ import logger from "@/lib/logger";
 export function useGetAddressBalance(
     chainId: string,
     address: string,
+    timeoutOption: number = 10 * 1000, // overwrite if needed but I think 10 seconds is okay
 ): UseQueryResult<AddressSpendableBalanceResponse, Error> {
+    const abort = new AbortController();
+    setTimeout(() => {
+        abort.abort();
+    }, timeoutOption);
     return useQuery({
         queryKey: ["addressBalance", chainId, address],
         queryFn: async () => {
@@ -27,7 +34,9 @@ export function useGetAddressBalance(
             if (!apiUrl) {
                 throw new Error(`No healthy API found for chain ${chainId}`);
             }
-            const response = await fetch(`${apiUrl}/cosmos/bank/v1beta1/balances/${address}`);
+            const response = await fetch(`${apiUrl}/cosmos/bank/v1beta1/balances/${address}`, {
+                signal: abort.signal,
+            });
             if (!response.ok) {
                 logger.error(
                     `Failed to get address balance for chain ${chainId} and address ${address}`,
@@ -52,9 +61,14 @@ export function useGetAddressBalance(
 export function useGetTransactionByHash(
     chainId: string,
     transactionRequest: TransactionRequestByHash,
+    timeoutOption: number = 15 * 1000, // overwrite if needed but I think 15 seconds is okay
 ): UseQueryResult<TransactionResponse, Error> {
-    return useQuery({
-        queryKey: ["transaction", chainId, transactionRequest],
+    const abort = new AbortController();
+    setTimeout(() => {
+        abort.abort();
+    }, timeoutOption);
+    const query = useQuery({
+        queryKey: ["transaction-tx", chainId, transactionRequest],
         queryFn: async () => {
             const apiUrl = getRandomHealthyApi(chainId);
             if (!apiUrl) {
@@ -62,6 +76,9 @@ export function useGetTransactionByHash(
             }
             const response = await fetch(
                 `${apiUrl}/cosmos/tx/v1beta1/txs/${transactionRequest.hash}`,
+                {
+                    signal: abort.signal,
+                },
             );
             if (!response.ok) {
                 throw new Error(
@@ -80,14 +97,21 @@ export function useGetTransactionByHash(
         retryOnMount: true,
         retry: 3,
     });
+    return query;
 }
 
 export function useGetTransactionByEvents(
     chainConfig: ClientChain,
     transactionRequest: TransactionRequestByEvents,
+    // overwrite if needed but I think 20 might too much but queries by events are a bit more complex
+    timeoutOption: number = 20 * 1000,
 ): UseQueryResult<TransactionResponse, Error> {
+    const abort = new AbortController();
+    setTimeout(() => {
+        abort.abort();
+    }, timeoutOption);
     return useQuery({
-        queryKey: ["transaction", chainConfig.id, transactionRequest],
+        queryKey: ["transaction-ev", chainConfig.id, transactionRequest],
         queryFn: async () => {
             const apiUrl = getRandomHealthyApi(chainConfig.id);
             if (!apiUrl) {
@@ -105,7 +129,9 @@ export function useGetTransactionByEvents(
                     `Failed to make url for transaction for chain ${chainConfig.id} and events ${transactionRequest.queries.join(",")}`,
                 );
             }
-            const response = await fetch(responseUrl);
+            const response = await fetch(responseUrl, {
+                signal: abort.signal,
+            });
             if (!response.ok) {
                 throw new Error(
                     `Failed to get transaction for chain ${chainConfig.id} and events ${transactionRequest.queries.join(",")}`,
@@ -121,7 +147,7 @@ export function useGetTransactionByEvents(
         refetchOnWindowFocus: false,
         retryDelay: 1000, // 1 second
         retryOnMount: true,
-        retry: 3,
+        retry: 2, // because the timeout is a lot bigger here so we don't want to retry too often
     });
 }
 
@@ -154,4 +180,54 @@ export function makeUrlForTransactionByEvents(
     }
 
     return `${apiUrl}/cosmos/tx/v1beta1/txs?${path}`;
+}
+
+export function getIbcDenomTrace(
+    chainId: string,
+    hash: string,
+    timeoutOption: number = 5 * 1000, // overwrite if needed
+): UseQueryResult<IbcDenomTraceResponse, Error> {
+    // sanitize the hash input here by removing the "ibc/" prefix if it exists and also validate that it does have
+    // the ibc/ prefix along with the correct length
+    if (!hash.startsWith("ibc/")) {
+        throw new Error(`Hash does not start with "ibc/"`);
+    }
+    if (hash.length !== 68) {
+        throw new Error(`Hash does not have the correct length`);
+    }
+    const denomHash = hash.slice(4);
+    if (denomHash.length !== 64) {
+        throw new Error(`Denom hash does not have the correct length`);
+    }
+
+    const abort = new AbortController();
+    setTimeout(() => {
+        abort.abort();
+    }, timeoutOption);
+    return useQuery({
+        queryKey: ["ibc-denom-trace", hash],
+        queryFn: async () => {
+            const apiUrl = getRandomHealthyApi(chainId);
+            if (!apiUrl) {
+                throw new Error(`No healthy API found for chain ${chainId}`);
+            }
+            const response = await fetch(`${apiUrl}/ibc/apps/transfer/v1/denom_traces/${hash}`, {
+                signal: abort.signal,
+            });
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to get IBC denom trace for chain ${chainId} and hash ${hash}`,
+                );
+            }
+            const data = await response.json();
+            return IbcDenomTraceResponseSchema.parse(data);
+        },
+        enabled: !!hash,
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        retryDelay: 1000,
+        retryOnMount: true,
+        retry: 3,
+    });
 }
