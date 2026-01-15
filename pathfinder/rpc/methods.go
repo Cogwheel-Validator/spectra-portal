@@ -292,7 +292,7 @@ func (s *PathfinderServer) GetChainInfo(
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 	return connect.NewResponse(&v1.ChainInfoResponse{
-		ChainInfo: convertToProtoChainInfo(&chain, &req.Msg.SortBySymbol),
+		ChainInfo: convertToProtoChainInfo(&chain, &req.Msg.ShowSymbols),
 	}), nil
 }
 
@@ -583,17 +583,17 @@ func convertOsmosisRouteData(data *router.OsmosisRouteData) *v1.OsmosisRouteData
 	}
 }
 
-func convertToProtoChainInfo(chain *router.PathfinderChain, sortBySymbol *bool) *v1.ChainInfo {
+func convertToProtoChainInfo(chain *router.PathfinderChain, showSymbols *bool) *v1.ChainInfo {
 	return &v1.ChainInfo{
 		ChainId:   chain.Id,
 		ChainName: chain.Name,
 		HasPfm:    chain.HasPFM,
 		IsBroker:  chain.Broker,
-		Routes:    convertToProtoBasicRoute(chain.Routes, sortBySymbol),
+		Routes:    convertToProtoBasicRoute(chain.Routes, showSymbols),
 	}
 }
 
-func convertToProtoBasicRoute(routes []router.BasicRoute, sortBySymbol *bool) []*v1.BasicRoute {
+func convertToProtoBasicRoute(routes []router.BasicRoute, showSymbols *bool) []*v1.BasicRoute {
 	protoRoutes := make([]*v1.BasicRoute, len(routes))
 	for i := range routes {
 		protoRoutes[i] = &v1.BasicRoute{
@@ -602,7 +602,7 @@ func convertToProtoBasicRoute(routes []router.BasicRoute, sortBySymbol *bool) []
 			ConnectionId:  routes[i].ConnectionId,
 			ChannelId:     routes[i].ChannelId,
 			PortId:        routes[i].PortId,
-			AllowedTokens: convertToProtoTokenInfo(routes[i].AllowedTokens, sortBySymbol),
+			AllowedTokens: convertToProtoTokenInfo(routes[i].AllowedTokens, showSymbols),
 		}
 	}
 	return protoRoutes
