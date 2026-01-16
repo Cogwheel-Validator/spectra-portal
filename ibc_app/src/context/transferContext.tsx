@@ -57,6 +57,9 @@ export interface TransferState {
     senderAddress: string;
     receiverAddress: string;
 
+    // Slippage tolerance in basis points (100 = 1%)
+    slippageBps: number;
+
     // Pathfinder response
     pathfinderResponse: FindPathResponse | null;
 
@@ -85,6 +88,7 @@ type TransferAction =
     | { type: "SET_AMOUNT"; payload: string }
     | { type: "SET_SENDER_ADDRESS"; payload: string }
     | { type: "SET_RECEIVER_ADDRESS"; payload: string }
+    | { type: "SET_SLIPPAGE"; payload: number }
     | { type: "SET_PATHFINDER_RESPONSE"; payload: FindPathResponse | null }
     | { type: "START_PREPARING" }
     | {
@@ -121,6 +125,7 @@ const initialState: TransferState = {
     amount: "",
     senderAddress: "",
     receiverAddress: "",
+    slippageBps: 100, // Default 1% slippage
     pathfinderResponse: null,
     steps: [],
     currentStepIndex: 0,
@@ -138,7 +143,7 @@ const initialState: TransferState = {
  * @param state - The current state of the transfer
  * @param action - The action to perform
  * @returns The new state of the transfer
- * 
+ *
  * This function is used to update the state of the transfer.
  * It is a reducer function that takes the current state and an action and returns the new state.
  * The action is an object that contains the type of action to perform and the payload of the action.
@@ -190,6 +195,9 @@ function transferReducer(state: TransferState, action: TransferAction): Transfer
 
         case "SET_RECEIVER_ADDRESS":
             return { ...state, receiverAddress: action.payload };
+
+        case "SET_SLIPPAGE":
+            return { ...state, slippageBps: action.payload };
 
         case "SET_PATHFINDER_RESPONSE": {
             const response = action.payload;
@@ -286,6 +294,7 @@ interface TransferContextType {
     setAmount: (amount: string) => void;
     setSenderAddress: (address: string) => void;
     setReceiverAddress: (address: string) => void;
+    setSlippage: (slippageBps: number) => void;
     setPathfinderResponse: (response: FindPathResponse | null) => void;
 
     // Execution actions
@@ -350,6 +359,10 @@ export function TransferProvider({ children }: { children: ReactNode }) {
 
     const setReceiverAddress = useCallback((address: string) => {
         dispatch({ type: "SET_RECEIVER_ADDRESS", payload: address });
+    }, []);
+
+    const setSlippage = useCallback((slippageBps: number) => {
+        dispatch({ type: "SET_SLIPPAGE", payload: slippageBps });
     }, []);
 
     const setPathfinderResponse = useCallback((response: FindPathResponse | null) => {
@@ -437,6 +450,7 @@ export function TransferProvider({ children }: { children: ReactNode }) {
                 setAmount,
                 setSenderAddress,
                 setReceiverAddress,
+                setSlippage,
                 setPathfinderResponse,
                 startPreparing,
                 startExecuting,

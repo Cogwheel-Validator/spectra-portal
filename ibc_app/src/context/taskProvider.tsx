@@ -2,7 +2,8 @@
 
 import type { EncodeObject } from "@cosmjs/proto-signing";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
-import type { ClientConfig } from "@/components/modules/tomlTypes";
+import type { ClientChain, ClientConfig } from "@/components/modules/tomlTypes";
+import useIbcTracking from "@/hooks/useIbcTracking";
 import type { SwapAmountInRoute } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/swap_route";
 import type {
     BrokerSwapRoute,
@@ -94,6 +95,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     const { sendTransaction, getAddress } = useWallet();
     const transfer = useTransfer();
+    const { trackIbcTransfer } = useIbcTracking();
 
     // Initialize database connection
     useEffect(() => {
@@ -392,7 +394,56 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
                     const result = await executeStep(step, config);
 
-                    if (result.success) {
+                    if (result.success && result.txHash) {
+                        // Check if this is an IBC transfer that needs tracking
+                        const isIbcStep =
+                            step.type === "ibc_transfer" ||
+                            step.type === "pfm_transfer" ||
+                            step.type === "wasm_execution";
+
+                        if (isIbcStep && i < steps.length - 1) {
+                            // Update to "confirming" status while we track
+                            transfer.updateStep(i, {
+                                status: "confirming",
+                                txHash: result.txHash,
+                            });
+
+                            // Get destination chain config for tracking
+                            const destChain = config.chains.find((c) => c.id === step.toChain) as
+                                | ClientChain
+                                | undefined;
+
+                            if (destChain) {
+                                // Track the IBC transfer on destination chain
+                                const trackingResult = await trackIbcTransfer(
+                                    step.fromChain,
+                                    result.txHash,
+                                    destChain,
+                                    {
+                                        maxAttempts: 60, // 60 attempts
+                                        pollInterval: 10000, // 10 seconds between polls
+                                        timeout: 10 * 60 * 1000, // 10 minute total timeout
+                                        onProgress: (attempt, max) => {
+                                            // Optional: could update UI with progress
+                                            console.log(
+                                                `Tracking IBC transfer: attempt ${attempt}/${max}`,
+                                            );
+                                        },
+                                    },
+                                );
+
+                                if (!trackingResult.success) {
+                                    // Tracking failed - this doesn't necessarily mean the transfer failed
+                                    // It could just mean we couldn't confirm it in time
+                                    // Mark as "completed" but log the warning
+                                    console.warn(
+                                        `IBC tracking inconclusive: ${trackingResult.error}`,
+                                    );
+                                }
+                            }
+                        }
+
+                        // Mark step as completed
                         transfer.updateStep(i, {
                             status: "completed",
                             txHash: result.txHash,
@@ -407,9 +458,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                         // If not the last step, advance
                         if (i < steps.length - 1) {
                             transfer.advanceStep();
-                            // Wait a bit for the transaction to be confirmed before next step
-                            // In production, you'd want to actually poll for confirmation
-                            await new Promise((resolve) => setTimeout(resolve, 2000));
                         }
                     } else {
                         transfer.updateStep(i, {
@@ -444,7 +492,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 setIsExecuting(false);
             }
         },
-        [db, transfer, executeStep],
+        [db, transfer, executeStep, trackIbcTransfer],
     );
 
     /**

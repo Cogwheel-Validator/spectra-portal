@@ -20,7 +20,11 @@ import {
     MsgSplitRouteSwapExactAmountIn,
     MsgSwapExactAmountIn,
 } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/tx";
-import { getWalletProviderAsync, type WalletConnectionState, WalletType } from "@/lib/wallets/walletUtility";
+import {
+    getWalletProviderAsync,
+    type WalletConnectionState,
+    WalletType,
+} from "@/lib/wallets/walletUtility";
 
 // Polyfill Buffer for client-side usage
 if (typeof window !== "undefined") {
