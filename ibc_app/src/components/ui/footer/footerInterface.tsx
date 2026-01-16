@@ -5,12 +5,8 @@ import FooterPhone from "./footerPhone";
 export default function FooterInterface(): JSX.Element {
     return (
         <>
-            <div className="block lg:hidden">
-                <FooterPhone />
-            </div>
-            <div className="hidden lg:block">
-                <FooterPC />
-            </div>
+            <FooterPhone className="block lg:hidden" />
+            <FooterPC className="hidden lg:block" />
         </>
     );
 }

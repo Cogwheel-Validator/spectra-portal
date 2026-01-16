@@ -27,13 +27,16 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en">
-            <body className={`${expletusSans.variable} ${robotoFont.variable} antialiased`}>
+        <html lang="en" className="h-full">
+            <body
+                className={`${expletusSans.variable} ${robotoFont.variable} antialiased min-h-full flex flex-col`}
+            >
                 <TanstackProvider>
                     <WalletProvider>
                         <MenuInterface />
-                        {children}
-                        <FooterInterface />
+                        <main className="flex-1 relative">{children}
+                            <FooterInterface />
+                        </main>
                     </WalletProvider>
                 </TanstackProvider>
             </body>

@@ -3,10 +3,14 @@ import Link from "next/link";
 import type { JSX } from "react";
 import { FaGlobe, FaSquareGithub, FaSquareXTwitter } from "react-icons/fa6";
 
-export default function FooterPC(): JSX.Element {
+interface footerPCProps {
+    className?: string;
+}
+
+export default function FooterPC({ className }: footerPCProps): JSX.Element {
     const year = new Date().getFullYear();
     return (
-        <footer className="bg-transparent absolute bottom-0 w-full z-20 p-4">
+        <footer className={`bg-transparent absolute bottom-0 w-full z-20 p-4 mt-auto ${className}`}>
             <div className="flex flex-row items-center justify-between">
                 {/*Powered by Cogwheel Logo*/}
                 <div>

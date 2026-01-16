@@ -3,10 +3,16 @@ import Link from "next/link";
 import type { JSX } from "react";
 import { FaGlobe, FaSquareGithub, FaSquareXTwitter } from "react-icons/fa6";
 
-export default function FooterPhone(): JSX.Element {
+interface footerPhoneProps {
+    className?: string;
+}
+
+export default function FooterPhone({ className }: footerPhoneProps): JSX.Element {
     const year = new Date().getFullYear();
     return (
-        <footer className="bg-transparent absolute bottom-0 w-full z-20 p-4 space-y-2">
+        <footer
+            className={`bg-transparent absolute bottom-0 w-full z-20 p-4 space-y-2 mt-auto ${className}`}
+        >
             <div className="flex flex-row items-center justify-between">
                 {/*Powered by Cogwheel Logo*/}
                 <div>

@@ -20,12 +20,10 @@ export default function Home() {
                     <h1 className="text-5xl text-center">The Spectra IBC Hub</h1>
                     <p className="max-w-80 md:max-w-lg font-semibold leading-relaxed text-center">
                         Send your assets accross different chains using Inter Blockchain
-                        Communication. With easy routing available via the{" "}
-                        <u className="font-extrabold">Spectra Solver RPC</u>, sending assets has
+                        Communication Protocol. You can send, and even swap your assets to receive
+                        the desired token ,all powered by the{" "}
+                        <u className="font-extrabold">Spectra's Pathfinder</u>, bridging assets has
                         never been easier.
-                        <br />
-                        <br />
-                        Send your assets to another chain using the Spectra 💫 IBC!
                     </p>
 
                     <FlyInButton type="button" className="btn btn-primary btn-lg lg:btn-xl">
