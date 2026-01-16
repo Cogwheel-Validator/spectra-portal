@@ -1,35 +1,36 @@
 "use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { type ReactElement, useCallback, useMemo } from "react";
 import { FaWpexplorer } from "react-icons/fa6";
 import type { ClientChain, ClientConfig, ClientToken } from "@/components/modules/tomlTypes";
+import AssetDropdown from "./assetDropdown";
+import ChainDropdown from "./chainDropdown";
 
 /**
  * Props for ChainSection component.
+ * This component is kept for backwards compatibility but the main UI now uses
+ * the individual dropdown components directly in senderUi.tsx
  */
 interface ChainSelectionProps {
-    // Static configuration
     config: ClientConfig;
     isPending: boolean;
-
-    // Current state
     chainId: string;
     tokenSymbol: string;
-
-    // Event handlers
     onChainChange: (chainId: string) => void;
     onTokenChange: (tokenSymbol: string) => void;
-
-    // Behavior configuration
-    // Whether this is the "From Chain" (true) or "To Chain" (false)
     isFromChain: boolean;
-    // Other chain's ID - used for filtering tokens (from chain) or validation (to chain)
     otherChainId?: string;
-    // Available chains for dropdown (if provided, limits options; otherwise uses all chains)
     availableChains?: ClientChain[];
 }
 
+/**
+ * ChainSection - A combined chain and asset selector
+ *
+ * This component wraps the ChainDropdown and AssetDropdown components
+ * into a card layout. Used for backwards compatibility.
+ */
 export default function ChainSection(props: ChainSelectionProps): ReactElement {
     const {
         config,
@@ -43,20 +44,15 @@ export default function ChainSection(props: ChainSelectionProps): ReactElement {
         availableChains,
     } = props;
 
-    // Behavior based on isFromChain and availableChains
-    // - If isFromChain: filter tokens by sendable_tokens when otherChainId is set
-    // - If !isFromChain: require otherChainId to enable selection
-    const filterBySendable = isFromChain;
-    const requireOtherChain = !isFromChain;
-
-    // Helper functions
+    // Helper to get chain by ID
     const getChainById = useCallback(
         (id: string): ClientChain | undefined => {
             return config.chains.find((chain) => chain.id === id);
         },
-        [config],
+        [config.chains],
     );
 
+    // Helper to get tokens for a chain
     const getTokensForChain = useCallback(
         (id: string): ClientToken[] => {
             const chain = getChainById(id);
@@ -66,20 +62,18 @@ export default function ChainSection(props: ChainSelectionProps): ReactElement {
         [getChainById],
     );
 
+    // Helper to get sendable tokens between chains
     const getSendableTokens = useCallback(
         (fromId: string, toId: string): string[] => {
             const fromChain = getChainById(fromId);
             if (!fromChain) return [];
-
             const connectedChain = fromChain.connected_chains.find((chain) => chain.id === toId);
-            if (!connectedChain) return [];
-
-            return connectedChain.sendable_tokens;
+            return connectedChain?.sendable_tokens ?? [];
         },
         [getChainById],
     );
 
-    // Derived data computed within this component
+    // Derived data
     const chainData = useMemo(() => getChainById(chainId), [chainId, getChainById]);
 
     const allAvailableTokens = useMemo(
@@ -88,112 +82,86 @@ export default function ChainSection(props: ChainSelectionProps): ReactElement {
     );
 
     const sendableTokens = useMemo(() => {
-        if (!filterBySendable || !otherChainId) return [];
+        if (!isFromChain || !otherChainId) return [];
         return getSendableTokens(chainId, otherChainId);
-    }, [filterBySendable, otherChainId, chainId, getSendableTokens]);
+    }, [isFromChain, otherChainId, chainId, getSendableTokens]);
 
     const availableTokens = useMemo(() => {
-        if (!filterBySendable || !sendableTokens.length) return allAvailableTokens;
+        if (!isFromChain || sendableTokens.length === 0) return allAvailableTokens;
         return allAvailableTokens.filter((token) => sendableTokens.includes(token.symbol));
-    }, [allAvailableTokens, sendableTokens, filterBySendable]);
+    }, [allAvailableTokens, sendableTokens, isFromChain]);
 
-    const selectedToken = useMemo(
-        () => availableTokens.find((t) => t.symbol === tokenSymbol),
-        [availableTokens, tokenSymbol],
-    );
-
-    // Determine which chains to show in the dropdown
+    // Determine which chains to show
     const chainsForSelection = useMemo(() => {
-        if (availableChains) return availableChains;
-        return config.chains;
+        return availableChains ?? config.chains;
     }, [availableChains, config.chains]);
 
-    const title: string = isFromChain ? "From Chain" : "To Chain";
-    const assetTitle: string = isFromChain ? "Send Asset" : "Receive Asset";
-    const chainSelectPlaceholder: string = isFromChain
-        ? "Select source chain"
-        : "Select destination chain";
-    const tokenSelectPlaceholder: string = isFromChain
-        ? "Select token to send"
-        : "Select token to receive (optional)";
+    const title = isFromChain ? "From Chain" : "To Chain";
+    const assetTitle = isFromChain ? "Send Asset" : "Receive Asset";
+
+    // Disable to-chain selection if from-chain not selected
+    const requireOtherChain = !isFromChain;
+    const isChainDisabled = isPending || (requireOtherChain && !otherChainId);
 
     return (
-        <>
-            {/* Chain Selection */}
-            <div className="card bg-slate-700/50 shadow-xl text-base-content">
-                <div className="card-body">
-                    <div className="flex flex-row justify-between">
-                        <h2 className="card-title">{title}</h2>
-                        {chainData ? (
-                            <Link
-                                href={chainData.explorer_details.base_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="tooltip"
-                                data-tip="Chain Explorer"
-                            >
-                                <FaWpexplorer className="size-8" />
-                            </Link>
-                        ) : null}
-                    </div>
-                    {chainData ? (
-                        <div className="flex items-center justify-center gap-2">
-                            <Image
-                                src={chainData.chain_logo || "/unknown.jpg"}
-                                alt={chainData.name}
-                                width={100}
-                                height={100}
-                                className={`rounded-full size-20 bg-slate-900 
-                ${
-                    isFromChain
-                        ? "border-[3px] border-orange-500 shadow-xl shadow-orange-800/70"
-                        : "border-[3px] border-teal-400 shadow-xl shadow-teal-700/70"
-                }`}
-                            />
-                        </div>
-                    ) : (
-                        <div className="flex items-center  justify-center gap-2">
-                            <Image
-                                src={"/unknown.jpg"}
-                                alt="No Chain Selected"
-                                width={100}
-                                height={100}
-                                className="rounded-full bg-slate-900 size-20"
-                            />
-                        </div>
-                    )}
-                    <select
-                        className="select select-bordered w-full"
-                        value={chainId}
-                        onChange={(e) => onChainChange(e.target.value)}
-                        disabled={isPending || (requireOtherChain && !otherChainId)}
+        <div className="bg-slate-700/50 rounded-xl p-6 space-y-4">
+            {/* Chain Header */}
+            <div className="flex flex-row justify-between items-center">
+                <h2 className="text-lg font-semibold text-white">{title}</h2>
+                {chainData && (
+                    <Link
+                        href={chainData.explorer_details.base_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="tooltip text-slate-400 hover:text-white transition-colors"
+                        data-tip="Chain Explorer"
                     >
-                        <option value="">{chainSelectPlaceholder}</option>
-                        {chainsForSelection.map((chain) => (
-                            <option key={chain.id} value={chain.id}>
-                                {chain.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                {/* Asset Selection */}
-                <div className="card-body">
-                    <h2 className="card-title">{assetTitle}</h2>
-                    <select
-                        className="select select-bordered w-full"
-                        value={tokenSymbol}
-                        onChange={(e) => onTokenChange(e.target.value)}
-                        disabled={isPending || !chainId}
-                    >
-                        <option value="">{tokenSelectPlaceholder}</option>
-                        {availableTokens.map((token) => (
-                            <option key={token.denom} value={token.symbol}>
-                                {token.symbol} - {token.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                        <FaWpexplorer className="size-6" />
+                    </Link>
+                )}
             </div>
-        </>
+
+            {/* Chain Logo Display */}
+            <div className="flex items-center justify-center py-2">
+                <Image
+                    src={chainData?.chain_logo || "/unknown.jpg"}
+                    alt={chainData?.name || "No Chain Selected"}
+                    width={80}
+                    height={80}
+                    className={`rounded-full size-20 bg-slate-900 
+                        ${
+                            chainData
+                                ? isFromChain
+                                    ? "border-[3px] border-orange-500 shadow-xl shadow-orange-800/70"
+                                    : "border-[3px] border-teal-400 shadow-xl shadow-teal-700/70"
+                                : "border-[3px] border-slate-600"
+                        }`}
+                />
+            </div>
+
+            {/* Chain Dropdown */}
+            <ChainDropdown
+                chains={chainsForSelection}
+                selectedChainId={chainId}
+                onSelect={onChainChange}
+                placeholder={isFromChain ? "Select source chain" : "Select destination chain"}
+                disabled={isChainDisabled}
+                variant={isFromChain ? "from" : "to"}
+            />
+
+            {/* Asset Dropdown */}
+            <div className="pt-4 border-t border-slate-600/50">
+                <h3 className="text-sm font-medium text-slate-300 mb-2">{assetTitle}</h3>
+                <AssetDropdown
+                    tokens={availableTokens}
+                    selectedSymbol={tokenSymbol}
+                    onSelect={onTokenChange}
+                    placeholder={
+                        isFromChain ? "Select token to send" : "Select token to receive (optional)"
+                    }
+                    disabled={isPending || !chainId}
+                />
+            </div>
+        </div>
     );
 }
