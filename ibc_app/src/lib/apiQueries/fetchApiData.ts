@@ -16,7 +16,7 @@ import {
 } from "@/components/modules/cosmosApiData";
 import type { ClientChain } from "@/components/modules/tomlTypes";
 import { getRandomHealthyApi } from "@/lib/apiQueries/featchHealthyEndpoint";
-import logger from "@/lib/logger";
+import logger from "@/lib/clientLogger";
 
 export function useGetAddressBalance(
     chainId: string,

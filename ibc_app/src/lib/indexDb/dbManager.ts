@@ -3,7 +3,7 @@
  * every transaction is available on that users device using IndexedDB.
  */
 "use client";
-import logger from "@/lib/logger";
+import logger from "@/lib/clientLogger";
 
 // Database version and name
 // in case you need to update something in the database, you can increment the version
