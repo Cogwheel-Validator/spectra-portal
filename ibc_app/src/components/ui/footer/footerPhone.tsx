@@ -34,7 +34,7 @@ export default function FooterPhone({ className }: footerPhoneProps): JSX.Elemen
                     </Link>
                 </div>
                 <div>
-                    {/*Spectra Solver RPC Logo*/}
+                    {/*Spectra's Pathfinder RPC Logo*/}
                     <h4 className="text-base-content">Powered By:</h4>
                     <Link
                         href="https://docs.cogwheel.zone/spectra-ibc"
@@ -44,10 +44,10 @@ export default function FooterPhone({ className }: footerPhoneProps): JSX.Elemen
                     >
                         {/*Use spectra logo for now but another should take place */}
                         <Image
-                            src="/logo.png"
-                            alt="Spectra Solver RPC Logo"
-                            width={521}
-                            height={126}
+                            src="/pathfinder.png"
+                            alt="Spectra's Pathfinder RPC Logo"
+                            width={1200}
+                            height={500}
                             className="w-30"
                             loading="eager"
                         />

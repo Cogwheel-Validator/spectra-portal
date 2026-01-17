@@ -34,7 +34,8 @@ export default function RootLayout({
                 <TanstackProvider>
                     <WalletProvider>
                         <MenuInterface />
-                        <main className="flex-1 relative">{children}
+                        <main className="flex-1 relative">
+                            {children}
                             <FooterInterface />
                         </main>
                     </WalletProvider>

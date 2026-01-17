@@ -11,6 +11,7 @@ import TransferModeToggle from "@/components/ui/send/transferModeToggle";
 import WalletConnect from "@/components/ui/wallet/walletConnect";
 import { type TransferMode, useTransfer } from "@/context/transferContext";
 import { useWallet } from "@/context/walletContext";
+import { useDebouncedCallback } from "@/hooks/useDebounce";
 import {
     getRouteStepCount,
     routeSupportsPfm,
@@ -200,6 +201,7 @@ export default function SendUI({
         const value = Number(tokenBalance) / 10 ** decimals;
         return value.toLocaleString(undefined, {
             minimumFractionDigits: 0,
+            // even if the token has more decimals than 6, we only want to display 6 decimal places
             maximumFractionDigits: decimals > 6 ? 6 : decimals,
         });
     }, [tokenBalance, selectedSendToken]);
@@ -213,6 +215,26 @@ export default function SendUI({
         return amountInSmallestUnit > balanceInSmallestUnit;
     }, [tokenBalance, amount, selectedSendToken]);
 
+    // Convert amount to base units (with decimals) for pathfinder
+    const amountInBaseUnits = useMemo(() => {
+        if (!amount || !selectedSendToken) return "";
+        const decimals = selectedSendToken.decimals ?? 6;
+        try {
+            // Convert from human-readable format (e.g., "1.5") to base units
+            // Using BigInt to handle tokens with high decimals (like EVM tokens with 18)
+            const parts = amount.split(".");
+            const integerPart = parts[0] || "0";
+            const decimalPart = (parts[1] || "").padEnd(decimals, "0").slice(0, decimals);
+            
+            // Combine to get the full amount in base units
+            const fullAmount = integerPart + decimalPart;
+            // Remove leading zeros but keep at least one digit
+            return BigInt(fullAmount).toString();
+        } catch {
+            return "";
+        }
+    }, [amount, selectedSendToken]);
+
     // Pathfinder query with debounce
     const pathfinderParams = useMemo(() => {
         if (!sendChain || !receiveChain || !sendToken || !senderAddress || !receiverAddress) {
@@ -221,7 +243,7 @@ export default function SendUI({
         return {
             chainFrom: sendChain,
             tokenFromDenom: selectedSendToken?.denom ?? "",
-            amountIn: amount,
+            amountIn: amountInBaseUnits,
             chainTo: receiveChain,
             tokenToDenom: selectedReceiveToken?.denom ?? "",
             senderAddress,
@@ -233,7 +255,7 @@ export default function SendUI({
         sendChain,
         receiveChain,
         sendToken,
-        amount,
+        amountInBaseUnits,
         senderAddress,
         receiverAddress,
         selectedSendToken,
@@ -255,7 +277,7 @@ export default function SendUI({
         isLoading: routeLoading,
         isPending: routePending,
         error: routeError,
-    } = usePathfinderQuery(pathfinderParams, isReadyToQuery);
+    } = usePathfinderQuery(pathfinderParams, isReadyToQuery, 2000);
 
     // Route analysis
     const supportsPfm = useMemo(() => {
@@ -401,12 +423,20 @@ export default function SendUI({
         [updateURL],
     );
 
+    // Debounced URL update for amount using callback hook
+    const debouncedUpdateURL = useDebouncedCallback(
+        (value: string) => {
+            updateURL({ amount: value });
+        },
+        2000,
+    );
+
     const handleAmountChange = useCallback(
         (value: string) => {
             setAmount(value);
-            updateURL({ amount: value });
+            debouncedUpdateURL(value);
         },
-        [updateURL],
+        [debouncedUpdateURL],
     );
 
     // Validation

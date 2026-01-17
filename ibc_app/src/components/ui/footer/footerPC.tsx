@@ -62,7 +62,7 @@ export default function FooterPC({ className }: footerPCProps): JSX.Element {
                     </Link>
                 </div>
                 <div>
-                    {/*Spectra Solver RPC Logo*/}
+                    {/*Spectra's Pathfinder RPC Logo*/}
                     <h4 className="text-base-content">Powered By:</h4>
                     <Link
                         href="https://docs.cogwheel.zone/spectra-ibc"
@@ -72,10 +72,10 @@ export default function FooterPC({ className }: footerPCProps): JSX.Element {
                     >
                         {/*Use spectra logo for now but another should take place */}
                         <Image
-                            src="/logo.png"
-                            alt="Spectra Solver RPC Logo"
-                            width={521}
-                            height={126}
+                            src="/pathfinder.png"
+                            alt="Spectra's Pathfinder RPC Logo"
+                            width={1200}
+                            height={500}
                             className="w-40 xl:w-44 2xl:w-48"
                             loading="eager"
                         />

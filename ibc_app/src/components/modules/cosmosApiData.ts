@@ -25,7 +25,7 @@ export const AddressSpendableBalanceResponseSchema = z.object({
         }),
     ),
     pagination: z.object({
-        nextKey: z.string(),
+        next_key: z.null().optional(),
         total: z.string(),
     }),
 });

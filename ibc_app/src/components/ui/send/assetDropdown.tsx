@@ -19,7 +19,7 @@ export default function AssetDropdown({
     tokens,
     selectedSymbol,
     onSelect,
-    placeholder = "Select asset",
+    placeholder = "Select token",
     disabled = false,
     label,
     showIcon = true,
