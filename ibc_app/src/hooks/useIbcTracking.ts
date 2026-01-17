@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import { getRecvPacketEvent, type TransactionResponse } from "@/components/modules/cosmosApiData";
 import type { ClientChain } from "@/components/modules/tomlTypes";
-import { getRandomHealthyApi } from "@/lib/apiQueries/featchHealthyEndpoint";
+import { getRandomHealthyApiImperative } from "@/lib/apiQueries/featchHealthyEndpoint";
 
 // ============================================================================
 // Types
@@ -78,7 +78,7 @@ async function fetchTransactionByHash(
     chainId: string,
     hash: string,
 ): Promise<TransactionResponse | null> {
-    const apiUrl = getRandomHealthyApi(chainId);
+    const apiUrl = await getRandomHealthyApiImperative(chainId);
     if (!apiUrl) return null;
 
     try {
@@ -97,7 +97,7 @@ async function queryIbcReceive(
     destChain: ClientChain,
     packetData: IbcPacketData,
 ): Promise<TransactionResponse | null> {
-    const apiUrl = getRandomHealthyApi(destChain.id);
+    const apiUrl = await getRandomHealthyApiImperative(destChain.id);
     if (!apiUrl) return null;
 
     // Build query for recv_packet event

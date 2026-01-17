@@ -18,12 +18,42 @@ function useFetchHealthyEndpoints(chainId: string) {
     });
 }
 
-export function getRandomHealthyApi(chainId: string) {
+export function useGetRandomHealthyApi(chainId: string) {
     const { data } = useFetchHealthyEndpoints(chainId);
     return data?.apis[Math.floor(Math.random() * data.apis.length)];
 }
 
-export function getRandomHealthyRpc(chainId: string) {
+export function useGetRandomHealthyRpc(chainId: string) {
     const { data } = useFetchHealthyEndpoints(chainId);
     return data?.rpcs[Math.floor(Math.random() * data.rpcs.length)];
+}
+
+/**
+ * Non-hook version for imperative use (e.g., in async functions, tasks, etc.)
+ * Fetches healthy endpoints directly without React hooks
+ */
+export async function getRandomHealthyApiImperative(chainId: string): Promise<string | null> {
+    try {
+        const response = await fetch(`/api/health?chainPath=${chainId}`);
+        const data: { apis: string[]; rpcs: string[] } = await response.json();
+        if (!data.apis || data.apis.length === 0) return null;
+        return data.apis[Math.floor(Math.random() * data.apis.length)];
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Non-hook version for imperative use (e.g., in async functions, tasks, etc.)
+ * Fetches healthy endpoints directly without React hooks
+ */
+export async function getRandomHealthyRpcImperative(chainId: string): Promise<string | null> {
+    try {
+        const response = await fetch(`/api/health?chainPath=${chainId}`);
+        const data: { apis: string[]; rpcs: string[] } = await response.json();
+        if (!data.rpcs || data.rpcs.length === 0) return null;
+        return data.rpcs[Math.floor(Math.random() * data.rpcs.length)];
+    } catch {
+        return null;
+    }
 }

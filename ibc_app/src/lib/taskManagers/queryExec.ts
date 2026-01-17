@@ -7,7 +7,7 @@ import {
 } from "@/components/modules/cosmosApiData";
 import type { ClientChain } from "@/components/modules/tomlTypes";
 import {
-    getIbcDenomTrace,
+    useGetIbcDenomTrace,
     useGetTransactionByEvents,
     useGetTransactionByHash,
 } from "../apiQueries/fetchApiData";
@@ -66,14 +66,12 @@ export function useGetConfirmationTx(
     },
     limit: number = 1,
 ): TransactionResponse | undefined {
-    // first get the IBC denom trace if the token denom starts with the ibc, else we assume it is a native token
-    let denomTrace: IbcDenomTraceResponse | undefined;
-    if (tokenDenom.startsWith("ibc/")) {
-        const denomTraceResponse = getIbcDenomTrace(innerChainId, tokenDenom);
-        if (denomTraceResponse.isSuccess) {
-            denomTrace = denomTraceResponse.data;
-        }
-    }
+    const denomTraceResponse = useGetIbcDenomTrace(
+        innerChainId,
+        tokenDenom.startsWith("ibc/") ? tokenDenom : "",
+    );
+
+    const denomTrace = denomTraceResponse.isSuccess ? denomTraceResponse.data : undefined;
 
     // Validate receiver address format
     const isValidReceiver = receiver.startsWith(chainConfig.bech32_prefix);

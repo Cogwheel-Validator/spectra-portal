@@ -15,7 +15,7 @@ import {
 import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import type { ClientChain } from "@/components/modules/tomlTypes";
-import { getRandomHealthyRpc } from "@/lib/apiQueries/featchHealthyEndpoint";
+import { getRandomHealthyRpcImperative } from "@/lib/apiQueries/featchHealthyEndpoint";
 import {
     MsgSplitRouteSwapExactAmountIn,
     MsgSwapExactAmountIn,
@@ -505,7 +505,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                 `${feeCurrency.gas_price_step.average}${feeCurrency.coin_minimal_denom}`,
             );
 
-            const randomHealthyRpc = getRandomHealthyRpc(chainId) as string;
+            const randomHealthyRpc = await getRandomHealthyRpcImperative(chainId);
+            if (!randomHealthyRpc) {
+                throw new Error(`No healthy RPC found for chain ${chainId}`);
+            }
             const client = await SigningStargateClient.connectWithSigner(
                 randomHealthyRpc,
                 offlineSigner,
