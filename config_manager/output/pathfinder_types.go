@@ -40,6 +40,13 @@ type PathfinderChain struct {
 	// Bech32 prefix for addresses on this chain (e.g., "osmo", "cosmos")
 	Bech32Prefix string `json:"bech32_prefix,omitempty" toml:"bech32_prefix,omitempty"`
 
+	// Native tokens on this chain (includes tokens with no allowed destinations)
+	// These are always available on their native chain even if they can't be sent via IBC.
+	//
+	// Example OSMO really doesn't have any use case outside of the Osmosis so in the chain config the uosmo
+	// allowed_destinations is set to ["none"]
+	NativeTokens []PathfinderTokenInfo `json:"native_tokens,omitempty" toml:"native_tokens,omitempty"`
+
 	// Available IBC routes from this chain
 	Routes []PathfinderRoute `json:"routes" toml:"routes"`
 }

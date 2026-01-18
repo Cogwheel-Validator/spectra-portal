@@ -59,7 +59,20 @@ func (l *ChainConfigLoader) ConvertToRouterTypes(config *output.PathfinderConfig
 			BrokerId:         pathfinderChain.BrokerID,
 			IBCHooksContract: pathfinderChain.IBCHooksContract,
 			Bech32Prefix:     pathfinderChain.Bech32Prefix,
+			NativeTokens:     make([]router.TokenInfo, len(pathfinderChain.NativeTokens)),
 			Routes:           make([]router.BasicRoute, len(pathfinderChain.Routes)),
+		}
+
+		// Convert native tokens
+		for j, nativeToken := range pathfinderChain.NativeTokens {
+			chains[i].NativeTokens[j] = router.TokenInfo{
+				ChainDenom:  nativeToken.ChainDenom,
+				IbcDenom:    nativeToken.IBCDenom,
+				BaseDenom:   nativeToken.BaseDenom,
+				OriginChain: nativeToken.OriginChain,
+				Symbol:      nativeToken.Symbol,
+				Decimals:    nativeToken.Decimals,
+			}
 		}
 
 		for j, route := range pathfinderChain.Routes {

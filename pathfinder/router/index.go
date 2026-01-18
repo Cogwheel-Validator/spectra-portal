@@ -44,6 +44,7 @@ type PathfinderChain struct {
 	IBCHooksContract string
 	// Bech32Prefix for address conversion (e.g., "osmo", "cosmos")
 	Bech32Prefix string
+	NativeTokens []TokenInfo
 	Routes       []BasicRoute
 }
 
@@ -116,6 +117,16 @@ func (ri *RouteIndex) BuildIndex(chains []PathfinderChain) error {
 		// Initialize chain routes map
 		if ri.chainRoutes[chain.Id] == nil {
 			ri.chainRoutes[chain.Id] = make(map[string]*BasicRoute)
+		}
+
+		// Add native tokens to denomToTokenInfo (even if they're not in any routes)
+		// This ensures tokens with allowed_destinations=["none"] are still available on their native chain
+		for _, nativeToken := range chain.NativeTokens {
+			// Only add if not already present (routes take precedence as they have more complete info)
+			if _, exists := ri.denomToTokenInfo[chain.Id][nativeToken.ChainDenom]; !exists {
+				tokenInfoCopy := nativeToken
+				ri.denomToTokenInfo[chain.Id][nativeToken.ChainDenom] = &tokenInfoCopy
+			}
 		}
 
 		for _, route := range chain.Routes {

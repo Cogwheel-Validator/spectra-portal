@@ -44,7 +44,20 @@ func (c *PathfinderConverter) convertChain(chain *enriched.ChainConfig) Pathfind
 		BrokerID:         chain.BrokerID,
 		IBCHooksContract: chain.IBCHooksContract,
 		Bech32Prefix:     chain.Bech32Prefix,
+		NativeTokens:     make([]PathfinderTokenInfo, 0, len(chain.NativeTokens)),
 		Routes:           make([]PathfinderRoute, 0, len(chain.Routes)),
+	}
+
+	// Add all native tokens to the chain (including those with no allowed destinations)
+	for _, token := range chain.NativeTokens {
+		pathfinderChain.NativeTokens = append(pathfinderChain.NativeTokens, PathfinderTokenInfo{
+			ChainDenom:  token.Denom,
+			IBCDenom:    "", // For this we do not need to compute the IBC denom because it is not used in this form
+			BaseDenom:   token.Denom,
+			OriginChain: chain.ID,
+			Symbol:      token.Symbol,
+			Decimals:    token.Decimals,
+		})
 	}
 
 	for _, route := range chain.Routes {
