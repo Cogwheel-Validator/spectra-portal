@@ -16,10 +16,26 @@ has_pfm = true
 url = "https://rpc.cosmoshub-4.citizenweb3.com/"
 provider = "CitizenWeb3"
 
+[[chain.rpcs]]
+url = "https://cosmos-rpc.polkachu.com/"
+provider = "Polkachu"
+
+[[chain.rpcs]]
+url = "https://rpc-cosmoshub.ecostake.com"
+provider = "Ecostake"
+
 # REST endpoints
 [[chain.rest]]
 url = "https://api.cosmoshub-4.citizenweb3.com/"
 provider = "CitizenWeb3"
+
+[[chain.rest]]
+url = "https://cosmos-api.polkachu.com/"
+provider = "Polkachu"
+
+[[chain.rest]]
+url = "https://rest-cosmoshub.ecostake.com"
+provider = "Ecostake"
 
 [[token]]
 denom = "uatom"
