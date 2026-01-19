@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
 	"connectrpc.com/otelconnect"
@@ -143,6 +144,15 @@ func NewServer(
 	// Create the PathfinderServer implementation
 	pathfinderServer := NewPathfinderServer(pathfinder, denomResolver)
 
+	// Initialize protovalidate validator
+	validator, err := protovalidate.New()
+	if err != nil {
+		Logger.Warn().Err(err).Msg("Failed to initialize protovalidate, continuing without validation")
+		validator = nil
+	} else {
+		Logger.Info().Msg("Protovalidate initialized successfully")
+	}
+
 	// Configure connect options
 	connectOpts := []connect.HandlerOption{
 		connect.WithRecover(recoverHandler),
@@ -150,6 +160,11 @@ func NewServer(
 			loggingInterceptor(),
 			noCacheInterceptor(), // Prevent caching of volatile swap/route data
 		),
+	}
+
+	// Add validation interceptor if validator was initialized
+	if validator != nil {
+		connectOpts = append(connectOpts, connect.WithInterceptors(validationInterceptor(validator)))
 	}
 
 	// Add OpenTelemetry tracing interceptor if enabled

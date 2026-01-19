@@ -6,9 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/cors"
+	"google.golang.org/protobuf/proto"
 )
 
 // zerologMiddleware logs HTTP requests using zerolog
@@ -172,6 +174,29 @@ func noCacheInterceptor() connect.UnaryInterceptorFunc {
 				resp.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
 			}
 			return resp, err
+		}
+	}
+}
+
+// validationInterceptor validates incoming requests using protovalidate.
+// It checks all validation rules defined in the proto files (required fields,
+// string length, numeric ranges, etc.) and returns InvalidArgument if validation fails.
+func validationInterceptor(validator protovalidate.Validator) connect.UnaryInterceptorFunc {
+	return func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			// Validate the request message if it implements the proto.Message interface
+			if msgAny := req.Any(); msgAny != nil {
+				if msg, ok := msgAny.(proto.Message); ok {
+					if err := validator.Validate(msg); err != nil {
+						Logger.Debug().
+							Str("procedure", req.Spec().Procedure).
+							Err(err).
+							Msg("Request validation failed")
+						return nil, connect.NewError(connect.CodeInvalidArgument, err)
+					}
+				}
+			}
+			return next(ctx, req)
 		}
 	}
 }
