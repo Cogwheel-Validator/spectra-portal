@@ -31,6 +31,18 @@ provider = "Cogwheel ⚙️"
 url = "https://rpc.osmosis.zone"
 provider = "Osmosis"
 
+[[chain.rpcs]]
+url = "https://rpc.osmosis.citizenweb3.com"
+provider = "CitizenWeb3"
+
+[[chain.rpcs]]
+url = "https://osmosis-rpc.polkachu.com"
+provider = "Polkachu"
+
+[[chain.rpcs]]
+url = "https://rpc-osmosis.ecostake.com/"
+provider = "Ecostake"
+
 # REST endpoints
 [[chain.rest]]
 url = "https://osmosis-api.cogwheel.zone"
@@ -39,6 +51,18 @@ provider = "Cogwheel ⚙️"
 [[chain.rest]]
 url = "https://lcd.osmosis.zone"
 provider = "Osmosis"
+
+[[chain.rest]]
+url = "https://api.osmosis.citizenweb3.com"
+provider = "CitizenWeb3"
+
+[[chain.rest]]
+url = "https://osmosis-api.polkachu.com"
+provider = "Polkachu"
+
+[[chain.rest]]
+url = "https://rest-osmosis.ecostake.com"
+provider = "Ecostake"
 
 # Native tokens on this chain
 [[token]]
