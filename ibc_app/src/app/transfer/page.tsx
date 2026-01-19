@@ -30,7 +30,8 @@ export default async function TransferPage(props: TransferPageProps) {
     // Fills available space in the flex layout
     // Particles expand to fill the entire area
     return (
-        <div className="relative w-full h-full min-h-screen flex-1 bg-blend-soft-light bg-radial-[at_50%_65%] from-slate-800 via-blue-950 to-indigo-950 to-90%">
+        <div className="relative w-full h-full min-h-screen flex-1 bg-blend-soft-light bg-radial-[at_50%_65%] 
+        from-slate-800 via-blue-950 to-indigo-950 to-90% pt-8 pb-40 lg:pt-16 lg:pb-32">
             <Particles className="absolute inset-0 z-0" />
             <div className="relative z-10 h-full">
                 <TransferPageClient

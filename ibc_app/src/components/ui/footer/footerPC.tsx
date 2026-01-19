@@ -10,7 +10,7 @@ interface footerPCProps {
 export default function FooterPC({ className }: footerPCProps): JSX.Element {
     const year = new Date().getFullYear();
     return (
-        <footer className={`bg-transparent absolute bottom-0 w-full z-20 p-4 mt-auto ${className}`}>
+        <footer className={`bg-transparent absolute bottom-0 w-full p-4 mt-auto ${className}`}>
             <div className="flex flex-row items-center justify-between">
                 {/*Powered by Cogwheel Logo*/}
                 <div>
@@ -74,7 +74,7 @@ export default function FooterPC({ className }: footerPCProps): JSX.Element {
                         <Image
                             src="/pathfinder.png"
                             alt="Spectra's Pathfinder RPC Logo"
-                            width={1200}
+                            width={2000}
                             height={500}
                             className="w-40 xl:w-44 2xl:w-48"
                             loading="eager"

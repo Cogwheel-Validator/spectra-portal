@@ -56,7 +56,7 @@ async function checkCorsPreflightHealthy(url: string): Promise<boolean> {
         const corsHeader = response.headers.get("Access-Control-Allow-Origin");
         
         if (!corsHeader || (!corsHeader.includes("*") && !corsHeader.includes(appUrl))) {
-            logger.warn(`🔒 CORS preflight failed: Missing or mismatched Access-Control-Allow-Origin header for ${url}`, {
+            logger.warn(`CORS preflight failed: Missing or mismatched Access-Control-Allow-Origin header for ${url}`, {
                 url,
                 expectedOrigin: appUrl,
                 receivedOriginHeader: corsHeader,

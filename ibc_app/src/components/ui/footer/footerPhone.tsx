@@ -11,7 +11,7 @@ export default function FooterPhone({ className }: footerPhoneProps): JSX.Elemen
     const year = new Date().getFullYear();
     return (
         <footer
-            className={`bg-transparent absolute bottom-0 w-full z-20 p-4 space-y-2 mt-auto ${className}`}
+            className={`bg-transparent absolute bottom-0 w-full p-4 space-y-2 mt-auto ${className}`}
         >
             <div className="flex flex-row items-center justify-between">
                 {/*Powered by Cogwheel Logo*/}
@@ -46,7 +46,7 @@ export default function FooterPhone({ className }: footerPhoneProps): JSX.Elemen
                         <Image
                             src="/pathfinder.png"
                             alt="Spectra's Pathfinder RPC Logo"
-                            width={1200}
+                            width={2000}
                             height={500}
                             className="w-30"
                             loading="eager"

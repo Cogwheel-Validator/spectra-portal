@@ -48,7 +48,7 @@ export default function SendUI({
     const [sendToken, setSendToken] = useState(initialSendToken);
     const [receiveToken, setReceiveToken] = useState(initialReceiveToken);
     const [amount, setAmount] = useState(initialAmount);
-    const [mode, setMode] = useState<TransferMode>("smart");
+    const [mode, setMode] = useState<TransferMode>("manual");
 
     // Helper functions
     const getChainById = useCallback(
@@ -673,7 +673,7 @@ export default function SendUI({
                 )}
 
                 {routeInfo && !routeLoading && !routePending && (
-                    <div className="bg-gradient-to-r from-teal-500/10 to-emerald-500/10 rounded-xl p-4 border border-teal-500/30">
+                    <div className="bg-linear-to-r from-teal-500/10 to-emerald-500/10 rounded-xl p-4 border border-teal-500/30">
                         <div className="flex items-center justify-between mb-3">
                             <h3 className="text-base font-semibold text-white">Route Summary</h3>
                             <CheckCircle2 className="w-4 h-4 text-teal-400" />
@@ -731,7 +731,7 @@ export default function SendUI({
                         transition-all duration-300 flex items-center justify-center gap-3
                         ${
                             canSubmit
-                                ? "bg-gradient-to-r from-teal-500 to-emerald-500 text-white hover:from-teal-400 hover:to-emerald-400 shadow-lg shadow-teal-500/25"
+                                ? "bg-linear-to-r from-teal-500 to-emerald-500 text-white hover:from-teal-400 hover:to-emerald-400 shadow-lg shadow-teal-500/25"
                                 : "bg-slate-700 text-slate-400 cursor-not-allowed"
                         }
                     `}
@@ -743,7 +743,7 @@ export default function SendUI({
                     ) : routeLoading || routePending ? (
                         <>
                             <Loader2 className="w-5 h-5 animate-spin" />
-                            Calculating...
+                            Computing...
                         </>
                     ) : (
                         <>
