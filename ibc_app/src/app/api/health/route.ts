@@ -20,6 +20,9 @@ const CACHE_TTL = 120 * 1000;
 // Health check timeout (2 seconds)
 const HEALTH_CHECK_TIMEOUT = 2000;
 
+// App URL
+const appUrl: string = "https://ibc.thespectra.io"
+
 // Get the chain paths ( chain paths = chainId ) with it's own RPCs and APIs endpoints
 const chainPaths: Map<string, { apis: string[]; rpcs: string[] }> = new Map();
 fullClientConfig.config.chains.forEach((chain) => {
@@ -28,6 +31,50 @@ fullClientConfig.config.chains.forEach((chain) => {
         rpcs: fullClientConfig.getChainRPCs(chain.id),
     });
 });
+
+/**
+ * Check if a CORS preflight request would succeed from the browser
+ * This simulates what a browser would do before making the actual request
+ */
+async function checkCorsPreflightHealthy(url: string): Promise<boolean> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
+
+    try {
+        const response = await fetch(url, {
+            method: "OPTIONS",
+            signal: controller.signal,
+            headers: {
+                "Origin": appUrl,
+                "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        });
+        clearTimeout(timeoutId);
+        
+        // Check if CORS headers are present in response
+        const corsHeader = response.headers.get("Access-Control-Allow-Origin");
+        
+        if (!corsHeader || (!corsHeader.includes("*") && !corsHeader.includes(appUrl))) {
+            logger.warn(`🔒 CORS preflight failed: Missing or mismatched Access-Control-Allow-Origin header for ${url}`, {
+                url,
+                expectedOrigin: appUrl,
+                receivedOriginHeader: corsHeader,
+            });
+            return false;
+        }
+        
+        return true;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        logger.warn(`Preflight check failed for ${url}: ${error instanceof Error ? error.message : String(error)}`, {
+            url,
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return false;
+    }
+}
+
 /**
  * Check if an RPC endpoint is healthy
  */
@@ -36,23 +83,48 @@ async function checkRpcHealth(rpc: string): Promise<[string, string, number]> {
     const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
 
     try {
+        // First check CORS preflight
+        const corsPreflight = await checkCorsPreflightHealthy(`${rpc}/abci_info`);
+        if (!corsPreflight) {
+            return ["", "", 0];
+        }
+
+        // Now make the actual request with browser-like headers
         const response = await fetch(`${rpc}/abci_info`, {
             method: "GET",
             signal: controller.signal,
             headers: {
                 "Content-Type": "application/json",
-                Origin: "https://ibc.thespectra.io", // So if there is some cors blocking the endpoint
+                "Origin": appUrl,
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": `${appUrl}/`,
+                "Accept": "application/json",
             },
         });
         clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            logger.warn(`RPC returned non-OK status: ${response.status} for ${rpc}`, { rpc, status: response.status });
+            return ["", "", 0];
+        }
+        
         const data = await response.json();
         const version = data.result.response.version;
         const abciAppName = data.result.response.data;
         const lastBlockHeight = parseInt(data.result.response.last_block_height, 10);
         return [version, abciAppName, lastBlockHeight];
     } catch (error) {
-        console.log(`Error when RPC checking ${rpc}: ${error}`);
         clearTimeout(timeoutId);
+        
+        if (error instanceof Error && error.name === "AbortError") {
+            logger.warn(`timeout: RPC health check timed out for ${rpc} (${HEALTH_CHECK_TIMEOUT}ms)`, { rpc });
+        } else {
+            logger.warn(`RPC health check failed for ${rpc}: ${error instanceof Error ? error.message : String(error)}`, {
+                rpc,
+                errorName: error instanceof Error ? error.name : "Unknown",
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+        }
         return ["", "", 0];
     }
 }
@@ -62,13 +134,30 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
     const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
 
     try {
+        // First check CORS preflight for both endpoints
+        const corsPreflightNodeInfo = await checkCorsPreflightHealthy(
+            `${api}/cosmos/base/tendermint/v1beta1/node_info`
+        );
+        const corsPreflightSyncing = await checkCorsPreflightHealthy(
+            `${api}/cosmos/base/tendermint/v1beta1/syncing`
+        );
+
+        if (!corsPreflightNodeInfo || !corsPreflightSyncing) {
+            clearTimeout(timeoutId);
+            return ["", "", false];
+        }
+
+        // Now make the actual requests with browser-like headers
         const responses = await Promise.all([
             fetch(`${api}/cosmos/base/tendermint/v1beta1/node_info`, {
                 method: "GET",
                 signal: controller.signal,
                 headers: {
                     "Content-Type": "application/json",
-                    Origin: "https://ibc.thespectra.io", // So if there is some cors blocking the endpoint
+                    "Origin": appUrl,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Referer": `${appUrl}/`,
+                    "Accept": "application/json",
                 },
             }),
             fetch(`${api}/cosmos/base/tendermint/v1beta1/syncing`, {
@@ -76,11 +165,25 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
                 signal: controller.signal,
                 headers: {
                     "Content-Type": "application/json",
-                    Origin: "https://ibc.thespectra.io", // So if there is some cors blocking the endpoint
+                    "Origin": appUrl,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Referer": `${appUrl}/`,
+                    "Accept": "application/json",
                 },
             }),
         ]);
         clearTimeout(timeoutId);
+        
+        // Check if both responses are OK
+        if (!responses[0].ok || !responses[1].ok) {
+            logger.warn(`API returned non-OK status for ${api}`, { 
+                api, 
+                nodeInfoStatus: responses[0].status,
+                syncingStatus: responses[1].status 
+            });
+            return ["", "", false];
+        }
+        
         const nodeInfo = await responses[0].json();
         const syncing = await responses[1].json();
         return [
@@ -89,8 +192,17 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
             syncing.syncing,
         ];
     } catch (error) {
-        console.log(`Error when API checking ${api}: ${error}`);
         clearTimeout(timeoutId);
+        
+        if (error instanceof Error && error.name === "AbortError") {
+            logger.warn(`timeout: API health check timed out for ${api} (${HEALTH_CHECK_TIMEOUT}ms)`, { api });
+        } else {
+            logger.warn(`API health check failed for ${api}: ${error instanceof Error ? error.message : String(error)}`, {
+                api,
+                errorName: error instanceof Error ? error.name : "Unknown",
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+        }
         return ["", "", false];
     }
 }
@@ -130,15 +242,41 @@ async function checkEndpointsHealth(
         }),
     );
 
-    logger.info(
-        `Checked ${endpoints.length} endpoints, ${healthyEndpoints.filter((r) => r !== undefined).length} healthy`,
-        {
-            endpoints,
-            healthyEndpoints,
-        },
-    );
+    // Filter out undefined values to only return actual healthy endpoints
+    const filteredHealthyEndpoints = healthyEndpoints.filter((r) => r !== undefined);
 
-    return healthyEndpoints;
+    const healthyCount = filteredHealthyEndpoints.length;
+    const endpointType = checking.toUpperCase();
+    
+    if (healthyCount === 0) {
+        logger.error(
+            `no healthy ${endpointType} endpoints found. All ${endpoints.length} endpoints failed health checks.`,
+            {
+                totalEndpoints: endpoints.length,
+                healthyCount,
+                endpoints,
+            },
+        );
+    } else if (healthyCount < endpoints.length) {
+        logger.warn(
+            `some ${endpointType} endpoints are unhealthy (${healthyCount}/${endpoints.length} healthy)`,
+            {
+                healthyCount,
+                totalEndpoints: endpoints.length,
+                healthyEndpoints: filteredHealthyEndpoints,
+            },
+        );
+    } else {
+        logger.info(
+            `all ${endpointType} endpoints are healthy (${healthyCount}/${endpoints.length})`,
+            {
+                healthyCount,
+                totalEndpoints: endpoints.length,
+            },
+        );
+    }
+
+    return filteredHealthyEndpoints;
 }
 
 /**

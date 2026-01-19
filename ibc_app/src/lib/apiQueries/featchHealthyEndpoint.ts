@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import clientLogger from "@/lib/clientLogger";
 
 function useFetchHealthyEndpoints(chainId: string) {
     return useQuery<{ apis: string[]; rpcs: string[] }>({
@@ -35,10 +36,23 @@ export function useGetRandomHealthyRpc(chainId: string) {
 export async function getRandomHealthyApiImperative(chainId: string): Promise<string | null> {
     try {
         const response = await fetch(`/api/health?chainPath=${chainId}`);
+        if (!response.ok) {
+            clientLogger.error(`Health check returned status ${response.status} for chain ${chainId}`);
+            return null;
+        }
         const data: { apis: string[]; rpcs: string[] } = await response.json();
-        if (!data.apis || data.apis.length === 0) return null;
-        return data.apis[Math.floor(Math.random() * data.apis.length)];
-    } catch {
+        if (!data.apis || data.apis.length === 0) {
+            clientLogger.warn(`No healthy APIs found for chain ${chainId}`);
+            return null;
+        }
+        const api = data.apis[Math.floor(Math.random() * data.apis.length)];
+        if (!api) {
+            clientLogger.error(`Selected API is undefined for chain ${chainId}`);
+            return null;
+        }
+        return api;
+    } catch (error) {
+        clientLogger.error(`Error fetching healthy API for chain ${chainId}:`, error);
         return null;
     }
 }
@@ -50,10 +64,23 @@ export async function getRandomHealthyApiImperative(chainId: string): Promise<st
 export async function getRandomHealthyRpcImperative(chainId: string): Promise<string | null> {
     try {
         const response = await fetch(`/api/health?chainPath=${chainId}`);
+        if (!response.ok) {
+            clientLogger.error(`Health check returned status ${response.status} for chain ${chainId}`);
+            return null;
+        }
         const data: { apis: string[]; rpcs: string[] } = await response.json();
-        if (!data.rpcs || data.rpcs.length === 0) return null;
-        return data.rpcs[Math.floor(Math.random() * data.rpcs.length)];
-    } catch {
+        if (!data.rpcs || data.rpcs.length === 0) {
+            clientLogger.warn(`No healthy RPCs found for chain ${chainId}`);
+            return null;
+        }
+        const rpc = data.rpcs[Math.floor(Math.random() * data.rpcs.length)];
+        if (!rpc) {
+            clientLogger.error(`Selected RPC is undefined for chain ${chainId}`);
+            return null;
+        }
+        return rpc;
+    } catch (error) {
+        clientLogger.error(`Error fetching healthy RPC for chain ${chainId}:`, error);
         return null;
     }
 }

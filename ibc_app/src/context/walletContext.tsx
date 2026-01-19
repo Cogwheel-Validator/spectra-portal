@@ -16,6 +16,7 @@ import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import type { ClientChain } from "@/components/modules/tomlTypes";
 import { getRandomHealthyRpcImperative } from "@/lib/apiQueries/featchHealthyEndpoint";
+import clientLogger from "@/lib/clientLogger";
 import {
     MsgSplitRouteSwapExactAmountIn,
     MsgSwapExactAmountIn,
@@ -509,11 +510,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
             if (!randomHealthyRpc) {
                 throw new Error(`No healthy RPC found for chain ${chainId}`);
             }
-            const client = await SigningStargateClient.connectWithSigner(
+
+            let client: SigningStargateClient;
+            try {
+            client = await SigningStargateClient.connectWithSigner(
                 randomHealthyRpc,
                 offlineSigner,
                 { gasPrice, registry, aminoTypes },
             );
+            } catch (error) {
+                clientLogger.error("Error when trying to connect to the Stargete Client", error)
+                throw error;
+            }
 
             let finalFee: StdFee;
             if (fee === "auto") {
