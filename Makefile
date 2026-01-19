@@ -27,13 +27,14 @@ generate-config:
 		-input ./chain_configs \
 		-copy-icons ./ibc_app/public/ 
 
-# Generate the config file for the client app and pathfinder using the already cached ibc registry
-generate-config-c:
-	@echo "Generating config file for the client app and pathfinder backend using the already cached ibc registry..."
+# Generate the config file for the client app and pathfinder using the already stored ibc and keplr registry
+generate-config-l:
+	@echo "Generating config file for the client app and pathfinder backend using the already stored ibc and keplr registry..."
 	go run config_manager/cmd/generate/main.go \
 		-input ./chain_configs \
-		-registry-cache ./ibc-registry \
-		-use-cache \
+		-local-registry-cache ./ibc-registry \
+		-local-keplr-cache ./keplr-registry \
+		-use-local-data \
 		-copy-icons ./ibc_app/public/
 
 # Validate the config files for the client app and pathfinder backend

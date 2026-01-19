@@ -42,7 +42,7 @@ func GetKeplrRegistry(dst string) error {
 			"git": &getter.GitGetter{},
 		},
 	}
-	fmt.Printf("Downloading keplr registry from %s", url)
+	log.Printf("Downloading keplr registry from %s", url)
 	err := opts.Get()
 	if err != nil {
 		return fmt.Errorf("failed to download keplr registry: %w", err)

@@ -45,20 +45,20 @@ type GeneratorConfig struct {
 	// Output format for client config (default: auto from extension)
 	ClientOutputFormat OutputFormat
 
-	// Path to cache the IBC registry data (optional)
-	RegistryCachePath string
+	// Path to stored the IBC registry data (optional)
+	LocalIbcRegistryPath string
 
-	// Path to cache the Keplr registry data (optional)
-	KeplrCachePath string
+	// Path to stored the Keplr registry data (optional)
+	LocalKeplrRegistryPath string
 
 	// Skip network validation of endpoints
 	SkipNetworkValidation bool
 
-	// Skip downloading fresh registry data (use cache)
-	UseRegistryCache bool
+	// Skip downloading fresh registry data (use stored data)
+	UseLocalIbcReg bool
 
-	// Skip downloading fresh keplr registry data (use cache)
-	UseKeplrCache bool
+	// Skip downloading fresh keplr registry data (use stored data)
+	UseLocalKeplrReg bool
 
 	// If the path is set for this option the program will assume this is enabled and will try to copy the icons.
 	CopyIconsPath string
@@ -234,7 +234,7 @@ func (g *Generator) fetchIBCRegistry(inputConfigs map[string]*input.ChainInput) 
 	log.Printf("Looking for IBC data matching: %v", keywords)
 
 	// Determine cache path
-	cachePath := g.config.RegistryCachePath
+	cachePath := g.config.LocalIbcRegistryPath
 	if cachePath == "" {
 		currentDir, err := os.Getwd()
 		if err != nil {
@@ -243,8 +243,8 @@ func (g *Generator) fetchIBCRegistry(inputConfigs map[string]*input.ChainInput) 
 		cachePath = filepath.Join(currentDir, "ibc-registry")
 	}
 
-	// Download registry if not using cache or cache doesn't exist
-	if !g.config.UseRegistryCache {
+	// Download registry if not using local data or local data doesn't exist
+	if !g.config.UseLocalIbcReg {
 		if err := os.RemoveAll(cachePath); err != nil {
 			return nil, fmt.Errorf("failed to clear registry cache: %w", err)
 		}
@@ -285,19 +285,19 @@ func (g *Generator) fetchKeplrRegistry(inputConfigs map[string]*input.ChainInput
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current directory: %w", err)
 	}
-	cachePath := g.config.KeplrCachePath
+	cachePath := g.config.LocalKeplrRegistryPath
 	if cachePath == "" {
 		cachePath = filepath.Join(currentDir, "keplr-registry")
 	}
 
-	if !g.config.UseKeplrCache {
+	if !g.config.UseLocalKeplrReg {
 		if err := os.RemoveAll(cachePath); err != nil {
 			return nil, fmt.Errorf("failed to clear keplr cache: %w", err)
 		}
-	}
 
-	if err := keplr.GetKeplrRegistry(cachePath); err != nil {
-		return nil, fmt.Errorf("failed to download Keplr registry: %w", err)
+		if err := keplr.GetKeplrRegistry(cachePath); err != nil {
+			return nil, fmt.Errorf("failed to download Keplr registry: %w", err)
+		}
 	}
 
 	// Process the keplr registry
