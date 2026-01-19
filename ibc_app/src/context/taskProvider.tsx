@@ -120,7 +120,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                     setIsDbReady(true);
                 }
             } catch (error) {
-                console.error("Failed to connect to IndexedDB:", error);
+                clientLogger.error("Failed to connect to IndexedDB:", error);
             }
         };
 

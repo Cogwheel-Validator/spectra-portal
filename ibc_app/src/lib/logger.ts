@@ -1,5 +1,5 @@
-import bunyan from "bunyan";
+import pino from "pino";
 
-const logger = bunyan.createLogger({ name: "spectra-ibc-hub-app" });
+const logger = pino({ name: "spectra-ibc-hub-app" });
 
 export default logger;

@@ -21,7 +21,7 @@ const CACHE_TTL = 120 * 1000;
 const HEALTH_CHECK_TIMEOUT = 2000;
 
 // App URL
-const appUrl: string = "https://ibc.thespectra.io"
+const appUrl: string = "https://ibc.thespectra.io";
 
 // Get the chain paths ( chain paths = chainId ) with it's own RPCs and APIs endpoints
 const chainPaths: Map<string, { apis: string[]; rpcs: string[] }> = new Map();
@@ -45,32 +45,38 @@ async function checkCorsPreflightHealthy(url: string): Promise<boolean> {
             method: "OPTIONS",
             signal: controller.signal,
             headers: {
-                "Origin": appUrl,
+                Origin: appUrl,
                 "Access-Control-Request-Method": "GET",
                 "Access-Control-Request-Headers": "content-type",
             },
         });
         clearTimeout(timeoutId);
-        
+
         // Check if CORS headers are present in response
         const corsHeader = response.headers.get("Access-Control-Allow-Origin");
-        
+
         if (!corsHeader || (!corsHeader.includes("*") && !corsHeader.includes(appUrl))) {
-            logger.warn(`CORS preflight failed: Missing or mismatched Access-Control-Allow-Origin header for ${url}`, {
-                url,
-                expectedOrigin: appUrl,
-                receivedOriginHeader: corsHeader,
-            });
+            logger.warn(
+                `CORS preflight failed: Missing or mismatched Access-Control-Allow-Origin header for ${url}`,
+                {
+                    url,
+                    expectedOrigin: appUrl,
+                    receivedOriginHeader: corsHeader,
+                },
+            );
             return false;
         }
-        
+
         return true;
     } catch (error) {
         clearTimeout(timeoutId);
-        logger.warn(`Preflight check failed for ${url}: ${error instanceof Error ? error.message : String(error)}`, {
-            url,
-            error: error instanceof Error ? error.message : String(error),
-        });
+        logger.warn(
+            `Preflight check failed for ${url}: ${error instanceof Error ? error.message : String(error)}`,
+            {
+                url,
+                error: error instanceof Error ? error.message : String(error),
+            },
+        );
         return false;
     }
 }
@@ -95,19 +101,22 @@ async function checkRpcHealth(rpc: string): Promise<[string, string, number]> {
             signal: controller.signal,
             headers: {
                 "Content-Type": "application/json",
-                "Origin": appUrl,
+                Origin: appUrl,
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": `${appUrl}/`,
-                "Accept": "application/json",
+                Referer: `${appUrl}/`,
+                Accept: "application/json",
             },
         });
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) {
-            logger.warn(`RPC returned non-OK status: ${response.status} for ${rpc}`, { rpc, status: response.status });
+            logger.warn(`RPC returned non-OK status: ${response.status} for ${rpc}`, {
+                rpc,
+                status: response.status,
+            });
             return ["", "", 0];
         }
-        
+
         const data = await response.json();
         const version = data.result.response.version;
         const abciAppName = data.result.response.data;
@@ -115,15 +124,21 @@ async function checkRpcHealth(rpc: string): Promise<[string, string, number]> {
         return [version, abciAppName, lastBlockHeight];
     } catch (error) {
         clearTimeout(timeoutId);
-        
+
         if (error instanceof Error && error.name === "AbortError") {
-            logger.warn(`timeout: RPC health check timed out for ${rpc} (${HEALTH_CHECK_TIMEOUT}ms)`, { rpc });
+            logger.warn(
+                `timeout: RPC health check timed out for ${rpc} (${HEALTH_CHECK_TIMEOUT}ms)`,
+                { rpc },
+            );
         } else {
-            logger.warn(`RPC health check failed for ${rpc}: ${error instanceof Error ? error.message : String(error)}`, {
-                rpc,
-                errorName: error instanceof Error ? error.name : "Unknown",
-                errorMessage: error instanceof Error ? error.message : String(error),
-            });
+            logger.warn(
+                `RPC health check failed for ${rpc}: ${error instanceof Error ? error.message : String(error)}`,
+                {
+                    rpc,
+                    errorName: error instanceof Error ? error.name : "Unknown",
+                    errorMessage: error instanceof Error ? error.message : String(error),
+                },
+            );
         }
         return ["", "", 0];
     }
@@ -136,10 +151,10 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
     try {
         // First check CORS preflight for both endpoints
         const corsPreflightNodeInfo = await checkCorsPreflightHealthy(
-            `${api}/cosmos/base/tendermint/v1beta1/node_info`
+            `${api}/cosmos/base/tendermint/v1beta1/node_info`,
         );
         const corsPreflightSyncing = await checkCorsPreflightHealthy(
-            `${api}/cosmos/base/tendermint/v1beta1/syncing`
+            `${api}/cosmos/base/tendermint/v1beta1/syncing`,
         );
 
         if (!corsPreflightNodeInfo || !corsPreflightSyncing) {
@@ -154,10 +169,10 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
                 signal: controller.signal,
                 headers: {
                     "Content-Type": "application/json",
-                    "Origin": appUrl,
+                    Origin: appUrl,
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": `${appUrl}/`,
-                    "Accept": "application/json",
+                    Referer: `${appUrl}/`,
+                    Accept: "application/json",
                 },
             }),
             fetch(`${api}/cosmos/base/tendermint/v1beta1/syncing`, {
@@ -165,25 +180,25 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
                 signal: controller.signal,
                 headers: {
                     "Content-Type": "application/json",
-                    "Origin": appUrl,
+                    Origin: appUrl,
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": `${appUrl}/`,
-                    "Accept": "application/json",
+                    Referer: `${appUrl}/`,
+                    Accept: "application/json",
                 },
             }),
         ]);
         clearTimeout(timeoutId);
-        
+
         // Check if both responses are OK
         if (!responses[0].ok || !responses[1].ok) {
-            logger.warn(`API returned non-OK status for ${api}`, { 
-                api, 
+            logger.warn(`API returned non-OK status for ${api}`, {
+                api,
                 nodeInfoStatus: responses[0].status,
-                syncingStatus: responses[1].status 
+                syncingStatus: responses[1].status,
             });
             return ["", "", false];
         }
-        
+
         const nodeInfo = await responses[0].json();
         const syncing = await responses[1].json();
         return [
@@ -193,15 +208,21 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
         ];
     } catch (error) {
         clearTimeout(timeoutId);
-        
+
         if (error instanceof Error && error.name === "AbortError") {
-            logger.warn(`timeout: API health check timed out for ${api} (${HEALTH_CHECK_TIMEOUT}ms)`, { api });
+            logger.warn(
+                `timeout: API health check timed out for ${api} (${HEALTH_CHECK_TIMEOUT}ms)`,
+                { api },
+            );
         } else {
-            logger.warn(`API health check failed for ${api}: ${error instanceof Error ? error.message : String(error)}`, {
-                api,
-                errorName: error instanceof Error ? error.name : "Unknown",
-                errorMessage: error instanceof Error ? error.message : String(error),
-            });
+            logger.warn(
+                `API health check failed for ${api}: ${error instanceof Error ? error.message : String(error)}`,
+                {
+                    api,
+                    errorName: error instanceof Error ? error.name : "Unknown",
+                    errorMessage: error instanceof Error ? error.message : String(error),
+                },
+            );
         }
         return ["", "", false];
     }
@@ -247,7 +268,7 @@ async function checkEndpointsHealth(
 
     const healthyCount = filteredHealthyEndpoints.length;
     const endpointType = checking.toUpperCase();
-    
+
     if (healthyCount === 0) {
         logger.error(
             `no healthy ${endpointType} endpoints found. All ${endpoints.length} endpoints failed health checks.`,

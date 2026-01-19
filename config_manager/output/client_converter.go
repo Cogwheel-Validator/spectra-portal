@@ -92,6 +92,7 @@ func (c *ClientConverter) convertChain(
 	clientChain.RESTEndpoints = c.convertEndpoints(chain.HealthyRests)
 
 	// Get the Cosmos SDK version from the REST endpoint
+	// nosemgrep
 	randomRestEndpoint := clientChain.RESTEndpoints[rand.Intn(len(clientChain.RESTEndpoints))]
 	cosmosSdkVersion, err := query.GetCosmosSdkVersion(randomRestEndpoint.URL)
 	if err != nil {

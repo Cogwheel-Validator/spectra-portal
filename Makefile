@@ -73,7 +73,7 @@ lint-js:
 vulncheck-js:
 	@echo "Vulnerability checking js files..."
 	cd ibc_app && \
-	bun run audit
+	bun audit
 	@echo "Js files vulnerability checked successfully!"
 
 # This check requires the vulncheck cli to be installed
@@ -81,7 +81,7 @@ vulncheck-all:
 	@echo "Vulnerability checking all files..."
 	vulncheck ./...
 	cd ibc_app && \
-	bun run audit
+	bun audit
 	@echo "All files vulnerability checked successfully!"
 
 # This check requires the semgrep cli to be installed
@@ -106,5 +106,5 @@ vulncheck-go:
 # This check requires the snyk cli to be installed
 snyk-local:
 	@echo "Vulnerability checking all files with snyk..."
-	snyk test
+	snyk test --all-projects
 	@echo "All files vulnerability checked successfully with snyk!"

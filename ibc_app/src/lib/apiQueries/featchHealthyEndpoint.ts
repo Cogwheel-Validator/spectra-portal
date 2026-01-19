@@ -37,7 +37,9 @@ export async function getRandomHealthyApiImperative(chainId: string): Promise<st
     try {
         const response = await fetch(`/api/health?chainPath=${chainId}`);
         if (!response.ok) {
-            clientLogger.error(`Health check returned status ${response.status} for chain ${chainId}`);
+            clientLogger.error(
+                `Health check returned status ${response.status} for chain ${chainId}`,
+            );
             return null;
         }
         const data: { apis: string[]; rpcs: string[] } = await response.json();
@@ -65,7 +67,9 @@ export async function getRandomHealthyRpcImperative(chainId: string): Promise<st
     try {
         const response = await fetch(`/api/health?chainPath=${chainId}`);
         if (!response.ok) {
-            clientLogger.error(`Health check returned status ${response.status} for chain ${chainId}`);
+            clientLogger.error(
+                `Health check returned status ${response.status} for chain ${chainId}`,
+            );
             return null;
         }
         const data: { apis: string[]; rpcs: string[] } = await response.json();

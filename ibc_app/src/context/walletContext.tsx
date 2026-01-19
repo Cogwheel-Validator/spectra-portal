@@ -189,7 +189,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     try {
                         savedStates.push(JSON.parse(saved));
                     } catch (error) {
-                        console.error(`Failed to parse saved state for ${key}:`, error);
+                        clientLogger.error(
+                            `Failed to parse saved state for ${key}:`,
+                            error,
+                        );
                     }
                 }
             }
@@ -237,7 +240,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     setWalletType(savedState.walletType);
                 }
             } catch (error) {
-                console.log("Auto-reconnect failed for chain:", savedState.chainId, error);
+                clientLogger.error(
+                    "Auto-reconnect failed for chain:",
+                    savedState.chainId,
+                    error,
+                );
                 clearWalletState(savedState.chainId);
             }
         },
@@ -257,7 +264,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     savedStates.map((savedState) => autoReconnectToChain(savedState)),
                 );
             } catch (error) {
-                console.log("Auto-reconnect failed:", error);
+                clientLogger.error("Auto-reconnect failed:", error);
             }
         };
 
@@ -318,7 +325,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                 await wallet.experimentalSuggestChain(keplrChainInfo);
             }
         } catch (error) {
-            console.error("Failed to suggest chain:", error);
+            clientLogger.error("Failed to suggest chain:", error);
             throw error;
         }
     };
@@ -346,7 +353,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
             try {
                 await wallet.enable(chainIds);
             } catch {
-                console.log("Some chains not found, identifying which chains need suggesting...");
+                clientLogger.info("Some chains not found, identifying which chains need suggesting...");
 
                 // Test each chain individually to find which ones need suggesting
                 const enableResults = await Promise.allSettled(
@@ -369,7 +376,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     .filter((config): config is ClientChain => config !== null);
 
                 if (chainsToSuggest.length > 0) {
-                    console.log(`Suggesting ${chainsToSuggest.length} chain(s)...`);
+                    clientLogger.info(`Suggesting ${chainsToSuggest.length} chain(s)...`);
                     // Suggest all missing chains at once
                     await suggestChain(chainsToSuggest, walletTypeParam);
 
@@ -391,7 +398,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                             key,
                         };
                     } catch (error) {
-                        console.error(`Failed to get key for chain ${chainConfig.id}:`, error);
+                        clientLogger.error(`Failed to get key for chain ${chainConfig.id}:`, error);
                         throw error;
                     }
                 }),
@@ -415,14 +422,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                         chainConfig,
                     });
                 } else {
-                    console.error("Failed to connect to chain:", result.reason);
+                    clientLogger.error("Failed to connect to chain:", result.reason);
                 }
             }
 
             setConnections(newConnections);
             setWalletType(walletTypeParam);
         } catch (error) {
-            console.error("Failed to connect wallet:", error);
+            clientLogger.error("Failed to connect wallet:", error);
             throw error;
         }
     };
@@ -536,7 +543,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 if (isLedger) {
-                    console.log("Ledger account detected, providing explicit SignerData.");
+                    clientLogger.info("Ledger account detected, providing explicit SignerData.");
                     const clientForQuery = await StargateClient.connect(randomHealthyRpc);
                     const account = await clientForQuery.getAccount(address);
                     if (!account) {
@@ -565,7 +572,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     height: result.height,
                 };
             } catch (error) {
-                console.error("Failed to sign and broadcast transaction:", error);
+                clientLogger.error(
+                    "Failed to sign and broadcast transaction:",
+                    error,
+                );
                 throw error;
             }
         },

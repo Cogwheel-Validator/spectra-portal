@@ -225,7 +225,7 @@ export default function SendUI({
             const parts = amount.split(".");
             const integerPart = parts[0] || "0";
             const decimalPart = (parts[1] || "").padEnd(decimals, "0").slice(0, decimals);
-            
+
             // Combine to get the full amount in base units
             const fullAmount = integerPart + decimalPart;
             // Remove leading zeros but keep at least one digit
@@ -424,12 +424,9 @@ export default function SendUI({
     );
 
     // Debounced URL update for amount using callback hook
-    const debouncedUpdateURL = useDebouncedCallback(
-        (value: string) => {
-            updateURL({ amount: value });
-        },
-        2000,
-    );
+    const debouncedUpdateURL = useDebouncedCallback((value: string) => {
+        updateURL({ amount: value });
+    }, 2000);
 
     const handleAmountChange = useCallback(
         (value: string) => {
