@@ -455,116 +455,122 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
      * Generic transaction method - handles ALL transaction types
      * This replaces ibcTransfer, poolmanagerSwapTokenIn, etc.
      */
-    const sendTransaction = async (
-        chainId: string,
-        messages: EncodeObject[],
-        options: TransactionOptions = {},
-    ): Promise<TransactionResult> => {
-        const {
-            fee = "auto",
-            memo = "",
-            gasAdjustment = 1.5,
-            chainConfig: chainConfigParam,
-        } = options;
+    const sendTransaction = useCallback(
+        async (
+            chainId: string,
+            messages: EncodeObject[],
+            options: TransactionOptions = {},
+        ): Promise<TransactionResult> => {
+            const {
+                fee = "auto",
+                memo = "",
+                gasAdjustment = 1.5,
+                chainConfig: chainConfigParam,
+            } = options;
 
-        // Get connection for this chain
-        const connection = connections.get(chainId);
-        const configToUse = chainConfigParam || connection?.chainConfig;
+            // Get connection for this chain
+            const connection = connections.get(chainId);
+            const configToUse = chainConfigParam || connection?.chainConfig;
 
-        if (!configToUse || !connection || !walletType) {
-            throw new Error(`Wallet not connected to chain ${chainId}`);
-        }
-
-        const address = connection.address;
-
-        try {
-            const wallet = await getWalletFromProvider(walletType);
-            const key = await wallet.getKey(chainId);
-            const isLedger = key.isNanoLedger;
-            const offlineSigner = await wallet.getOfflineSignerAuto(chainId);
-
-            // Create registry with Osmosis types
-            const registry = new Registry(defaultRegistryTypes);
-            registry.register(
-                "/osmosis.poolmanager.v1beta1.MsgSwapExactAmountIn",
-                MsgSwapExactAmountIn as GeneratedType,
-            );
-            registry.register(
-                "/osmosis.poolmanager.v1beta1.MsgSplitRouteSwapExactAmountIn",
-                MsgSplitRouteSwapExactAmountIn as GeneratedType,
-            );
-
-            const aminoTypes = new AminoTypes(createDefaultAminoConverters());
-
-            // Get fee currency and gas price
-            const feeCurrency = configToUse.keplr_chain_config.fee_currencies[0];
-            if (!feeCurrency) {
-                throw new Error("No fee currency found in chain config");
+            if (!configToUse || !connection || !walletType) {
+                throw new Error(`Wallet not connected to chain ${chainId}`);
             }
 
-            const gasPrice = GasPrice.fromString(
-                `${feeCurrency.gas_price_step.average}${feeCurrency.coin_minimal_denom}`,
-            );
+            const address = connection.address;
 
-            const randomHealthyRpc = await getRandomHealthyRpcImperative(chainId);
-            if (!randomHealthyRpc) {
-                throw new Error(`No healthy RPC found for chain ${chainId}`);
-            }
-
-            let client: SigningStargateClient;
             try {
-            client = await SigningStargateClient.connectWithSigner(
-                randomHealthyRpc,
-                offlineSigner,
-                { gasPrice, registry, aminoTypes },
-            );
-            } catch (error) {
-                clientLogger.error("Error when trying to connect to the Stargete Client", error)
-                throw error;
-            }
+                const wallet = await getWalletFromProvider(walletType);
+                const key = await wallet.getKey(chainId);
+                const isLedger = key.isNanoLedger;
+                const offlineSigner = await wallet.getOfflineSignerAuto(chainId);
 
-            let finalFee: StdFee;
-            if (fee === "auto") {
-                const gasEstimated = await client.simulate(address, messages, memo);
-                finalFee = calculateFee(Math.round(gasEstimated * gasAdjustment), gasPrice);
-            } else {
-                finalFee = fee;
-            }
+                // Create registry with Osmosis types
+                const registry = new Registry(defaultRegistryTypes);
+                registry.register(
+                    "/osmosis.poolmanager.v1beta1.MsgSwapExactAmountIn",
+                    MsgSwapExactAmountIn as GeneratedType,
+                );
+                registry.register(
+                    "/osmosis.poolmanager.v1beta1.MsgSplitRouteSwapExactAmountIn",
+                    MsgSplitRouteSwapExactAmountIn as GeneratedType,
+                );
 
-            if (isLedger) {
-                console.log("Ledger account detected, providing explicit SignerData.");
-                const clientForQuery = await StargateClient.connect(randomHealthyRpc);
-                const account = await clientForQuery.getAccount(address);
-                if (!account) {
-                    throw new Error("Could not retrieve account details for signing.");
+                const aminoTypes = new AminoTypes(createDefaultAminoConverters());
+
+                // Get fee currency and gas price
+                const feeCurrency = configToUse.keplr_chain_config.fee_currencies[0];
+                if (!feeCurrency) {
+                    throw new Error("No fee currency found in chain config");
                 }
 
-                const signed = await client.sign(address, messages, finalFee, memo, {
-                    accountNumber: account.accountNumber,
-                    sequence: account.sequence,
-                    chainId,
-                });
-                const result = await client.broadcastTx(TxRaw.encode(signed).finish());
+                const gasPrice = GasPrice.fromString(
+                    `${feeCurrency.gas_price_step.average}${feeCurrency.coin_minimal_denom}`,
+                );
+
+                const randomHealthyRpc = await getRandomHealthyRpcImperative(chainId);
+                if (!randomHealthyRpc) {
+                    throw new Error(`No healthy RPC found for chain ${chainId}`);
+                }
+
+                let client: SigningStargateClient;
+                try {
+                    client = await SigningStargateClient.connectWithSigner(
+                        randomHealthyRpc,
+                        offlineSigner,
+                        { gasPrice, registry, aminoTypes },
+                    );
+                } catch (error) {
+                    clientLogger.error(
+                        "Error when trying to connect to the Stargete Client",
+                        error,
+                    );
+                    throw error;
+                }
+
+                let finalFee: StdFee;
+                if (fee === "auto") {
+                    const gasEstimated = await client.simulate(address, messages, memo);
+                    finalFee = calculateFee(Math.round(gasEstimated * gasAdjustment), gasPrice);
+                } else {
+                    finalFee = fee;
+                }
+
+                if (isLedger) {
+                    console.log("Ledger account detected, providing explicit SignerData.");
+                    const clientForQuery = await StargateClient.connect(randomHealthyRpc);
+                    const account = await clientForQuery.getAccount(address);
+                    if (!account) {
+                        throw new Error("Could not retrieve account details for signing.");
+                    }
+
+                    const signed = await client.sign(address, messages, finalFee, memo, {
+                        accountNumber: account.accountNumber,
+                        sequence: account.sequence,
+                        chainId,
+                    });
+                    const result = await client.broadcastTx(TxRaw.encode(signed).finish());
+
+                    return {
+                        transactionHash: result.transactionHash,
+                        code: result.code,
+                        height: result.height,
+                    };
+                }
+
+                const result = await client.signAndBroadcast(address, messages, finalFee, memo);
 
                 return {
                     transactionHash: result.transactionHash,
                     code: result.code,
                     height: result.height,
                 };
+            } catch (error) {
+                console.error("Failed to sign and broadcast transaction:", error);
+                throw error;
             }
-
-            const result = await client.signAndBroadcast(address, messages, finalFee, memo);
-
-            return {
-                transactionHash: result.transactionHash,
-                code: result.code,
-                height: result.height,
-            };
-        } catch (error) {
-            console.error("Failed to sign and broadcast transaction:", error);
-            throw error;
-        }
-    };
+        },
+        [connections, walletType],
+    );
 
     return (
         <WalletContext.Provider

@@ -1,9 +1,19 @@
 "use client";
 
 import type { EncodeObject } from "@cosmjs/proto-signing";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import {
+    createContext,
+    type ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import type { ClientChain, ClientConfig } from "@/components/modules/tomlTypes";
 import useIbcTracking from "@/hooks/useIbcTracking";
+import clientLogger from "@/lib/clientLogger";
 import type { SwapAmountInRoute } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/swap_route";
 import type {
     BrokerSwapRoute,
@@ -92,6 +102,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const [db, setDb] = useState<IDBDatabase | null>(null);
     const [isDbReady, setIsDbReady] = useState(false);
     const [isExecuting, setIsExecuting] = useState(false);
+    const executionLock = useRef(false);
 
     const { sendTransaction, getAddress } = useWallet();
     const transfer = useTransfer();
@@ -349,8 +360,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 return;
             }
 
+            if (executionLock.current) {
+                clientLogger.warn("Transfer already executing, ignoring duplicate call");
+                return;
+            }
+
+            executionLock.current = true;
             setIsExecuting(true);
-            transfer.startPreparing();
 
             try {
                 // Generate steps from the pathfinder response
@@ -425,18 +441,20 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                                         timeout: 10 * 60 * 1000, // 10 minute total timeout
                                         onProgress: (attempt, max) => {
                                             // Optional: could update UI with progress
-                                            console.log(
+                                            clientLogger.info(
                                                 `Tracking IBC transfer: attempt ${attempt}/${max}`,
                                             );
                                         },
                                     },
                                 );
 
+                                clientLogger.info("trackingResult", trackingResult);
+
                                 if (!trackingResult.success) {
                                     // Tracking failed - this doesn't necessarily mean the transfer failed
                                     // It could just mean we couldn't confirm it in time
                                     // Mark as "completed" but log the warning
-                                    console.warn(
+                                    clientLogger.warn(
                                         `IBC tracking inconclusive: ${trackingResult.error}`,
                                     );
                                 }
@@ -489,6 +507,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 const errorMessage = error instanceof Error ? error.message : "Unknown error";
                 transfer.failTransfer(errorMessage);
             } finally {
+                executionLock.current = false;
                 setIsExecuting(false);
             }
         },
@@ -536,20 +555,19 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         [db, transfer, executeStep],
     );
 
-    return (
-        <TaskContext.Provider
-            value={{
-                db,
-                isDbReady,
-                executeTransfer,
-                executeStep,
-                retryStep,
-                isExecuting,
-            }}
-        >
-            {children}
-        </TaskContext.Provider>
+    const contextValue = useMemo(
+        () => ({
+            db,
+            isDbReady,
+            executeTransfer,
+            executeStep,
+            retryStep,
+            isExecuting,
+        }),
+        [db, isDbReady, executeTransfer, executeStep, retryStep, isExecuting],
     );
+
+    return <TaskContext.Provider value={contextValue}>{children}</TaskContext.Provider>;
 };
 
 // ============================================================================
