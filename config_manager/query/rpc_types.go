@@ -66,3 +66,9 @@ type URLProvider struct {
 	URL      string
 	Provider string
 }
+
+type RpcBlockResponse struct {
+	Jsonrpc string    `json:"jsonrpc"`
+	Id      int       `json:"id"`
+	Result  BlockData `json:"result"`
+}

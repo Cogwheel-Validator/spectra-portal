@@ -11,7 +11,7 @@ import (
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
 )
 
-func getRestStatus(
+func GetRestStatus(
 	endpoint input.APIEndpoint,
 	retryAttempts int,
 	retryDelay time.Duration,
@@ -84,7 +84,9 @@ func getRestStatus(
 // - retryDelay - the delay between retry attempts
 // - timeout - the timeout for the request
 //
-// Returns a map of healthy endpoints
+// # Returns a map of healthy endpoints
+//
+// Depricated: Use the new validator package instead
 func ValidateRestEndpoints(
 	endpoints []input.APIEndpoint,
 	retryAttempts int,
@@ -95,7 +97,7 @@ func ValidateRestEndpoints(
 	// Step 1: Collect node status from all endpoints
 	nodeStatuses := make([]NodeStatus, 0, len(endpoints))
 	for _, endpoint := range endpoints {
-		nodeStatus, err := getRestStatus(endpoint, retryAttempts, retryDelay, timeout)
+		nodeStatus, err := GetRestStatus(endpoint, retryAttempts, retryDelay, timeout)
 		if err != nil {
 			log.Printf("Failed to get REST status for %s: %v", endpoint.URL, err)
 			continue
@@ -215,4 +217,51 @@ func GetCosmosSdkVersion(healthyRestEndpoint string) (string, error) {
 		return "", err
 	}
 	return response.ApplicationVersion.CosmosSdkVersion, nil
+}
+
+/*
+Get the block data from the REST API for a given block
+
+Parameters:
+- endpoint - the endpoint to get the block data from
+- block - the integer of the blocks to get the data from
+
+Returns:
+- the block data
+- map of the block data with the block number as the key
+- error if the request fails
+*/
+func GetCosmosBlockHeights(endpoint input.APIEndpoint, block int) (BlockData, error) {
+	client := http.Client{
+		Timeout: 10 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// Do not allow ANY redirects! Will work with this more...
+			return fmt.Errorf("redirect not allowed (count=%d) to %s", len(via), req.URL.String())
+		},
+	}
+
+	resp, err := client.Get(
+		fmt.Sprintf(
+			"%s/cosmos/base/tendermint/v1beta1/blocks/%d",
+			endpoint.URL,
+			block,
+		),
+	)
+	if err != nil {
+		log.Printf("Failed to get block %d: %v", block, err)
+		return BlockData{}, err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return BlockData{}, err
+	}
+
+	var blockDataValue BlockData
+	err = json.Unmarshal(body, &blockDataValue)
+	if err != nil {
+		log.Printf("Failed to unmarshal block %d: %v", block, err)
+		return BlockData{}, err
+	}
+	return blockDataValue, nil
 }

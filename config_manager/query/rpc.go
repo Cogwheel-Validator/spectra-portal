@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	status    = "status"
-	net_info  = "net_info"
-	abci_info = "abci_info"
+	status      = "status"
+	net_info    = "net_info"
+	abci_info   = "abci_info"
+	block_query = "block"
 )
 
 func NewRpcClient(baseURLs []string, retryAttempts int, retryDelay time.Duration, timeout time.Duration) *RpcClient {
@@ -23,6 +24,9 @@ func NewRpcClient(baseURLs []string, retryAttempts int, retryDelay time.Duration
 		BaseURLs: baseURLs,
 		Client: &http.Client{
 			Timeout: timeout,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return fmt.Errorf("redirect not allowed (count=%d) to %s", len(via), req.URL.String())
+			},
 		},
 		RetryAttempts: retryAttempts,
 		RetryDelay:    retryDelay,
@@ -69,7 +73,7 @@ func (c *RpcClient) performRequest(url, method string, params map[string]any, re
 	return nil
 }
 
-func (c *RpcClient) queryStatus(url string) (RpcStatusResponse, error) {
+func (c *RpcClient) QueryStatus(url string) (RpcStatusResponse, error) {
 	var response RpcStatusResponse
 	err := c.performRequest(url, status, nil, &response)
 	if err != nil {
@@ -78,7 +82,7 @@ func (c *RpcClient) queryStatus(url string) (RpcStatusResponse, error) {
 	return response, nil
 }
 
-func (c *RpcClient) queryAbciInfo(url string) (AbciInfoResponse, error) {
+func (c *RpcClient) QueryAbciInfo(url string) (AbciInfoResponse, error) {
 	var response AbciInfoResponse
 	err := c.performRequest(url, abci_info, nil, &response)
 	if err != nil {
@@ -135,7 +139,9 @@ type endpointData struct {
 // - retryDelay - the delay between retry attempts
 // - timeout - the timeout for the request
 //
-// Returns a map of healthy endpoints
+// # Returns a map of healthy endpoints
+//
+// Depricated: The whole validation should happen within the validation package.
 func ValidateRpcEndpoints(
 	endpoints []input.APIEndpoint,
 	retryAttempts int,
@@ -146,12 +152,12 @@ func ValidateRpcEndpoints(
 	rawData := make(map[URLProvider]CollectedValidationData)
 	for _, endpoint := range endpoints {
 		c := NewRpcClient([]string{endpoint.URL}, retryAttempts, retryDelay, timeout)
-		status, err := c.queryStatus(endpoint.URL)
+		status, err := c.QueryStatus(endpoint.URL)
 		if err != nil {
 			log.Printf("failed to query status for %s: %v", endpoint.URL, err)
 			continue
 		}
-		abciInfo, err := c.queryAbciInfo(endpoint.URL)
+		abciInfo, err := c.QueryAbciInfo(endpoint.URL)
 		if err != nil {
 			log.Printf("failed to query abci info for %s: %v", endpoint.URL, err)
 			continue
@@ -251,4 +257,13 @@ func ValidateRpcEndpoints(
 	}
 
 	return validEndpoints
+}
+
+func (c *RpcClient) QueryBlock(url string, block int) (RpcBlockResponse, error) {
+	var response RpcBlockResponse
+	err := c.performRequest(url, block_query, map[string]any{"height": block}, &response)
+	if err != nil {
+		return RpcBlockResponse{}, err
+	}
+	return response, nil
 }
