@@ -38,6 +38,11 @@ func GetRestStatus(
 		}
 	}
 
+	// check status code
+	if resp.StatusCode != http.StatusOK {
+		return NodeStatus{}, fmt.Errorf("endpoint returned status %d", resp.StatusCode)
+	}
+
 	// read the body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -241,8 +246,11 @@ func GetCosmosBlockHeights(
 	client := http.Client{
 		Timeout: timeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			// Do not allow ANY redirects! Will work with this more...
-			return fmt.Errorf("redirect not allowed (count=%d) to %s", len(via), req.URL.String())
+			// allow only 1 redirect
+			if len(via) > 2 {
+				return fmt.Errorf("redirect limit exceeded (count=%d) to %s", len(via), req.URL.String())
+			}
+			return nil
 		},
 	}
 
@@ -268,6 +276,11 @@ func GetCosmosBlockHeights(
 		}
 	}
 
+	// check status code
+	if resp.StatusCode != http.StatusOK {
+		return BlockData{}, fmt.Errorf("endpoint returned status %d", resp.StatusCode)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return BlockData{}, err
@@ -276,7 +289,6 @@ func GetCosmosBlockHeights(
 	var blockDataValue BlockData
 	err = json.Unmarshal(body, &blockDataValue)
 	if err != nil {
-		log.Printf("Failed to unmarshal block %d: %v", block, err)
 		return BlockData{}, err
 	}
 	return blockDataValue, nil
@@ -311,6 +323,12 @@ func GetCosmosLatestBlockHeight(
 			log.Fatalf("Failed to close response body: %v", err)
 		}
 	}()
+
+	// check status code
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("endpoint returned status %d", resp.StatusCode)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return 0, err

@@ -25,7 +25,11 @@ func NewRpcClient(baseURLs []string, retryAttempts int, retryDelay time.Duration
 		Client: &http.Client{
 			Timeout: timeout,
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return fmt.Errorf("redirect not allowed (count=%d) to %s", len(via), req.URL.String())
+				// allow only 1 redirect
+				if len(via) > 2 {
+					return fmt.Errorf("redirect limit exceeded (count=%d) to %s", len(via), req.URL.String())
+				}
+				return nil
 			},
 		},
 		RetryAttempts: retryAttempts,
@@ -65,6 +69,11 @@ func (c *RpcClient) performRequest(url, method string, params map[string]any, re
 			log.Printf("failed to close response body: %v", err)
 		}
 	}()
+
+	// check status code
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("endpoint returned status %d", resp.StatusCode)
+	}
 
 	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
 		return fmt.Errorf("failed to decode response: %w", err)

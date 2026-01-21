@@ -151,19 +151,25 @@ func filterRpcEndpointsByBasicData(
 			actual   any
 			expected any
 		}{
-			{"version", endpoint.version, expectedVersion},
-			{"abciAppName", endpoint.abciAppName, expectedAbciAppName},
-			{"chainId", endpoint.chainId, expectedChainId},
-			{"height", endpoint.height, maxHeight},
+			{"version", *endpoint.version, expectedVersion},
+			{"abciAppName", *endpoint.abciAppName, expectedAbciAppName},
+			{"chainId", *endpoint.chainId, expectedChainId},
 		}
 		for _, check := range checks {
 			if check.actual != check.expected {
-				log.Printf("endpoint %s has different %s: %s (expected: %s)",
+				log.Printf("endpoint %s has different %s: %v (expected: %v) minus 10 points",
 					endpoint.Endpoint.URL, check.name, check.actual, check.expected)
 				endpoint.points -= mismatchPenalty
 				(*rpcValidities)[endpoint.Endpoint.URL] = endpoint
 
 			}
+		}
+
+		if *endpoint.height < maxHeight-500 {
+			endpoint.points -= mismatchPenalty
+			log.Printf("endpoint %s is behind by more than 500 blocks minuse 10 points", endpoint.Endpoint.URL)
+			(*rpcValidities)[endpoint.Endpoint.URL] = endpoint
+			continue
 		}
 
 		// final check of the points, if it has less than 60 points, we should mark the endpoint as invalid

@@ -10,6 +10,7 @@ import (
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/query"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/registry"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/validator"
 )
 
 const (
@@ -194,9 +195,9 @@ func (b *Builder) convertEndpoints(
 	// Perform full network validation
 	var healthyEndpoints map[query.URLProvider]bool
 	if checkingRest {
-		healthyEndpoints = query.ValidateRestEndpoints(endpoints, b.retryAttempts, b.retryDelay, b.timeout)
+		healthyEndpoints = validator.ValidateRestEndpoints(endpoints, b.retryAttempts, b.retryDelay, b.timeout)
 	} else {
-		healthyEndpoints = query.ValidateRpcEndpoints(endpoints, b.retryAttempts, b.retryDelay, b.timeout)
+		healthyEndpoints = validator.ValidateRpcEndpoints(endpoints, b.retryAttempts, b.retryDelay, b.timeout)
 	}
 
 	result := make([]Endpoint, 0, len(healthyEndpoints))

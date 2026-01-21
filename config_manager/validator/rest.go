@@ -21,27 +21,31 @@ func ValidateRestEndpoints(
 	restValidities := initRestValidity(&endpoints)
 
 	// Step 1: Collect node status from all endpoints
-	chainIds, binaryNames, binaryCommits, cosmosSdkVersions, versions := fetchAllNetworkData(
+	chainIds, binaryNames, binaryCommits, cosmosSdkVersions, tendermintVersions, appVersions := fetchAllNetworkData(
 		&restValidities, retryAttempts, retryDelay, timeout,
 	)
 
 	expectedBinaryName := getMostCommonValue(binaryNames)
-	expectedVersion := getMostCommonValue(versions)
+	expectedTendermintVersion := getMostCommonValue(tendermintVersions)
 	expectedCommit := getMostCommonValue(binaryCommits)
 	expectedCosmosSdkVersion := getMostCommonValue(cosmosSdkVersions)
 	expectedChainId := getMostCommonValue(chainIds)
+	expectedAppVersion := getMostCommonValue(appVersions)
 
 	if expectedBinaryName == "" {
 		log.Fatalf("No binary name found")
 	}
-	if expectedVersion == "" {
-		log.Fatalf("No version found")
+	if expectedTendermintVersion == "" {
+		log.Fatalf("No Tendermint version found")
 	}
 	if expectedCommit == "" {
 		log.Fatalf("No git commit found")
 	}
 	if expectedCosmosSdkVersion == "" {
 		log.Fatalf("No Cosmos SDK version found")
+	}
+	if expectedAppVersion == "" {
+		log.Fatalf("No app version found")
 	}
 
 	if expectedChainId == "" {
@@ -52,10 +56,11 @@ func ValidateRestEndpoints(
 	log.Printf("Validating network endpoints details for chain %s...", expectedChainId)
 	validateNetworkDetails(
 		expectedBinaryName,
-		expectedVersion,
+		expectedTendermintVersion,
 		expectedCommit,
 		expectedCosmosSdkVersion,
 		expectedChainId,
+		expectedAppVersion,
 		&restValidities,
 	)
 
@@ -106,7 +111,7 @@ Returns:
 - binaryNames - the map of the binary names
 - binaryCommits - the map of the binary commits
 - cosmosSdkVersions - the map of the Cosmos SDK versions
-- versions - the map of the versions
+- tendermintVersions - the map of the Tendermint versions
 */
 func fetchAllNetworkData(
 	restValidities *map[string]RestApiValidity,
@@ -118,13 +123,15 @@ func fetchAllNetworkData(
 	map[string]int, // binaryNames
 	map[string]int, // binaryCommits
 	map[string]int, // cosmosSdkVersions
-	map[string]int, // versions
+	map[string]int, // tendermintVersions
+	map[string]int, // appVersions
 ) {
 	chainIds := make(map[string]int)
 	binaryNames := make(map[string]int)
 	binaryCommits := make(map[string]int)
 	cosmosSdkVersions := make(map[string]int)
-	versions := make(map[string]int)
+	tendermintVersions := make(map[string]int)
+	appVersions := make(map[string]int)
 
 	for _, endpoint := range *restValidities {
 		nodeStatus, err := query.GetRestStatus(endpoint.Endpoint, retryAttempts, retryDelay, timeout)
@@ -144,11 +151,12 @@ func fetchAllNetworkData(
 			(*restValidities)[endpoint.Endpoint.URL] = validity
 			continue
 		}
+
 		if nodeStatus.AppName != "" {
 			binaryNames[nodeStatus.AppName]++
 		}
 		if nodeStatus.Version != "" {
-			versions[nodeStatus.Version]++
+			tendermintVersions[nodeStatus.Version]++
 		}
 		if nodeStatus.GitCommit != "" {
 			binaryCommits[nodeStatus.GitCommit]++
@@ -156,7 +164,11 @@ func fetchAllNetworkData(
 		if nodeStatus.CosmosSdkVersion != "" {
 			cosmosSdkVersions[nodeStatus.CosmosSdkVersion]++
 		}
+		if nodeStatus.AppVersion != "" {
+			appVersions[nodeStatus.AppVersion]++
+		}
 		chainIds[nodeStatus.Network]++
+
 		validity := (*restValidities)[endpoint.Endpoint.URL]
 		validity.chainId = &nodeStatus.Network
 		validity.version = &nodeStatus.Version
@@ -165,10 +177,11 @@ func fetchAllNetworkData(
 		validity.appName = &nodeStatus.AppName
 		validity.appVersion = &nodeStatus.AppVersion
 		validity.binaryName = &nodeStatus.AppName
+
 		(*restValidities)[endpoint.Endpoint.URL] = validity
 	}
 
-	return chainIds, binaryNames, binaryCommits, cosmosSdkVersions, versions
+	return chainIds, binaryNames, binaryCommits, cosmosSdkVersions, tendermintVersions, appVersions
 }
 
 /*
@@ -223,7 +236,7 @@ Validate the network details of the endpoints
 
 Parameters:
 - expectedBinaryName - the expected binary name
-- expectedVersion - the expected version
+- expectedTendermintVersion - the expected Tendermint version
 - expectedCommit - the expected commit
 - expectedCosmosSdkVersion - the expected Cosmos SDK version
 - expectedChainId - the expected chain ID
@@ -234,10 +247,11 @@ Returns:
 */
 func validateNetworkDetails(
 	expectedBinaryName string,
-	expectedVersion string,
+	expectedTendermintVersion string,
 	expectedCommit string,
 	expectedCosmosSdkVersion string,
 	expectedChainId string,
+	expectedAppVersion string,
 	restValidities *map[string]RestApiValidity,
 ) {
 
@@ -247,26 +261,27 @@ func validateNetworkDetails(
 		}
 
 		checks := []struct {
+			name     string
 			actual   *string
 			expected string
 		}{
-			{endpoint.chainId, expectedChainId},
-			{endpoint.version, expectedVersion},
-			{endpoint.gitCommit, expectedCommit},
-			{endpoint.cosmosSdkVersion, expectedCosmosSdkVersion},
-			{endpoint.appName, expectedBinaryName},
-			{endpoint.appVersion, expectedVersion},
-			{endpoint.binaryName, expectedBinaryName},
+			{"chainId", endpoint.chainId, expectedChainId},
+			{"version", endpoint.version, expectedTendermintVersion},
+			{"gitCommit", endpoint.gitCommit, expectedCommit},
+			{"cosmosSdkVersion", endpoint.cosmosSdkVersion, expectedCosmosSdkVersion},
+			{"appVersion", endpoint.appVersion, expectedAppVersion},
+			{"binaryName", endpoint.binaryName, expectedBinaryName},
 		}
 
 		for _, check := range checks {
 			// If it is missing for some reason we should also count it as a penalty
 			if check.actual == nil || *check.actual != check.expected {
 				endpoint.points -= mismatchPenalty
-				log.Printf("Mismatch found for %s: %s != %s, minus 10 points",
+				log.Printf("Mismatch found for %s: on check %s, expected %v, got %v, minus 10 points",
 					url,
-					*check.actual,
+					check.name,
 					check.expected,
+					*check.actual,
 				)
 			}
 		}
@@ -315,6 +330,7 @@ func fetchBlockData(
 		blockData := make(map[int]*query.BlockData)
 		for _, height := range heights {
 			go func(height int) {
+				defer wg.Done()
 				response, err := query.GetCosmosBlockHeights(
 					endpoint.Endpoint,
 					retryAttempts,
@@ -327,12 +343,11 @@ func fetchBlockData(
 					mu.Lock()
 					blockData[height] = nil
 					mu.Unlock()
-					wg.Done()
+					return
 				}
 				mu.Lock()
 				blockData[height] = &response
 				mu.Unlock()
-				wg.Done()
 			}(height)
 		}
 		wg.Wait()
