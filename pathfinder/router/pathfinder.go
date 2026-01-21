@@ -424,16 +424,12 @@ func (s *Pathfinder) buildBrokerRoute(
 		return nil, fmt.Errorf("swapResult is nil")
 	}
 
-	/*
-		Due to the nature of proto3 the slippage can never be nil, even if it is not specified
-		uint32 value will be 0 if not specified.
-		This code will be commented out because it is not needed.
-		However if there is some change in the underlying function, this code will be uncommented again.
-		if req.SlippageBps == nil {
-			defaultSlippage := uint32(100)
-			req.SlippageBps = &defaultSlippage
-		}
-	*/
+	// Leave it like this only for the tests... The proto will ALWAYS provide value
+	// TODO: Refactor this in the future, it is not needed for program to function but tests rely on it
+	if req.SlippageBps == nil {
+		defaultSlippage := uint32(100) // 1% default slippage
+		req.SlippageBps = &defaultSlippage
+	}
 
 	if *req.SlippageBps > 10000 {
 		return nil, fmt.Errorf("slippage bps must be less than 10000")

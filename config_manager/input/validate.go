@@ -268,23 +268,48 @@ func (v *Validator) validateKeplrChainConfig(config *ChainInput, result *Validat
 }
 
 func validateStructs(values reflect.Value, result *ValidationResult) {
-	valuesIter := reflect.ValueOf(values).MapRange()
-	for valuesIter.Next() {
-		key := valuesIter.Key()
-		value := valuesIter.Value()
-		if key.Kind() == reflect.String && value.Kind() == reflect.String && value.String() == "" {
+	// Handle nil values
+	if values.Kind() == reflect.Pointer && values.IsNil() {
+		return
+	}
+
+	// Dereference pointers
+	if values.Kind() == reflect.Pointer {
+		values = values.Elem()
+	}
+
+	// Only process struct types
+	if values.Kind() != reflect.Struct {
+		return
+	}
+
+	t := values.Type()
+	for i := 0; i < values.NumField(); i++ {
+		field := t.Field(i)
+		value := values.Field(i)
+
+		// Skip unexported fields
+		if !field.IsExported() {
+			continue
+		}
+
+		// Check for empty strings
+		if value.Kind() == reflect.String && value.String() == "" {
 			result.Errors = append(result.Errors, &ValidationError{
-				"chain.keplr_chain_config." + key.String(),
+				"chain.keplr_chain_config." + field.Name,
 				"is required",
 			})
 		}
+
+		// Check for negative integers
 		if value.Kind() == reflect.Int && value.Int() < 0 {
 			result.Errors = append(result.Errors, &ValidationError{
-				"chain.keplr_chain_config." + key.String(),
+				"chain.keplr_chain_config." + field.Name,
 				"must be non-negative",
 			})
 		}
-		// recursively validate the struct
+
+		// Recursively validate nested structs
 		if value.Kind() == reflect.Struct {
 			validateStructs(value, result)
 		}

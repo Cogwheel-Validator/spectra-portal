@@ -275,6 +275,13 @@ func createTestAllowedExplorers() []input.AllowedExplorer {
 			TransactionPath:   "/{chain_name}/txs",
 		},
 		{
+			Name:              "spectra",
+			BaseURL:           "https://thespectra.io",
+			MultiChainSupport: true,
+			AccountPath:       "/{chain_name}/account",
+			TransactionPath:   "/{chain_name}/transactions",
+		},
+		{
 			Name:              "random explorer with no multichain support",
 			BaseURL:           "https://random-explorer.com",
 			MultiChainSupport: false,

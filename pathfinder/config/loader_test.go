@@ -38,7 +38,32 @@ func TestValidateInputConfig(t *testing.T) {
 		t.Fatalf("failed to load chain config: %v", err)
 	}
 
-	validator := input.NewValidator([]input.AllowedExplorer{}, input.WithSkipNetworkCheck(true))
+	// Include the Spectra explorer which is used by the test config
+	allowedExplorers := []input.AllowedExplorer{
+		{
+			Name:              "spectra",
+			BaseURL:           "https://thespectra.io",
+			MultiChainSupport: true,
+			AccountPath:       "/{chain_name}/account",
+			TransactionPath:   "/{chain_name}/transactions",
+		},
+		{
+			Name:              "mintscan",
+			BaseURL:           "https://mintscan.io",
+			MultiChainSupport: true,
+			AccountPath:       "/{chain_name}/account",
+			TransactionPath:   "/{chain_name}/txs",
+		},
+		{
+			Name:              "random explorer with no multichain support",
+			BaseURL:           "https://random-explorer.com",
+			MultiChainSupport: false,
+			AccountPath:       "/account",
+			TransactionPath:   "/txs",
+		},
+	}
+
+	validator := input.NewValidator(allowedExplorers, input.WithSkipNetworkCheck(true))
 	result := validator.Validate(chainConfig)
 
 	if !result.IsValid {
