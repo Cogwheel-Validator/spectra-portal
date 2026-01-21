@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
@@ -231,25 +232,40 @@ Returns:
 - map of the block data with the block number as the key
 - error if the request fails
 */
-func GetCosmosBlockHeights(endpoint input.APIEndpoint, block int) (BlockData, error) {
+func GetCosmosBlockHeights(
+	endpoint input.APIEndpoint,
+	retryAttempts int,
+	retryDelay time.Duration,
+	timeout time.Duration,
+	block int) (BlockData, error) {
 	client := http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: timeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			// Do not allow ANY redirects! Will work with this more...
 			return fmt.Errorf("redirect not allowed (count=%d) to %s", len(via), req.URL.String())
 		},
 	}
 
-	resp, err := client.Get(
-		fmt.Sprintf(
-			"%s/cosmos/base/tendermint/v1beta1/blocks/%d",
-			endpoint.URL,
-			block,
-		),
+	fullURL := fmt.Sprintf(
+		"%s/cosmos/base/tendermint/v1beta1/blocks/%d",
+		endpoint.URL,
+		block,
 	)
+
+	resp, err := client.Get(fullURL)
 	if err != nil {
-		log.Printf("Failed to get block %d: %v", block, err)
-		return BlockData{}, err
+		attempt := 0
+		for attempt < retryAttempts {
+			resp, err = client.Get(fullURL)
+			if err == nil {
+				break
+			}
+			attempt++
+			time.Sleep(retryDelay)
+		}
+		if err != nil {
+			return BlockData{}, err
+		}
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -264,4 +280,49 @@ func GetCosmosBlockHeights(endpoint input.APIEndpoint, block int) (BlockData, er
 		return BlockData{}, err
 	}
 	return blockDataValue, nil
+}
+
+// Get latest block height from the REST API
+//
+// Parameters:
+// - endpoint - the endpoint to get the latest block height from
+// - retryAttempts - the number of retry attempts to perform
+// - retryDelay - the delay between retry attempts
+// - timeout - the timeout for the request
+//
+// Returns:
+// - the latest block height
+// - error if the request fails
+func GetCosmosLatestBlockHeight(
+	endpoint input.APIEndpoint,
+	retryAttempts int,
+	retryDelay time.Duration,
+	timeout time.Duration) (int, error) {
+	client := http.Client{
+		Timeout: timeout,
+	}
+	fullURL := fmt.Sprintf("%s/cosmos/base/tendermint/v1beta1/blocks/latest", endpoint.URL)
+	resp, err := client.Get(fullURL)
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Fatalf("Failed to close response body: %v", err)
+		}
+	}()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
+	var blockDataValue BlockData
+	err = json.Unmarshal(body, &blockDataValue)
+	if err != nil {
+		return 0, err
+	}
+	height, err := strconv.Atoi(blockDataValue.Block.Header.Height)
+	if err != nil {
+		return 0, err
+	}
+	return height, nil
 }
