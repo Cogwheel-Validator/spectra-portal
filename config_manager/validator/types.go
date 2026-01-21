@@ -7,6 +7,17 @@ import (
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/query"
 )
 
+// Interface that both RestApiValidity and RpcValidity must implement
+type EndpointValidity interface {
+	GetEndpoint() input.APIEndpoint
+	GetPoints() int
+	SetPoints(int)
+	IsValid() bool
+	SetValid(bool)
+	GetBlockData() map[int]*query.BlockData
+	GetURL() string
+}
+
 // A struct that allows us to track the progress if the url provided regardless if it is RPC or REST is legit
 type RestApiValidity struct {
 	// Same for RPC and REST
@@ -31,6 +42,35 @@ type RestApiValidity struct {
 	binaryName *string
 	// Block data
 	blockData map[int]*query.BlockData
+}
+
+// Implement EndpointValidity interface for RestApiValidity
+func (r RestApiValidity) GetEndpoint() input.APIEndpoint {
+	return r.Endpoint
+}
+
+func (r RestApiValidity) GetPoints() int {
+	return r.points
+}
+
+func (r *RestApiValidity) SetPoints(p int) {
+	r.points = p
+}
+
+func (r RestApiValidity) IsValid() bool {
+	return r.valid
+}
+
+func (r *RestApiValidity) SetValid(v bool) {
+	r.valid = v
+}
+
+func (r RestApiValidity) GetBlockData() map[int]*query.BlockData {
+	return r.blockData
+}
+
+func (r RestApiValidity) GetURL() string {
+	return r.Endpoint.URL
 }
 
 type blockDataTracker struct {
@@ -64,4 +104,50 @@ type majorityConsensus struct {
 	lastResultsHash    string
 	evidenceHash       string
 	proposerAddress    string
+}
+
+type RpcValidity struct {
+	Endpoint    input.APIEndpoint
+	points      int
+	valid       bool
+	version     *string
+	abciAppName *string
+	height      *int
+	// marked as network in the status
+	chainId   *string
+	blockData map[int]*query.BlockData
+}
+
+// Implement EndpointValidity interface for RpcValidity
+func (r RpcValidity) GetEndpoint() input.APIEndpoint {
+	return r.Endpoint
+}
+
+func (r RpcValidity) GetPoints() int {
+	return r.points
+}
+
+func (r *RpcValidity) SetPoints(p int) {
+	r.points = p
+}
+
+func (r RpcValidity) IsValid() bool {
+	return r.valid
+}
+
+func (r *RpcValidity) SetValid(v bool) {
+	r.valid = v
+}
+
+func (r RpcValidity) GetBlockData() map[int]*query.BlockData {
+	return r.blockData
+}
+
+func (r RpcValidity) GetURL() string {
+	return r.Endpoint.URL
+}
+
+type RpcValidationBasicData struct {
+	AbciInfo query.AbciInfoResponseResultResponse
+	Status   query.StatusResault
 }
