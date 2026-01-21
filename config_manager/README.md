@@ -85,18 +85,24 @@ go run ./config_manager/cmd/generate \
   -input ./chain_configs \
   -pathfinder-output ./generated/pathfinder_config.toml \
   -client-output ./generated/client_config.json
+```
 
+```bash
 # Validate only (no output)
 go run ./config_manager/cmd/generate \
   -input ./chain_configs \
   -validate-only
+```
 
+```bash
 # Skip network checks (faster, for development)
 go run ./config_manager/cmd/generate \
   --input ./chain_configs \
   --skip-network \
   --pathfinder-output ./generated/pathfinder_config.toml
+```
 
+```bash
 # If you need output in a different format, you can use the following flags:
 go run ./config_manager/cmd/generate \
   --input ./chain_configs \
@@ -104,21 +110,26 @@ go run ./config_manager/cmd/generate \
   --client-output ./generated/client_config.json \
   --pathfinder-format toml \
   --client-format json
+```
 
-# If you need to use a cached registry data, you can use the following flag:
+```bash
+# If you need to use a local registry file, you can use the following flag and set the use-local-data flag to true:
 
 go run ./config_manager/cmd/generate \
   --input ./chain_configs \
-  --registry-cache ./cache/registry.json \
-  --use-cache
+  --local-registry-cache ./ibc_registry \
+  --local-keplr-cache ./keplr-registry \
+  --use-local-data
 
 # If you need to skip network validation, you can use the following flag:
-
+```bash
 
 go run ./config_manager/cmd/generate \
   --input ./chain_configs \
   --skip-network
+```
 
+```bash
 # If you need to validate only, you can use the following flag:
 
 
@@ -128,77 +139,25 @@ go run ./config_manager/cmd/generate \
 
 ```
 
-### Programmatic Usage
+Or if you have `make` installed, you can use the following command:
 
-```go
-import (
-    "github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/pipeline"
-)
-
-config := pipeline.GeneratorConfig{
-    InputDir:         "./chain_configs",
-    PathfinderOutputPath: "./generated/pathfinder_config.toml",
-    ClientOutputPath: "./generated/client_config.json",
-}
-
-generator := pipeline.NewGenerator(config)
-result, err := generator.Generate()
+```bash
+# for running the generator with local registry and keplr registry
+make generate-config-l
 ```
 
-## Generated Configs
+Or something like this can work if you need fresh registries:
 
-### Pathfinder Config (Backend)
-
-The pathfinder config is used by the routing pathfinder to build the route index:
-
-```go
-import (
-    "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/config"
-    "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
-)
-
-loader := config.NewChainConfigLoader()
-
-// Load and initialize the pathfinder
-pathfinder, err := loader.InitializePathfinder(
-    "./generated/pathfinder_config.toml",
-    brokerClients, // map[string]router.BrokerClient
-)
-
-// Use the pathfinder
-response := pathfinder.FindPath(routeRequest)
-```
-
-### Client Config (Frontend)
-
-The client config is a JSON file designed for frontend consumption:
-
-```typescript
-interface ClientConfig {
-  version: string;
-  generated_at: string;
-  chains: ClientChain[];
-  all_tokens: ClientTokenSummary[];
-}
-
-// Load in your frontend app
-const config = await fetch('/config/client_config.json').then(r => r.json());
-
-// Access chain data
-config.chains.forEach(chain => {
-  console.log(chain.name, chain.native_tokens, chain.connected_chains);
-});
-
-// Quick token lookup
-const atomToken = config.all_tokens.find(t => t.symbol === 'ATOM');
-console.log('ATOM available on:', atomToken.available_on);
+```bash
+# for running the generator with fresh registries
+make generate-config
 ```
 
 ## Data Flow
 
 1. **Input**: Developer writes `chain_configs/mychain.toml`
 2. **Validation**: Input config is validated for required fields and types
-3. **Registry Fetch**: IBC channel data is fetched from cosmos/chain-registry
+3. **Registry Fetch**: IBC channel data is fetched from cosmos/chain-registry and keplr registry from chainapsis github repository
 4. **Endpoint Verification**: RPC/REST endpoints are health-checked
 5. **Enrichment**: Input config is enriched with IBC routes and token mappings
 6. **Conversion**: Enriched config is converted to pathfinder and client formats
@@ -219,7 +178,7 @@ Ensure the `registry` field matches the exact directory name in the [cosmos/chai
 
 ### "Endpoint not reachable"
 
-Check that your RPC/REST URLs are correct and accessible. Use `--skip-network` for development.
+Check that your RPC/REST URLs are correct and accessible. Use `--skip-network` for development when you generate config files.
 
 ### "Duplicate chain ID"
 
