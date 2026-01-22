@@ -40,18 +40,23 @@ function safeStringify(...args: unknown[]): string {
         if (typeof arg === "number" || typeof arg === "boolean" || typeof arg === "bigint") {
             return String(arg);
         }
-        
+
         // Handle objects, arrays, functions, etc. - convert to JSON string
         // This ensures no references are preserved
         try {
-            return JSON.stringify(arg, (_key, value) => {
-                // Convert functions, symbols, undefined to strings
-                if (typeof value === "function") return `[Function: ${value.name || "anonymous"}]`;
-                if (typeof value === "symbol") return String(value);
-                if (typeof value === "undefined") return "undefined";
-                // For objects with circular refs, JSON.stringify will throw, caught below
-                return value;
-            }, 2);
+            return JSON.stringify(
+                arg,
+                (_key, value) => {
+                    // Convert functions, symbols, undefined to strings
+                    if (typeof value === "function")
+                        return `[Function: ${value.name || "anonymous"}]`;
+                    if (typeof value === "symbol") return String(value);
+                    if (typeof value === "undefined") return "undefined";
+                    // For objects with circular refs, JSON.stringify will throw, caught below
+                    return value;
+                },
+                2,
+            );
         } catch (error) {
             // Handle circular references or other JSON.stringify errors
             if (error instanceof Error && error.message.includes("circular")) {
@@ -65,7 +70,7 @@ function safeStringify(...args: unknown[]): string {
             }
         }
     });
-    
+
     // Join with spaces (similar to util.format behavior)
     return stringified.join(" ");
 }

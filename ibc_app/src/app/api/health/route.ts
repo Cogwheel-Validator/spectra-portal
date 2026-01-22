@@ -17,8 +17,8 @@ const fullClientConfig = await LoadConfig();
 // Cache TTL in milliseconds (120 seconds)
 const CACHE_TTL = 120 * 1000;
 
-// Health check timeout (2 seconds)
-const HEALTH_CHECK_TIMEOUT = 2000;
+// Health check timeout (3 seconds)
+const HEALTH_CHECK_TIMEOUT = 3000;
 
 // App URL
 const appUrl: string = "https://ibc.thespectra.io";
