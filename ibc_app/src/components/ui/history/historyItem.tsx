@@ -30,6 +30,15 @@ export default function HistoryItem({ transaction, config, onResume, onRetry }: 
               (t) => t.denom === transaction.tokenIn,
           )
         : null;
+    
+    let toToken = null;
+    if (transaction.swapInvolved) {
+        toToken = toChain
+            ? [...toChain.native_tokens, ...toChain.ibc_tokens].find(
+                  (t) => t.denom === transaction.tokenOut,
+              )
+            : null;
+    }
 
     // Status icon and color
     const StatusIcon = () => {
@@ -57,6 +66,7 @@ export default function HistoryItem({ transaction, config, onResume, onRetry }: 
     // Format amount for display
     const formatAmount = (amount: string, decimals: number = 6) => {
         const num = Number.parseFloat(amount) / 10 ** decimals;
+        if (num < 0.0001) return "< 0.0001";
         return num.toFixed(4);
     };
 
@@ -98,15 +108,20 @@ export default function HistoryItem({ transaction, config, onResume, onRetry }: 
                                 {transaction.trajectory.map((chainId) => {
                                     const chain = config.chains.find((c) => c.id === chainId);
                                     return (
-                                        <Image
-                                            key={chainId}
-                                            src={chain?.chain_logo || "/unknown.jpg"}
-                                            alt={chain?.name || chainId}
-                                            width={20}
-                                            height={20}
-                                            className="rounded-full opacity-60"
-                                            title={chain?.name || chainId}
-                                        />
+                                        <div className="flex items-center gap-1.5 shrink-0" key={chainId}>
+                                            <Image
+                                                key={chainId}
+                                                src={chain?.chain_logo || "/unknown.jpg"}
+                                                alt={chain?.name || chainId}
+                                                width={24}
+                                                height={24}
+                                                className="rounded-full opacity-60"
+                                                title={chain?.name || chainId}
+                                            />
+                                            <span className="text-sm text-white font-medium hidden sm:inline">
+                                                {chain?.name || chainId}
+                                            </span>
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -131,13 +146,28 @@ export default function HistoryItem({ transaction, config, onResume, onRetry }: 
                 </div>
 
                 {/* Amount */}
-                <div className="text-right shrink-0">
-                    <span className="text-sm text-white font-medium">
-                        {formatAmount(transaction.amountIn, fromToken?.decimals)}
-                    </span>
-                    <span className="text-xs text-slate-400 ml-1">
-                        {fromToken?.symbol || "???"}
-                    </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="text-right shrink-0">
+                        <span className="text-sm text-white font-medium">
+                            {formatAmount(transaction.amountIn, fromToken?.decimals)}
+                        </span>
+                        <span className="text-xs text-slate-400 ml-1">
+                            {fromToken?.symbol || "???"}
+                        </span>
+                    </div>
+                    {transaction.swapInvolved && (
+                        <>
+                            <ArrowRight className="w-4 h-4 text-slate-500 shrink-0" />
+                            <div className="flex items-center gap-1">
+                                <span className="text-sm text-white font-medium">
+                                    {formatAmount(transaction.amountOut, toToken?.decimals)}
+                                </span>
+                                <span className="text-xs text-slate-400 ml-1">
+                                    {toToken?.symbol || "???"}
+                                </span>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Progress (for in-progress) */}

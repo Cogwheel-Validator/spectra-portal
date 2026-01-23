@@ -520,13 +520,15 @@ export default function SendUI({
             case "brokerSwap":
                 routeType = "Swap & Transfer";
                 expectedOutput = pathfinderResponse.route.value.swap?.amountOut ?? "0";
-                priceImpact = Number.parseFloat(pathfinderResponse.route.value.swap?.priceImpact ?? "0");
+                priceImpact = Number.parseFloat(
+                    pathfinderResponse.route.value.swap?.priceImpact ?? "0",
+                );
                 priceImpactBps = Math.round(priceImpact * 10000);
-                
+
                 // It is retarded but for some reason the Tailwind CSS keeps ****ing me and not renderind the color
                 // as intended, let it just work directly with the style and just move on...
                 if (priceImpactBps < -500) {
-                    priceImpactColor = "#991b1b"; // red-800
+                    priceImpactColor = "#e11d48"; // rose-600
                 } else if (priceImpactBps < -250) {
                     priceImpactColor = "#f87171"; // red-400
                 } else if (priceImpactBps < -100) {
@@ -537,7 +539,14 @@ export default function SendUI({
                 break;
         }
 
-        return { routeType, expectedOutput, priceImpact, priceImpactBps, priceImpactColor, stepCount };
+        return {
+            routeType,
+            expectedOutput,
+            priceImpact,
+            priceImpactBps,
+            priceImpactColor,
+            stepCount,
+        };
     }, [pathfinderResponse, stepCount]);
 
     return (
@@ -718,17 +727,18 @@ export default function SendUI({
                                     {routeInfo.stepCount} tx{routeInfo.stepCount !== 1 ? "s" : ""}
                                 </p>
                             </div>
-                            {routeInfo.priceImpactBps !== 0 && Math.abs(routeInfo.priceImpactBps) > 1 && (
-                                <div>
-                                    <span className="text-slate-400 text-xs">Price Impact</span>
-                                    <p
-                                        className="font-medium"
-                                        style={{ color: routeInfo.priceImpactColor }}
-                                    >
-                                        {(routeInfo.priceImpact * 100).toFixed(2)}%
-                                    </p>
-                                </div>
-                            )}
+                            {routeInfo.priceImpactBps !== 0 &&
+                                Math.abs(routeInfo.priceImpactBps) > 1 && (
+                                    <div>
+                                        <span className="text-slate-400 text-xs">Price Impact</span>
+                                        <p
+                                            className="font-medium"
+                                            style={{ color: routeInfo.priceImpactColor }}
+                                        >
+                                            {(routeInfo.priceImpact * 100).toFixed(2)}%
+                                        </p>
+                                    </div>
+                                )}
                             {selectedReceiveToken && (
                                 <div>
                                     <span className="text-slate-400 text-xs">Expected Output</span>

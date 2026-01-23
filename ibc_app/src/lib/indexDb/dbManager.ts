@@ -7,7 +7,7 @@ import logger from "@/lib/clientLogger";
 
 // Database version and name
 // in case you need to update something in the database, you can increment the version
-const DB_VERSION: number = 1;
+const DB_VERSION: number = 1.1;
 const DB_NAME: string = "spectra_ibc";
 const TRANSACTION_STORE = "transactions";
 const MAX_TRANSACTIONS = 50;
@@ -30,6 +30,8 @@ export type TransactionRecord = {
     // trajectory as in are there any chainIds in between the fromChainId and the toChainId
     trajectory: string[] | null;
     error: string | null;
+    // confirmation weather the transaction involves a swap on the broker chain
+    swapInvolved: boolean;
 };
 
 export type TransactionUpdate = {
@@ -37,6 +39,7 @@ export type TransactionUpdate = {
     status?: "success" | "failed" | "in-progress" | "canceled";
     currentStep?: number;
     error?: string | null;
+    swapInvolved?: boolean;
 };
 
 /**
@@ -181,6 +184,9 @@ export function UpdateTransactionStatus(db: IDBDatabase, update: TransactionUpda
             }
             if (update.error !== undefined) {
                 transaction.error = update.error;
+            }
+            if (update.swapInvolved !== undefined) {
+                transaction.swapInvolved = update.swapInvolved;
             }
 
             const putRequest = store.put(transaction);

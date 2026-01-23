@@ -32,24 +32,29 @@ export default function ChainProgress({
 
     return (
         <div className="relative">
-            {/* Progress Line Background */}
-            <div className="absolute top-8 left-0 right-0 h-1 bg-slate-700 rounded-full mx-12" />
+            {/* Progress Line Container */}
+            <div className="absolute top-8 left-0 right-0 flex items-center justify-center pointer-events-none">
+                <div className="relative w-full mx-12">
+                    {/* Progress Line Background */}
+                    <div className="absolute inset-0 h-1 bg-slate-700 rounded-full" />
 
-            {/* Animated Progress Line */}
-            <motion.div
-                className="absolute top-8 left-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full mx-12"
-                initial={{ width: "0%" }}
-                animate={{
-                    width:
-                        status === "completed"
-                            ? "100%"
-                            : `${(currentChainIndex / (chainPath.length - 1)) * 100}%`,
-                }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-            />
+                    {/* Animated Progress Line */}
+                    <motion.div
+                        className="absolute left-0 top-0 h-1 bg-linear-to-r from-teal-500 to-emerald-500 rounded-full z-10"
+                        initial={{ width: "0%" }}
+                        animate={{
+                            width:
+                                status === "completed"
+                                    ? "100%"
+                                    : `${(currentChainIndex / (chainPath.length - 1)) * 100}%`,
+                        }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                    />
+                </div>
+            </div>
 
             {/* Chain Nodes */}
-            <div className="flex justify-between items-start relative z-10">
+            <div className="flex justify-between items-start relative z-20">
                 {chainPath.map((chainId, index) => {
                     const chain = getChainData(chainId);
                     const chainStatus = getChainStatus(index);

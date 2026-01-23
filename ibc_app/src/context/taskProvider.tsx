@@ -404,6 +404,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                     currentStep: 0,
                     trajectory: chainPath.length > 2 ? chainPath.slice(1, -1) : null,
                     error: null,
+                    swapInvolved: response.route.case === "brokerSwap",
                 };
 
                 const dbRecordId = await AddTransactionToDb(db, transactionRecord);
