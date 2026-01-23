@@ -25,6 +25,7 @@ import {
     type TransactionRecord,
     UpdateTransactionStatus,
 } from "@/lib/indexDb/dbManager";
+import { humanToBaseUnits } from "@/lib/utils";
 import {
     extractChainPath,
     generateStepsFromResponse,
@@ -379,6 +380,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 // Create transaction record in IndexedDB
+                // Convert human-readable amount to base units for consistent storage
+                const fromTokenDecimals = transfer.state.fromToken?.decimals ?? 6;
+                const amountInBaseUnits = humanToBaseUnits(
+                    transfer.state.amount,
+                    fromTokenDecimals,
+                );
+
                 const transactionRecord: Omit<TransactionRecord, "id"> = {
                     timestamp: new Date().toISOString(),
                     fromChainId: transfer.state.fromChainId,
@@ -388,7 +396,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                     tokenIn: transfer.state.fromToken?.denom || "",
                     tokenOut:
                         transfer.state.toToken?.denom || transfer.state.fromToken?.denom || "",
-                    amountIn: transfer.state.amount,
+                    amountIn: amountInBaseUnits,
                     amountOut: getExpectedOutput(response),
                     typeOfTransfer: mode,
                     status: "in-progress",

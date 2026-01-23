@@ -10,7 +10,6 @@ import {
     XCircle,
 } from "lucide-react";
 import Image from "next/image";
-
 import type { ClientConfig } from "@/components/modules/tomlTypes";
 import type { TransactionWithMeta } from "@/hooks/useTransactionHistory";
 
@@ -58,7 +57,7 @@ export default function HistoryItem({ transaction, config, onResume, onRetry }: 
     // Format amount for display
     const formatAmount = (amount: string, decimals: number = 6) => {
         const num = Number.parseFloat(amount) / 10 ** decimals;
-        return num.toLocaleString(undefined, { maximumFractionDigits: 4 });
+        return num.toFixed(4);
     };
 
     return (

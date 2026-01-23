@@ -189,10 +189,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     try {
                         savedStates.push(JSON.parse(saved));
                     } catch (error) {
-                        clientLogger.error(
-                            `Failed to parse saved state for ${key}:`,
-                            error,
-                        );
+                        clientLogger.error(`Failed to parse saved state for ${key}:`, error);
                     }
                 }
             }
@@ -240,11 +237,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     setWalletType(savedState.walletType);
                 }
             } catch (error) {
-                clientLogger.error(
-                    "Auto-reconnect failed for chain:",
-                    savedState.chainId,
-                    error,
-                );
+                clientLogger.error("Auto-reconnect failed for chain:", savedState.chainId, error);
                 clearWalletState(savedState.chainId);
             }
         },
@@ -353,7 +346,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
             try {
                 await wallet.enable(chainIds);
             } catch {
-                clientLogger.info("Some chains not found, identifying which chains need suggesting...");
+                clientLogger.info(
+                    "Some chains not found, identifying which chains need suggesting...",
+                );
 
                 // Test each chain individually to find which ones need suggesting
                 const enableResults = await Promise.allSettled(
@@ -572,10 +567,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     height: result.height,
                 };
             } catch (error) {
-                clientLogger.error(
-                    "Failed to sign and broadcast transaction:",
-                    error,
-                );
+                clientLogger.error("Failed to sign and broadcast transaction:", error);
                 throw error;
             }
         },

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import type { ClientConfig } from "@/components/modules/tomlTypes";
 import { useTaskProvider } from "@/context/taskProvider";
 import { useTransfer } from "@/context/transferContext";
+import { buildExplorerTxUrl } from "@/lib/utils";
 import ChainProgress from "./chainProgress";
 import StepIndicator from "./stepIndicator";
 
@@ -51,7 +52,11 @@ export default function TransferTracker({ config, onBack }: TransferTrackerProps
             if (!chain) return null;
 
             if (txHash) {
-                return `${chain.explorer_details.base_url}${chain.explorer_details.transaction_path}/${txHash}`;
+                return buildExplorerTxUrl(
+                    chain.explorer_details.base_url,
+                    chain.explorer_details.transaction_path,
+                    txHash,
+                );
             }
             return chain.explorer_details.base_url;
         },

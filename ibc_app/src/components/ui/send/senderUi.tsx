@@ -18,6 +18,7 @@ import {
     usePathfinderQuery,
 } from "@/hooks/usePathfinderQuery";
 import { useGetAddressBalance } from "@/lib/apiQueries/fetchApiData";
+import { humanToBaseUnits } from "@/lib/utils";
 
 interface SendUIProps {
     config: ClientConfig;
@@ -78,16 +79,6 @@ export default function SendUI({
         [getChainById],
     );
 
-    const getSendableTokens = useCallback(
-        (fromChainId: string, toChainId: string): string[] => {
-            const chain = getChainById(fromChainId);
-            if (!chain) return [];
-            const connected = chain.connected_chains.find((cc) => cc.id === toChainId);
-            return connected?.sendable_tokens ?? [];
-        },
-        [getChainById],
-    );
-
     // Derived data
     const sendChainData = useMemo(() => getChainById(sendChain), [sendChain, getChainById]);
     const receiveChainData = useMemo(
@@ -129,11 +120,6 @@ export default function SendUI({
 
         return [...directlyConnected, ...viabroker];
     }, [sendChain, getConnectedChains, brokerChains, getChainById]);
-
-    const sendableTokenSymbols = useMemo(() => {
-        if (!sendChain || !receiveChain) return [];
-        return getSendableTokens(sendChain, receiveChain);
-    }, [sendChain, receiveChain, getSendableTokens]);
 
     // Base tokens available on chains (without balance sorting)
     const baseSendTokens = useMemo(() => {
@@ -217,22 +203,8 @@ export default function SendUI({
 
     // Convert amount to base units (with decimals) for pathfinder
     const amountInBaseUnits = useMemo(() => {
-        if (!amount || !selectedSendToken) return "";
-        const decimals = selectedSendToken.decimals ?? 6;
-        try {
-            // Convert from human-readable format (e.g., "1.5") to base units
-            // Using BigInt to handle tokens with high decimals (like EVM tokens with 18)
-            const parts = amount.split(".");
-            const integerPart = parts[0] || "0";
-            const decimalPart = (parts[1] || "").padEnd(decimals, "0").slice(0, decimals);
-
-            // Combine to get the full amount in base units
-            const fullAmount = integerPart + decimalPart;
-            // Remove leading zeros but keep at least one digit
-            return BigInt(fullAmount).toString();
-        } catch {
-            return "";
-        }
+        // call the util function just wrapped in with use Memo
+        return humanToBaseUnits(amount, selectedSendToken?.decimals ?? 6);
     }, [amount, selectedSendToken]);
 
     // Pathfinder query with debounce
@@ -436,11 +408,65 @@ export default function SendUI({
         [debouncedUpdateURL],
     );
 
+    // Extract intermediate chains from pathfinder response
+    const intermediateChainIds = useMemo(() => {
+        if (!pathfinderResponse?.success) return [];
+
+        let chainPath: string[] = [];
+        switch (pathfinderResponse.route.case) {
+            case "indirect":
+                chainPath = pathfinderResponse.route.value.path;
+                break;
+            case "brokerSwap":
+                chainPath = pathfinderResponse.route.value.path;
+                break;
+            default:
+                return [];
+        }
+
+        // Return intermediate chains (excluding first and last)
+        if (chainPath.length > 2) {
+            return chainPath.slice(1, -1);
+        }
+        return [];
+    }, [pathfinderResponse]);
+
+    // Required chains for wallet connection (including intermediate chains for multi-hop routes)
+    const requiredChains = useMemo(() => {
+        const chains: ClientChain[] = [];
+        const addedIds = new Set<string>();
+
+        // Add source chain
+        if (sendChainData) {
+            chains.push(sendChainData);
+            addedIds.add(sendChainData.id);
+        }
+
+        // Add intermediate chains from the route (for broker swaps and indirect routes)
+        for (const chainId of intermediateChainIds) {
+            if (!addedIds.has(chainId)) {
+                const chain = getChainById(chainId);
+                if (chain) {
+                    chains.push(chain);
+                    addedIds.add(chainId);
+                }
+            }
+        }
+
+        // Add destination chain
+        if (receiveChainData && !addedIds.has(receiveChainData.id)) {
+            chains.push(receiveChainData);
+        }
+
+        return chains;
+    }, [sendChainData, receiveChainData, intermediateChainIds, getChainById]);
+
     // Validation
     const isWalletReady = useMemo(() => {
         if (!sendChain || !receiveChain) return false;
-        return isConnectedToChain(sendChain) && isConnectedToChain(receiveChain);
-    }, [sendChain, receiveChain, isConnectedToChain]);
+        // Check that all required chains are connected
+        return requiredChains.every((chain) => isConnectedToChain(chain.id));
+    }, [sendChain, receiveChain, requiredChains, isConnectedToChain]);
 
     const canSubmit = useMemo(() => {
         return (
@@ -462,16 +488,6 @@ export default function SendUI({
         balanceLoading,
     ]);
 
-    // Required chains for wallet connection
-    const requiredChains = useMemo(() => {
-        const chains: ClientChain[] = [];
-        if (sendChainData) chains.push(sendChainData);
-        if (receiveChainData && receiveChainData.id !== sendChainData?.id) {
-            chains.push(receiveChainData);
-        }
-        return chains;
-    }, [sendChainData, receiveChainData]);
-
     // Handle transfer submission
     const { startPreparing } = transfer;
     const handleSubmit = useCallback(() => {
@@ -486,7 +502,9 @@ export default function SendUI({
 
         let routeType = "";
         let expectedOutput = "";
-        let priceImpact = "";
+        let priceImpact = 0;
+        let priceImpactBps = 0;
+        let priceImpactColor = "";
 
         switch (pathfinderResponse.route.case) {
             case "direct":
@@ -502,11 +520,24 @@ export default function SendUI({
             case "brokerSwap":
                 routeType = "Swap & Transfer";
                 expectedOutput = pathfinderResponse.route.value.swap?.amountOut ?? "0";
-                priceImpact = pathfinderResponse.route.value.swap?.priceImpact ?? "0";
+                priceImpact = Number.parseFloat(pathfinderResponse.route.value.swap?.priceImpact ?? "0");
+                priceImpactBps = Math.round(priceImpact * 10000);
+                
+                // It is retarded but for some reason the Tailwind CSS keeps ****ing me and not renderind the color
+                // as intended, let it just work directly with the style and just move on...
+                if (priceImpactBps < -500) {
+                    priceImpactColor = "#991b1b"; // red-800
+                } else if (priceImpactBps < -250) {
+                    priceImpactColor = "#f87171"; // red-400
+                } else if (priceImpactBps < -100) {
+                    priceImpactColor = "#facc15"; // yellow-400
+                } else {
+                    priceImpactColor = "#4ade80"; // green-400
+                }
                 break;
         }
 
-        return { routeType, expectedOutput, priceImpact, stepCount };
+        return { routeType, expectedOutput, priceImpact, priceImpactBps, priceImpactColor, stepCount };
     }, [pathfinderResponse, stepCount]);
 
     return (
@@ -687,20 +718,17 @@ export default function SendUI({
                                     {routeInfo.stepCount} tx{routeInfo.stepCount !== 1 ? "s" : ""}
                                 </p>
                             </div>
-                            {routeInfo.priceImpact &&
-                                Number.parseFloat(routeInfo.priceImpact) !== 0 && (
-                                    <div>
-                                        <span className="text-slate-400 text-xs">Price Impact</span>
-                                        <p
-                                            className={`font-medium ${Number.parseFloat(routeInfo.priceImpact) < -0.01 ? "text-yellow-400" : "text-white"}`}
-                                        >
-                                            {(
-                                                Number.parseFloat(routeInfo.priceImpact) * 100
-                                            ).toFixed(2)}
-                                            %
-                                        </p>
-                                    </div>
-                                )}
+                            {routeInfo.priceImpactBps !== 0 && Math.abs(routeInfo.priceImpactBps) > 1 && (
+                                <div>
+                                    <span className="text-slate-400 text-xs">Price Impact</span>
+                                    <p
+                                        className="font-medium"
+                                        style={{ color: routeInfo.priceImpactColor }}
+                                    >
+                                        {(routeInfo.priceImpact * 100).toFixed(2)}%
+                                    </p>
+                                </div>
+                            )}
                             {selectedReceiveToken && (
                                 <div>
                                     <span className="text-slate-400 text-xs">Expected Output</span>
