@@ -1,220 +1,5 @@
 version = 'v1-20260124'
-generated_at = '2026-01-24T09:42:24Z'
-
-[[chains]]
-name = 'Juno Network'
-id = 'juno-1'
-has_pfm = true
-broker = false
-bech32_prefix = 'juno'
-
-[[chains.native_tokens]]
-chain_denom = 'ujuno'
-ibc_denom = ''
-base_denom = 'ujuno'
-origin_chain = 'juno-1'
-symbol = 'JUNO'
-decimals = 6
-
-[[chains.native_tokens]]
-chain_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
-ibc_denom = ''
-base_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
-origin_chain = 'juno-1'
-symbol = 'NETA'
-decimals = 6
-
-[[chains.routes]]
-to_chain = 'Cosmos Hub'
-to_chain_id = 'cosmoshub-4'
-connection_id = 'connection-2'
-channel_id = 'channel-1'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-
-[[chains.routes]]
-to_chain = 'Noble'
-to_chain_id = 'noble-1'
-connection_id = 'connection-322'
-channel_id = 'channel-224'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF']
-chain_denom = 'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF'
-ibc_denom = 'uusdc'
-base_denom = 'uusdc'
-origin_chain = 'noble-1'
-symbol = 'USDC'
-decimals = 6
-
-[[chains.routes]]
-to_chain = 'Osmosis'
-to_chain_id = 'osmosis-1'
-connection_id = 'connection-0'
-channel_id = 'channel-0'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr']
-chain_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
-ibc_denom = 'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA'
-base_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
-origin_chain = 'juno-1'
-symbol = 'NETA'
-decimals = 6
-
-[chains.routes.allowed_tokens.ujuno]
-chain_denom = 'ujuno'
-ibc_denom = 'ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED'
-base_denom = 'ujuno'
-origin_chain = 'juno-1'
-symbol = 'JUNO'
-decimals = 6
-
-[[chains.routes]]
-to_chain = 'Stargaze'
-to_chain_id = 'stargaze-1'
-connection_id = 'connection-30'
-channel_id = 'channel-20'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.ujuno]
-chain_denom = 'ujuno'
-ibc_denom = 'ibc/448C1061CE97D86CC5E86374CD914870FB8EBA16C58661B5F1D3F46729A2422D'
-base_denom = 'ujuno'
-origin_chain = 'juno-1'
-symbol = 'JUNO'
-decimals = 6
-
-[[chains]]
-name = 'Noble'
-id = 'noble-1'
-has_pfm = true
-broker = false
-bech32_prefix = 'noble'
-
-[[chains.native_tokens]]
-chain_denom = 'ueure'
-ibc_denom = ''
-base_denom = 'ueure'
-origin_chain = 'noble-1'
-symbol = 'EURe'
-decimals = 6
-
-[[chains.native_tokens]]
-chain_denom = 'uusdc'
-ibc_denom = ''
-base_denom = 'uusdc'
-origin_chain = 'noble-1'
-symbol = 'USDC'
-decimals = 6
-
-[[chains.native_tokens]]
-chain_denom = 'uusdn'
-ibc_denom = ''
-base_denom = 'uusdn'
-origin_chain = 'noble-1'
-symbol = 'USDN'
-decimals = 6
-
-[[chains.native_tokens]]
-chain_denom = 'ausdy'
-ibc_denom = ''
-base_denom = 'ausdy'
-origin_chain = 'noble-1'
-symbol = 'USDY'
-decimals = 18
-
-[[chains.routes]]
-to_chain = 'Cosmos Hub'
-to_chain_id = 'cosmoshub-4'
-connection_id = 'connection-12'
-channel_id = 'channel-4'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.uusdc]
-chain_denom = 'uusdc'
-ibc_denom = 'ibc/F663521BF1836B00F5F177680F74BFB9A8B5654A694D0D2BC249E03CF2509013'
-base_denom = 'uusdc'
-origin_chain = 'noble-1'
-symbol = 'USDC'
-decimals = 6
-
-[[chains.routes]]
-to_chain = 'Juno Network'
-to_chain_id = 'juno-1'
-connection_id = 'connection-8'
-channel_id = 'channel-3'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.uusdc]
-chain_denom = 'uusdc'
-ibc_denom = 'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF'
-base_denom = 'uusdc'
-origin_chain = 'noble-1'
-symbol = 'USDC'
-decimals = 6
-
-[[chains.routes]]
-to_chain = 'Osmosis'
-to_chain_id = 'osmosis-1'
-connection_id = 'connection-2'
-channel_id = 'channel-1'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.ausdy]
-chain_denom = 'ausdy'
-ibc_denom = 'ibc/23104D411A6EB6031FA92FB75F227422B84989969E91DCAD56A535DD7FF0A373'
-base_denom = 'ausdy'
-origin_chain = 'noble-1'
-symbol = 'USDY'
-decimals = 18
-
-[chains.routes.allowed_tokens.ueure]
-chain_denom = 'ueure'
-ibc_denom = 'ibc/92AE2F53284505223A1BB80D132F859A00E190C6A738772F0B3EF65E20BA484F'
-base_denom = 'ueure'
-origin_chain = 'noble-1'
-symbol = 'EURe'
-decimals = 6
-
-[chains.routes.allowed_tokens.uusdc]
-chain_denom = 'uusdc'
-ibc_denom = 'ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4'
-base_denom = 'uusdc'
-origin_chain = 'noble-1'
-symbol = 'USDC'
-decimals = 6
-
-[chains.routes.allowed_tokens.uusdn]
-chain_denom = 'uusdn'
-ibc_denom = 'ibc/0C39BD03B5C57A1753A9B73164705871A9B549F1A5226CFD7E39BE7BF73CF8CF'
-base_denom = 'uusdn'
-origin_chain = 'noble-1'
-symbol = 'USDN'
-decimals = 6
-
-[[chains.routes]]
-to_chain = 'Stargaze'
-to_chain_id = 'stargaze-1'
-connection_id = 'connection-25'
-channel_id = 'channel-11'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.uusdc]
-chain_denom = 'uusdc'
-ibc_denom = 'ibc/4A1C18CA7F50544760CF306189B810CE4C1CB156C7FC870143D401FE7280E591'
-base_denom = 'uusdc'
-origin_chain = 'noble-1'
-symbol = 'USDC'
-decimals = 6
+generated_at = '2026-01-24T11:20:21Z'
 
 [[chains]]
 name = 'Osmosis'
@@ -256,78 +41,6 @@ base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw
 origin_chain = 'osmosis-1'
 symbol = 'allETH'
 decimals = 18
-
-[[chains.routes]]
-to_chain = 'Atom One'
-to_chain_id = 'atomone-1'
-connection_id = 'connection-4829'
-channel_id = 'channel-94814'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB']
-chain_denom = 'ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB'
-ibc_denom = 'uatone'
-base_denom = 'uatone'
-origin_chain = 'atomone-1'
-symbol = 'ATONE'
-decimals = 6
-
-[chains.routes.allowed_tokens.'ibc/D6E02C5AE8A37FC2E3AB1FC8AC168878ADB870549383DFFEA9FD020C234520A7']
-chain_denom = 'ibc/D6E02C5AE8A37FC2E3AB1FC8AC168878ADB870549383DFFEA9FD020C234520A7'
-ibc_denom = 'uphoton'
-base_denom = 'uphoton'
-origin_chain = 'atomone-1'
-symbol = 'PHOTON'
-decimals = 6
-
-[[chains.routes]]
-to_chain = 'Cosmos Hub'
-to_chain_id = 'cosmoshub-4'
-connection_id = 'connection-1'
-channel_id = 'channel-0'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc']
-chain_denom = 'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc'
-ibc_denom = 'ibc/99B00614DDBE6189AA03B77066FF8EB3F93680BD790C43CF56096B7F23542015'
-base_denom = 'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc'
-origin_chain = 'osmosis-1'
-symbol = 'WBTC'
-decimals = 8
-
-[chains.routes.allowed_tokens.'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2']
-chain_denom = 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2'
-ibc_denom = 'uatom'
-base_denom = 'uatom'
-origin_chain = 'cosmoshub-4'
-symbol = 'ATOM'
-decimals = 6
-
-[[chains.routes]]
-to_chain = 'Juno Network'
-to_chain_id = 'juno-1'
-connection_id = 'connection-1142'
-channel_id = 'channel-42'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA']
-chain_denom = 'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA'
-ibc_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
-base_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
-origin_chain = 'juno-1'
-symbol = 'NETA'
-decimals = 6
-
-[chains.routes.allowed_tokens.'ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED']
-chain_denom = 'ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED'
-ibc_denom = 'ujuno'
-base_denom = 'ujuno'
-origin_chain = 'juno-1'
-symbol = 'JUNO'
-decimals = 6
 
 [[chains.routes]]
 to_chain = 'Noble'
@@ -417,6 +130,78 @@ origin_chain = 'symphony-1'
 symbol = 'MLD'
 decimals = 6
 
+[[chains.routes]]
+to_chain = 'Atom One'
+to_chain_id = 'atomone-1'
+connection_id = 'connection-4829'
+channel_id = 'channel-94814'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB']
+chain_denom = 'ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB'
+ibc_denom = 'uatone'
+base_denom = 'uatone'
+origin_chain = 'atomone-1'
+symbol = 'ATONE'
+decimals = 6
+
+[chains.routes.allowed_tokens.'ibc/D6E02C5AE8A37FC2E3AB1FC8AC168878ADB870549383DFFEA9FD020C234520A7']
+chain_denom = 'ibc/D6E02C5AE8A37FC2E3AB1FC8AC168878ADB870549383DFFEA9FD020C234520A7'
+ibc_denom = 'uphoton'
+base_denom = 'uphoton'
+origin_chain = 'atomone-1'
+symbol = 'PHOTON'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Cosmos Hub'
+to_chain_id = 'cosmoshub-4'
+connection_id = 'connection-1'
+channel_id = 'channel-0'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc']
+chain_denom = 'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc'
+ibc_denom = 'ibc/99B00614DDBE6189AA03B77066FF8EB3F93680BD790C43CF56096B7F23542015'
+base_denom = 'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc'
+origin_chain = 'osmosis-1'
+symbol = 'WBTC'
+decimals = 8
+
+[chains.routes.allowed_tokens.'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2']
+chain_denom = 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2'
+ibc_denom = 'uatom'
+base_denom = 'uatom'
+origin_chain = 'cosmoshub-4'
+symbol = 'ATOM'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Juno Network'
+to_chain_id = 'juno-1'
+connection_id = 'connection-1142'
+channel_id = 'channel-42'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA']
+chain_denom = 'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA'
+ibc_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
+base_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
+origin_chain = 'juno-1'
+symbol = 'NETA'
+decimals = 6
+
+[chains.routes.allowed_tokens.'ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED']
+chain_denom = 'ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED'
+ibc_denom = 'ujuno'
+base_denom = 'ujuno'
+origin_chain = 'juno-1'
+symbol = 'JUNO'
+decimals = 6
+
 [[chains]]
 name = 'Stargaze'
 id = 'stargaze-1'
@@ -430,6 +215,22 @@ ibc_denom = ''
 base_denom = 'ustars'
 origin_chain = 'stargaze-1'
 symbol = 'STARS'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Atom One'
+to_chain_id = 'atomone-1'
+connection_id = 'connection-337'
+channel_id = 'channel-448'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D']
+chain_denom = 'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D'
+ibc_denom = 'uatone'
+base_denom = 'uatone'
+origin_chain = 'atomone-1'
+symbol = 'ATONE'
 decimals = 6
 
 [[chains.routes]]
@@ -510,22 +311,6 @@ ibc_denom = 'ibc/987C17B11ABC2B20019178ACE62929FE9840202CE79498E29FE8E5CB02B7C0A
 base_denom = 'ustars'
 origin_chain = 'stargaze-1'
 symbol = 'STARS'
-decimals = 6
-
-[[chains.routes]]
-to_chain = 'Atom One'
-to_chain_id = 'atomone-1'
-connection_id = 'connection-337'
-channel_id = 'channel-448'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D']
-chain_denom = 'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D'
-ibc_denom = 'uatone'
-base_denom = 'uatone'
-origin_chain = 'atomone-1'
-symbol = 'ATONE'
 decimals = 6
 
 [[chains]]
@@ -700,4 +485,219 @@ ibc_denom = 'ibc/9DF365E2C0EF4EA02FA771F638BB9C0C830EFCD354629BDC017F79B348B4E98
 base_denom = 'uatom'
 origin_chain = 'cosmoshub-4'
 symbol = 'ATOM'
+decimals = 6
+
+[[chains]]
+name = 'Juno Network'
+id = 'juno-1'
+has_pfm = true
+broker = false
+bech32_prefix = 'juno'
+
+[[chains.native_tokens]]
+chain_denom = 'ujuno'
+ibc_denom = ''
+base_denom = 'ujuno'
+origin_chain = 'juno-1'
+symbol = 'JUNO'
+decimals = 6
+
+[[chains.native_tokens]]
+chain_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
+ibc_denom = ''
+base_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
+origin_chain = 'juno-1'
+symbol = 'NETA'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Cosmos Hub'
+to_chain_id = 'cosmoshub-4'
+connection_id = 'connection-2'
+channel_id = 'channel-1'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+
+[[chains.routes]]
+to_chain = 'Noble'
+to_chain_id = 'noble-1'
+connection_id = 'connection-322'
+channel_id = 'channel-224'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF']
+chain_denom = 'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF'
+ibc_denom = 'uusdc'
+base_denom = 'uusdc'
+origin_chain = 'noble-1'
+symbol = 'USDC'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Osmosis'
+to_chain_id = 'osmosis-1'
+connection_id = 'connection-0'
+channel_id = 'channel-0'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr']
+chain_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
+ibc_denom = 'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA'
+base_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
+origin_chain = 'juno-1'
+symbol = 'NETA'
+decimals = 6
+
+[chains.routes.allowed_tokens.ujuno]
+chain_denom = 'ujuno'
+ibc_denom = 'ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED'
+base_denom = 'ujuno'
+origin_chain = 'juno-1'
+symbol = 'JUNO'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Stargaze'
+to_chain_id = 'stargaze-1'
+connection_id = 'connection-30'
+channel_id = 'channel-20'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.ujuno]
+chain_denom = 'ujuno'
+ibc_denom = 'ibc/448C1061CE97D86CC5E86374CD914870FB8EBA16C58661B5F1D3F46729A2422D'
+base_denom = 'ujuno'
+origin_chain = 'juno-1'
+symbol = 'JUNO'
+decimals = 6
+
+[[chains]]
+name = 'Noble'
+id = 'noble-1'
+has_pfm = true
+broker = false
+bech32_prefix = 'noble'
+
+[[chains.native_tokens]]
+chain_denom = 'ueure'
+ibc_denom = ''
+base_denom = 'ueure'
+origin_chain = 'noble-1'
+symbol = 'EURe'
+decimals = 6
+
+[[chains.native_tokens]]
+chain_denom = 'uusdc'
+ibc_denom = ''
+base_denom = 'uusdc'
+origin_chain = 'noble-1'
+symbol = 'USDC'
+decimals = 6
+
+[[chains.native_tokens]]
+chain_denom = 'uusdn'
+ibc_denom = ''
+base_denom = 'uusdn'
+origin_chain = 'noble-1'
+symbol = 'USDN'
+decimals = 6
+
+[[chains.native_tokens]]
+chain_denom = 'ausdy'
+ibc_denom = ''
+base_denom = 'ausdy'
+origin_chain = 'noble-1'
+symbol = 'USDY'
+decimals = 18
+
+[[chains.routes]]
+to_chain = 'Osmosis'
+to_chain_id = 'osmosis-1'
+connection_id = 'connection-2'
+channel_id = 'channel-1'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.ausdy]
+chain_denom = 'ausdy'
+ibc_denom = 'ibc/23104D411A6EB6031FA92FB75F227422B84989969E91DCAD56A535DD7FF0A373'
+base_denom = 'ausdy'
+origin_chain = 'noble-1'
+symbol = 'USDY'
+decimals = 18
+
+[chains.routes.allowed_tokens.ueure]
+chain_denom = 'ueure'
+ibc_denom = 'ibc/92AE2F53284505223A1BB80D132F859A00E190C6A738772F0B3EF65E20BA484F'
+base_denom = 'ueure'
+origin_chain = 'noble-1'
+symbol = 'EURe'
+decimals = 6
+
+[chains.routes.allowed_tokens.uusdc]
+chain_denom = 'uusdc'
+ibc_denom = 'ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4'
+base_denom = 'uusdc'
+origin_chain = 'noble-1'
+symbol = 'USDC'
+decimals = 6
+
+[chains.routes.allowed_tokens.uusdn]
+chain_denom = 'uusdn'
+ibc_denom = 'ibc/0C39BD03B5C57A1753A9B73164705871A9B549F1A5226CFD7E39BE7BF73CF8CF'
+base_denom = 'uusdn'
+origin_chain = 'noble-1'
+symbol = 'USDN'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Stargaze'
+to_chain_id = 'stargaze-1'
+connection_id = 'connection-25'
+channel_id = 'channel-11'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.uusdc]
+chain_denom = 'uusdc'
+ibc_denom = 'ibc/4A1C18CA7F50544760CF306189B810CE4C1CB156C7FC870143D401FE7280E591'
+base_denom = 'uusdc'
+origin_chain = 'noble-1'
+symbol = 'USDC'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Cosmos Hub'
+to_chain_id = 'cosmoshub-4'
+connection_id = 'connection-12'
+channel_id = 'channel-4'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.uusdc]
+chain_denom = 'uusdc'
+ibc_denom = 'ibc/F663521BF1836B00F5F177680F74BFB9A8B5654A694D0D2BC249E03CF2509013'
+base_denom = 'uusdc'
+origin_chain = 'noble-1'
+symbol = 'USDC'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Juno Network'
+to_chain_id = 'juno-1'
+connection_id = 'connection-8'
+channel_id = 'channel-3'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.uusdc]
+chain_denom = 'uusdc'
+ibc_denom = 'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF'
+base_denom = 'uusdc'
+origin_chain = 'noble-1'
+symbol = 'USDC'
 decimals = 6

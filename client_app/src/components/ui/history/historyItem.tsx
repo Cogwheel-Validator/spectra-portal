@@ -30,7 +30,7 @@ export default function HistoryItem({ transaction, config, onResume, onRetry }: 
               (t) => t.denom === transaction.tokenIn,
           )
         : null;
-    
+
     let toToken = null;
     if (transaction.swapInvolved) {
         toToken = toChain
@@ -108,7 +108,10 @@ export default function HistoryItem({ transaction, config, onResume, onRetry }: 
                                 {transaction.trajectory.map((chainId) => {
                                     const chain = config.chains.find((c) => c.id === chainId);
                                     return (
-                                        <div className="flex items-center gap-1.5 shrink-0" key={chainId}>
+                                        <div
+                                            className="flex items-center gap-1.5 shrink-0"
+                                            key={chainId}
+                                        >
                                             <Image
                                                 key={chainId}
                                                 src={chain?.chain_logo || "/unknown.jpg"}

@@ -42,5 +42,5 @@ denom = "note"
 name = "Melody"
 symbol = "MLD"
 exponent = 6
-icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/symphony/melody.png"
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/symphony/mld.png"
 allowed_destinations = ["osmosis-1"]
