@@ -239,7 +239,7 @@ func (s *Server) logServerInfo(protocol string) {
 	Logger.Info().
 		Str("address", s.config.Address).
 		Str("protocol", protocol).
-		Msg("Spectra IBC Hub RPC Server starting")
+		Msg("Spectra's Pathfinder RPC Server starting")
 
 	Logger.Info().Msg("Available endpoints:")
 	Logger.Info().Msg("\tRPC: /rpc.v1.PathfinderService/*")

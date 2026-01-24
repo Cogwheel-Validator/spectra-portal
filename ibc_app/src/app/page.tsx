@@ -17,7 +17,7 @@ export default function Home() {
                         width={360}
                         height={360}
                     />
-                    <h1 className="text-5xl text-center">The Spectra IBC Hub</h1>
+                    <h1 className="text-5xl text-center">The Spectra Portal</h1>
                     <p className="max-w-80 md:max-w-lg font-semibold leading-relaxed text-center">
                         Send your assets accross different chains using Inter Blockchain
                         Communication Protocol. You can send, and even swap your assets to receive

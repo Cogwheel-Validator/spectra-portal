@@ -17,8 +17,8 @@ const robotoFont = Roboto({
 });
 
 export const metadata: Metadata = {
-    title: "Spectra IBC Hub",
-    description: "Spectra IBC Hub",
+    title: "Spectra Portal",
+    description: "Spectra Portal",
 };
 
 export default function RootLayout({

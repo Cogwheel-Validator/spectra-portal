@@ -47,7 +47,7 @@ export default function FooterPC({ className }: footerPCProps): JSX.Element {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="tooltip"
-                        data-tip="IBC Hub Repo"
+                        data-tip="Portal Repo"
                     >
                         <FaSquareGithub className="size-10 text-base-content" />
                     </Link>

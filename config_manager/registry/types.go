@@ -37,9 +37,9 @@ type ChannelTags struct {
 }
 
 /*
-The internal Spectra IBC Hub registry
+The internal Spectra Portal registry
 
-It should hold the information about the chains and channels that are supported by the Spectra IBC Hub.
+It should hold the information about the chains and channels that are supported by the Spectra Portal.
 This should be a part of the final config at least for now.
 */
 type IbcRegistry struct {
@@ -47,7 +47,7 @@ type IbcRegistry struct {
 }
 
 /*
-IbcChain is a struct that holds the information about a chain that is supported by the Spectra IBC Hub.
+IbcChain is a struct that holds the information about a chain that is supported by the Spectra Portal.
 */
 type IbcChain struct {
 	ChainName string       `toml:"chain_name"`

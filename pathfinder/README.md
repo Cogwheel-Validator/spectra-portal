@@ -1,8 +1,8 @@
-# The Spectra IBC Pathfinder
+# The Spectra's Pathfinder
 
-The Pathfinder is an information broker for token routing across different chains. The implementation routes tokens via IBC bridging with optional DEX swaps on broker chains. The pathfinder provides a ConnectRPC service that can be queried to get the necessary information to bridge tokens.
+The Pathfinder is an information broker for token routing across different chains. The implementation routes tokens via IBC Protocol with optional DEX swaps on broker chains (only Osmosis for now). The pathfinder provides a ConnectRPC service that can be queried to get the necessary information to bridge tokens.
 
-The idea behind the Pathfinder RPC is to provide a service from where you can query the pathfinder for the best route to bridge tokens between two chains. It also serves as a information broker for every chain connected via IBC. You can acquire information about all possible connections between chains and the tokens available on each chain.
+The idea behind the Pathfinder RPC is to provide a service from where you can query the pathfinder for the best route to bridge tokens between two chains. It also serves as a information broker for every chain connected via IBC. You can acquire information about all possible connections between chains and the tokens available on each chain, while it allows the developer to gather data by using any of the 3 protocols supported by the Pathfinder: gRPC, gRPC-Web, and HTTP-Connect.
 
 ## How does this RPC work?
 
@@ -28,8 +28,6 @@ The route index is built using the following algorithm:
 - `/server/ready` - This is a classic http endpoint to check if the RPC is ready to serve requests
 - `/server/health` - This is a classic http endpoint to check if the RPC is healthy
 - `/server/metrics` - This is a classic http endpoint to get the metrics of the RPC for prometheus if enabled
-
-ConnectRPC supports multiple protocols to query the pathfinder: gRPC, gRPC-Web, and HTTP-Connect all on the same endpoint.
 
 ## Route Types
 
@@ -183,7 +181,7 @@ This ensures the pathfinder always returns the most efficient available route.
 In the root of the project there is an `rpc-config.example.toml` file. You can use this file as a template to create your own config file.
 
 ```toml
-# Spectra IBC Hub Pathfinder RPC Configuration Example
+# Spectra's Pathfinder RPC Configuration Example
 # Copy this file to rpc-config.toml and customize as needed
 
 # =============================================================================

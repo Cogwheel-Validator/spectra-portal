@@ -34,7 +34,7 @@ func main() {
 	log.Info().
 		Str("rpc_config", *configRpc).
 		Str("chains_config", *configChains).
-		Msg("Starting Spectra IBC Hub Pathfinder")
+		Msg("Starting Spectra's Pathfinder")
 
 	// Load RPC server configuration
 	rpcConfig, err := config.NewDefaultRPCPathfinderConfigLoader().LoadRPCPathfinderConfig(*configRpc)
