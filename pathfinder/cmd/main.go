@@ -28,7 +28,7 @@ func init() {
 func main() {
 	// Parse command line flags
 	configRpc := flag.String("config-rpc", "./rpc-config.toml", "config file for the rpc server")
-	configChains := flag.String("config-chains", "generated-configs/pathfinder_config.toml", "config file for the chains")
+	configChains := flag.String("config-chains", "generated_configs/pathfinder_config.toml", "config file for the chains")
 	flag.Parse()
 
 	log.Info().

@@ -1,7 +1,7 @@
 version: v2
 plugins:
   - local: protoc-gen-ts_proto
-    out: ../ibc_app/src/lib/generated/osmosis
+    out: ../client_app/src/lib/generated/osmosis
 inputs:
   - git_repo: https://github.com/osmosis-labs/osmosis.git
     branch: main

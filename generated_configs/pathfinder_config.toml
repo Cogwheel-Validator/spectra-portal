@@ -1,5 +1,5 @@
-version = 'v1-20260121'
-generated_at = '2026-01-21T16:34:13Z'
+version = 'v1-20260124'
+generated_at = '2026-01-24T09:42:24Z'
 
 [[chains]]
 name = 'Juno Network'
@@ -433,22 +433,6 @@ symbol = 'STARS'
 decimals = 6
 
 [[chains.routes]]
-to_chain = 'Atom One'
-to_chain_id = 'atomone-1'
-connection_id = 'connection-337'
-channel_id = 'channel-448'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D']
-chain_denom = 'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D'
-ibc_denom = 'uatone'
-base_denom = 'uatone'
-origin_chain = 'atomone-1'
-symbol = 'ATONE'
-decimals = 6
-
-[[chains.routes]]
 to_chain = 'Cosmos Hub'
 to_chain_id = 'cosmoshub-4'
 connection_id = 'connection-256'
@@ -526,6 +510,22 @@ ibc_denom = 'ibc/987C17B11ABC2B20019178ACE62929FE9840202CE79498E29FE8E5CB02B7C0A
 base_denom = 'ustars'
 origin_chain = 'stargaze-1'
 symbol = 'STARS'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Atom One'
+to_chain_id = 'atomone-1'
+connection_id = 'connection-337'
+channel_id = 'channel-448'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D']
+chain_denom = 'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D'
+ibc_denom = 'uatone'
+base_denom = 'uatone'
+origin_chain = 'atomone-1'
+symbol = 'ATONE'
 decimals = 6
 
 [[chains]]

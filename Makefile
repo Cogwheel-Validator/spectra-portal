@@ -25,7 +25,7 @@ generate-config:
 	@echo "Generating config file for the client app and pathfinder backend..."
 	go run config_manager/cmd/generate/main.go \
 		-input ./chain_configs \
-		-copy-icons ./ibc_app/public/ 
+		-copy-icons ./client_app/public/ 
 
 # Generate the config file for the client app and pathfinder using the already stored ibc and keplr registry
 generate-config-l:
@@ -35,7 +35,7 @@ generate-config-l:
 		-local-registry-cache ./ibc-registry \
 		-local-keplr-cache ./keplr-registry \
 		-use-local-data \
-		-copy-icons ./ibc_app/public/
+		-copy-icons ./client_app/public/
 
 # Validate the config files for the client app and pathfinder backend
 validate-config:
@@ -54,7 +54,7 @@ build-pathfinder:
 lint-all:
 	@echo "Linting all files..."
 	golangci-lint run ./... && \
-	cd ibc_app && \
+	cd client_app && \
 	bun run lint
 	@echo "All files linted successfully!"
 
@@ -66,13 +66,13 @@ lint-go:
 
 lint-js:
 	@echo "Linting js files..."
-	cd ibc_app && \
+	cd client_app && \
 	bun run lint
 	@echo "Js files linted successfully!"
 
 vulncheck-js:
 	@echo "Vulnerability checking js files..."
-	cd ibc_app && \
+	cd client_app && \
 	bun audit
 	@echo "Js files vulnerability checked successfully!"
 
@@ -80,7 +80,7 @@ vulncheck-js:
 vulncheck-all:
 	@echo "Vulnerability checking all files..."
 	vulncheck ./...
-	cd ibc_app && \
+	cd client_app && \
 	bun audit
 	@echo "All files vulnerability checked successfully!"
 

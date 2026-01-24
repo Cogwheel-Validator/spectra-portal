@@ -8,9 +8,9 @@
 		"source.fixAll.biome": "explicit"
 
 	},
-	"biome.configurationPath": "./ibc_app/biome.json",
+	"biome.configurationPath": "./client_app/biome.json",
 	"biome.lsp.trace.server": "verbose",
-	"biome.lsp.bin": "./ibc_app/node_modules/@biomejs/biome/bin/biome",
+	"biome.lsp.bin": "./client_app/node_modules/@biomejs/biome/bin/biome",
 	"[jsonc]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},
