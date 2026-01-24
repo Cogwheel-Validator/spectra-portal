@@ -44,6 +44,12 @@ func (s *PathfinderServer) FindPath(
 	ctx context.Context,
 	req *connect.Request[v1.FindPathRequest],
 ) (*connect.Response[v1.FindPathResponse], error) {
+
+	Logger.Info().Msgf(
+		"Request data for find path; %+v",
+		req.Msg,
+	)
+
 	// Step 0: Validate input parameters (returns 400 for validation errors)
 	if err := s.validateFindPathRequest(req.Msg); err != nil {
 		return nil, err
@@ -163,6 +169,11 @@ func (s *PathfinderServer) LookupDenom(
 	req *connect.Request[v1.LookupDenomRequest],
 ) (*connect.Response[v1.LookupDenomResponse], error) {
 	denomInfo, err := s.denomResolver.ResolveDenom(req.Msg.ChainId, req.Msg.Denom)
+
+	Logger.Info().Msgf(
+		"Request data for lookup denom; %+v",
+		req.Msg,
+	)
 	if err != nil {
 		return connect.NewResponse(&v1.LookupDenomResponse{
 			Found: false,
@@ -198,6 +209,12 @@ func (s *PathfinderServer) GetTokenDenoms(
 	ctx context.Context,
 	req *connect.Request[v1.GetTokenDenomsRequest],
 ) (*connect.Response[v1.GetTokenDenomsResponse], error) {
+
+	Logger.Info().Msgf(
+		"Request data for get token denoms; %+v",
+		req.Msg,
+	)
+
 	denoms, found := s.denomResolver.GetTokenDenomsAcrossChains(
 		req.Msg.BaseDenom,
 		req.Msg.OriginChain,
@@ -236,6 +253,12 @@ func (s *PathfinderServer) GetChainTokens(
 	ctx context.Context,
 	req *connect.Request[v1.GetChainTokensRequest],
 ) (*connect.Response[v1.GetChainTokensResponse], error) {
+
+	Logger.Info().Msgf(
+		"Request data for get chain tokens; %+v",
+		req.Msg,
+	)
+
 	tokens, err := s.denomResolver.GetChainTokens(req.Msg.ChainId)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
@@ -287,6 +310,12 @@ func (s *PathfinderServer) GetChainInfo(
 	ctx context.Context,
 	req *connect.Request[v1.ChainInfoRequest],
 ) (*connect.Response[v1.ChainInfoResponse], error) {
+
+	Logger.Info().Msgf(
+		"Request data for get chain info; %+v",
+		req.Msg,
+	)
+
 	chain, err := s.pathfinder.GetChainInfo(req.Msg.ChainId)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
