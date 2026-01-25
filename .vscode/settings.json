@@ -4,13 +4,11 @@
 	"editor.codeActionsOnSave": {
 		"source.fixAll": "explicit",
 		"source.organizeImports.biome": "explicit",
-
 		"source.fixAll.biome": "explicit"
-
 	},
-	"biome.configurationPath": "./client_app/biome.json",
+	"biome.configurationPath": "client_app/biome.json",
 	"biome.lsp.trace.server": "verbose",
-	"biome.lsp.bin": "./client_app/node_modules/@biomejs/biome/bin/biome",
+	"biome.lsp.bin": "client_app/node_modules/@biomejs/biome/bin/biome",
 	"[jsonc]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},

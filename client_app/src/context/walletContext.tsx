@@ -176,7 +176,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const loadAllWalletStates = useCallback(() => {
         if (typeof window === "undefined") return [];
 
-        const savedStates: (WalletConnectionState & { chainConfig: ClientChain })[] = [];
+        const savedStates: (WalletConnectionState & {
+            chainConfig: ClientChain;
+        })[] = [];
         const savedWalletType = localStorage.getItem("spectra_ibc_wallet_type");
 
         if (!savedWalletType) return [];
@@ -531,7 +533,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
                 let finalFee: StdFee;
                 if (fee === "auto") {
-                    const gasEstimated = await client.simulate(address, messages, memo);
+                    let gasEstimated: number | undefined;
+                    try {
+                        gasEstimated = await client.simulate(address, messages, memo);
+                    } catch (error) {
+                        clientLogger.error("Error when trying to simulate transaction:", error);
+                        throw error;
+                    }
+
+                    if (!gasEstimated) {
+                        throw new Error("Gas estimated is undefined");
+                    }
+
                     finalFee = calculateFee(Math.round(gasEstimated * gasAdjustment), gasPrice);
                 } else {
                     finalFee = fee;

@@ -14,7 +14,10 @@ import {
 import type { ClientChain, ClientConfig } from "@/components/modules/tomlTypes";
 import useIbcTracking from "@/hooks/useIbcTracking";
 import clientLogger from "@/lib/clientLogger";
-import type { SwapAmountInRoute } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/swap_route";
+import type {
+    SwapAmountInRoute,
+    SwapAmountInSplitRoute,
+} from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/swap_route";
 import type {
     BrokerSwapRoute,
     FindPathResponse,
@@ -168,7 +171,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     );
 
     /**
-     * Creates an Osmosis swap message
+     * Creates an Osmosis swap message (single route)
      */
     const createSwapMessage = useCallback(
         (
@@ -177,6 +180,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             routes: SwapAmountInRoute[],
             tokenOutMinAmount: string,
         ): EncodeObject => {
+            const routeCount: number = routes.length;
+            clientLogger.info("Single route swap - pool count:", routeCount);
+            if (routeCount === 0) {
+                throw new Error("No routes provided");
+            }
             return {
                 typeUrl: "/osmosis.poolmanager.v1beta1.MsgSwapExactAmountIn",
                 value: {
@@ -191,13 +199,43 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     );
 
     /**
+     * Creates an Osmosis split route swap message (multiple routes)
+     */
+    const createSplitRouteSwapMessage = useCallback(
+        (
+            sender: string,
+            tokenInDenom: string,
+            routes: SwapAmountInSplitRoute[],
+            tokenOutMinAmount: string,
+        ): EncodeObject => {
+            clientLogger.info("Split route swap - route count:", routes.length);
+            if (routes.length === 0) {
+                throw new Error("No routes provided");
+            }
+            return {
+                typeUrl: "/osmosis.poolmanager.v1beta1.MsgSplitRouteSwapExactAmountIn",
+                value: {
+                    sender,
+                    routes,
+                    tokenInDenom,
+                    tokenOutMinAmount,
+                },
+            };
+        },
+        [],
+    );
+
+    /**
      * Execute a single transfer step
      */
     const executeStep = useCallback(
         async (step: TransferStep, config: ClientConfig): Promise<TaskExecutionResult> => {
             const chainConfig = config.chains.find((c) => c.id === step.fromChain);
             if (!chainConfig) {
-                return { success: false, error: `Chain config not found for ${step.fromChain}` };
+                return {
+                    success: false,
+                    error: `Chain config not found for ${step.fromChain}`,
+                };
             }
 
             const senderAddress = getAddress(step.fromChain);
@@ -277,7 +315,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                     }
 
                     case "swap": {
-                        // Osmosis swap
+                        // Osmosis swap - can be single route or split route
                         const brokerRoute = transfer.state.pathfinderResponse?.route
                             .value as BrokerSwapRoute;
                         const swapData = brokerRoute?.swap;
@@ -287,23 +325,46 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                             return { success: false, error: "Swap route data not found" };
                         }
 
-                        const routes: SwapAmountInRoute[] = osmosisRouteData.value.routes.flatMap(
-                            (route) =>
+                        const osmosisRoutes = osmosisRouteData.value.routes;
+
+                        // Check if this is a split route (multiple routes) or single route
+                        if (osmosisRoutes.length > 1) {
+                            // Split route swap
+                            const splitRoutes: SwapAmountInSplitRoute[] = osmosisRoutes.map(
+                                (route) => ({
+                                    pools: route.pools.map((pool) => ({
+                                        poolId: Number(pool.id),
+                                        tokenOutDenom: pool.tokenOutDenom,
+                                    })),
+                                    tokenInAmount: route.inAmount,
+                                }),
+                            );
+
+                            message = createSplitRouteSwapMessage(
+                                senderAddress,
+                                swapData.tokenIn?.chainDenom || "",
+                                splitRoutes,
+                                swapData.amountOut, // Use expected output as minimum
+                            );
+                        } else {
+                            // Single route swap
+                            const routes: SwapAmountInRoute[] = osmosisRoutes.flatMap((route) =>
                                 route.pools.map((pool) => ({
                                     poolId: Number(pool.id),
                                     tokenOutDenom: pool.tokenOutDenom,
                                 })),
-                        );
+                            );
 
-                        message = createSwapMessage(
-                            senderAddress,
-                            {
-                                amount: swapData.amountIn,
-                                denom: swapData.tokenIn?.chainDenom || "",
-                            },
-                            routes,
-                            swapData.amountOut, // Use expected output as minimum
-                        );
+                            message = createSwapMessage(
+                                senderAddress,
+                                {
+                                    amount: swapData.amountIn,
+                                    denom: swapData.tokenIn?.chainDenom || "",
+                                },
+                                routes,
+                                swapData.amountOut, // Use expected output as minimum
+                            );
+                        }
                         break;
                     }
 
@@ -344,6 +405,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             transfer.state.receiverAddress,
             createIbcTransferMessage,
             createSwapMessage,
+            createSplitRouteSwapMessage,
         ],
     );
 

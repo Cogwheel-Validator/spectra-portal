@@ -17,8 +17,8 @@ const fullClientConfig = await LoadConfig();
 // Cache TTL in milliseconds (120 seconds)
 const CACHE_TTL = 120 * 1000;
 
-// Health check timeout (3 seconds)
-const HEALTH_CHECK_TIMEOUT = 3000;
+// Health check timeout (5 seconds)
+const HEALTH_CHECK_TIMEOUT = 5000;
 
 // App URL
 const appUrl: string = "https://ibc.thespectra.io";
@@ -57,12 +57,12 @@ async function checkCorsPreflightHealthy(url: string): Promise<boolean> {
 
         if (!corsHeader || (!corsHeader.includes("*") && !corsHeader.includes(appUrl))) {
             logger.warn(
-                `CORS preflight failed: Missing or mismatched Access-Control-Allow-Origin header for ${url}`,
                 {
                     url,
                     expectedOrigin: appUrl,
                     receivedOriginHeader: corsHeader,
                 },
+                `CORS preflight failed: Missing or mismatched Access-Control-Allow-Origin header for ${url}`,
             );
             return false;
         }
@@ -71,11 +71,11 @@ async function checkCorsPreflightHealthy(url: string): Promise<boolean> {
     } catch (error) {
         clearTimeout(timeoutId);
         logger.warn(
-            `Preflight check failed for ${url}: ${error instanceof Error ? error.message : String(error)}`,
             {
                 url,
                 error: error instanceof Error ? error.message : String(error),
             },
+            `Preflight check failed for ${url}: ${error instanceof Error ? error.message : String(error)}`,
         );
         return false;
     }
@@ -110,10 +110,13 @@ async function checkRpcHealth(rpc: string): Promise<[string, string, number]> {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-            logger.warn(`RPC returned non-OK status: ${response.status} for ${rpc}`, {
-                rpc,
-                status: response.status,
-            });
+            logger.warn(
+                {
+                    rpc,
+                    status: response.status,
+                },
+                `RPC returned non-OK status: ${response.status} for ${rpc}`,
+            );
             return ["", "", 0];
         }
 
@@ -127,17 +130,17 @@ async function checkRpcHealth(rpc: string): Promise<[string, string, number]> {
 
         if (error instanceof Error && error.name === "AbortError") {
             logger.warn(
-                `timeout: RPC health check timed out for ${rpc} (${HEALTH_CHECK_TIMEOUT}ms)`,
                 { rpc },
+                `timeout: RPC health check timed out for ${rpc} (${HEALTH_CHECK_TIMEOUT}ms)`,
             );
         } else {
             logger.warn(
-                `RPC health check failed for ${rpc}: ${error instanceof Error ? error.message : String(error)}`,
                 {
                     rpc,
                     errorName: error instanceof Error ? error.name : "Unknown",
                     errorMessage: error instanceof Error ? error.message : String(error),
                 },
+                `RPC health check failed for ${rpc}: ${error instanceof Error ? error.message : String(error)}`,
             );
         }
         return ["", "", 0];
@@ -191,11 +194,14 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
 
         // Check if both responses are OK
         if (!responses[0].ok || !responses[1].ok) {
-            logger.warn(`API returned non-OK status for ${api}`, {
-                api,
-                nodeInfoStatus: responses[0].status,
-                syncingStatus: responses[1].status,
-            });
+            logger.warn(
+                {
+                    api,
+                    nodeInfoStatus: responses[0].status,
+                    syncingStatus: responses[1].status,
+                },
+                `API returned non-OK status for ${api}`,
+            );
             return ["", "", false];
         }
 
@@ -211,17 +217,17 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
 
         if (error instanceof Error && error.name === "AbortError") {
             logger.warn(
-                `timeout: API health check timed out for ${api} (${HEALTH_CHECK_TIMEOUT}ms)`,
                 { api },
+                `timeout: API health check timed out for ${api} (${HEALTH_CHECK_TIMEOUT}ms)`,
             );
         } else {
             logger.warn(
-                `API health check failed for ${api}: ${error instanceof Error ? error.message : String(error)}`,
                 {
                     api,
                     errorName: error instanceof Error ? error.name : "Unknown",
                     errorMessage: error instanceof Error ? error.message : String(error),
                 },
+                `API health check failed for ${api}: ${error instanceof Error ? error.message : String(error)}`,
             );
         }
         return ["", "", false];
@@ -271,29 +277,29 @@ async function checkEndpointsHealth(
 
     if (healthyCount === 0) {
         logger.error(
-            `no healthy ${endpointType} endpoints found. All ${endpoints.length} endpoints failed health checks.`,
             {
                 totalEndpoints: endpoints.length,
                 healthyCount,
                 endpoints,
             },
+            `no healthy ${endpointType} endpoints found. All ${endpoints.length} endpoints failed health checks.`,
         );
     } else if (healthyCount < endpoints.length) {
         logger.warn(
-            `some ${endpointType} endpoints are unhealthy (${healthyCount}/${endpoints.length} healthy)`,
             {
                 healthyCount,
                 totalEndpoints: endpoints.length,
                 healthyEndpoints: filteredHealthyEndpoints,
             },
+            `some ${endpointType} endpoints are unhealthy (${healthyCount}/${endpoints.length} healthy)`,
         );
     } else {
         logger.info(
-            `all ${endpointType} endpoints are healthy (${healthyCount}/${endpoints.length})`,
             {
                 healthyCount,
                 totalEndpoints: endpoints.length,
             },
+            `all ${endpointType} endpoints are healthy (${healthyCount}/${endpoints.length})`,
         );
     }
 
@@ -323,13 +329,16 @@ export async function GET(request: NextRequest) {
         const timeSinceCached = Date.now() - (cached?.timestamp ?? 0);
         if (cached && timeSinceCached < CACHE_TTL) {
             const age = `${Math.round(timeSinceCached / 1000)}s`;
-            logger.info(`Returning cached data for chain ${chainPath}`, {
-                chainPath,
-                apis: cached.apis,
-                rpcs: cached.rpcs,
-                cached: true,
-                age: age,
-            });
+            logger.info(
+                {
+                    chainPath,
+                    apis: cached.apis,
+                    rpcs: cached.rpcs,
+                    cached: true,
+                    age: age,
+                },
+                `Returning cached data for chain ${chainPath}`,
+            );
             return NextResponse.json({
                 chainPath,
                 apis: cached.apis,

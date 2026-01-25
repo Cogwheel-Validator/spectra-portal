@@ -6,8 +6,9 @@
 		"dev": "bun --bun next dev --turbopack",
 		"build": "bun --bun next build --turbopack",
 		"start": "bun --bun next start",
-		"lint": "biome check",
-		"format": "biome format --write"
+		"lint": "./node_modules/@biomejs/biome/bin/biome check --config-path ./biome.json",
+		"format": "./node_modules/@biomejs/biome/bin/biome format --write --config-path ./biome.json",
+		"biome": "./node_modules/@biomejs/biome/bin/biome"
 	},
 	"dependencies": {
 		"@bufbuild/protobuf": "^2.11.0",

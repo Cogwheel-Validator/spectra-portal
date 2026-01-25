@@ -113,7 +113,7 @@ export function usePathfinderQuery(
                 tokenToDenom: params.tokenToDenom || "",
                 senderAddress: params.senderAddress,
                 receiverAddress: params.receiverAddress,
-                singleRoute: params.singleRoute ?? true,
+                singleRoute: params.singleRoute ?? false, // For now it should be able to support tx with multiple routes
                 slippageBps: params.slippageBps ?? 100, // Default 1% slippage
             };
 
