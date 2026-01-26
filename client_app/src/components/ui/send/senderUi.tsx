@@ -220,7 +220,7 @@ export default function SendUI({
             tokenToDenom: selectedReceiveToken?.denom ?? "",
             senderAddress,
             receiverAddress,
-            singleRoute: true,
+            singleRoute: false,
             slippageBps: 100,
         };
     }, [
