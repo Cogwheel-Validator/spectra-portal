@@ -16,10 +16,34 @@ has_pfm = false
 url = "https://atomone-rpc.cogwheel.zone"
 provider = "Cogwheel ⚙️"
 
+[[chain.rpcs]]
+url = "https://atomone-mainnet-rpc.itrocket.net"
+provider = "ITRocket"
+
+[[chain.rpcs]]
+url = "https://rpc-atomone.ecostake.com"
+provider = "Ecostake"
+
+[[chain.rpcs]]
+url = "https://rpc.atomone.citizenweb3.com"
+provider = "CitizenWeb3"
+
 # REST endpoints
 [[chain.rest]]
 url = "https://atomone-api.cogwheel.zone"
 provider = "Cogwheel ⚙️"
+
+[[chain.rest]]
+url = "https://atomone-mainnet-api.itrocket.net"
+provider = "ITRocket"
+
+[[chain.rest]]
+url = "https://rest-atomone.ecostake.com"
+provider = "Ecostake"
+
+[[chain.rest]]
+url = "https://api.atomone.citizenweb3.com"
+provider = "CitizenWeb3"
 
 [[token]]
 denom = "uatone"
