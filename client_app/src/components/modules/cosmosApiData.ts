@@ -67,28 +67,26 @@ export type TransactionMessage = z.infer<typeof TransactionMessageSchema>;
 
 // Transaction Response Schema
 export const TransactionResponseSchema = z.object({
-    tx_responses: z.array(
-        z.object({
-            height: z.string(),
-            txhash: z.string(),
-            codespace: z.string(),
-            code: z.number(),
-            raw_log: z.string(),
-            info: z.string(),
-            gas_wanted: z.string(),
-            gas_used: z.string(),
-            tx: z.object({
-                type_url: z.string(),
-                body: z.object({
-                    messages: z.array(TransactionMessageSchema),
-                }),
+    tx_response: z.looseObject({
+        height: z.string(),
+        txhash: z.string(),
+        codespace: z.string(),
+        code: z.number(),
+        raw_log: z.string(),
+        info: z.string(),
+        gas_wanted: z.string(),
+        gas_used: z.string(),
+        tx: z.looseObject({
+            "@type": z.string(),
+            body: z.looseObject({
+                messages: z.array(TransactionMessageSchema),
             }),
-            timestamp: z.string(),
-            events: z.array(TransactionEventsSchema),
+            auth_info: z.any().optional(),
+            signatures: z.array(z.string()).optional(),
         }),
-    ),
-    pagination: z.object({ next_key: z.string(), total: z.string() }),
-    total: z.string(),
+        timestamp: z.string(),
+        events: z.array(TransactionEventsSchema),
+    }),
 });
 
 export type TransactionResponse = z.infer<typeof TransactionResponseSchema>;
@@ -130,7 +128,7 @@ export type IbcMsgTransferDetails = {
  * @returns The hashes of all transactions in the response
  */
 export function getTxHashes(tx: TransactionResponse): string[] {
-    return tx.tx_responses.map((tx) => tx.txhash);
+    return [tx.tx_response.txhash];
 }
 
 /**
@@ -142,8 +140,8 @@ export function getTxHashes(tx: TransactionResponse): string[] {
 function getTransactionDataByHash(
     tx: TransactionResponse,
     hash: string,
-): TransactionResponse["tx_responses"][number] | undefined {
-    return tx.tx_responses.find((tx) => tx.txhash === hash) ?? undefined;
+): TransactionResponse["tx_response"] | undefined {
+    return tx.tx_response.txhash === hash ? tx.tx_response : undefined;
 }
 
 /**
@@ -170,7 +168,7 @@ export function getTxMessages(
  */
 export function getTxHeight(tx: TransactionResponse): string {
     // it should always be the same for all transactions in the response
-    return tx.tx_responses[0].height;
+    return tx.tx_response.height;
 }
 
 /**
@@ -180,7 +178,7 @@ export function getTxHeight(tx: TransactionResponse): string {
  */
 export function getTxTimestamp(tx: TransactionResponse): string {
     // it should always be the same for all transactions in the response
-    return tx.tx_responses[0].timestamp;
+    return tx.tx_response.timestamp;
 }
 
 /**
@@ -251,6 +249,30 @@ export function getAcknowledgePacketEvent(
 export function getRecvPacketEvent(events: TransactionEvents[]): TransactionEvents | undefined {
     // recv_packet is usually tied to the IBC message receive
     return events.find((event) => event.type === "recv_packet") as TransactionEvents | undefined;
+}
+
+/**
+ * Get the fungible token packet event from the events
+ * @param events The events array
+ * @returns The fungible token packet event, undefined if the fungible token packet event is not found
+ */
+export function getFungibleTokenPacketEvent(
+    events: TransactionEvents[],
+): TransactionEvents | undefined {
+    // fungible token packet is the event that contains the fungible token packet data
+    return events.find((event) => event.type === "fungible_token_packet") as
+        | TransactionEvents
+        | undefined;
+}
+
+/**
+ * Get the send packet event from the events
+ * @param events The events array
+ * @returns The send packet event, undefined if the send packet event is not found
+ */
+export function getSendPacketEvent(events: TransactionEvents[]): TransactionEvents | undefined {
+    // send_packet is usually tied to the IBC message send
+    return events.find((event) => event.type === "send_packet") as TransactionEvents | undefined;
 }
 
 /**
