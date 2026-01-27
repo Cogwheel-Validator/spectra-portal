@@ -20,8 +20,8 @@ const CACHE_TTL = 120 * 1000;
 // Health check timeout (5 seconds)
 const HEALTH_CHECK_TIMEOUT = 5000;
 
-// App URL
-const appUrl: string = "https://ibc.thespectra.io";
+// App URL for CORS checks
+const appUrl: string = "https://portal.thespectra.io";
 
 // Get the chain paths ( chain paths = chainId ) with it's own RPCs and APIs endpoints
 const chainPaths: Map<string, { apis: string[]; rpcs: string[] }> = new Map();
@@ -32,9 +32,20 @@ fullClientConfig.config.chains.forEach((chain) => {
     });
 });
 
+interface HealthCheckResult {
+    endpoint: string;
+    healthy: boolean;
+    version?: string;
+    abciAppName?: string;
+    lastBlockHeight?: number;
+    syncing?: boolean;
+    error?: string;
+}
+
 /**
  * Check if a CORS preflight request would succeed from the browser
- * This simulates what a browser would do before making the actual request
+ * @param url - The URL to check
+ * @returns True if the CORS preflight request would succeed, false otherwise
  */
 async function checkCorsPreflightHealthy(url: string): Promise<boolean> {
     const controller = new AbortController();
@@ -52,133 +63,28 @@ async function checkCorsPreflightHealthy(url: string): Promise<boolean> {
         });
         clearTimeout(timeoutId);
 
-        // Check if CORS headers are present in response
         const corsHeader = response.headers.get("Access-Control-Allow-Origin");
-
-        if (!corsHeader || (!corsHeader.includes("*") && !corsHeader.includes(appUrl))) {
-            logger.warn(
-                {
-                    url,
-                    expectedOrigin: appUrl,
-                    receivedOriginHeader: corsHeader,
-                },
-                `CORS preflight failed: Missing or mismatched Access-Control-Allow-Origin header for ${url}`,
-            );
-            return false;
-        }
-
-        return true;
-    } catch (error) {
+        return !!(corsHeader && (corsHeader.includes("*") || corsHeader.includes(appUrl)));
+    } catch {
         clearTimeout(timeoutId);
-        logger.warn(
-            {
-                url,
-                error: error instanceof Error ? error.message : String(error),
-            },
-            `Preflight check failed for ${url}: ${error instanceof Error ? error.message : String(error)}`,
-        );
         return false;
     }
 }
 
 /**
  * Check if an RPC endpoint is healthy
+ * @param rpc - The RPC endpoint to check
+ * @returns The health check result
  */
-async function checkRpcHealth(rpc: string): Promise<[string, string, number]> {
+async function checkRpcHealth(rpc: string): Promise<HealthCheckResult> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
 
     try {
-        // First check CORS preflight
-        const corsPreflight = await checkCorsPreflightHealthy(`${rpc}/abci_info`);
-        if (!corsPreflight) {
-            return ["", "", 0];
-        }
-
-        // Now make the actual request with browser-like headers
-        const response = await fetch(`${rpc}/abci_info`, {
-            method: "GET",
-            signal: controller.signal,
-            headers: {
-                "Content-Type": "application/json",
-                Origin: appUrl,
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                Referer: `${appUrl}/`,
-                Accept: "application/json",
-            },
-        });
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-            logger.warn(
-                {
-                    rpc,
-                    status: response.status,
-                },
-                `RPC returned non-OK status: ${response.status} for ${rpc}`,
-            );
-            return ["", "", 0];
-        }
-
-        const data = await response.json();
-        const version = data.result.response.version;
-        const abciAppName = data.result.response.data;
-        const lastBlockHeight = parseInt(data.result.response.last_block_height, 10);
-        return [version, abciAppName, lastBlockHeight];
-    } catch (error) {
-        clearTimeout(timeoutId);
-
-        if (error instanceof Error && error.name === "AbortError") {
-            logger.warn(
-                { rpc },
-                `timeout: RPC health check timed out for ${rpc} (${HEALTH_CHECK_TIMEOUT}ms)`,
-            );
-        } else {
-            logger.warn(
-                {
-                    rpc,
-                    errorName: error instanceof Error ? error.name : "Unknown",
-                    errorMessage: error instanceof Error ? error.message : String(error),
-                },
-                `RPC health check failed for ${rpc}: ${error instanceof Error ? error.message : String(error)}`,
-            );
-        }
-        return ["", "", 0];
-    }
-}
-
-async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
-
-    try {
-        // First check CORS preflight for both endpoints
-        const corsPreflightNodeInfo = await checkCorsPreflightHealthy(
-            `${api}/cosmos/base/tendermint/v1beta1/node_info`,
-        );
-        const corsPreflightSyncing = await checkCorsPreflightHealthy(
-            `${api}/cosmos/base/tendermint/v1beta1/syncing`,
-        );
-
-        if (!corsPreflightNodeInfo || !corsPreflightSyncing) {
-            clearTimeout(timeoutId);
-            return ["", "", false];
-        }
-
-        // Now make the actual requests with browser-like headers
-        const responses = await Promise.all([
-            fetch(`${api}/cosmos/base/tendermint/v1beta1/node_info`, {
-                method: "GET",
-                signal: controller.signal,
-                headers: {
-                    "Content-Type": "application/json",
-                    Origin: appUrl,
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    Referer: `${appUrl}/`,
-                    Accept: "application/json",
-                },
-            }),
-            fetch(`${api}/cosmos/base/tendermint/v1beta1/syncing`, {
+        // Run CORS preflight and actual request in parallel
+        const [corsPreflight, response] = await Promise.all([
+            checkCorsPreflightHealthy(`${rpc}/abci_info`),
+            fetch(`${rpc}/abci_info`, {
                 method: "GET",
                 signal: controller.signal,
                 headers: {
@@ -192,87 +98,179 @@ async function checkApiHealth(api: string): Promise<[string, string, boolean]> {
         ]);
         clearTimeout(timeoutId);
 
-        // Check if both responses are OK
-        if (!responses[0].ok || !responses[1].ok) {
-            logger.warn(
-                {
-                    api,
-                    nodeInfoStatus: responses[0].status,
-                    syncingStatus: responses[1].status,
-                },
-                `API returned non-OK status for ${api}`,
-            );
-            return ["", "", false];
+        if (!corsPreflight) {
+            return { endpoint: rpc, healthy: false, error: "CORS preflight failed" };
         }
 
-        const nodeInfo = await responses[0].json();
-        const syncing = await responses[1].json();
-        return [
-            nodeInfo.default_node_info.version,
-            nodeInfo.application_version.app_name,
-            syncing.syncing,
-        ];
+        if (!response.ok) {
+            return { endpoint: rpc, healthy: false, error: `HTTP ${response.status}` };
+        }
+
+        const data = await response.json();
+        const version = data.result.response.version;
+        const abciAppName = data.result.response.data;
+        const lastBlockHeight = parseInt(data.result.response.last_block_height, 10);
+
+        return {
+            endpoint: rpc,
+            healthy: version !== "" && abciAppName !== "" && lastBlockHeight > 0,
+            version,
+            abciAppName,
+            lastBlockHeight,
+        };
     } catch (error) {
         clearTimeout(timeoutId);
-
-        if (error instanceof Error && error.name === "AbortError") {
-            logger.warn(
-                { api },
-                `timeout: API health check timed out for ${api} (${HEALTH_CHECK_TIMEOUT}ms)`,
-            );
-        } else {
-            logger.warn(
-                {
-                    api,
-                    errorName: error instanceof Error ? error.name : "Unknown",
-                    errorMessage: error instanceof Error ? error.message : String(error),
-                },
-                `API health check failed for ${api}: ${error instanceof Error ? error.message : String(error)}`,
-            );
-        }
-        return ["", "", false];
+        return {
+            endpoint: rpc,
+            healthy: false,
+            error: error instanceof Error ? error.message : String(error),
+        };
     }
 }
 
 /**
- * Check multiple endpoints in parallel
+ * Check if an API endpoint is healthy
+ * @param api - The API endpoint to check
+ * @returns The health check result
+ */
+async function checkApiHealth(api: string): Promise<HealthCheckResult> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
+
+    try {
+        const nodeInfoUrl = `${api}/cosmos/base/tendermint/v1beta1/node_info`;
+        const syncingUrl = `${api}/cosmos/base/tendermint/v1beta1/syncing`;
+
+        // Run CORS preflight checks and actual requests in parallel
+        const [corsNodeInfo, corsSyncing, response1, response2] = await Promise.all([
+            checkCorsPreflightHealthy(nodeInfoUrl),
+            checkCorsPreflightHealthy(syncingUrl),
+            fetch(nodeInfoUrl, {
+                method: "GET",
+                signal: controller.signal,
+                headers: {
+                    "Content-Type": "application/json",
+                    Origin: appUrl,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    Referer: `${appUrl}/`,
+                    Accept: "application/json",
+                },
+            }),
+            fetch(syncingUrl, {
+                method: "GET",
+                signal: controller.signal,
+                headers: {
+                    "Content-Type": "application/json",
+                    Origin: appUrl,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    Referer: `${appUrl}/`,
+                    Accept: "application/json",
+                },
+            }),
+        ]);
+        clearTimeout(timeoutId);
+
+        if (!corsNodeInfo || !corsSyncing) {
+            return { endpoint: api, healthy: false, error: "CORS preflight failed" };
+        }
+
+        if (!response1.ok || !response2.ok) {
+            return {
+                endpoint: api,
+                healthy: false,
+                error: `HTTP ${response1.status}/${response2.status}`,
+            };
+        }
+
+        const nodeInfo = await response1.json();
+        const syncing = await response2.json();
+
+        return {
+            endpoint: api,
+            healthy:
+                nodeInfo.default_node_info.version !== "" &&
+                nodeInfo.application_version.app_name !== "" &&
+                syncing.syncing === false,
+            version: nodeInfo.default_node_info.version,
+            abciAppName: nodeInfo.application_version.app_name,
+            syncing: syncing.syncing,
+        };
+    } catch (error) {
+        clearTimeout(timeoutId);
+        return {
+            endpoint: api,
+            healthy: false,
+            error: error instanceof Error ? error.message : String(error),
+        };
+    }
+}
+
+/**
+ * Check the health of multiple endpoints in parallel
+ * @param endpoints - The endpoints to check
+ * @param checking - The type of endpoints to check (rpc or api)
+ * @returns The healthy endpoints
  */
 async function checkEndpointsHealth(
     endpoints: string[],
     checking: "rpc" | "api",
 ): Promise<string[]> {
-    const healthyEndpoints: string[] = new Array(endpoints.length);
-    let highestBlockHeight = 0;
-    await Promise.all(
-        endpoints.map(async (endpoint, index) => {
-            if (checking === "rpc") {
-                const [version, abciAppName, lastBlockHeight] = await checkRpcHealth(endpoint);
-                const acceptableHeightDiff = 100;
-                if (lastBlockHeight > highestBlockHeight) {
-                    highestBlockHeight = lastBlockHeight;
-                }
-                const isHealthy =
-                    version !== "" &&
-                    abciAppName !== "" &&
-                    lastBlockHeight > 0 &&
-                    Math.abs(highestBlockHeight - lastBlockHeight) <= acceptableHeightDiff;
-                if (isHealthy) {
-                    healthyEndpoints[index] = endpoint;
-                }
-            } else if (checking === "api") {
-                const [version, abciAppName, syncing] = await checkApiHealth(endpoint);
-                const isHealthy = version !== "" && abciAppName !== "" && syncing === false;
-                if (isHealthy) {
-                    healthyEndpoints[index] = endpoint;
-                }
-            }
-        }),
+    // Run all health checks in parallel using Promise.all
+    const results = await Promise.all(
+        endpoints.map((endpoint) =>
+            checking === "rpc" ? checkRpcHealth(endpoint) : checkApiHealth(endpoint),
+        ),
     );
 
-    // Filter out undefined values to only return actual healthy endpoints
-    const filteredHealthyEndpoints = healthyEndpoints.filter((r) => r !== undefined);
+    // Find the highest block height (for RPC checks only)
+    let highestBlockHeight = 0;
+    if (checking === "rpc") {
+        for (const result of results) {
+            if (result.lastBlockHeight && result.lastBlockHeight > highestBlockHeight) {
+                highestBlockHeight = result.lastBlockHeight;
+            }
+        }
+    }
 
-    const healthyCount = filteredHealthyEndpoints.length;
+    // Filter healthy endpoints based on their criteria
+    const healthyEndpoints: string[] = [];
+    const acceptableHeightDiff = 100;
+
+    for (const result of results) {
+        if (checking === "rpc") {
+            const isHealthy =
+                result.healthy &&
+                result.lastBlockHeight &&
+                result.lastBlockHeight > 0 &&
+                Math.abs(highestBlockHeight - result.lastBlockHeight) <= acceptableHeightDiff;
+            if (isHealthy) {
+                healthyEndpoints.push(result.endpoint);
+            } else if (!result.healthy && result.error) {
+                logger.warn(
+                    {
+                        rpc: result.endpoint,
+                        error: result.error,
+                    },
+                    `RPC health check failed for ${result.endpoint}: ${result.error}`,
+                );
+            }
+        } else if (checking === "api") {
+            const isHealthy = result.healthy && result.syncing === false;
+            if (isHealthy) {
+                healthyEndpoints.push(result.endpoint);
+            } else if (!result.healthy && result.error) {
+                logger.warn(
+                    {
+                        api: result.endpoint,
+                        error: result.error,
+                    },
+                    `API health check failed for ${result.endpoint}: ${result.error}`,
+                );
+            }
+        }
+    }
+
+    const healthyCount = healthyEndpoints.length;
     const endpointType = checking.toUpperCase();
 
     if (healthyCount === 0) {
@@ -289,7 +287,7 @@ async function checkEndpointsHealth(
             {
                 healthyCount,
                 totalEndpoints: endpoints.length,
-                healthyEndpoints: filteredHealthyEndpoints,
+                healthyEndpoints,
             },
             `some ${endpointType} endpoints are unhealthy (${healthyCount}/${endpoints.length} healthy)`,
         );
@@ -303,7 +301,7 @@ async function checkEndpointsHealth(
         );
     }
 
-    return filteredHealthyEndpoints;
+    return healthyEndpoints;
 }
 
 /**
