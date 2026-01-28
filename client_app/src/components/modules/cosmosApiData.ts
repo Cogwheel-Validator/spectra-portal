@@ -91,6 +91,51 @@ export const TransactionResponseSchema = z.object({
 
 export type TransactionResponse = z.infer<typeof TransactionResponseSchema>;
 
+// Transaction Response Error Schema
+export const TransactionResponseErrorSchema = z.object({
+    code: z.number(),
+    message: z.string(),
+    details: z.array(z.string()),
+});
+
+export type TransactionResponseError = z.infer<typeof TransactionResponseErrorSchema>;
+
+// Transaction Not Found Response - empty result transaction not yet indexed or invalid parameters
+export const TransactionNotFoundResponseSchema = z.object({
+    txs: z.array(z.unknown()).refine((arr) => arr.length === 0),
+    tx_responses: z.array(z.unknown()).refine((arr) => arr.length === 0),
+    pagination: z.null(),
+    total: z.string().refine((s) => s === "0"),
+});
+
+export type TransactionNotFoundResponse = z.infer<typeof TransactionNotFoundResponseSchema>;
+
+/**
+ * Check if a response is a "transaction not found yet" response
+ * This indicates the API is healthy but the transaction hasn't been indexed
+ * @param data - The data to check
+ * @returns true if the response indicates transaction not found yet
+ */
+export function isTransactionNotFound(data: unknown): data is TransactionNotFoundResponse {
+    try {
+        TransactionNotFoundResponseSchema.parse(data);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Type guard to check if a result is a TransactionResponseError
+ * @param result - The result to check
+ * @returns true if the result is an error response
+ */
+export function isTransactionResponseError(
+    result: TransactionResponse | TransactionResponseError | null,
+): result is TransactionResponseError {
+    return result !== null && "code" in result && !("tx_response" in result);
+}
+
 export const IbcDenomTraceResponseSchema = z.object({
     denom_trace: z.object({
         path: z.string(),
@@ -360,3 +405,48 @@ export function getIbcMsgTransferDetails(
         },
     } as IbcMsgTransferDetails;
 }
+
+// Transaction response schema gathered from REST API by using events for query
+export const EvTransactionResponse = z.looseObject({
+    tx_responses: z.array(
+      z.object({
+        height: z.string(),
+        txhash: z.string(),
+        codespace: z.string(),
+        code: z.number(),
+        data: z.string(),
+        raw_log: z.string(),
+        logs: z.array(
+          z.object({
+            msg_index: z.number(),
+            log: z.string(),
+            events: z.array(
+              z.object({
+                type: z.string(),
+                attributes: z.array(
+                  z.object({ key: z.string(), value: z.string() })
+                )
+              })
+            )
+          })
+        ),
+        info: z.string(),
+        gas_wanted: z.string(),
+        gas_used: z.string(),
+        tx: z.looseObject({ "@type": z.string(), body: z.looseObject({ messages: z.array(TransactionMessageSchema) }) }),
+        timestamp: z.string(),
+        events: z.array(
+          z.object({
+            type: z.string(),
+            attributes: z.array(
+              z.object({ key: z.string(), value: z.string(), index: z.boolean() })
+            )
+          })
+        )
+      })
+    ),
+    pagination: z.object({ next_key: z.string(), total: z.string() }),
+    total: z.string()
+  });
+
+export type EvTransactionResponse = z.infer<typeof EvTransactionResponse>;
