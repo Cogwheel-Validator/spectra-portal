@@ -7,17 +7,29 @@ import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import {
     type AddressSpendableBalanceResponse,
     AddressSpendableBalanceResponseSchema,
+    type EvTransactionResponse,
+    EvTransactionResponseSchema,
     type IbcDenomTraceResponse,
     IbcDenomTraceResponseSchema,
+    isTransactionNotFound,
     type TransactionRequestByEvents,
     type TransactionRequestByHash,
     type TransactionResponse,
+    type TransactionResponseError,
+    TransactionResponseErrorSchema,
     TransactionResponseSchema,
 } from "@/components/modules/cosmosApiData";
 import type { ClientChain } from "@/components/modules/tomlTypes";
 import { getRandomHealthyApiImperative } from "@/lib/apiQueries/featchHealthyEndpoint";
 import logger from "@/lib/clientLogger";
 
+/**
+ * Hook to query the address balance
+ * @param chainId chain id of the chain that is about to be queried
+ * @param address address of the account that is about to be queried
+ * @param timeoutOption timeout option for the query
+ * @returns
+ */
 export function useGetAddressBalance(
     chainId: string,
     address: string,
@@ -65,6 +77,13 @@ export function useGetAddressBalance(
     });
 }
 
+/**
+ * Hook to query the transaction by hash
+ * @param chainId chain id of the chain that is about to be queried
+ * @param transactionRequest request of the transaction that is about to be queried
+ * @param timeoutOption timeout option for the query
+ * @returns
+ */
 export function useGetTransactionByHash(
     chainId: string,
     transactionRequest: TransactionRequestByHash,
@@ -113,6 +132,48 @@ export function useGetTransactionByHash(
     return query;
 }
 
+/**
+ * Imperative option to query the transaction by tx hash
+ * @param chainId chaind id of the chain that is about to be queried
+ * @param transactionHash hash of the transaction that is about to be queried
+ * @param timeoutOption timeout option for the query
+ * @returns
+ */
+export async function fetchTransactionByHash(
+    chainId: string,
+    transactionHash: string,
+    timeoutOption: number = 15 * 1000, // overwrite if needed but I think 15 seconds is okay
+): Promise<TransactionResponse | null> {
+    const apiUrl = await getRandomHealthyApiImperative(chainId);
+    if (!apiUrl) return null;
+    const abort = new AbortController();
+    const timeoutId = setTimeout(() => {
+        abort.abort();
+    }, timeoutOption);
+    try {
+        const response = await fetch(`${apiUrl}/cosmos/tx/v1beta1/txs/${transactionHash}`, {
+            signal: abort.signal,
+        });
+        if (!response.ok) return null;
+        return TransactionResponseSchema.parse(await response.json());
+    } catch (error) {
+        logger.error(
+            `Failed to get transaction for chain ${chainId} and hash ${transactionHash}`,
+            error,
+        );
+        return null;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+/**
+ * Hook to query the transaction by events
+ * @param chainConfig chain config of the chain that is about to be queried
+ * @param transactionRequest request of the transaction that is about to be queried
+ * @param timeoutOption timeout option for the query
+ * @returns
+ */
 export function useGetTransactionByEvents(
     chainConfig: ClientChain,
     transactionRequest: TransactionRequestByEvents,
@@ -169,6 +230,85 @@ export function useGetTransactionByEvents(
     });
 }
 
+/**
+ * Imperative option to query the transaction by events
+ * @param chainConfig chain config of the chain that is about to be queried
+ * @param transactionRequest request of the transaction that is about to be queried
+ * @param timeoutOption timeout option for the query
+ * @returns TransactionResponse if found, TransactionResponseError if error occurred, null if not found yet (empty result)
+ */
+export async function fetchTransactionByEvents(
+    chainConfig: ClientChain,
+    transactionRequest: TransactionRequestByEvents,
+    timeoutOption: number = 20 * 1000,
+): Promise<EvTransactionResponse | TransactionResponseError | null> {
+    const apiUrl = await getRandomHealthyApiImperative(chainConfig.id);
+    if (!apiUrl) {
+        return {
+            code: 400,
+            message: "No healthy API found for chain",
+            details: ["No healthy API found for chain"],
+        };
+    }
+
+    const abort = new AbortController();
+    const timeoutId = setTimeout(() => {
+        abort.abort();
+    }, timeoutOption);
+
+    const fetchUrl = makeUrlForTransactionByEvents(apiUrl, chainConfig, transactionRequest);
+
+    logger.info("fetch url", fetchUrl)
+
+    try {
+        const response = await fetch(fetchUrl, {
+            signal: abort.signal,
+        });
+
+        if (!response.ok) {
+            return TransactionResponseErrorSchema.parse({
+                code: response.status,
+                message: response.statusText,
+                details: [response.statusText],
+            });
+        }
+
+        const data = await response.json();
+
+        // Check if this is an empty response (transaction not yet indexed)
+        if (isTransactionNotFound(data)) {
+            return null; // Signal that transaction not found yet - should retry
+        }
+
+        // Try to parse as successful response
+        try {
+            return EvTransactionResponseSchema.parse(data);
+        } catch {
+            // If it doesn't match successful response schema, try error schema
+            return TransactionResponseErrorSchema.parse(data);
+        }
+    } catch (error) {
+        logger.error(
+            `Failed to get transaction for chain ${chainConfig.id} and events ${transactionRequest.queries.join(",")}`,
+            error,
+        );
+        return {
+            code: 500,
+            message: `Failed to get transaction for chain ${chainConfig.id} and events ${transactionRequest.queries.join(",")}`,
+            details: [String(error)],
+        };
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+/**
+ * Helper function to make the url for the transaction by events
+ * @param apiUrl api url of the chain that is about to be queried
+ * @param chainConfig chain config of the chain that is about to be queried
+ * @param transactionRequest request of the transaction that is about to be queried
+ * @returns
+ */
 export function makeUrlForTransactionByEvents(
     apiUrl: string,
     chainConfig: ClientChain,
