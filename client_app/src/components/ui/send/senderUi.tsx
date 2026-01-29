@@ -207,6 +207,8 @@ export default function SendUI({
         return humanToBaseUnits(amount, selectedSendToken?.decimals ?? 6);
     }, [amount, selectedSendToken]);
 
+    const slippageBps = transfer.state.slippageBps;
+
     // Pathfinder query with debounce
     const pathfinderParams = useMemo(() => {
         if (!sendChain || !receiveChain || !sendToken || !senderAddress || !receiverAddress) {
@@ -221,7 +223,7 @@ export default function SendUI({
             senderAddress,
             receiverAddress,
             singleRoute: false,
-            slippageBps: 100,
+            slippageBps: slippageBps,
         };
     }, [
         sendChain,
@@ -232,6 +234,7 @@ export default function SendUI({
         receiverAddress,
         selectedSendToken,
         selectedReceiveToken,
+        slippageBps,
     ]);
 
     const isReadyToQuery = !!(
@@ -249,7 +252,14 @@ export default function SendUI({
         isLoading: routeLoading,
         isPending: routePending,
         error: routeError,
-    } = usePathfinderQuery(pathfinderParams, isReadyToQuery, 2000);
+        isStale: routeIsStale,
+        quoteAgeSeconds,
+        refetchFresh,
+    } = usePathfinderQuery(pathfinderParams, isReadyToQuery, {
+        debounceMs: 2000,
+        autoRefreshMs: 30000,
+        staleAfterMs: 15000,
+    });
 
     // Route analysis
     const supportsPfm = useMemo(() => {
@@ -282,9 +292,6 @@ export default function SendUI({
         setSlippage,
         state: transferState,
     } = transfer;
-
-    // Slippage from context
-    const slippageBps = transferState.slippageBps;
 
     // Determine if this is a direct route (no PFM or WASM available)
     const isDirectRoute = useMemo(() => {
@@ -488,13 +495,41 @@ export default function SendUI({
         balanceLoading,
     ]);
 
-    // Handle transfer submission
     const { startPreparing } = transfer;
-    const handleSubmit = useCallback(() => {
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const handleSubmit = useCallback(async () => {
         if (!canSubmit || !pathfinderResponse) return;
+
+        // If quote is stale, refresh it first to get latest prices
+        if (routeIsStale) {
+            setIsRefreshing(true);
+            try {
+                const freshResponse = await refetchFresh();
+                if (!freshResponse?.success) {
+                    // If refresh failed, don't proceed
+                    setIsRefreshing(false);
+                    return;
+                }
+                // Update context with fresh response before starting
+                setPathfinderResponse(freshResponse);
+            } catch {
+                setIsRefreshing(false);
+                return;
+            }
+            setIsRefreshing(false);
+        }
+
         // Trigger the transfer flow - TaskProvider will handle execution
         startPreparing();
-    }, [canSubmit, pathfinderResponse, startPreparing]);
+    }, [
+        canSubmit,
+        pathfinderResponse,
+        routeIsStale,
+        refetchFresh,
+        setPathfinderResponse,
+        startPreparing,
+    ]);
 
     // Extract route info for display
     const routeInfo = useMemo(() => {
@@ -710,11 +745,39 @@ export default function SendUI({
                 )}
 
                 {routeInfo && !routeLoading && !routePending && (
-                    <div className="bg-linear-to-r from-teal-500/10 to-emerald-500/10 rounded-xl p-4 border border-teal-500/30">
+                    <div
+                        className={`rounded-xl p-4 border ${
+                            routeIsStale
+                                ? "bg-amber-500/10 border-amber-500/30"
+                                : "bg-linear-to-r from-teal-500/10 to-emerald-500/10 border-teal-500/30"
+                        }`}
+                    >
                         <div className="flex items-center justify-between mb-3">
                             <h3 className="text-base font-semibold text-white">Route Summary</h3>
-                            <CheckCircle2 className="w-4 h-4 text-teal-400" />
+                            <div className="flex items-center gap-2">
+                                {quoteAgeSeconds !== null && (
+                                    <span
+                                        className={`text-xs ${routeIsStale ? "text-amber-400" : "text-slate-400"}`}
+                                    >
+                                        {quoteAgeSeconds}s ago
+                                    </span>
+                                )}
+                                {routeIsStale ? (
+                                    <AlertCircle className="w-4 h-4 text-amber-400" />
+                                ) : (
+                                    <CheckCircle2 className="w-4 h-4 text-teal-400" />
+                                )}
+                            </div>
                         </div>
+
+                        {/* Stale quote warning */}
+                        {routeIsStale && (
+                            <div className="mb-3 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                                <p className="text-amber-300 text-xs">
+                                    Quote may be outdated. Price will be refreshed before execution.
+                                </p>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                             <div>
@@ -760,12 +823,12 @@ export default function SendUI({
                 <button
                     type="button"
                     onClick={handleSubmit}
-                    disabled={!canSubmit || isPending}
+                    disabled={!canSubmit || isPending || isRefreshing}
                     className={`
                         w-full py-3 lg:py-4 px-6 rounded-xl font-bold text-base lg:text-lg
                         transition-all duration-300 flex items-center justify-center gap-3
                         ${
-                            canSubmit
+                            canSubmit && !isRefreshing
                                 ? "bg-linear-to-r from-teal-500 to-emerald-500 text-white hover:from-teal-400 hover:to-emerald-400 shadow-lg shadow-teal-500/25"
                                 : "bg-slate-700 text-slate-400 cursor-not-allowed"
                         }
@@ -780,9 +843,17 @@ export default function SendUI({
                             <Loader2 className="w-5 h-5 animate-spin" />
                             Computing...
                         </>
+                    ) : isRefreshing ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Refreshing quote...
+                        </>
                     ) : (
                         <>
                             {mode === "smart" ? "Smart Transfer" : "Manual Transfer"}
+                            {routeIsStale && (
+                                <span className="text-xs opacity-75">(will refresh)</span>
+                            )}
                             <ArrowRight className="w-5 h-5" />
                         </>
                     )}

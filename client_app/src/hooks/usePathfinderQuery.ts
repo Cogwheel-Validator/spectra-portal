@@ -26,6 +26,18 @@ export interface PathfinderQueryParams {
 }
 
 /**
+ * Configuration options for the pathfinder query hook
+ */
+export interface PathfinderQueryOptions {
+    /** Debounce delay in milliseconds for amount changes (default: 1000ms) */
+    debounceMs?: number;
+    /** Auto-refresh interval in milliseconds (default: 30000ms = 30s, 0 to disable) */
+    autoRefreshMs?: number;
+    /** Time after which a quote is considered stale in milliseconds (default: 15000ms = 15s) */
+    staleAfterMs?: number;
+}
+
+/**
  * State returned by the usePathfinderQuery hook
  */
 export interface PathfinderQueryState {
@@ -33,7 +45,11 @@ export interface PathfinderQueryState {
     isLoading: boolean;
     isPending: boolean;
     error: string | null;
+    isStale: boolean;
+    lastFetchedAt: number | null;
+    quoteAgeSeconds: number | null;
     refetch: () => Promise<void>;
+    refetchFresh: () => Promise<FindPathResponse | null>;
 }
 
 /**
@@ -45,26 +61,41 @@ function createPathfinderClient(): Client<typeof PathfinderService> {
     return createClient(PathfinderService, transport);
 }
 
+const DEFAULT_OPTIONS: Required<PathfinderQueryOptions> = {
+    debounceMs: 1000,
+    autoRefreshMs: 30000,
+    staleAfterMs: 15000,
+};
+
 /**
  * Hook to query the pathfinder for route information
  * Automatically debounces the amount input to prevent excessive queries
+ * Supports auto-refresh and stale quote detection for better UX
  *
  * @param params - The query parameters
  * @param enabled - Whether the query should be enabled
- * @param debounceMs - Debounce delay in milliseconds (default: 1000ms)
- * @returns The query state with data, loading, error, and refetch function
+ * @param options - Configuration options (debounce, auto-refresh, stale threshold)
+ * @returns The query state with data, loading, error, staleness info, and refetch functions
  */
 export function usePathfinderQuery(
     params: PathfinderQueryParams | null,
     enabled: boolean = true,
-    debounceMs: number = 1000,
+    options: PathfinderQueryOptions | number = DEFAULT_OPTIONS,
 ): PathfinderQueryState {
+    // Handle backwards compatibility: if number is passed, treat as debounceMs
+    const opts: Required<PathfinderQueryOptions> =
+        typeof options === "number"
+            ? { ...DEFAULT_OPTIONS, debounceMs: options }
+            : { ...DEFAULT_OPTIONS, ...options };
+
     const [data, setData] = useState<FindPathResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
+    const [now, setNow] = useState(() => Date.now());
 
     // Debounce the amount to prevent excessive API calls
-    const debouncedAmount = useDebounce(params?.amountIn ?? "", debounceMs);
+    const debouncedAmount = useDebounce(params?.amountIn ?? "", opts.debounceMs);
     const isPending = params?.amountIn !== debouncedAmount;
 
     // Keep track of the latest request to handle race conditions
@@ -73,88 +104,138 @@ export function usePathfinderQuery(
     // Memoize the client to avoid recreating on each render
     const client = useMemo(() => createPathfinderClient(), []);
 
-    const fetchRoute = useCallback(async () => {
-        if (!params || !enabled) {
-            setData(null);
-            return;
-        }
+    // Calculate staleness
+    const quoteAgeMs = lastFetchedAt ? now - lastFetchedAt : null;
+    const quoteAgeSeconds = quoteAgeMs !== null ? Math.floor(quoteAgeMs / 1000) : null;
+    const isStale = quoteAgeMs !== null && quoteAgeMs > opts.staleAfterMs;
 
-        // Validate required fields
-        if (
-            !params.chainFrom ||
-            !params.chainTo ||
-            !params.tokenFromDenom ||
-            !params.senderAddress ||
-            !params.receiverAddress
-        ) {
-            setData(null);
-            return;
-        }
+    useEffect(() => {
+        const interval = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(interval);
+    }, []);
 
-        // Validate amount
-        const amountNum = Number.parseFloat(debouncedAmount);
-        if (Number.isNaN(amountNum) || amountNum <= 0) {
-            setData(null);
-            return;
-        }
+    const fetchRouteInternal = useCallback(
+        async (amountOverride?: string): Promise<FindPathResponse | null> => {
+            const amount = amountOverride ?? debouncedAmount;
 
-        // Increment request ID to handle race conditions
-        const currentRequestId = ++requestIdRef.current;
+            if (!params || !enabled) {
+                setData(null);
+                return null;
+            }
 
-        setIsLoading(true);
-        setError(null);
+            // Validate required fields
+            if (
+                !params.chainFrom ||
+                !params.chainTo ||
+                !params.tokenFromDenom ||
+                !params.senderAddress ||
+                !params.receiverAddress
+            ) {
+                setData(null);
+                return null;
+            }
 
-        try {
-            const request: Partial<FindPathRequest> = {
-                chainFrom: params.chainFrom,
-                tokenFromDenom: params.tokenFromDenom,
-                amountIn: debouncedAmount,
-                chainTo: params.chainTo,
-                tokenToDenom: params.tokenToDenom || "",
-                senderAddress: params.senderAddress,
-                receiverAddress: params.receiverAddress,
-                singleRoute: params.singleRoute ?? false, // For now it should be able to support tx with multiple routes
-                slippageBps: params.slippageBps ?? 100, // Default 1% slippage
-            };
+            // Validate amount
+            const amountNum = Number.parseFloat(amount);
+            if (Number.isNaN(amountNum) || amountNum <= 0) {
+                setData(null);
+                return null;
+            }
 
-            const response = await client.findPath(request as FindPathRequest);
+            // Increment request ID to handle race conditions
+            const currentRequestId = ++requestIdRef.current;
 
-            // Only update state if this is still the latest request
-            if (currentRequestId === requestIdRef.current) {
-                if (response.success) {
-                    setData(response);
-                    setError(null);
-                } else {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const request: Partial<FindPathRequest> = {
+                    chainFrom: params.chainFrom,
+                    tokenFromDenom: params.tokenFromDenom,
+                    amountIn: amount,
+                    chainTo: params.chainTo,
+                    tokenToDenom: params.tokenToDenom || "",
+                    senderAddress: params.senderAddress,
+                    receiverAddress: params.receiverAddress,
+                    singleRoute: params.singleRoute ?? false,
+                    slippageBps: params.slippageBps ?? 100, // Default 1% slippage
+                };
+
+                const response = await client.findPath(request as FindPathRequest);
+
+                // Only update state if this is still the latest request
+                if (currentRequestId === requestIdRef.current) {
+                    if (response.success) {
+                        setData(response);
+                        setError(null);
+                        setLastFetchedAt(Date.now());
+                        return response;
+                    }
                     setData(null);
                     setError(response.errorMessage || "Failed to find route");
+                    return null;
+                }
+                return null;
+            } catch (err) {
+                // Only update state if this is still the latest request
+                if (currentRequestId === requestIdRef.current) {
+                    const errorMessage =
+                        err instanceof Error ? err.message : "Unknown error occurred";
+                    setError(errorMessage);
+                    setData(null);
+                }
+                return null;
+            } finally {
+                // Only update loading state if this is still the latest request
+                if (currentRequestId === requestIdRef.current) {
+                    setIsLoading(false);
                 }
             }
-        } catch (err) {
-            // Only update state if this is still the latest request
-            if (currentRequestId === requestIdRef.current) {
-                const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-                setError(errorMessage);
-                setData(null);
-            }
-        } finally {
-            // Only update loading state if this is still the latest request
-            if (currentRequestId === requestIdRef.current) {
-                setIsLoading(false);
-            }
-        }
-    }, [client, params, enabled, debouncedAmount]);
+        },
+        [client, params, enabled, debouncedAmount],
+    );
+
+    // Debounced fetch (for UI typing)
+    const fetchRoute = useCallback(async () => {
+        await fetchRouteInternal();
+    }, [fetchRouteInternal]);
+
+    // Fresh fetch - bypasses debounce, uses current amount directly
+    // Use this right before executing a transaction
+    const refetchFresh = useCallback(async (): Promise<FindPathResponse | null> => {
+        if (!params?.amountIn) return null;
+        return fetchRouteInternal(params.amountIn);
+    }, [fetchRouteInternal, params?.amountIn]);
 
     // Fetch route when debounced amount changes
     useEffect(() => {
         fetchRoute();
     }, [fetchRoute]);
 
+    // Auto-refresh interval (only when enabled and we have valid data)
+    useEffect(() => {
+        if (!enabled || !data || opts.autoRefreshMs === 0) return;
+
+        const interval = setInterval(() => {
+            // Only auto-refresh if we have params and data
+            if (params && data) {
+                fetchRouteInternal();
+            }
+        }, opts.autoRefreshMs);
+
+        return () => clearInterval(interval);
+    }, [enabled, data, params, opts.autoRefreshMs, fetchRouteInternal]);
+
     return {
         data,
         isLoading,
         isPending,
         error,
+        isStale,
+        lastFetchedAt,
+        quoteAgeSeconds,
         refetch: fetchRoute,
+        refetchFresh,
     };
 }
 
