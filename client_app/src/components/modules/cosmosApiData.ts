@@ -136,6 +136,15 @@ export function isTransactionResponseError(
     return result !== null && "code" in result && !("tx_response" in result);
 }
 
+/**
+ * Type guard to check if a result is an EvTransactionResponse
+ * @param result - The result to check
+ * @returns true if the result is an EvTransactionResponse
+ */
+export function isEvTransactionResponse(result: TransactionResponse | EvTransactionResponse | null): result is EvTransactionResponse {
+    return result !== null && "tx_responses" in result && result.tx_responses.length > 0;
+}
+
 export const IbcDenomTraceResponseSchema = z.object({
     denom_trace: z.object({
         path: z.string(),
@@ -407,29 +416,14 @@ export function getIbcMsgTransferDetails(
 }
 
 // Transaction response schema gathered from REST API by using events for query
-export const EvTransactionResponse = z.looseObject({
+export const EvTransactionResponseSchema = z.looseObject({
     tx_responses: z.array(
       z.object({
         height: z.string(),
         txhash: z.string(),
         codespace: z.string(),
         code: z.number(),
-        data: z.string(),
         raw_log: z.string(),
-        logs: z.array(
-          z.object({
-            msg_index: z.number(),
-            log: z.string(),
-            events: z.array(
-              z.object({
-                type: z.string(),
-                attributes: z.array(
-                  z.object({ key: z.string(), value: z.string() })
-                )
-              })
-            )
-          })
-        ),
         info: z.string(),
         gas_wanted: z.string(),
         gas_used: z.string(),
@@ -445,8 +439,11 @@ export const EvTransactionResponse = z.looseObject({
         )
       })
     ),
-    pagination: z.object({ next_key: z.string(), total: z.string() }),
+    pagination: z.union([
+      z.object({ next_key: z.string().nullable().optional(), total: z.string() }),
+      z.null()
+    ]),
     total: z.string()
   });
 
-export type EvTransactionResponse = z.infer<typeof EvTransactionResponse>;
+export type EvTransactionResponse = z.infer<typeof EvTransactionResponseSchema>;

@@ -258,7 +258,12 @@ export async function fetchTransactionByEvents(
 
     const fetchUrl = makeUrlForTransactionByEvents(apiUrl, chainConfig, transactionRequest);
 
-    logger.info("fetch url", fetchUrl)
+    logger.info("fetch url", {
+        url: fetchUrl,
+        urlLength: fetchUrl.length,
+        queries: transactionRequest.queries,
+        queriesJoined: transactionRequest.queries.join(" AND "),
+    });
 
     try {
         const response = await fetch(fetchUrl, {
@@ -283,9 +288,24 @@ export async function fetchTransactionByEvents(
         // Try to parse as successful response
         try {
             return EvTransactionResponseSchema.parse(data);
-        } catch {
+        } catch (successParseError) {
             // If it doesn't match successful response schema, try error schema
-            return TransactionResponseErrorSchema.parse(data);
+            try {
+                return TransactionResponseErrorSchema.parse(data);
+            } catch (errorParseError) {
+                // Neither schema matched - log the actual response for debugging
+                logger.error("Response doesn't match any expected schema", {
+                    data,
+                    successParseError,
+                    errorParseError,
+                });
+                // Return a generic error
+                return {
+                    code: 500,
+                    message: "Unexpected response format from API",
+                    details: [JSON.stringify(data)],
+                };
+            }
         }
     } catch (error) {
         logger.error(
@@ -334,10 +354,30 @@ export function makeUrlForTransactionByEvents(
         // example of the end result:
         // https://osmosis-api.polkachu.com/cosmos/tx/v1beta1/txs?order_by=ORDER_BY_UNSPECIFIED&limit=1&query=fungible_token_packet.sender%3D'atone16fxth82zn0zxr9mc2k6g9mc6fmv2ysf9kephw9'%20AND%20fungible_token_packet.amount%3D'851000000'
         const fullQuery = queries.join(" AND ");
-        path = `order_by=${encodeURIComponent("ORDER_BY_UNSPECIFIED")}&limit=${transactionRequest.limit}&query=${encodeURIComponent(fullQuery)}`;
+        const encodedQuery = encodeURIComponent(fullQuery);
+        
+        logger.info("Building v0.50+ query URL", {
+            queriesArray: queries,
+            fullQueryBeforeEncode: fullQuery,
+            fullQueryLength: fullQuery.length,
+            encodedQuery: encodedQuery,
+            encodedQueryLength: encodedQuery.length,
+            lastCharBeforeEncode: fullQuery.charAt(fullQuery.length - 1),
+            lastCharAfterEncode: encodedQuery.slice(-3), // last 3 chars to see if %27 is there
+        });
+        
+        path = `order_by=${encodeURIComponent("ORDER_BY_UNSPECIFIED")}&limit=${transactionRequest.limit}&query=${encodedQuery}`;
     }
 
-    return `${apiUrl}/cosmos/tx/v1beta1/txs?${path}`;
+    const finalUrl = `${apiUrl}/cosmos/tx/v1beta1/txs?${path}`;
+    
+    logger.info("Final URL construction", {
+        finalUrl,
+        finalUrlLength: finalUrl.length,
+        endsWithQuote: finalUrl.includes("%27") && finalUrl.lastIndexOf("%27"),
+    });
+    
+    return finalUrl;
 }
 
 export function useGetIbcDenomTrace(
