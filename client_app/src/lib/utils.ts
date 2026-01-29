@@ -124,3 +124,150 @@ export function buildExplorerAccountUrl(
 
     return `${cleanBase}/${cleanPath}`;
 }
+
+// ============================================================================
+// Error Detection Utilities
+// ============================================================================
+
+/**
+ * Result of slippage error analysis
+ */
+export interface SlippageErrorInfo {
+    /** Whether the error is a slippage-related failure */
+    isSlippageError: boolean;
+    /** The calculated amount that would have been received */
+    calculatedAmount?: string;
+    /** The minimum amount that was required */
+    minAmount?: string;
+    /** Shortfall as a percentage (negative means calculated was less than min) */
+    shortfallPercent?: number;
+    /** Suggested slippage to use (in basis points) to avoid this error */
+    suggestedSlippageBps?: number;
+}
+
+/**
+ * Detects if an error message is related to slippage/price movement.
+ * Parses the error to extract useful information for the user.
+ *
+ * Common error patterns:
+ * - "token amount calculated (X) is lesser than min amount (Y)"
+ * - "minimum receive amount: X, actual: Y"
+ * - "slippage exceeded"
+ * 
+ * Usage: 
+ * - For now it should mark the Osmosis swap error I think?
+ * - Should also cover some edge cases
+ * - Todo: change this section a bit
+ *
+ * @param errorMessage - The error message from the transaction
+ * @returns SlippageErrorInfo with analysis results
+ */
+export function parseSlippageError(errorMessage: string): SlippageErrorInfo {
+    // Pattern 1: Osmosis swap error
+    // "token amount calculated (361937) is lesser than min amount (363079)"
+    const osmosisPattern = /token amount calculated \((\d+)\) is lesser than min amount \((\d+)\)/i;
+    const osmosisMatch = errorMessage.match(osmosisPattern);
+
+    if (osmosisMatch) {
+        const calculatedAmount = osmosisMatch[1];
+        const minAmount = osmosisMatch[2];
+        const calculated = BigInt(calculatedAmount);
+        const min = BigInt(minAmount);
+
+        // Calculate shortfall percentage
+        // (calculated - min) / min * 100 (negative means shortfall)
+        const shortfallPercent = Number(((calculated - min) * BigInt(10000)) / min) / 100;
+
+        // Suggest slippage: current shortfall + 0.5% buffer
+        // E.g., if calculated was 0.31% less than min, suggest at least 0.81% (81 bps)
+        const suggestedSlippageBps = Math.ceil(Math.abs(shortfallPercent) * 100) + 50;
+
+        return {
+            isSlippageError: true,
+            calculatedAmount,
+            minAmount,
+            shortfallPercent,
+            suggestedSlippageBps: Math.max(suggestedSlippageBps, 100), // Minimum 1%
+        };
+    }
+
+    // Pattern 2: Generic slippage exceeded
+    const slippagePattern = /slippage (exceeded|tolerance)/i;
+    if (slippagePattern.test(errorMessage)) {
+        return {
+            isSlippageError: true,
+             // Suggest 2% if we can't parse the exact amounts
+             // This kinda sucks at the momen becaus the user could set higher slipage but it is okay
+             // This is just some idea to try to standardize this in the future so that teh Portal app doesn't just
+             // rely on the Osmosis SQS for example
+             // TODO leave this part as it is, it probably won't be used in this form but to future me this will need
+             // a rework when some new pathfinder brokers are added
+            suggestedSlippageBps: 200,
+        };
+    }
+
+    // Pattern 3: Minimum receive amount error
+    const minReceivePattern = /minimum receive amount[:\s]+(\d+)[,\s]+actual[:\s]+(\d+)/i;
+    const minReceiveMatch = errorMessage.match(minReceivePattern);
+
+    if (minReceiveMatch) {
+        const minAmount = minReceiveMatch[1];
+        const calculatedAmount = minReceiveMatch[2];
+        const calculated = BigInt(calculatedAmount);
+        const min = BigInt(minAmount);
+
+        const shortfallPercent = Number(((calculated - min) * BigInt(10000)) / min) / 100;
+        const suggestedSlippageBps = Math.ceil(Math.abs(shortfallPercent) * 100) + 50;
+
+        return {
+            isSlippageError: true,
+            calculatedAmount,
+            minAmount,
+            shortfallPercent,
+            suggestedSlippageBps: Math.max(suggestedSlippageBps, 100),
+        };
+    }
+
+    return { isSlippageError: false };
+}
+
+/**
+ * Formats a slippage error into a user-friendly message with suggestions.
+ *
+ * @param errorInfo - The parsed slippage error info
+ * @param tokenSymbol - Optional token symbol for display
+ * @param decimals - Token decimals for amount formatting
+ * @returns User-friendly error message with suggestions
+ */
+export function formatSlippageErrorMessage(
+    errorInfo: SlippageErrorInfo,
+    tokenSymbol?: string,
+    decimals: number = 6,
+): string {
+    if (!errorInfo.isSlippageError) {
+        return "Transaction failed";
+    }
+
+    const parts: string[] = [];
+
+    parts.push("Transaction failed due to price movement (slippage).");
+
+    if (errorInfo.calculatedAmount && errorInfo.minAmount && errorInfo.shortfallPercent) {
+        const calculated = baseUnitsToHuman(errorInfo.calculatedAmount, decimals);
+        const min = baseUnitsToHuman(errorInfo.minAmount, decimals);
+        const symbol = tokenSymbol ? ` ${tokenSymbol}` : "";
+
+        parts.push(
+            `Expected at least ${min.toLocaleString()}${symbol} but would only receive ${calculated.toLocaleString()}${symbol} (${Math.abs(errorInfo.shortfallPercent).toFixed(2)}% less).`,
+        );
+    }
+
+    if (errorInfo.suggestedSlippageBps) {
+        const suggestedPercent = errorInfo.suggestedSlippageBps / 100;
+        parts.push(
+            `Consider increasing slippage tolerance to ${suggestedPercent.toFixed(1)}% or higher.`,
+        );
+    }
+
+    return parts.join(" ");
+}

@@ -1,13 +1,22 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, ExternalLink, Loader2, RotateCcw, XCircle } from "lucide-react";
+import {
+    AlertTriangle,
+    ArrowLeft,
+    CheckCircle2,
+    ExternalLink,
+    Loader2,
+    RotateCcw,
+    Settings2,
+    XCircle,
+} from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ClientConfig } from "@/components/modules/tomlTypes";
 import { useTaskProvider } from "@/context/taskProvider";
 import { useTransfer } from "@/context/transferContext";
-import { buildExplorerTxUrl } from "@/lib/utils";
+import { buildExplorerTxUrl, formatSlippageErrorMessage, parseSlippageError } from "@/lib/utils";
 import ChainProgress from "./chainProgress";
 import StepIndicator from "./stepIndicator";
 
@@ -107,6 +116,17 @@ export default function TransferTracker({ config, onBack }: TransferTrackerProps
     const fromChain = config.chains.find((c) => c.id === fromChainId);
     const toChain = config.chains.find((c) => c.id === toChainId);
 
+    // Handle adjusting slippage for retry
+    const [suggestedSlippage, setSuggestedSlippage] = useState<number | null>(null);
+
+    const handleAdjustSlippage = useCallback(
+        (newSlippageBps: number) => {
+            setSuggestedSlippage(newSlippageBps);
+            transfer.setSlippage(newSlippageBps);
+        },
+        [transfer],
+    );
+
     return (
         <div className="max-w-3xl mx-auto py-12 px-4 space-y-8">
             {/* Header */}
@@ -199,19 +219,11 @@ export default function TransferTracker({ config, onBack }: TransferTrackerProps
 
             {/* Error Message */}
             {error && (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-red-500/10 rounded-xl p-6 border border-red-500/30"
-                >
-                    <div className="flex items-start gap-3">
-                        <XCircle className="w-6 h-6 text-red-400 shrink-0 mt-0.5" />
-                        <div>
-                            <h4 className="text-red-400 font-semibold">Error Occurred</h4>
-                            <p className="text-red-300 text-sm mt-1">{error}</p>
-                        </div>
-                    </div>
-                </motion.div>
+                <ErrorDisplay
+                    error={error}
+                    toToken={state.toToken}
+                    onAdjustSlippage={handleAdjustSlippage}
+                />
             )}
 
             {/* Success Message */}
@@ -319,5 +331,122 @@ export default function TransferTracker({ config, onBack }: TransferTrackerProps
                 )}
             </motion.div>
         </div>
+    );
+}
+
+// ============================================================================
+// Error Display Component
+// ============================================================================
+
+interface ErrorDisplayProps {
+    error: string;
+    toToken: { symbol: string; decimals: number } | null;
+    onAdjustSlippage: (newSlippageBps: number) => void;
+}
+
+function ErrorDisplay({ error, toToken, onAdjustSlippage }: ErrorDisplayProps) {
+    const slippageInfo = useMemo(() => parseSlippageError(error), [error]);
+    const [slippageApplied, setSlippageApplied] = useState(false);
+
+    // Format the error message
+    const formattedMessage = useMemo(() => {
+        if (slippageInfo.isSlippageError) {
+            return formatSlippageErrorMessage(
+                slippageInfo,
+                toToken?.symbol,
+                toToken?.decimals ?? 6,
+            );
+        }
+        return error;
+    }, [slippageInfo, error, toToken]);
+
+    const handleApplySuggestedSlippage = () => {
+        if (slippageInfo.suggestedSlippageBps) {
+            onAdjustSlippage(slippageInfo.suggestedSlippageBps);
+            setSlippageApplied(true);
+        }
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`rounded-xl p-6 border ${
+                slippageInfo.isSlippageError
+                    ? "bg-amber-500/10 border-amber-500/30"
+                    : "bg-red-500/10 border-red-500/30"
+            }`}
+        >
+            <div className="flex items-start gap-3">
+                {slippageInfo.isSlippageError ? (
+                    <AlertTriangle className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
+                ) : (
+                    <XCircle className="w-6 h-6 text-red-400 shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1">
+                    <h4
+                        className={`font-semibold ${
+                            slippageInfo.isSlippageError ? "text-amber-400" : "text-red-400"
+                        }`}
+                    >
+                        {slippageInfo.isSlippageError ? "Price Moved Too Much" : "Error Occurred"}
+                    </h4>
+                    <p
+                        className={`text-sm mt-1 ${
+                            slippageInfo.isSlippageError ? "text-amber-300" : "text-red-300"
+                        }`}
+                    >
+                        {formattedMessage}
+                    </p>
+
+                    {/* Slippage adjustment suggestion */}
+                    {slippageInfo.isSlippageError && slippageInfo.suggestedSlippageBps && (
+                        <div className="mt-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Settings2 className="w-4 h-4 text-amber-400" />
+                                    <span className="text-sm text-slate-300">
+                                        Suggested slippage:{" "}
+                                        <span className="font-medium text-amber-400">
+                                            {(slippageInfo.suggestedSlippageBps / 100).toFixed(1)}%
+                                        </span>
+                                    </span>
+                                </div>
+                                {!slippageApplied ? (
+                                    <button
+                                        type="button"
+                                        onClick={handleApplySuggestedSlippage}
+                                        className="px-3 py-1 text-xs font-medium bg-amber-500/20 text-amber-400 rounded hover:bg-amber-500/30 transition-colors"
+                                    >
+                                        Apply & Retry
+                                    </button>
+                                ) : (
+                                    <span className="text-xs text-emerald-400 flex items-center gap-1">
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        Applied
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-2">
+                                Click &quot;Apply & Retry&quot; then use the &quot;Retry Failed
+                                Step&quot; button below to try again with higher slippage tolerance.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Show raw error for debugging in non-slippage cases */}
+            {!slippageInfo.isSlippageError && error !== formattedMessage && (
+                <details className="mt-3">
+                    <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-400">
+                        Technical details
+                    </summary>
+                    <pre className="mt-2 text-xs text-slate-500 overflow-x-auto whitespace-pre-wrap break-all">
+                        {error}
+                    </pre>
+                </details>
+            )}
+        </motion.div>
     );
 }

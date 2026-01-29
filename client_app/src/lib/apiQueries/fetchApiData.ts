@@ -355,7 +355,7 @@ export function makeUrlForTransactionByEvents(
         // https://osmosis-api.polkachu.com/cosmos/tx/v1beta1/txs?order_by=ORDER_BY_UNSPECIFIED&limit=1&query=fungible_token_packet.sender%3D'atone16fxth82zn0zxr9mc2k6g9mc6fmv2ysf9kephw9'%20AND%20fungible_token_packet.amount%3D'851000000'
         const fullQuery = queries.join(" AND ");
         const encodedQuery = encodeURIComponent(fullQuery);
-        
+
         logger.info("Building v0.50+ query URL", {
             queriesArray: queries,
             fullQueryBeforeEncode: fullQuery,
@@ -365,18 +365,18 @@ export function makeUrlForTransactionByEvents(
             lastCharBeforeEncode: fullQuery.charAt(fullQuery.length - 1),
             lastCharAfterEncode: encodedQuery.slice(-3), // last 3 chars to see if %27 is there
         });
-        
+
         path = `order_by=${encodeURIComponent("ORDER_BY_UNSPECIFIED")}&limit=${transactionRequest.limit}&query=${encodedQuery}`;
     }
 
     const finalUrl = `${apiUrl}/cosmos/tx/v1beta1/txs?${path}`;
-    
+
     logger.info("Final URL construction", {
         finalUrl,
         finalUrlLength: finalUrl.length,
         endsWithQuote: finalUrl.includes("%27") && finalUrl.lastIndexOf("%27"),
     });
-    
+
     return finalUrl;
 }
 

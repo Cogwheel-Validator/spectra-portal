@@ -141,7 +141,9 @@ export function isTransactionResponseError(
  * @param result - The result to check
  * @returns true if the result is an EvTransactionResponse
  */
-export function isEvTransactionResponse(result: TransactionResponse | EvTransactionResponse | null): result is EvTransactionResponse {
+export function isEvTransactionResponse(
+    result: TransactionResponse | EvTransactionResponse | null,
+): result is EvTransactionResponse {
     return result !== null && "tx_responses" in result && result.tx_responses.length > 0;
 }
 
@@ -418,32 +420,35 @@ export function getIbcMsgTransferDetails(
 // Transaction response schema gathered from REST API by using events for query
 export const EvTransactionResponseSchema = z.looseObject({
     tx_responses: z.array(
-      z.object({
-        height: z.string(),
-        txhash: z.string(),
-        codespace: z.string(),
-        code: z.number(),
-        raw_log: z.string(),
-        info: z.string(),
-        gas_wanted: z.string(),
-        gas_used: z.string(),
-        tx: z.looseObject({ "@type": z.string(), body: z.looseObject({ messages: z.array(TransactionMessageSchema) }) }),
-        timestamp: z.string(),
-        events: z.array(
-          z.object({
-            type: z.string(),
-            attributes: z.array(
-              z.object({ key: z.string(), value: z.string(), index: z.boolean() })
-            )
-          })
-        )
-      })
+        z.object({
+            height: z.string(),
+            txhash: z.string(),
+            codespace: z.string(),
+            code: z.number(),
+            raw_log: z.string(),
+            info: z.string(),
+            gas_wanted: z.string(),
+            gas_used: z.string(),
+            tx: z.looseObject({
+                "@type": z.string(),
+                body: z.looseObject({ messages: z.array(TransactionMessageSchema) }),
+            }),
+            timestamp: z.string(),
+            events: z.array(
+                z.object({
+                    type: z.string(),
+                    attributes: z.array(
+                        z.object({ key: z.string(), value: z.string(), index: z.boolean() }),
+                    ),
+                }),
+            ),
+        }),
     ),
     pagination: z.union([
-      z.object({ next_key: z.string().nullable().optional(), total: z.string() }),
-      z.null()
+        z.object({ next_key: z.string().nullable().optional(), total: z.string() }),
+        z.null(),
     ]),
-    total: z.string()
-  });
+    total: z.string(),
+});
 
 export type EvTransactionResponse = z.infer<typeof EvTransactionResponseSchema>;

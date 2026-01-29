@@ -15,7 +15,6 @@ import { getRandomHealthyApiImperative } from "@/lib/apiQueries/featchHealthyEnd
 import { fetchTransactionByEvents, fetchTransactionByHash } from "@/lib/apiQueries/fetchApiData";
 import clientLogger from "@/lib/clientLogger";
 
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -76,7 +75,7 @@ function buildQueryStrategies(packetData: PacketData): string[][] {
         `recv_packet.packet_sequence='${packetData.packetSequence}'`,
         `recv_packet.packet_src_channel='${packetData.packetSrcChannel}'`,
     ];
-    
+
     // Only use if under length limit
     if (estimateQueryLength(strategy1) <= MAX_QUERY_LENGTH) {
         strategies.push(strategy1);
@@ -88,7 +87,7 @@ function buildQueryStrategies(packetData: PacketData): string[][] {
         `recv_packet.packet_data_hex='${packetData.packetDataHex}'`,
         `recv_packet.packet_sequence='${packetData.packetSequence}'`,
     ];
-    
+
     if (estimateQueryLength(strategy2) <= MAX_QUERY_LENGTH) {
         strategies.push(strategy2);
         return strategies;
@@ -175,7 +174,7 @@ function verifyTransactionTimestamp(
     try {
         const receiveTime = new Date(receiveTxTimestamp).getTime();
         const sourceTime = new Date(sourceTxTimestamp).getTime();
-        
+
         // Receive must happen after send (with small tolerance for clock skew)
         // Allow up to 1 second before source due to clock differences
         return receiveTime >= sourceTime - 1000;
@@ -241,7 +240,9 @@ async function queryIbcReceive(
 
             // Verify timestamp if provided (prevents matching old duplicate txs)
             if (sourceTxTimestamp) {
-                if (!verifyTransactionTimestamp(result.tx_responses[0].timestamp, sourceTxTimestamp)) {
+                if (
+                    !verifyTransactionTimestamp(result.tx_responses[0].timestamp, sourceTxTimestamp)
+                ) {
                     clientLogger.warn("Transaction timestamp is before source tx, skipping", {
                         receiveTxTime: result.tx_responses[0].timestamp,
                         sourceTxTime: sourceTxTimestamp,
@@ -276,10 +277,7 @@ async function queryIbcReceive(
  * Verify packet data matches by comparing hex representation
  * This is more reliable than comparing all fields individually
  */
-function verifyPacketData(
-    receivedPacketData: PacketData,
-    expectedPacketData: PacketData,
-): boolean {
+function verifyPacketData(receivedPacketData: PacketData, expectedPacketData: PacketData): boolean {
     // Primary verification: compare hex data (most reliable)
     if (receivedPacketData.packetDataHex !== expectedPacketData.packetDataHex) {
         return false;
@@ -317,7 +315,7 @@ export function useIbcTracking() {
         ): Promise<{ packetData: PacketData; timestamp: string } | null> => {
             const txResponse = await fetchTransactionByHash(sourceChainId, txHash);
             if (!txResponse || !txResponse.tx_response) return null;
-            
+
             const packetData = extractSendPacket(txResponse);
             if (!packetData) return null;
 
@@ -371,14 +369,21 @@ export function useIbcTracking() {
                 onProgress?.(attempt, maxAttempts);
 
                 // Try to find the receive transaction (with timestamp verification)
-                const receiveResult = await queryIbcReceive(destChain, packetData, sourceTxTimestamp);
+                const receiveResult = await queryIbcReceive(
+                    destChain,
+                    packetData,
+                    sourceTxTimestamp,
+                );
 
                 clientLogger.info("receive IBC data confirmation", receiveResult);
 
                 // Handle the three possible outcomes
                 if (receiveResult === null) {
                     // Transaction not found yet - poll again
-                    clientLogger.info("Transaction not found yet, will retry", { attempt, maxAttempts });
+                    clientLogger.info("Transaction not found yet, will retry", {
+                        attempt,
+                        maxAttempts,
+                    });
                 } else if ("code" in receiveResult && "message" in receiveResult) {
                     // API error occurred (bad params, server error, etc.)
                     // Continue polling - might be temporary issue or transaction just not indexed
@@ -388,7 +393,10 @@ export function useIbcTracking() {
                         code: receiveResult.code,
                         message: receiveResult.message,
                     });
-                } else if (isEvTransactionResponse(receiveResult) && receiveResult.tx_responses.length > 0) {
+                } else if (
+                    isEvTransactionResponse(receiveResult) &&
+                    receiveResult.tx_responses.length > 0
+                ) {
                     // We got a valid transaction response (already verified in queryIbcReceive)
                     const txResponse = receiveResult.tx_responses[0];
                     if (txResponse.code === 0) {
