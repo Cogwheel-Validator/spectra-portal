@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package rpc.v1;
+package pathfinder.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";
@@ -32,8 +32,8 @@ service PathfinderService {
         option idempotency_level = NO_SIDE_EFFECTS;
     }
 
-    // GetPathfinderSupportedChains returns a list of supported chains
-    rpc GetPathfinderSupportedChains(google.protobuf.Empty) returns (PathfinderSupportedChainsResponse) {
+    // ListSupportedChains returns a list of supported chains
+    rpc ListSupportedChains(google.protobuf.Empty) returns (PathfinderSupportedChainsResponse) {
         option idempotency_level = NO_SIDE_EFFECTS;
     }
 
@@ -131,7 +131,7 @@ message BrokerSwapRoute {
     // All chain IDs in order
     repeated string path = 1;
     // IBC transfer to reach broker (absent if starting from broker)
-    IBCLeg inbound_leg = 2;
+    repeated IBCLeg inbound_legs = 2;
     // The swap operation on the broker chain
     SwapQuote swap = 3;
     // IBC transfers after swap (empty if destination is broker)

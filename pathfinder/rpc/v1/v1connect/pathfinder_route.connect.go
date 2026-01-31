@@ -23,7 +23,7 @@ const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// PathfinderServiceName is the fully-qualified name of the PathfinderService service.
-	PathfinderServiceName = "rpc.v1.PathfinderService"
+	PathfinderServiceName = "pathfinder.v1.PathfinderService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -36,25 +36,25 @@ const (
 const (
 	// PathfinderServiceFindPathProcedure is the fully-qualified name of the PathfinderService's
 	// FindPath RPC.
-	PathfinderServiceFindPathProcedure = "/rpc.v1.PathfinderService/FindPath"
+	PathfinderServiceFindPathProcedure = "/pathfinder.v1.PathfinderService/FindPath"
 	// PathfinderServiceLookupDenomProcedure is the fully-qualified name of the PathfinderService's
 	// LookupDenom RPC.
-	PathfinderServiceLookupDenomProcedure = "/rpc.v1.PathfinderService/LookupDenom"
+	PathfinderServiceLookupDenomProcedure = "/pathfinder.v1.PathfinderService/LookupDenom"
 	// PathfinderServiceGetTokenDenomsProcedure is the fully-qualified name of the PathfinderService's
 	// GetTokenDenoms RPC.
-	PathfinderServiceGetTokenDenomsProcedure = "/rpc.v1.PathfinderService/GetTokenDenoms"
+	PathfinderServiceGetTokenDenomsProcedure = "/pathfinder.v1.PathfinderService/GetTokenDenoms"
 	// PathfinderServiceGetChainInfoProcedure is the fully-qualified name of the PathfinderService's
 	// GetChainInfo RPC.
-	PathfinderServiceGetChainInfoProcedure = "/rpc.v1.PathfinderService/GetChainInfo"
-	// PathfinderServiceGetPathfinderSupportedChainsProcedure is the fully-qualified name of the
-	// PathfinderService's GetPathfinderSupportedChains RPC.
-	PathfinderServiceGetPathfinderSupportedChainsProcedure = "/rpc.v1.PathfinderService/GetPathfinderSupportedChains"
+	PathfinderServiceGetChainInfoProcedure = "/pathfinder.v1.PathfinderService/GetChainInfo"
+	// PathfinderServiceListSupportedChainsProcedure is the fully-qualified name of the
+	// PathfinderService's ListSupportedChains RPC.
+	PathfinderServiceListSupportedChainsProcedure = "/pathfinder.v1.PathfinderService/ListSupportedChains"
 	// PathfinderServiceGetChainTokensProcedure is the fully-qualified name of the PathfinderService's
 	// GetChainTokens RPC.
-	PathfinderServiceGetChainTokensProcedure = "/rpc.v1.PathfinderService/GetChainTokens"
+	PathfinderServiceGetChainTokensProcedure = "/pathfinder.v1.PathfinderService/GetChainTokens"
 )
 
-// PathfinderServiceClient is a client for the rpc.v1.PathfinderService service.
+// PathfinderServiceClient is a client for the pathfinder.v1.PathfinderService service.
 type PathfinderServiceClient interface {
 	// FindPath finds and validates a route between two chains
 	// Supports human-readable denoms (e.g., "uatone") or IBC denoms
@@ -67,16 +67,16 @@ type PathfinderServiceClient interface {
 	GetTokenDenoms(context.Context, *connect.Request[v1.GetTokenDenomsRequest]) (*connect.Response[v1.GetTokenDenomsResponse], error)
 	// GetChainInfo returns information about a specific chain
 	GetChainInfo(context.Context, *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error)
-	// GetPathfinderSupportedChains returns a list of supported chains
-	GetPathfinderSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.PathfinderSupportedChainsResponse], error)
+	// ListSupportedChains returns a list of supported chains
+	ListSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.PathfinderSupportedChainsResponse], error)
 	// GetChainTokens returns all tokens available on a specific chain
 	// Includes both native tokens and IBC tokens with their denoms
 	GetChainTokens(context.Context, *connect.Request[v1.GetChainTokensRequest]) (*connect.Response[v1.GetChainTokensResponse], error)
 }
 
-// NewPathfinderServiceClient constructs a client for the rpc.v1.PathfinderService service. By
-// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
-// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
+// NewPathfinderServiceClient constructs a client for the pathfinder.v1.PathfinderService service.
+// By default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped
+// responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
 // connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
@@ -113,10 +113,10 @@ func NewPathfinderServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
-		getPathfinderSupportedChains: connect.NewClient[emptypb.Empty, v1.PathfinderSupportedChainsResponse](
+		listSupportedChains: connect.NewClient[emptypb.Empty, v1.PathfinderSupportedChainsResponse](
 			httpClient,
-			baseURL+PathfinderServiceGetPathfinderSupportedChainsProcedure,
-			connect.WithSchema(pathfinderServiceMethods.ByName("GetPathfinderSupportedChains")),
+			baseURL+PathfinderServiceListSupportedChainsProcedure,
+			connect.WithSchema(pathfinderServiceMethods.ByName("ListSupportedChains")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -132,45 +132,45 @@ func NewPathfinderServiceClient(httpClient connect.HTTPClient, baseURL string, o
 
 // pathfinderServiceClient implements PathfinderServiceClient.
 type pathfinderServiceClient struct {
-	findPath                     *connect.Client[v1.FindPathRequest, v1.FindPathResponse]
-	lookupDenom                  *connect.Client[v1.LookupDenomRequest, v1.LookupDenomResponse]
-	getTokenDenoms               *connect.Client[v1.GetTokenDenomsRequest, v1.GetTokenDenomsResponse]
-	getChainInfo                 *connect.Client[v1.ChainInfoRequest, v1.ChainInfoResponse]
-	getPathfinderSupportedChains *connect.Client[emptypb.Empty, v1.PathfinderSupportedChainsResponse]
-	getChainTokens               *connect.Client[v1.GetChainTokensRequest, v1.GetChainTokensResponse]
+	findPath            *connect.Client[v1.FindPathRequest, v1.FindPathResponse]
+	lookupDenom         *connect.Client[v1.LookupDenomRequest, v1.LookupDenomResponse]
+	getTokenDenoms      *connect.Client[v1.GetTokenDenomsRequest, v1.GetTokenDenomsResponse]
+	getChainInfo        *connect.Client[v1.ChainInfoRequest, v1.ChainInfoResponse]
+	listSupportedChains *connect.Client[emptypb.Empty, v1.PathfinderSupportedChainsResponse]
+	getChainTokens      *connect.Client[v1.GetChainTokensRequest, v1.GetChainTokensResponse]
 }
 
-// FindPath calls rpc.v1.PathfinderService.FindPath.
+// FindPath calls pathfinder.v1.PathfinderService.FindPath.
 func (c *pathfinderServiceClient) FindPath(ctx context.Context, req *connect.Request[v1.FindPathRequest]) (*connect.Response[v1.FindPathResponse], error) {
 	return c.findPath.CallUnary(ctx, req)
 }
 
-// LookupDenom calls rpc.v1.PathfinderService.LookupDenom.
+// LookupDenom calls pathfinder.v1.PathfinderService.LookupDenom.
 func (c *pathfinderServiceClient) LookupDenom(ctx context.Context, req *connect.Request[v1.LookupDenomRequest]) (*connect.Response[v1.LookupDenomResponse], error) {
 	return c.lookupDenom.CallUnary(ctx, req)
 }
 
-// GetTokenDenoms calls rpc.v1.PathfinderService.GetTokenDenoms.
+// GetTokenDenoms calls pathfinder.v1.PathfinderService.GetTokenDenoms.
 func (c *pathfinderServiceClient) GetTokenDenoms(ctx context.Context, req *connect.Request[v1.GetTokenDenomsRequest]) (*connect.Response[v1.GetTokenDenomsResponse], error) {
 	return c.getTokenDenoms.CallUnary(ctx, req)
 }
 
-// GetChainInfo calls rpc.v1.PathfinderService.GetChainInfo.
+// GetChainInfo calls pathfinder.v1.PathfinderService.GetChainInfo.
 func (c *pathfinderServiceClient) GetChainInfo(ctx context.Context, req *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error) {
 	return c.getChainInfo.CallUnary(ctx, req)
 }
 
-// GetPathfinderSupportedChains calls rpc.v1.PathfinderService.GetPathfinderSupportedChains.
-func (c *pathfinderServiceClient) GetPathfinderSupportedChains(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[v1.PathfinderSupportedChainsResponse], error) {
-	return c.getPathfinderSupportedChains.CallUnary(ctx, req)
+// ListSupportedChains calls pathfinder.v1.PathfinderService.ListSupportedChains.
+func (c *pathfinderServiceClient) ListSupportedChains(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[v1.PathfinderSupportedChainsResponse], error) {
+	return c.listSupportedChains.CallUnary(ctx, req)
 }
 
-// GetChainTokens calls rpc.v1.PathfinderService.GetChainTokens.
+// GetChainTokens calls pathfinder.v1.PathfinderService.GetChainTokens.
 func (c *pathfinderServiceClient) GetChainTokens(ctx context.Context, req *connect.Request[v1.GetChainTokensRequest]) (*connect.Response[v1.GetChainTokensResponse], error) {
 	return c.getChainTokens.CallUnary(ctx, req)
 }
 
-// PathfinderServiceHandler is an implementation of the rpc.v1.PathfinderService service.
+// PathfinderServiceHandler is an implementation of the pathfinder.v1.PathfinderService service.
 type PathfinderServiceHandler interface {
 	// FindPath finds and validates a route between two chains
 	// Supports human-readable denoms (e.g., "uatone") or IBC denoms
@@ -183,8 +183,8 @@ type PathfinderServiceHandler interface {
 	GetTokenDenoms(context.Context, *connect.Request[v1.GetTokenDenomsRequest]) (*connect.Response[v1.GetTokenDenomsResponse], error)
 	// GetChainInfo returns information about a specific chain
 	GetChainInfo(context.Context, *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error)
-	// GetPathfinderSupportedChains returns a list of supported chains
-	GetPathfinderSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.PathfinderSupportedChainsResponse], error)
+	// ListSupportedChains returns a list of supported chains
+	ListSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.PathfinderSupportedChainsResponse], error)
 	// GetChainTokens returns all tokens available on a specific chain
 	// Includes both native tokens and IBC tokens with their denoms
 	GetChainTokens(context.Context, *connect.Request[v1.GetChainTokensRequest]) (*connect.Response[v1.GetChainTokensResponse], error)
@@ -225,10 +225,10 @@ func NewPathfinderServiceHandler(svc PathfinderServiceHandler, opts ...connect.H
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
-	pathfinderServiceGetPathfinderSupportedChainsHandler := connect.NewUnaryHandler(
-		PathfinderServiceGetPathfinderSupportedChainsProcedure,
-		svc.GetPathfinderSupportedChains,
-		connect.WithSchema(pathfinderServiceMethods.ByName("GetPathfinderSupportedChains")),
+	pathfinderServiceListSupportedChainsHandler := connect.NewUnaryHandler(
+		PathfinderServiceListSupportedChainsProcedure,
+		svc.ListSupportedChains,
+		connect.WithSchema(pathfinderServiceMethods.ByName("ListSupportedChains")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
@@ -239,7 +239,7 @@ func NewPathfinderServiceHandler(svc PathfinderServiceHandler, opts ...connect.H
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
-	return "/rpc.v1.PathfinderService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return "/pathfinder.v1.PathfinderService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PathfinderServiceFindPathProcedure:
 			pathfinderServiceFindPathHandler.ServeHTTP(w, r)
@@ -249,8 +249,8 @@ func NewPathfinderServiceHandler(svc PathfinderServiceHandler, opts ...connect.H
 			pathfinderServiceGetTokenDenomsHandler.ServeHTTP(w, r)
 		case PathfinderServiceGetChainInfoProcedure:
 			pathfinderServiceGetChainInfoHandler.ServeHTTP(w, r)
-		case PathfinderServiceGetPathfinderSupportedChainsProcedure:
-			pathfinderServiceGetPathfinderSupportedChainsHandler.ServeHTTP(w, r)
+		case PathfinderServiceListSupportedChainsProcedure:
+			pathfinderServiceListSupportedChainsHandler.ServeHTTP(w, r)
 		case PathfinderServiceGetChainTokensProcedure:
 			pathfinderServiceGetChainTokensHandler.ServeHTTP(w, r)
 		default:
@@ -263,25 +263,25 @@ func NewPathfinderServiceHandler(svc PathfinderServiceHandler, opts ...connect.H
 type UnimplementedPathfinderServiceHandler struct{}
 
 func (UnimplementedPathfinderServiceHandler) FindPath(context.Context, *connect.Request[v1.FindPathRequest]) (*connect.Response[v1.FindPathResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.PathfinderService.FindPath is not implemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pathfinder.v1.PathfinderService.FindPath is not implemented"))
 }
 
 func (UnimplementedPathfinderServiceHandler) LookupDenom(context.Context, *connect.Request[v1.LookupDenomRequest]) (*connect.Response[v1.LookupDenomResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.PathfinderService.LookupDenom is not implemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pathfinder.v1.PathfinderService.LookupDenom is not implemented"))
 }
 
 func (UnimplementedPathfinderServiceHandler) GetTokenDenoms(context.Context, *connect.Request[v1.GetTokenDenomsRequest]) (*connect.Response[v1.GetTokenDenomsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.PathfinderService.GetTokenDenoms is not implemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pathfinder.v1.PathfinderService.GetTokenDenoms is not implemented"))
 }
 
 func (UnimplementedPathfinderServiceHandler) GetChainInfo(context.Context, *connect.Request[v1.ChainInfoRequest]) (*connect.Response[v1.ChainInfoResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.PathfinderService.GetChainInfo is not implemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pathfinder.v1.PathfinderService.GetChainInfo is not implemented"))
 }
 
-func (UnimplementedPathfinderServiceHandler) GetPathfinderSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.PathfinderSupportedChainsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.PathfinderService.GetPathfinderSupportedChains is not implemented"))
+func (UnimplementedPathfinderServiceHandler) ListSupportedChains(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.PathfinderSupportedChainsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pathfinder.v1.PathfinderService.ListSupportedChains is not implemented"))
 }
 
 func (UnimplementedPathfinderServiceHandler) GetChainTokens(context.Context, *connect.Request[v1.GetChainTokensRequest]) (*connect.Response[v1.GetChainTokensResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("rpc.v1.PathfinderService.GetChainTokens is not implemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pathfinder.v1.PathfinderService.GetChainTokens is not implemented"))
 }
