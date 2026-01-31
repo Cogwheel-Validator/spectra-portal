@@ -2,13 +2,7 @@ package ibcmemo
 
 import "encoding/json"
 
-type NextEnum string
-
-const (
-	NextEnumWasm       NextEnum = "wasm"
-	NextEnumPFMForward NextEnum = "pfm_forward"
-)
-
+// PostSwapActionEnum defines the type of action after a swap
 type PostSwapActionEnum string
 
 const (
@@ -16,75 +10,104 @@ const (
 	PostSwapActionEnumIBCTransfer PostSwapActionEnum = "ibc_transfer"
 )
 
-var SwapVenueNames = []string{
-	"osmosis-poolmanager",
+// ForwardMemo is the top-level structure for PFM forwarding (case 1, 5.2, 5.4 from doc.go)
+// This wraps either a simple forward or a forward-with-wasm-next
+type ForwardMemo struct {
+	Forward *PFMForward `json:"forward"`
 }
 
+// WasmMemo is the top-level structure for ibc-hooks wasm memo (case 2, 5.1, 5.3 from doc.go)
+type WasmMemo struct {
+	Wasm *WasmData `json:"wasm"`
+}
+
+// PFMForward contains PFM forwarding details
+// Can contain a "next" field for chaining to wasm or another forward
 type PFMForward struct {
 	Channel  string `json:"channel"`
-	Next     *Next  `json:"next,omitempty"`
 	Port     string `json:"port"`
 	Receiver string `json:"receiver"`
-	Retries  int    `json:"retries"`
-	Timeout  int64  `json:"timeout"`
+	Retries  int    `json:"retries,omitempty"`
+	Timeout  int64  `json:"timeout,omitempty"`
+	// Next can contain either a Wasm action or another PFMForward for multi-hop
+	Next *PFMNext `json:"next,omitempty"`
 }
 
-func (p *PFMForward) ToString() string {
-	json, err := json.Marshal(p)
-	if err != nil {
-		return ""
-	}
-	return string(json)
+// PFMNext represents the "next" field in a PFM forward
+// It can contain either a wasm action or another forward (union type)
+type PFMNext struct {
+	Wasm    *WasmMemo   `json:"wasm,omitempty"`
+	Forward *PFMForward `json:"forward,omitempty"`
 }
 
-type Wasm struct {
-	WasmData WasmData `json:"wasm"`
-}
-
+// WasmData contains the contract call information
 type WasmData struct {
-	Contract string `json:"contract"`
-	Msg      any    `json:"msg"`
+	Contract string   `json:"contract"`
+	Msg      *WasmMsg `json:"msg"`
 }
 
-func (w *Wasm) ToString() string {
-	json, err := json.Marshal(w)
-	if err != nil {
-		return ""
-	}
-	return string(json)
-}
-
+// WasmMsg contains the swap_and_action message
 type WasmMsg struct {
-	SwapAndAction *SwapAndAction `json:"swap_and_action,omitempty"`
+	SwapAndAction *SwapAndAction `json:"swap_and_action"`
 }
 
+// SwapAndAction is the entry point contract message structure
 type SwapAndAction struct {
-	Affiliates       []any           `json:"affiliates"` // show even when empty!
-	MinAsset         *MinAsset       `json:"min_asset,omitempty"`
-	PostSwapAction   *PostSwapAction `json:"post_swap_action,omitempty"`
-	TimeoutTimestamp int64           `json:"timeout_timestamp,omitempty"`
-	UserSwap         any             `json:"user_swap,omitempty"`
+	UserSwap         *UserSwap       `json:"user_swap"`
+	MinAsset         *MinAsset       `json:"min_asset"`
+	TimeoutTimestamp int64           `json:"timeout_timestamp"`
+	PostSwapAction   *PostSwapAction `json:"post_swap_action"`
+	Affiliates       []interface{}   `json:"affiliates"`
 }
 
+// UserSwap contains the swap route information
+type UserSwap struct {
+	SwapExactAssetIn *SwapExactAssetIn `json:"swap_exact_asset_in"`
+}
+
+// SwapExactAssetIn contains the swap venue and operations
+type SwapExactAssetIn struct {
+	SwapVenueName string          `json:"swap_venue_name"`
+	Operations    []SwapOperation `json:"operations"`
+}
+
+// SwapOperation represents a single pool hop in a swap route
+type SwapOperation struct {
+	Pool     string `json:"pool"`
+	DenomIn  string `json:"denom_in"`
+	DenomOut string `json:"denom_out"`
+	// Interface is used by some DEXs (like Injective), optional
+	Interface *string `json:"interface,omitempty"`
+}
+
+// MinAsset specifies the minimum output for slippage protection
 type MinAsset struct {
-	Native Asset `json:"native"`
+	Native *Asset `json:"native"`
 }
 
+// Asset represents a native token with denom and amount
 type Asset struct {
 	Amount string `json:"amount"`
 	Denom  string `json:"denom"`
 }
 
+// PostSwapAction is the action to take after swapping (union type)
 type PostSwapAction struct {
-	PostSwapActionEnum PostSwapActionEnum `json:"-"` // not using json reflection
-	IBCTransfer        *IBCTransfer       `json:"ibc_transfer,omitempty"`
-	Transfer           *Transfer          `json:"transfer,omitempty"`
+	IBCTransfer *IBCTransfer `json:"ibc_transfer,omitempty"`
+	Transfer    *Transfer    `json:"transfer,omitempty"`
 }
 
+// Transfer sends tokens to an address on the same chain (post-swap)
+type Transfer struct {
+	ToAddress string `json:"to_address"`
+}
+
+// IBCTransfer sends tokens via IBC to another chain (post-swap)
 type IBCTransfer struct {
-	IBCInfo IBCInfo `json:"ibc_info"`
+	IBCInfo *IBCInfo `json:"ibc_info"`
 }
 
+// IBCInfo contains IBC transfer details for post-swap forwarding
 type IBCInfo struct {
 	Memo           string `json:"memo"`
 	Receiver       string `json:"receiver"`
@@ -92,30 +115,26 @@ type IBCInfo struct {
 	SourceChannel  string `json:"source_channel"`
 }
 
-type Transfer struct {
-	ToAddress string `json:"to_address"`
+// ToJSON marshals the ForwardMemo to JSON string
+func (m *ForwardMemo) ToJSON() (string, error) {
+	bytes, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
 
-type UserSwap struct {
-	SwapExactAssetIn *SwapExactAssetIn `json:"swap_exact_asset_in"`
+// ToJSON marshals the WasmMemo to JSON string
+func (m *WasmMemo) ToJSON() (string, error) {
+	bytes, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
 
-type SwapExactAssetIn struct {
-	SwapVenueName string          `json:"swap_venue_name"`
-	Operations    []SwapOperation `json:"operations"`
-}
-
-type SwapOperation struct {
-	Pool     string `json:"pool"`
-	DenomIn  string `json:"denom_in"`
-	DenomOut string `json:"denom_out"`
-	// This is tied to some other DEXs, like Injective has, not all of them
-	// have this but just keep it for now.
-	Interface *string `json:"interface,omitempty"`
-}
-
-type Next struct {
-	NextEnum   NextEnum    `json:"-"` // not using json reflection
-	Wasm       *Wasm       `json:"wasm,omitempty"`
-	PFMForward *PFMForward `json:"pfm_forward,omitempty"`
+// ToJSON marshals the PFMForward to JSON string (for nested forwards)
+func (f *PFMForward) ToJSON() (string, error) {
+	wrapper := &ForwardMemo{Forward: f}
+	return wrapper.ToJSON()
 }

@@ -1,92 +1,147 @@
 package ibcmemo
 
 import (
-	"fmt"
-	"slices"
+	"time"
 )
 
-func NewWasm(contractAddress string, msg *WasmMsg) *Wasm {
-	wasmData := newWasmData(contractAddress, msg)
-	return &Wasm{
-		WasmData: *wasmData,
+// NewWasmMemo creates a new wasm memo with the given contract and message
+func NewWasmMemo(contractAddress string, msg *WasmMsg) *WasmMemo {
+	return &WasmMemo{
+		Wasm: &WasmData{
+			Contract: contractAddress,
+			Msg:      msg,
+		},
 	}
 }
 
-func newWasmData(contractAddress string, msg *WasmMsg) *WasmData {
-	return &WasmData{
-		Contract: contractAddress,
-		Msg:      msg,
+// NewWasmMsg creates a new WasmMsg with swap_and_action
+func NewWasmMsg(swapAndAction *SwapAndAction) *WasmMsg {
+	return &WasmMsg{
+		SwapAndAction: swapAndAction,
 	}
 }
 
-func NewSwapOperation(
-	pool string,
-	denomIn string,
-	denomOut string,
-	interfaceValue *string) *SwapOperation {
-	return &SwapOperation{
+// NewSwapAndAction creates a new SwapAndAction with all required fields
+func NewSwapAndAction(
+	userSwap *UserSwap,
+	minAsset *MinAsset,
+	timeoutTimestamp int64,
+	postSwapAction *PostSwapAction,
+) *SwapAndAction {
+	return &SwapAndAction{
+		UserSwap:         userSwap,
+		MinAsset:         minAsset,
+		TimeoutTimestamp: timeoutTimestamp,
+		PostSwapAction:   postSwapAction,
+		Affiliates:       []interface{}{}, // Always empty array
+	}
+}
+
+// NewUserSwap creates a new UserSwap with swap_exact_asset_in
+func NewUserSwap(swapVenueName string, operations []SwapOperation) *UserSwap {
+	return &UserSwap{
+		SwapExactAssetIn: &SwapExactAssetIn{
+			SwapVenueName: swapVenueName,
+			Operations:    operations,
+		},
+	}
+}
+
+// NewSwapOperation creates a single swap operation (pool hop)
+func NewSwapOperation(pool, denomIn, denomOut string) SwapOperation {
+	return SwapOperation{
+		Pool:     pool,
+		DenomIn:  denomIn,
+		DenomOut: denomOut,
+	}
+}
+
+// NewSwapOperationWithInterface creates a swap operation with interface (for DEXs like Injective)
+func NewSwapOperationWithInterface(pool, denomIn, denomOut string, iface string) SwapOperation {
+	return SwapOperation{
 		Pool:      pool,
 		DenomIn:   denomIn,
 		DenomOut:  denomOut,
-		Interface: interfaceValue,
+		Interface: &iface,
 	}
 }
 
-func NewSwapExactAssetIn(
-	swapVenueName string,
-	operations []SwapOperation) (*SwapExactAssetIn, error) {
-	if !slices.Contains(SwapVenueNames, swapVenueName) {
-		return nil, fmt.Errorf("invalid swap venue name: %s", swapVenueName)
-	}
-	return &SwapExactAssetIn{
-		SwapVenueName: swapVenueName,
-		Operations:    operations,
-	}, nil
-}
-
-// Union type constructors with validation
-func NewNextWithWasm(wasm *Wasm) *Next {
-	return &Next{
-		NextEnum: NextEnumWasm,
-		Wasm:     wasm,
+// NewMinAsset creates a MinAsset for slippage protection
+func NewMinAsset(denom, amount string) *MinAsset {
+	return &MinAsset{
+		Native: &Asset{
+			Denom:  denom,
+			Amount: amount,
+		},
 	}
 }
 
-func NewNextWithPFMForward(forward *PFMForward) *Next {
-	return &Next{
-		NextEnum:   NextEnumPFMForward,
-		PFMForward: forward,
-	}
-}
-
-func NewPostSwapActionWithTransfer(transfer *Transfer) *PostSwapAction {
+// NewTransferAction creates a PostSwapAction for same-chain transfer
+func NewTransferAction(toAddress string) *PostSwapAction {
 	return &PostSwapAction{
-		PostSwapActionEnum: PostSwapActionEnumTransfer,
-		Transfer:           transfer,
+		Transfer: &Transfer{
+			ToAddress: toAddress,
+		},
 	}
 }
 
-func NewPostSwapActionWithIBCTransfer(ibc *IBCTransfer) *PostSwapAction {
+// NewIBCTransferAction creates a PostSwapAction for IBC transfer
+func NewIBCTransferAction(sourceChannel, receiver, memo, recoverAddress string) *PostSwapAction {
 	return &PostSwapAction{
-		PostSwapActionEnum: PostSwapActionEnumIBCTransfer,
-		IBCTransfer:        ibc,
+		IBCTransfer: &IBCTransfer{
+			IBCInfo: &IBCInfo{
+				SourceChannel:  sourceChannel,
+				Receiver:       receiver,
+				Memo:           memo,
+				RecoverAddress: recoverAddress,
+			},
+		},
 	}
 }
 
-func NewPFMForward(
-	channel,
-	port,
-	receiver string,
-	retries int,
-	timeout int64,
-	next *Next,
-) (*PFMForward, error) {
-	if retries < 0 {
-		return nil, fmt.Errorf("retries must be greater than 0")
+// NewForwardMemo creates a simple forward memo (case 1 from doc.go)
+func NewForwardMemo(channel, port, receiver string, retries int, timeout int64) *ForwardMemo {
+	return &ForwardMemo{
+		Forward: &PFMForward{
+			Channel:  channel,
+			Port:     port,
+			Receiver: receiver,
+			Retries:  retries,
+			Timeout:  timeout,
+		},
 	}
-	if timeout < 0 {
-		return nil, fmt.Errorf("timeout must be greater than 0")
+}
+
+// NewForwardMemoWithNext creates a forward memo with a next action
+func NewForwardMemoWithNext(channel, port, receiver string, retries int, timeout int64, next *PFMNext) *ForwardMemo {
+	return &ForwardMemo{
+		Forward: &PFMForward{
+			Channel:  channel,
+			Port:     port,
+			Receiver: receiver,
+			Retries:  retries,
+			Timeout:  timeout,
+			Next:     next,
+		},
 	}
+}
+
+// NewPFMNextWithWasm creates a PFMNext that chains to a wasm action
+func NewPFMNextWithWasm(wasmMemo *WasmMemo) *PFMNext {
+	return &PFMNext{
+		Wasm: wasmMemo,
+	}
+}
+
+// NewPFMNextWithForward creates a PFMNext that chains to another forward
+func NewPFMNextWithForward(forward *PFMForward) *PFMNext {
+	return &PFMNext{
+		Forward: forward,
+	}
+}
+
+// NewNestedForward creates a nested forward structure (for building chains)
+func NewNestedForward(channel, port, receiver string, retries int, timeout int64, next *PFMNext) *PFMForward {
 	return &PFMForward{
 		Channel:  channel,
 		Port:     port,
@@ -94,25 +149,20 @@ func NewPFMForward(
 		Retries:  retries,
 		Timeout:  timeout,
 		Next:     next,
-	}, nil
-}
-
-func NewIBCTransfer(sourceChannel, receiver, recoverAddress, memo string) *IBCTransfer {
-	return &IBCTransfer{
-		IBCInfo: IBCInfo{
-			SourceChannel:  sourceChannel,
-			Receiver:       receiver,
-			RecoverAddress: recoverAddress,
-			Memo:           memo,
-		},
 	}
 }
 
-func NewMinAsset(amount, denom string) *MinAsset {
-	return &MinAsset{
-		Native: Asset{
-			Amount: amount,
-			Denom:  denom,
-		},
-	}
+// DefaultTimeoutTimestamp returns a default timeout (10 minutes from now) in nanoseconds
+func DefaultTimeoutTimestamp() int64 {
+	return time.Now().Add(10 * time.Minute).UnixNano()
+}
+
+// DefaultRetries returns the default number of retries for PFM
+func DefaultRetries() int {
+	return 2
+}
+
+// DefaultPort returns the default IBC port
+func DefaultPort() string {
+	return "transfer"
 }
