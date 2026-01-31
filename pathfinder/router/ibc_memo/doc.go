@@ -187,7 +187,7 @@ treat the Broker chain as an anchor.
 Inbound IBC Leg [ Max 2 Chains ] -> Broker Chain (Swap) -> Outbound IBC Leg [ Max 2 Chains ]
 
 Each "leg" presents a chain transfer. Maximum of total 4 legs ( plus the broker chain )
-is allowed at all time. There are 3 variations but they are all similar.
+is allowed at all time. There are 4 variations but they are all similar.
 
 5.1. One Leg On Each Side of the Broker Chain
 
