@@ -300,7 +300,7 @@ func (b *MemoBuilder) BuildForwardSwapMemo(params ibcmemo.ForwardSwapParams) (st
 
 	// Build the nested forward structure from innermost (broker) to outermost (source)
 	// Start with the wasm memo as the innermost "next"
-	var currentNext *ibcmemo.PFMNext = ibcmemo.NewPFMNextWithWasm(wasmMemo)
+	currentNext := ibcmemo.NewPFMNextWithWasm(wasmMemo)
 
 	// Build forwards from last hop (closest to broker) to first hop (closest to source)
 	for i := len(params.InboundHops) - 1; i >= 0; i-- {
@@ -409,7 +409,7 @@ func (b *MemoBuilder) BuildForwardSwapForwardMemo(params ibcmemo.ForwardSwapForw
 	)
 
 	// Build the nested forward structure from innermost (broker) to outermost (source)
-	var currentNext *ibcmemo.PFMNext = ibcmemo.NewPFMNextWithWasm(wasmMemo)
+	currentNext := ibcmemo.NewPFMNextWithWasm(wasmMemo)
 
 	// Build forwards from last hop (closest to broker) to first hop (closest to source)
 	for i := len(params.InboundHops) - 1; i >= 0; i-- {
