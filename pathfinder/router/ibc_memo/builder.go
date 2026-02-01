@@ -1,5 +1,14 @@
 package ibcmemo
 
+const (
+	// PFMIntermediateReceiver is used as receiver address on intermediate PFM chains.
+	// Using an invalid bech32 string ensures:
+	// 1. Security: PFM creates a hash of sender+channel for the actual receiver
+	// 2. Safety: If sent to a chain without PFM, the transfer fails and refunds properly
+	// See: https://github.com/cosmos/ibc-apps/tree/main/middleware/packet-forward-middleware
+	PFMIntermediateReceiver = "pfm"
+)
+
 // MemoBuilder is the interface for building IBC memos across different broker chains.
 // Each broker (Osmosis, Neutron, etc.) implements this interface with their specific logic.
 type MemoBuilder interface {
@@ -16,7 +25,8 @@ type MemoBuilder interface {
 	BuildSwapAndMultiHopMemo(params SwapAndMultiHopParams) (string, error)
 
 	// BuildForwardSwapMemo creates a forward memo wrapping wasm (case 5.2 from doc.go)
-	// This is used when the inbound path requires forwarding through an intermediate chain before swap.
+	// This is used when the inbound path requires forwarding through intermediate chain(s) before swap.
+	// Supports both single inbound hop and multiple inbound hops (forward -> forward -> wasm).
 	BuildForwardSwapMemo(params ForwardSwapParams) (string, error)
 
 	// BuildForwardSwapForwardMemo creates a forward memo wrapping wasm with nested forward (case 5.4)
@@ -37,7 +47,8 @@ type SwapMemoParams struct {
 	// MinOutputAmount is the minimum output amount (for slippage protection)
 	MinOutputAmount string
 	// RouteData contains broker-specific routing information (pools, etc.)
-	RouteData RouteData
+	// Each broker implementation casts this to their specific type.
+	RouteData interface{}
 	// TimeoutTimestamp is the timeout in nanoseconds
 	TimeoutTimestamp int64
 	// RecoverAddress is where funds go if the swap fails (on broker chain)
@@ -69,19 +80,22 @@ type SwapAndMultiHopParams struct {
 }
 
 // ForwardSwapParams contains parameters for forward-then-swap (case 5.2).
-// Used when: Source -> Intermediate (forward) -> Broker (swap) -> Destination
+// Used when: Source -> Intermediate(s) (forward) -> Broker (swap) -> Destination
+// Supports multiple inbound hops: Source -> Int1 -> Int2 -> Broker (swap) -> Dest
 type ForwardSwapParams struct {
-	// InboundHop is the forwarding hop to the broker
-	InboundHop IBCHop
+	// InboundHops contains the forwarding hops to reach the broker.
+	// For single hop: [hop_to_broker]
+	// For multi-hop: [hop_to_int1, hop_to_broker]
+	InboundHops []IBCHop
 	// SwapParams contains the swap parameters (executed after forwarding to broker)
 	SwapParams SwapAndForwardParams
 }
 
 // ForwardSwapForwardParams contains parameters for forward + swap + forward (case 5.4).
-// Used when: Source -> Intermediate (forward) -> Broker (swap) -> Intermediate -> Destination
+// Used when: Source -> Intermediate(s) (forward) -> Broker (swap) -> Intermediate(s) -> Destination
 type ForwardSwapForwardParams struct {
-	// InboundHop is the forwarding hop to the broker
-	InboundHop IBCHop
+	// InboundHops contains the forwarding hops to reach the broker.
+	InboundHops []IBCHop
 	// SwapParams contains the swap parameters
 	SwapParams SwapAndMultiHopParams
 }
@@ -92,17 +106,66 @@ type IBCHop struct {
 	Channel string
 	// Port is the IBC port (typically "transfer")
 	Port string
-	// Receiver is the address on the destination of this hop
+	// Receiver is the address on the destination of this hop.
+	// For intermediate hops in PFM chains, use PFMIntermediateReceiver ("pfm").
+	// Only the final hop should have the actual recipient address.
 	Receiver string
 	// Timeout in nanoseconds
 	Timeout int64
 }
 
-// RouteData is an interface for broker-specific routing data.
-// Each broker implements this to provide their pool/route information.
-type RouteData interface {
-	// GetOperations returns the swap operations in a format the broker understands
-	GetOperations() []SwapOperation
-	// GetSwapVenueName returns the swap venue identifier (e.g., "osmosis-poolmanager")
-	GetSwapVenueName() string
+// buildNestedForwardMemo builds a nested PFM forward structure for multi-hop forwarding.
+// The hops slice should contain all hops except the first one (which is handled separately).
+// Uses "pfm" as receiver for intermediate hops (security feature), only the final hop
+// uses the actual finalReceiver address.
+func BuildNestedForwardMemo(hops []IBCHop, finalReceiver string) *PFMForward {
+	if len(hops) == 0 {
+		return nil
+	}
+
+	// Build from the last hop backwards
+	var current *PFMForward
+
+	for i := len(hops) - 1; i >= 0; i-- {
+		hop := hops[i]
+
+		// Determine receiver for this hop:
+		// - Last hop (i == len-1): use final receiver address
+		// - Other hops: use "pfm" for intermediate chain security
+		receiver := PFMIntermediateReceiver
+		if i == len(hops)-1 {
+			receiver = finalReceiver
+		}
+
+		if current == nil {
+			// Last hop - no next
+			current = NewNestedForward(
+				hop.Channel,
+				hop.Port,
+				receiver,
+				DefaultRetries(),
+				hop.Timeout,
+				nil,
+			)
+		} else {
+			// Intermediate hop - chain to previous
+			current = NewNestedForward(
+				hop.Channel,
+				hop.Port,
+				receiver,
+				DefaultRetries(),
+				hop.Timeout,
+				NewPFMNextWithForward(current),
+			)
+		}
+	}
+
+	return current
+}
+
+// BuildSimpleForwardMemo creates a simple PFM forward memo (case 1 from doc.go).
+// This is a convenience method for non-swap forwarding.
+func BuildSimpleForwardMemo(channel, port, receiver string, timeout int64) (string, error) {
+	memo := NewForwardMemo(channel, port, receiver, DefaultRetries(), timeout)
+	return memo.ToJSON()
 }

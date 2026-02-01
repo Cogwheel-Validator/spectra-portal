@@ -1,4 +1,4 @@
-package router
+package osmosis
 
 import (
 	"os"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/rs/zerolog"
 
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
 	sqsquery "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/sqs_query"
 )
 
@@ -16,32 +18,36 @@ func init() {
 	log = zerolog.New(out).With().Timestamp().Str("component", "osmosis-broker").Logger()
 }
 
-// This is an adapter for any Osmosis based broker that implements the BrokerClient interface
-
-// OsmosisSqsBroker implements BrokerClient for Osmosis using the SQS API
-type OsmosisSqsBroker struct {
-	client *sqsquery.SqsQueryClient
+// SqsBroker implements brokers.BrokerClient for Osmosis using the SQS API
+type SqsBroker struct {
+	client               *sqsquery.SqsQueryClient
+	memoBuilder          *MemoBuilder
+	smartContractBuilder *SmartContractBuilder
 }
 
-// NewOsmosisSqsBroker creates a new Osmosis SQS broker client with a single endpoint
-func NewOsmosisSqsBroker(sqsApiUrl string) *OsmosisSqsBroker {
-	return &OsmosisSqsBroker{
-		client: sqsquery.NewSqsQueryClient(sqsApiUrl),
+// NewSqsBroker creates a new Osmosis SQS broker client with a single endpoint
+func NewSqsBroker(sqsApiUrl, contractAddress string) *SqsBroker {
+	return &SqsBroker{
+		client:               sqsquery.NewSqsQueryClient(sqsApiUrl),
+		memoBuilder:          NewMemoBuilder(contractAddress),
+		smartContractBuilder: NewSmartContractBuilder(contractAddress),
 	}
 }
 
-// NewOsmosisSqsBrokerWithFailover creates a new Osmosis SQS broker client with failover support
-func NewOsmosisSqsBrokerWithFailover(primaryURL string, backupURLs []string) *OsmosisSqsBroker {
-	return &OsmosisSqsBroker{
-		client: sqsquery.NewSqsQueryClientWithFailover(primaryURL, backupURLs, sqsquery.DefaultFailoverConfig()),
+// NewSqsBrokerWithFailover creates a new Osmosis SQS broker client with failover support
+func NewSqsBrokerWithFailover(primaryURL string, backupURLs []string, contractAddress string) *SqsBroker {
+	return &SqsBroker{
+		client:               sqsquery.NewSqsQueryClientWithFailover(primaryURL, backupURLs, sqsquery.DefaultFailoverConfig()),
+		memoBuilder:          NewMemoBuilder(contractAddress),
+		smartContractBuilder: NewSmartContractBuilder(contractAddress),
 	}
 }
 
-// QuerySwap implements BrokerClient interface for Osmosis SQS
-func (o *OsmosisSqsBroker) QuerySwap(
+// QuerySwap implements brokers.BrokerClient interface for Osmosis SQS
+func (o *SqsBroker) QuerySwap(
 	tokenInDenom, tokenInAmount, tokenOutDenom string,
 	singleRoute *bool,
-) (*SwapResult, error) {
+) (*brokers.SwapResult, error) {
 	log.Debug().
 		Str("tokenIn", tokenInDenom).
 		Str("amount", tokenInAmount).
@@ -74,11 +80,11 @@ func (o *OsmosisSqsBroker) QuerySwap(
 		Str("priceImpact", response.PriceImpact).
 		Msg("SQS query successful")
 
-	// Convert SQS response to typed OsmosisRouteData
+	// Convert SQS response to typed RouteData
 	routeData := ConvertSqsResponseToRouteData(response)
 
 	// Convert SQS response to standardized SwapResult
-	return &SwapResult{
+	return &brokers.SwapResult{
 		AmountIn:     response.AmountIn.Amount,
 		AmountOut:    response.AmountOut,
 		PriceImpact:  response.PriceImpact,
@@ -88,12 +94,17 @@ func (o *OsmosisSqsBroker) QuerySwap(
 }
 
 // GetBrokerType returns the broker type identifier
-func (o *OsmosisSqsBroker) GetBrokerType() string {
+func (o *SqsBroker) GetBrokerType() string {
 	return "osmosis-sqs"
 }
 
+// GetMemoBuilder returns the memo builder for Osmosis
+func (o *SqsBroker) GetMemoBuilder() ibcmemo.MemoBuilder {
+	return o.memoBuilder
+}
+
 // Close cleans up resources used by the broker client
-func (o *OsmosisSqsBroker) Close() {
+func (o *SqsBroker) Close() {
 	if o.client != nil {
 		o.client.Close()
 	}
