@@ -1,16 +1,20 @@
 package models
 
+import ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
+
 // RouteRequest - POST body
 type RouteRequest struct {
-	ChainFrom       string  `json:"chain_from"`             // e.g., "juno"
-	TokenFromDenom  string  `json:"token_from_denom"`       // e.g., "ujuno"
-	AmountIn        string  `json:"amount_in"`              // e.g., "1000000"
-	ChainTo         string  `json:"chain_to"`               // e.g., "cosmoshub"
-	TokenToDenom    string  `json:"token_to_denom"`         // e.g., "uatom"
-	SenderAddress   string  `json:"sender_address"`         // For validation
-	ReceiverAddress string  `json:"receiver_address"`       // e.g., "cosmos1234567890"
-	SingleRoute     *bool   `json:"single_route,omitempty"` // if true, only return a single route, if false, return all possible routes
-	SlippageBps     *uint32 `json:"slippage_bps,omitempty"`
+	ChainFrom       string // e.g., "juno"
+	TokenFromDenom  string // e.g., "ujuno"
+	AmountIn        string // e.g., "1000000"
+	ChainTo         string // e.g., "cosmoshub"
+	TokenToDenom    string // e.g., "uatom"
+	SenderAddress   string // For validation
+	ReceiverAddress string // e.g., "cosmos1234567890"
+	// If true the route will query the sqs api with single route on.
+	// If false the route will query the data with the single route off and provide the best trade route.
+	SmartRoute  *bool
+	SlippageBps *uint32
 }
 
 // TokenMapping represents how a token transforms between chains
@@ -59,16 +63,16 @@ type IndirectRoute struct {
 
 // BrokerRoute represents a route that requires a swap on a broker chain.
 // Supports various scenarios:
-// - Same-chain swap: InboundLeg=nil, OutboundLegs=[] (e.g., osmosis ATOM -> osmosis OSMO)
-// - Swap from broker: InboundLeg=nil (e.g., osmosis USDC -> juno JUNO)
-// - Standard 3-chain: InboundLeg set, len(OutboundLegs)=1
-// - Multi-hop outbound: InboundLeg set, len(OutboundLegs)>1 (e.g., cosmos ATOM -> swap -> noble USDC -> juno USDC)
+// - Same-chain swap: InboundLegs=nil, OutboundLegs=[] (e.g., osmosis ATOM -> osmosis OSMO)
+// - Swap from broker: InboundLegs=nil (e.g., osmosis USDC -> juno JUNO)
+// - Standard 3-chain: InboundLegs set, len(OutboundLegs)=1
+// - Multi-hop outbound: InboundLegs>1 set, len(OutboundLegs)>1 (e.g., cosmos ATOM -> swap -> noble USDC -> juno USDC)
 type BrokerRoute struct {
 	// Chain IDs in order (all chains involved)
 	Path []string `json:"path"`
 
 	// IBC transfer to reach broker (nil if starting from broker)
-	InboundLeg *IBCLeg `json:"inbound_leg,omitempty"`
+	InboundLegs []*IBCLeg `json:"inbound_legs,omitempty"`
 
 	// Swap on broker chain
 	Swap *SwapQuote `json:"swap"`
@@ -88,15 +92,18 @@ type BrokerRoute struct {
 type BrokerExecutionData struct {
 	// The IBC memo to use with the inbound MsgTransfer
 	// This contains the wasm swap_and_action or PFM forward instructions
-	Memo string `json:"memo"`
+	Memo *string `json:"memo"`
+
+	// The smart contract data, if the start point is a broker chain and it support this type of execution
+	SmartContractData *ibcmemo.WasmMemo
 
 	// Receiver address for the inbound MsgTransfer
 	// For wasm swaps, this is the entry point contract address
-	IBCReceiver string `json:"ibc_receiver"`
+	IBCReceiver *string `json:"ibc_receiver"`
 
 	// Recovery/refund address on the broker chain
 	// If the swap or forward fails, funds are sent here
-	RecoverAddress string `json:"recover_address"`
+	RecoverAddress *string `json:"recover_address"`
 
 	// Minimum output amount after slippage (default 1% slippage)
 	MinOutputAmount string `json:"min_output_amount"`

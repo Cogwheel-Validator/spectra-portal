@@ -6,6 +6,8 @@ import (
 	"time"
 
 	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
 	"github.com/rs/zerolog"
 )
 
@@ -16,42 +18,19 @@ func init() {
 	pathfinderLog = zerolog.New(out).With().Timestamp().Str("component", "pathfinder").Logger()
 }
 
-// BrokerClient is an interface for querying different DEX protocols on broker chains
-// Each broker (Osmosis, Neutron, etc.) implements this interface with their specific API
-type BrokerClient interface {
-	// QuerySwap queries the broker DEX for a swap route and returns standardized swap information
-	// tokenInDenom: the denom of the input token on the broker chain (may be IBC denom)
-	// tokenInAmount: the amount of input tokens
-	// tokenOutDenom: the denom of the desired output token on the broker chain (may be IBC denom)
-	// singleRoute: if true, only return a single route, if false, return all possible routes
-	QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom string, singleRoute *bool) (*SwapResult, error)
-
-	// GetBrokerType returns the type of broker (e.g., "osmosis-sqs", "astroport", etc.)
-	GetBrokerType() string
-}
-
-// SwapResult contains standardized swap information from any broker DEX
-type SwapResult struct {
-	AmountIn     string      // Actual amount in (after any adjustments)
-	AmountOut    string      // Expected amount out
-	PriceImpact  string      // Price impact as string (e.g., "0.02" for 2%)
-	EffectiveFee string      // Effective fee as string
-	RouteData    interface{} // Broker-specific route data (pools, hops, etc.)
-}
-
 // Pathfinder orchestrates route finding and integrates with broker DEX APIs
 type Pathfinder struct {
-	chainsMap        map[string]PathfinderChain // mapped chainId -> PathfinderChain
-	routeIndex       *RouteIndex                // routeIndex from which all routes are found
-	brokerClients    map[string]BrokerClient    // mapped brokerId -> broker client interface
-	denomResolver    *DenomResolver             // denomResolver for resolving denoms across chains
-	addressConverter *AddressConverter          // addressConverter for converting addresses across chains
-	maxRetries       int                        // maximum number of retries for broker queries
-	retryDelay       time.Duration              // delay between retries for broker queries
+	chainsMap        map[string]PathfinderChain      // mapped chainId -> PathfinderChain
+	routeIndex       *RouteIndex                     // routeIndex from which all routes are found
+	brokerClients    map[string]brokers.BrokerClient // mapped brokerId -> broker client interface
+	denomResolver    *DenomResolver                  // denomResolver for resolving denoms across chains
+	addressConverter *AddressConverter               // addressConverter for converting addresses across chains
+	maxRetries       int                             // maximum number of retries for broker queries
+	retryDelay       time.Duration                   // delay between retries for broker queries
 }
 
 // NewPathfinder creates a new Pathfinder with the given route index and broker clients
-func NewPathfinder(chains []PathfinderChain, routeIndex *RouteIndex, brokerClients map[string]BrokerClient) *Pathfinder {
+func NewPathfinder(chains []PathfinderChain, routeIndex *RouteIndex, brokerClients map[string]brokers.BrokerClient) *Pathfinder {
 	chainMap := make(map[string]PathfinderChain, len(chains))
 	for _, chain := range chains {
 		chainMap[chain.Id] = chain
@@ -341,14 +320,14 @@ func (s *Pathfinder) buildBrokerSwapResponse(
 
 	// Query with retry logic
 	swapResult, err := s.queryBrokerWithRetry(
-		brokerClient, req.AmountIn, tokenInDenomOnBroker, tokenOutDenomOnBroker, req.SingleRoute)
+		brokerClient, req.AmountIn, tokenInDenomOnBroker, tokenOutDenomOnBroker, req.SmartRoute)
 	if err != nil {
 		pathfinderLog.Error().Err(err).Msg("Broker query failed")
 		return models.RouteResponse{}, fmt.Errorf("broker query failed: %w", err)
 	}
 
 	// Build the broker swap route information
-	brokerRoute, err := s.buildBrokerRoute(req, hopInfo, swapResult, brokerClient.GetBrokerType())
+	brokerRoute, err := s.buildBrokerRoute(req, hopInfo, swapResult, brokerClient)
 	if err != nil {
 		return models.RouteResponse{}, fmt.Errorf("failed to build broker route: %w", err)
 	}
@@ -361,7 +340,7 @@ func (s *Pathfinder) buildBrokerSwapResponse(
 }
 
 // getMapKeys returns the keys of a map as a slice
-func getMapKeys(m map[string]BrokerClient) []string {
+func getMapKeys(m map[string]brokers.BrokerClient) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -371,12 +350,12 @@ func getMapKeys(m map[string]BrokerClient) []string {
 
 // queryBrokerWithRetry queries any broker DEX with exponential backoff retry logic
 func (s *Pathfinder) queryBrokerWithRetry(
-	client BrokerClient,
+	client brokers.BrokerClient,
 	amountIn string,
 	tokenInDenom string,
 	tokenOutDenom string,
 	singleRoute *bool,
-) (*SwapResult, error) {
+) (*brokers.SwapResult, error) {
 	var lastErr error
 	delay := s.retryDelay
 
@@ -407,8 +386,8 @@ func (s *Pathfinder) queryBrokerWithRetry(
 func (s *Pathfinder) buildBrokerRoute(
 	req models.RouteRequest,
 	hopInfo *MultiHopInfo,
-	swapResult *SwapResult,
-	brokerType string,
+	swapResult *brokers.SwapResult,
+	brokerClient brokers.BrokerClient,
 ) (*models.BrokerRoute, error) {
 	// Validate hopInfo has required fields
 	if hopInfo == nil {
@@ -435,10 +414,13 @@ func (s *Pathfinder) buildBrokerRoute(
 		return nil, fmt.Errorf("slippage bps must be less than 10000")
 	}
 
-	// Get broker chain info for ibc-hooks contract
+	// Get broker chain info and memo builder
 	brokerChain, brokerExists := s.chainsMap[hopInfo.BrokerChainId]
+	memoBuilder := brokerClient.GetMemoBuilder()
+	brokerType := brokerClient.GetBrokerType()
 
 	// Build path based on route type
+	// Include intermediate chains in the path if there are multi-hop inbound routes
 	var path []string
 	if hopInfo.SourceIsBroker && hopInfo.SwapOnly {
 		// Same-chain swap
@@ -447,15 +429,17 @@ func (s *Pathfinder) buildBrokerRoute(
 		// Source is broker, has outbound
 		path = []string{hopInfo.BrokerChainId, req.ChainTo}
 	} else if hopInfo.SwapOnly {
-		// Dest is broker, has inbound
-		path = []string{req.ChainFrom, hopInfo.BrokerChainId}
+		// Dest is broker, has inbound (possibly multi-hop)
+		path = append([]string{}, hopInfo.InboundPath...)
+		path = append(path, hopInfo.BrokerChainId)
 	} else {
-		// Full route
-		path = []string{req.ChainFrom, hopInfo.BrokerChainId, req.ChainTo}
+		// Full route (possibly with multi-hop inbound)
+		path = append([]string{}, hopInfo.InboundPath...)
+		path = append(path, hopInfo.BrokerChainId, req.ChainTo)
 	}
 
-	// Build inbound leg (nil if source is broker)
-	var inboundLeg *models.IBCLeg
+	// Build inbound legs (nil if source is broker)
+	var inboundLegs []*models.IBCLeg
 	var tokenInOnBroker *models.TokenMapping
 
 	if hopInfo.SourceIsBroker {
@@ -466,30 +450,85 @@ func (s *Pathfinder) buildBrokerRoute(
 			OriginChain: hopInfo.TokenIn.OriginChain,
 			IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, hopInfo.BrokerChainId),
 		}
-	} else {
-		// Build inbound leg
-		inboundTokenMapping := &models.TokenMapping{
-			ChainDenom:  hopInfo.TokenIn.ChainDenom,
-			BaseDenom:   hopInfo.TokenIn.BaseDenom,
-			OriginChain: hopInfo.TokenIn.OriginChain,
-			IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, req.ChainFrom),
+	} else if len(hopInfo.InboundRoutes) > 0 {
+		// Build inbound legs - can be single or multi-hop
+		inboundLegs = make([]*models.IBCLeg, 0, len(hopInfo.InboundRoutes))
+
+		// Track the current token as it travels through the hops
+		currentTokenDenom := hopInfo.TokenIn.ChainDenom
+		currentTokenInfo := hopInfo.TokenIn
+
+		for i, route := range hopInfo.InboundRoutes {
+			fromChain := hopInfo.InboundPath[i]
+
+			// Determine the destination chain for this hop
+			var toChain string
+			if i < len(hopInfo.InboundRoutes)-1 {
+				// Intermediate hop - destination is next chain in path
+				toChain = hopInfo.InboundPath[i+1]
+			} else {
+				// Last hop - destination is broker
+				toChain = hopInfo.BrokerChainId
+			}
+
+			// Get the token info for this hop
+			var legTokenMapping *models.TokenMapping
+			if i == 0 {
+				// First hop uses the original token from source
+				legTokenMapping = &models.TokenMapping{
+					ChainDenom:  currentTokenDenom,
+					BaseDenom:   hopInfo.TokenIn.BaseDenom,
+					OriginChain: hopInfo.TokenIn.OriginChain,
+					IsNative:    s.denomResolver.IsTokenNativeToChain(currentTokenInfo, fromChain),
+				}
+			} else {
+				// Subsequent hops use intermediate token info
+				intToken := hopInfo.InboundIntermediateTokens[i-1]
+				legTokenMapping = &models.TokenMapping{
+					ChainDenom:  intToken.ChainDenom,
+					BaseDenom:   intToken.BaseDenom,
+					OriginChain: intToken.OriginChain,
+					IsNative:    s.denomResolver.IsTokenNativeToChain(intToken, fromChain),
+				}
+				currentTokenInfo = intToken
+			}
+
+			leg := &models.IBCLeg{
+				FromChain: fromChain,
+				ToChain:   toChain,
+				Channel:   route.ChannelId,
+				Port:      route.PortId,
+				Token:     legTokenMapping,
+				Amount:    req.AmountIn, // Amount stays the same through pure transfers
+			}
+			inboundLegs = append(inboundLegs, leg)
+
+			// Update the token denom for the next hop (it becomes an IBC denom)
+			if i == 0 {
+				currentTokenDenom = hopInfo.TokenIn.IbcDenom
+			} else if i < len(hopInfo.InboundIntermediateTokens) {
+				currentTokenDenom = hopInfo.InboundIntermediateTokens[i-1].IbcDenom
+			}
 		}
 
-		inboundLeg = &models.IBCLeg{
-			FromChain: req.ChainFrom,
-			ToChain:   hopInfo.BrokerChainId,
-			Channel:   hopInfo.InboundRoute.ChannelId,
-			Port:      hopInfo.InboundRoute.PortId,
-			Token:     inboundTokenMapping,
-			Amount:    req.AmountIn,
-		}
-
-		// Token on broker after IBC transfer
-		tokenInOnBroker = &models.TokenMapping{
-			ChainDenom:  hopInfo.TokenIn.IbcDenom,
-			BaseDenom:   hopInfo.TokenIn.BaseDenom,
-			OriginChain: hopInfo.TokenIn.OriginChain,
-			IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, hopInfo.BrokerChainId),
+		// Token on broker after all IBC transfers
+		// Use the last intermediate token's IbcDenom, or the TokenIn.IbcDenom if single hop
+		if len(hopInfo.InboundIntermediateTokens) > 0 {
+			lastIntToken := hopInfo.InboundIntermediateTokens[len(hopInfo.InboundIntermediateTokens)-1]
+			tokenInOnBroker = &models.TokenMapping{
+				ChainDenom:  lastIntToken.IbcDenom,
+				BaseDenom:   hopInfo.TokenIn.BaseDenom,
+				OriginChain: hopInfo.TokenIn.OriginChain,
+				IsNative:    s.denomResolver.IsTokenNativeToChain(lastIntToken, hopInfo.BrokerChainId),
+			}
+		} else {
+			// Single hop inbound
+			tokenInOnBroker = &models.TokenMapping{
+				ChainDenom:  hopInfo.TokenIn.IbcDenom,
+				BaseDenom:   hopInfo.TokenIn.BaseDenom,
+				OriginChain: hopInfo.TokenIn.OriginChain,
+				IsNative:    s.denomResolver.IsTokenNativeToChain(hopInfo.TokenIn, hopInfo.BrokerChainId),
+			}
 		}
 	}
 
@@ -563,66 +602,57 @@ func (s *Pathfinder) buildBrokerRoute(
 		}
 	}
 
-	// Build execution data based on route type
+	// Build execution data based on route type and SmartRoute flag
+	// SmartRoute controls whether to generate execution data:
+	// - nil/false: Manual route - just return route info, no execution data
+	// - true: Smart route - generate memo (IBC) or smart contract data (direct)
 	var execution *models.BrokerExecutionData
 	var err error
 
-	if hopInfo.SourceIsBroker && hopInfo.SwapOnly {
-		// Same-chain swap - just need swap data, no IBC memo
-		pathfinderLog.Debug().Msg("Building same-chain swap route (no IBC)")
-		// Calculate minimum output with slippage
-		if req.SlippageBps != nil {
-			calculated, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
-			if err != nil {
-				// If for some reason it does fail at least try to return some value
-				pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
-			}
-			// If there is a slippage, overwrite the AmountOut value with the minimum output
-			swapResult.AmountOut = calculated
-		}
-		execution = &models.BrokerExecutionData{
-			UsesWasm:        false,
-			Description:     "Same-chain swap on " + hopInfo.BrokerChainId,
-			MinOutputAmount: swapResult.AmountOut,
-		}
-	} else if hopInfo.SourceIsBroker {
-		// Source is broker - need swap + outbound IBC
-		pathfinderLog.Debug().Msg("Building broker-as-source route (swap + outbound)")
-		// For now, use swap-only execution since no ibc-hooks needed when starting from broker
+	// Only build execution data if SmartRoute is explicitly true
+	if req.SmartRoute != nil && *req.SmartRoute {
+		smartContractBuilder := brokerClient.GetSmartContractBuilder()
 
-		// Calculate minimum output with slippage
-		if req.SlippageBps != nil {
-			calculated, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+		if hopInfo.SourceIsBroker && hopInfo.SwapOnly {
+			// Same-chain swap: Source == Broker == Destination
+			// Use smart contract data (direct contract call, no IBC)
+			pathfinderLog.Debug().Msg("Building same-chain swap route (smart contract)")
+			execution, err = s.buildSmartContractSwapExecution(req, hopInfo, swapResult, smartContractBuilder, brokerChain, brokerExists)
 			if err != nil {
-				pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
+				pathfinderLog.Warn().Err(err).Msg("Failed to build smart contract data, route still usable")
 			}
-			// If there is a slippage, overwrite the AmountOut value with the minimum output
-			swapResult.AmountOut = calculated
-		}
-		execution = &models.BrokerExecutionData{
-			UsesWasm:        false,
-			Description:     "Swap on " + hopInfo.BrokerChainId + " then IBC to " + req.ChainTo,
-			MinOutputAmount: swapResult.AmountOut,
-		}
-	} else if hopInfo.SwapOnly {
-		// Destination is broker - need inbound IBC + swap
-		pathfinderLog.Debug().Msg("Building swap-only route (inbound + swap)")
-		execution, err = s.buildSwapOnlyExecution(req, hopInfo, swapResult, brokerChain, brokerExists)
-		if err != nil {
-			pathfinderLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
+		} else if hopInfo.SourceIsBroker {
+			// Source is broker, dest is not: swap + outbound IBC
+			// Use smart contract data with IBC forward built-in
+			pathfinderLog.Debug().Msg("Building broker-as-source route (smart contract + IBC forward)")
+			execution, err = s.buildSmartContractSwapAndForwardExecution(req, hopInfo, swapResult, outboundLegs, smartContractBuilder, brokerChain, brokerExists)
+			if err != nil {
+				pathfinderLog.Warn().Err(err).Msg("Failed to build smart contract data, route still usable")
+			}
+		} else if hopInfo.SwapOnly {
+			// Source is not broker, dest is broker: inbound IBC + swap
+			// Use IBC memo (ibc-hooks will trigger swap)
+			pathfinderLog.Debug().Msg("Building swap-only route (IBC memo)")
+			execution, err = s.buildSwapOnlyExecution(req, hopInfo, swapResult, memoBuilder, brokerChain, brokerExists)
+			if err != nil {
+				pathfinderLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
+			}
+		} else {
+			// Full route: source -> broker -> dest (all different chains)
+			// Use IBC memo (ibc-hooks will trigger swap + forward)
+			pathfinderLog.Debug().Int("outboundHops", len(outboundLegs)).Msg("Building full broker route (IBC memo)")
+			execution, err = s.buildSwapAndForwardExecution(req, hopInfo, swapResult, outboundLegs, memoBuilder, brokerExists)
+			if err != nil {
+				pathfinderLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
+			}
 		}
 	} else {
-		// Full route - need inbound IBC + swap + outbound IBC
-		pathfinderLog.Debug().Int("outboundHops", len(outboundLegs)).Msg("Building full broker route (inbound + swap + outbound)")
-		execution, err = s.buildSwapAndForwardExecution(req, hopInfo, swapResult, outboundLegs, brokerChain, brokerExists)
-		if err != nil {
-			pathfinderLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
-		}
+		pathfinderLog.Debug().Msg("Manual route - skipping execution data generation")
 	}
 
 	return &models.BrokerRoute{
 		Path:                path,
-		InboundLeg:          inboundLeg,
+		InboundLegs:         inboundLegs,
 		Swap:                swap,
 		OutboundLegs:        outboundLegs,
 		OutboundSupportsPFM: supportsPFM,
@@ -631,10 +661,12 @@ func (s *Pathfinder) buildBrokerRoute(
 }
 
 // buildSwapOnlyExecution builds execution data for swap-only routes (destination is broker)
+// Supports both single-hop and multi-hop inbound paths
 func (s *Pathfinder) buildSwapOnlyExecution(
 	req models.RouteRequest,
 	hopInfo *MultiHopInfo,
-	swapResult *SwapResult,
+	swapResult *brokers.SwapResult,
+	memoBuilder ibcmemo.MemoBuilder,
 	brokerChain PathfinderChain,
 	brokerExists bool,
 ) (*models.BrokerExecutionData, error) {
@@ -643,7 +675,8 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 	}
 	// Check if there is IBC hook, only needed for now but when more "Broker Chains" are added
 	// some of these checks will need to be modified
-	if brokerChain.IBCHooksContract == "" {
+	contractAddress := memoBuilder.GetContractAddress()
+	if contractAddress == "" {
 		return nil, fmt.Errorf("ibc-hooks contract not configured for broker %s", hopInfo.BrokerChainId)
 	}
 
@@ -654,60 +687,94 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 	}
 
 	// Calculate minimum output with slippage
+	minOutput := swapResult.AmountOut
 	if req.SlippageBps != nil {
-		calculated, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
-		if err != nil {
+		calculated, calcErr := brokers.CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+		if calcErr != nil {
 			// If for some reason it does fail at least try to return some value
-			pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
+			pathfinderLog.Warn().Err(calcErr).Msg("Failed to calculate min output, using original amount")
+		} else {
+			minOutput = calculated
 		}
-		// If there is a slippage, overwrite the AmountOut value with the minimum output
-		swapResult.AmountOut = calculated
 	}
 
-	// Get route data
-	routeData, ok := swapResult.RouteData.(*OsmosisRouteData)
-	if !ok {
-		return nil, fmt.Errorf("invalid route data type")
+	// Determine token in denom on broker (after all inbound IBC transfers)
+	var tokenInDenomOnBroker string
+	if len(hopInfo.InboundIntermediateTokens) > 0 {
+		// Multi-hop: use the IBC denom from the last intermediate token
+		lastIntToken := hopInfo.InboundIntermediateTokens[len(hopInfo.InboundIntermediateTokens)-1]
+		tokenInDenomOnBroker = lastIntToken.IbcDenom
+	} else {
+		// Single hop: use the direct IBC denom
+		tokenInDenomOnBroker = hopInfo.TokenIn.IbcDenom
 	}
 
-	// Build wasm memo
-	memoBuilder := NewWasmMemoBuilder(brokerChain.IBCHooksContract)
-	memo, err := memoBuilder.BuildSwapMemo(SwapMemoParams{
-		TokenInDenom:     hopInfo.TokenIn.IbcDenom,
-		TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
-		MinOutputAmount:  swapResult.AmountOut,
-		RouteData:        routeData,
-		TimeoutTimestamp: DefaultTimeoutTimestamp(),
-		RecoverAddress:   addresses.BrokerAddress,
-		PostSwapAction: PostSwapAction{
-			TransferTo: addresses.DestinationAddress, // For swap-only, receiver is on broker chain
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to build wasm memo: %w", err)
+	var memo string
+
+	// Check if we need multi-hop inbound (Forward + Swap)
+	if len(hopInfo.InboundRoutes) > 1 {
+		// Multi-hop inbound: build Forward + Swap memo
+		inboundHops := s.buildInboundHops(hopInfo)
+
+		memo, err = memoBuilder.BuildForwardSwapMemo(ibcmemo.ForwardSwapParams{
+			InboundHops: inboundHops,
+			SwapParams: ibcmemo.SwapAndForwardParams{
+				SwapMemoParams: ibcmemo.SwapMemoParams{
+					TokenInDenom:     tokenInDenomOnBroker,
+					TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
+					MinOutputAmount:  minOutput,
+					RouteData:        swapResult.RouteData,
+					TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
+					RecoverAddress:   addresses.BrokerAddress,
+					ReceiverAddress:  addresses.DestinationAddress,
+				},
+				// For swap-only with multi-hop inbound, there's no forward after swap
+				SourceChannel:   "", // No forward after swap
+				ForwardReceiver: addresses.DestinationAddress,
+				ForwardMemo:     "",
+			},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to build forward+swap memo: %w", err)
+		}
+	} else {
+		// Single-hop inbound: build simple Swap memo
+		memo, err = memoBuilder.BuildSwapMemo(ibcmemo.SwapMemoParams{
+			TokenInDenom:     tokenInDenomOnBroker,
+			TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
+			MinOutputAmount:  minOutput,
+			RouteData:        swapResult.RouteData,
+			TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
+			RecoverAddress:   addresses.BrokerAddress,
+			ReceiverAddress:  addresses.DestinationAddress, // For swap-only, receiver is on broker chain
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to build wasm memo: %w", err)
+		}
 	}
 
 	return &models.BrokerExecutionData{
-		Memo:            memo,
-		IBCReceiver:     brokerChain.IBCHooksContract,
-		RecoverAddress:  addresses.BrokerAddress,
-		MinOutputAmount: swapResult.AmountOut,
+		Memo:            &memo,
+		IBCReceiver:     &contractAddress,
+		RecoverAddress:  &addresses.BrokerAddress,
+		MinOutputAmount: minOutput,
 		UsesWasm:        true,
 		Description:     fmt.Sprintf("IBC transfer with swap on %s", hopInfo.BrokerChainId),
 	}, nil
 }
 
 // buildSwapAndForwardExecution builds execution data for swap+forward routes
-// Supports multi-hop outbound via nested PFM memos
+// Supports both single-hop and multi-hop inbound/outbound via nested PFM memos
 func (s *Pathfinder) buildSwapAndForwardExecution(
 	req models.RouteRequest,
 	hopInfo *MultiHopInfo,
-	swapResult *SwapResult,
+	swapResult *brokers.SwapResult,
 	outboundLegs []*models.IBCLeg,
-	brokerChain PathfinderChain,
+	memoBuilder ibcmemo.MemoBuilder,
 	brokerExists bool,
 ) (*models.BrokerExecutionData, error) {
-	if !brokerExists || brokerChain.IBCHooksContract == "" {
+	contractAddress := memoBuilder.GetContractAddress()
+	if !brokerExists || contractAddress == "" {
 		return nil, fmt.Errorf("ibc-hooks contract not configured for broker")
 	}
 
@@ -722,29 +789,26 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 	}
 
 	// Calculate minimum output with slippage
+	minOutput := swapResult.AmountOut
 	if req.SlippageBps != nil {
-		calculated, err := CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
-		if err != nil {
+		calculated, calcErr := brokers.CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+		if calcErr != nil {
 			// If for some reason it does fail at least try to return some value
-			pathfinderLog.Warn().Err(err).Msg("Failed to calculate min output, using original amount")
+			pathfinderLog.Warn().Err(calcErr).Msg("Failed to calculate min output, using original amount")
+		} else {
+			minOutput = calculated
 		}
-		// If there is a slippage, overwrite the AmountOut value with the minimum output
-		swapResult.AmountOut = calculated
 	}
 
-	// Get route data
-	routeData, ok := swapResult.RouteData.(*OsmosisRouteData)
-	if !ok {
-		return nil, fmt.Errorf("invalid route data type")
-	}
-
-	// Build the PFM forward memo for hops after the first one (if any)
-	// For multi-hop: wasm swap_and_action → ibc_transfer with nested PFM forward
-	forwardMemo := ""
-	if len(outboundLegs) > 1 {
-		// Build nested forward memo from the last hop backwards
-		forwardMemo = s.buildNestedForwardMemo(outboundLegs[1:], req.ReceiverAddress)
-		pathfinderLog.Debug().Str("forwardMemo", forwardMemo).Msg("Built nested forward memo for multi-hop")
+	// Determine token in denom on broker (after all inbound IBC transfers)
+	var tokenInDenomOnBroker string
+	if len(hopInfo.InboundIntermediateTokens) > 0 {
+		// Multi-hop inbound: use the IBC denom from the last intermediate token
+		lastIntToken := hopInfo.InboundIntermediateTokens[len(hopInfo.InboundIntermediateTokens)-1]
+		tokenInDenomOnBroker = lastIntToken.IbcDenom
+	} else {
+		// Single hop inbound: use the direct IBC denom
+		tokenInDenomOnBroker = hopInfo.TokenIn.IbcDenom
 	}
 
 	// Determine the receiver for the first IBC transfer (after swap)
@@ -754,38 +818,110 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 		// For multi-hop, the receiver on the first intermediate chain
 		// We need to derive the address for the intermediate chain
 		intermediateChain := outboundLegs[0].ToChain
-		intermediateAddr, err := s.addressConverter.ConvertAddress(req.ReceiverAddress, intermediateChain)
-		if err != nil {
+		intermediateAddr, addrErr := s.addressConverter.ConvertAddress(req.ReceiverAddress, intermediateChain)
+		if addrErr != nil {
 			// Fallback to destination address (PFM will use it anyway)
-			pathfinderLog.Warn().Err(err).Str("chain", intermediateChain).Msg("Failed to derive intermediate address")
+			pathfinderLog.Warn().Err(addrErr).Str("chain", intermediateChain).Msg("Failed to derive intermediate address")
 			intermediateAddr = addresses.DestinationAddress
 		}
 		firstHopReceiver = intermediateAddr
 	}
 
-	// Build wasm memo with IBC forwarding
-	memoBuilder := NewWasmMemoBuilder(brokerChain.IBCHooksContract)
-	memo, err := memoBuilder.BuildSwapMemo(SwapMemoParams{
-		TokenInDenom:     hopInfo.TokenIn.IbcDenom,
-		TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
-		MinOutputAmount:  swapResult.AmountOut,
-		RouteData:        routeData,
-		TimeoutTimestamp: DefaultTimeoutTimestamp(),
-		RecoverAddress:   addresses.BrokerAddress,
-		PostSwapAction: PostSwapAction{
-			IBCTransfer: &IBCTransferInfo{
-				SourceChannel: outboundLegs[0].Channel,
-				Receiver:      firstHopReceiver,
-				Memo:          forwardMemo,
-			},
-		},
-	})
+	// Build the memo based on inbound and outbound hop counts
+	var memo string
+	hasMultiHopInbound := len(hopInfo.InboundRoutes) > 1
+	hasMultiHopOutbound := len(outboundLegs) > 1
+
+	if hasMultiHopInbound {
+		// Multi-hop inbound: use ForwardSwap or ForwardSwapForward
+		inboundHops := s.buildInboundHops(hopInfo)
+
+		if hasMultiHopOutbound {
+			// Forward + Swap + MultiHop Forward (case 5.4)
+			outboundHops := s.buildOutboundHops(outboundLegs, addresses.DestinationAddress, req)
+
+			memo, err = memoBuilder.BuildForwardSwapForwardMemo(ibcmemo.ForwardSwapForwardParams{
+				InboundHops: inboundHops,
+				SwapParams: ibcmemo.SwapAndMultiHopParams{
+					SwapMemoParams: ibcmemo.SwapMemoParams{
+						TokenInDenom:     tokenInDenomOnBroker,
+						TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
+						MinOutputAmount:  minOutput,
+						RouteData:        swapResult.RouteData,
+						TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
+						RecoverAddress:   addresses.BrokerAddress,
+						ReceiverAddress:  firstHopReceiver,
+					},
+					OutboundHops:  outboundHops,
+					FinalReceiver: addresses.DestinationAddress,
+				},
+			})
+		} else {
+			// Forward + Swap + Single Forward (case 5.2)
+			memo, err = memoBuilder.BuildForwardSwapMemo(ibcmemo.ForwardSwapParams{
+				InboundHops: inboundHops,
+				SwapParams: ibcmemo.SwapAndForwardParams{
+					SwapMemoParams: ibcmemo.SwapMemoParams{
+						TokenInDenom:     tokenInDenomOnBroker,
+						TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
+						MinOutputAmount:  minOutput,
+						RouteData:        swapResult.RouteData,
+						TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
+						RecoverAddress:   addresses.BrokerAddress,
+						ReceiverAddress:  firstHopReceiver,
+					},
+					SourceChannel:   outboundLegs[0].Channel,
+					ForwardReceiver: firstHopReceiver,
+					ForwardMemo:     "",
+				},
+			})
+		}
+	} else {
+		// Single-hop inbound
+		if hasMultiHopOutbound {
+			// Swap + MultiHop Forward (case 5.3)
+			outboundHops := s.buildOutboundHops(outboundLegs, addresses.DestinationAddress, req)
+
+			memo, err = memoBuilder.BuildSwapAndMultiHopMemo(ibcmemo.SwapAndMultiHopParams{
+				SwapMemoParams: ibcmemo.SwapMemoParams{
+					TokenInDenom:     tokenInDenomOnBroker,
+					TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
+					MinOutputAmount:  minOutput,
+					RouteData:        swapResult.RouteData,
+					TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
+					RecoverAddress:   addresses.BrokerAddress,
+					ReceiverAddress:  firstHopReceiver,
+				},
+				OutboundHops:  outboundHops,
+				FinalReceiver: addresses.DestinationAddress,
+			})
+		} else {
+			// Swap + Single Forward (case 5.1)
+			memo, err = memoBuilder.BuildSwapAndForwardMemo(ibcmemo.SwapAndForwardParams{
+				SwapMemoParams: ibcmemo.SwapMemoParams{
+					TokenInDenom:     tokenInDenomOnBroker,
+					TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
+					MinOutputAmount:  minOutput,
+					RouteData:        swapResult.RouteData,
+					TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
+					RecoverAddress:   addresses.BrokerAddress,
+					ReceiverAddress:  firstHopReceiver,
+				},
+				SourceChannel:   outboundLegs[0].Channel,
+				ForwardReceiver: firstHopReceiver,
+				ForwardMemo:     "",
+			})
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to build wasm memo: %w", err)
 	}
 
 	// Build description
 	description := fmt.Sprintf("IBC transfer with swap on %s", hopInfo.BrokerChainId)
+	if hasMultiHopInbound {
+		description = fmt.Sprintf("Multi-hop IBC (%d hops) with swap on %s", len(hopInfo.InboundRoutes), hopInfo.BrokerChainId)
+	}
 	if len(outboundLegs) == 1 {
 		description += fmt.Sprintf(" and forward to %s", req.ChainTo)
 	} else {
@@ -793,48 +929,167 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 	}
 
 	return &models.BrokerExecutionData{
-		Memo:            memo,
-		IBCReceiver:     brokerChain.IBCHooksContract,
-		RecoverAddress:  addresses.BrokerAddress,
-		MinOutputAmount: swapResult.AmountOut,
+		Memo:            &memo,
+		IBCReceiver:     &contractAddress,
+		RecoverAddress:  &addresses.BrokerAddress,
+		MinOutputAmount: minOutput,
 		UsesWasm:        true,
 		Description:     description,
 	}, nil
 }
 
-// buildNestedForwardMemo builds a nested PFM forward memo for multi-hop forwarding
-// legs should be the remaining legs after the first hop (from intermediate chains onwards)
-func (s *Pathfinder) buildNestedForwardMemo(legs []*models.IBCLeg, finalReceiver string) string {
-	if len(legs) == 0 {
-		return ""
+// buildInboundHops converts inbound routes to IBCHop slice for memo building
+func (s *Pathfinder) buildInboundHops(hopInfo *MultiHopInfo) []ibcmemo.IBCHop {
+	hops := make([]ibcmemo.IBCHop, len(hopInfo.InboundRoutes))
+	for i, route := range hopInfo.InboundRoutes {
+		hops[i] = ibcmemo.IBCHop{
+			Channel: route.ChannelId,
+			Port:    route.PortId,
+			Timeout: ibcmemo.DefaultTimeoutTimestamp(),
+			// Receiver is set by the memo builder based on position (intermediate = "pfm", last = contract)
+		}
+	}
+	return hops
+}
+
+// buildSmartContractSwapExecution builds execution data for same-chain swap (source == broker == dest)
+// Returns smart contract data instead of IBC memo since no IBC transfer is needed.
+func (s *Pathfinder) buildSmartContractSwapExecution(
+	req models.RouteRequest,
+	hopInfo *MultiHopInfo,
+	swapResult *brokers.SwapResult,
+	scBuilder brokers.SmartContractBuilder,
+	brokerChain PathfinderChain,
+	brokerExists bool,
+) (*models.BrokerExecutionData, error) {
+	if !brokerExists {
+		return nil, fmt.Errorf("broker chain %s not found", hopInfo.BrokerChainId)
 	}
 
-	// Build from the last leg backwards
-	var buildForward func(legIndex int) string
-	buildForward = func(legIndex int) string {
-		// Safety check for bounds
-		if legIndex >= len(legs) {
-			pathfinderLog.Warn().Int("legIndex", legIndex).Int("legsLen", len(legs)).Msg("Index out of bounds in buildNestedForwardMemo")
-			return ""
+	// Calculate minimum output with slippage
+	minOutput := swapResult.AmountOut
+	if req.SlippageBps != nil {
+		calculated, calcErr := brokers.CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+		if calcErr != nil {
+			pathfinderLog.Warn().Err(calcErr).Msg("Failed to calculate min output, using original amount")
+		} else {
+			minOutput = calculated
 		}
-
-		leg := legs[legIndex]
-
-		if legIndex == len(legs)-1 {
-			// Last hop - receiver is the final destination
-			return fmt.Sprintf(`{"forward":{"receiver":"%s","port":"%s","channel":"%s"}}`,
-				finalReceiver, leg.Port, leg.Channel)
-		}
-
-		// Intermediate hop - need to nest the next forward
-		// For intermediate hops, receiver should be the address on the next chain
-		// but PFM will override this, so we use finalReceiver
-		nextMemo := buildForward(legIndex + 1)
-		return fmt.Sprintf(`{"forward":{"receiver":"%s","port":"%s","channel":"%s","next":%s}}`,
-			finalReceiver, leg.Port, leg.Channel, nextMemo)
 	}
 
-	return buildForward(0)
+	// Build smart contract data for same-chain swap
+	scData, err := scBuilder.BuildSwapAndTransfer(ibcmemo.SwapMemoParams{
+		TokenInDenom:     hopInfo.TokenIn.ChainDenom, // Native denom since source is broker
+		TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
+		MinOutputAmount:  minOutput,
+		RouteData:        swapResult.RouteData,
+		TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
+		RecoverAddress:   req.SenderAddress,   // On same chain, use sender as recover
+		ReceiverAddress:  req.ReceiverAddress, // Final destination on same chain
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to build smart contract data: %w", err)
+	}
+
+	return &models.BrokerExecutionData{
+		SmartContractData: scData,
+		MinOutputAmount:   minOutput,
+		UsesWasm:          true,
+		Description:       fmt.Sprintf("Smart contract swap on %s", hopInfo.BrokerChainId),
+	}, nil
+}
+
+// buildSmartContractSwapAndForwardExecution builds execution data for broker-as-source routes
+// (source == broker, dest != broker). Returns smart contract data with IBC forward built-in.
+func (s *Pathfinder) buildSmartContractSwapAndForwardExecution(
+	req models.RouteRequest,
+	hopInfo *MultiHopInfo,
+	swapResult *brokers.SwapResult,
+	outboundLegs []*models.IBCLeg,
+	scBuilder brokers.SmartContractBuilder,
+	brokerChain PathfinderChain,
+	brokerExists bool,
+) (*models.BrokerExecutionData, error) {
+	if !brokerExists {
+		return nil, fmt.Errorf("broker chain %s not found", hopInfo.BrokerChainId)
+	}
+	if len(outboundLegs) == 0 {
+		return nil, fmt.Errorf("no outbound legs for swap-and-forward")
+	}
+
+	// Calculate minimum output with slippage
+	minOutput := swapResult.AmountOut
+	if req.SlippageBps != nil {
+		calculated, calcErr := brokers.CalculateMinOutput(swapResult.AmountOut, *req.SlippageBps)
+		if calcErr != nil {
+			pathfinderLog.Warn().Err(calcErr).Msg("Failed to calculate min output, using original amount")
+		} else {
+			minOutput = calculated
+		}
+	}
+
+	// For single outbound hop, use simple swap+forward
+	// For multi-hop, we'd need PFM memo in the forward action
+	firstLeg := outboundLegs[0]
+	var forwardMemo string
+	if len(outboundLegs) > 1 {
+		// Build PFM memo for remaining hops
+		forwardMemo = s.generatePFMMemo(outboundLegs[1:], req.ReceiverAddress)
+	}
+
+	// Build smart contract data for swap + IBC forward
+	scData, err := scBuilder.BuildSwapAndForward(ibcmemo.SwapAndForwardParams{
+		SwapMemoParams: ibcmemo.SwapMemoParams{
+			TokenInDenom:     hopInfo.TokenIn.ChainDenom, // Native denom since source is broker
+			TokenOutDenom:    hopInfo.TokenOutOnBroker.ChainDenom,
+			MinOutputAmount:  minOutput,
+			RouteData:        swapResult.RouteData,
+			TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
+			RecoverAddress:   req.SenderAddress,   // On broker, use sender as recover
+			ReceiverAddress:  req.ReceiverAddress, // Used for forward action
+		},
+		SourceChannel:   firstLeg.Channel,
+		ForwardReceiver: req.ReceiverAddress,
+		ForwardMemo:     forwardMemo,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to build smart contract data: %w", err)
+	}
+
+	description := fmt.Sprintf("Smart contract swap on %s then IBC to %s", hopInfo.BrokerChainId, req.ChainTo)
+	if len(outboundLegs) > 1 {
+		description = fmt.Sprintf("Smart contract swap on %s then IBC forward via %d hops", hopInfo.BrokerChainId, len(outboundLegs))
+	}
+
+	return &models.BrokerExecutionData{
+		SmartContractData: scData,
+		MinOutputAmount:   minOutput,
+		UsesWasm:          true,
+		Description:       description,
+	}, nil
+}
+
+// buildOutboundHops converts outbound legs to IBCHop slice for memo building
+func (s *Pathfinder) buildOutboundHops(outboundLegs []*models.IBCLeg, finalReceiver string, req models.RouteRequest) []ibcmemo.IBCHop {
+	hops := make([]ibcmemo.IBCHop, len(outboundLegs))
+	for i, leg := range outboundLegs {
+		receiver := finalReceiver
+		if i < len(outboundLegs)-1 {
+			// Intermediate hop - derive address for next chain
+			nextChain := outboundLegs[i+1].FromChain
+			nextAddr, addrErr := s.addressConverter.ConvertAddress(req.ReceiverAddress, nextChain)
+			if addrErr == nil {
+				receiver = nextAddr
+			}
+		}
+		hops[i] = ibcmemo.IBCHop{
+			Channel:  leg.Channel,
+			Port:     leg.Port,
+			Receiver: receiver,
+			Timeout:  ibcmemo.DefaultTimeoutTimestamp(),
+		}
+	}
+	return hops
 }
 
 /*

@@ -6,6 +6,8 @@ import (
 
 	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
 	router "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
 	"github.com/zeebo/assert"
 )
 
@@ -14,7 +16,7 @@ var chains = []router.PathfinderChain{
 		Name:     "Osmosis",
 		Id:       "osmosis-1",
 		Broker:   true,
-		BrokerId: "osmosis",
+		BrokerId: "osmosis-sqs",
 		HasPFM:   true,
 		Routes: []router.BasicRoute{
 			{
@@ -293,30 +295,116 @@ var chains = []router.PathfinderChain{
 	},
 }
 
-// MockBrokerClient implements the BrokerClient interface for testing
-type MockBrokerClient struct {
-	brokerType string
-	swapFunc   func(tokenIn, amountIn, tokenOut string, singleRoute *bool) (*router.SwapResult, error)
+// MockRouteData implements ibcmemo.RouteData for testing
+type MockRouteData struct {
+	operations    []ibcmemo.SwapOperation
+	swapVenueName string
 }
 
-func (m *MockBrokerClient) QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom string, singleRoute *bool) (*router.SwapResult, error) {
+func (m *MockRouteData) GetOperations() []ibcmemo.SwapOperation {
+	return m.operations
+}
+
+func (m *MockRouteData) GetSwapVenueName() string {
+	return m.swapVenueName
+}
+
+// MockMemoBuilder implements ibcmemo.MemoBuilder for testing
+type MockMemoBuilder struct {
+	contractAddress string
+}
+
+func (m *MockMemoBuilder) GetContractAddress() string {
+	return m.contractAddress
+}
+
+func (m *MockMemoBuilder) BuildSwapMemo(params ibcmemo.SwapMemoParams) (string, error) {
+	return `{"wasm":{"contract":"mock","msg":{}}}`, nil
+}
+
+func (m *MockMemoBuilder) BuildSwapAndForwardMemo(params ibcmemo.SwapAndForwardParams) (string, error) {
+	return `{"wasm":{"contract":"mock","msg":{}}}`, nil
+}
+
+func (m *MockMemoBuilder) BuildSwapAndMultiHopMemo(params ibcmemo.SwapAndMultiHopParams) (string, error) {
+	return `{"wasm":{"contract":"mock","msg":{}}}`, nil
+}
+
+func (m *MockMemoBuilder) BuildForwardSwapMemo(params ibcmemo.ForwardSwapParams) (string, error) {
+	return `{"forward":{"next":{"wasm":{}}}}`, nil
+}
+
+func (m *MockMemoBuilder) BuildForwardSwapForwardMemo(params ibcmemo.ForwardSwapForwardParams) (string, error) {
+	return `{"forward":{"next":{"wasm":{}}}}`, nil
+}
+
+// MockBrokerClient implements the brokers.BrokerClient interface for testing
+type MockBrokerClient struct {
+	brokerType      string
+	contractAddress string
+	swapFunc        func(tokenIn, amountIn, tokenOut string, singleRoute *bool) (*brokers.SwapResult, error)
+}
+
+func (m *MockBrokerClient) QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom string, singleRoute *bool) (*brokers.SwapResult, error) {
 	if m.swapFunc != nil {
 		return m.swapFunc(tokenInDenom, tokenInAmount, tokenOutDenom, singleRoute)
 	}
 	// Fake swap, but in this case we will assume 1:1 swap with 0.3% fee and
 	// slipage can be anywhere from 0.1% to 0.9%, for this purpose and to ease testing
 	// we will just assume it is 1% in total
-	return &router.SwapResult{
+	return &brokers.SwapResult{
 		AmountIn:     tokenInAmount,
 		AmountOut:    "990000", // Assuming 1000000 input - 1% total (0.3% fee + 0.7% slippage)
 		PriceImpact:  "0.007",
 		EffectiveFee: "0.003",
-		RouteData:    map[string]interface{}{"pools": []int{1, 2}},
+		RouteData: &MockRouteData{
+			operations:    []ibcmemo.SwapOperation{{Pool: "1", DenomIn: tokenInDenom, DenomOut: tokenOutDenom}},
+			swapVenueName: "osmosis-poolmanager",
+		},
 	}, nil
 }
 
 func (m *MockBrokerClient) GetBrokerType() string {
 	return m.brokerType
+}
+
+func (m *MockBrokerClient) GetMemoBuilder() ibcmemo.MemoBuilder {
+	return &MockMemoBuilder{contractAddress: m.contractAddress}
+}
+
+func (m *MockBrokerClient) GetSmartContractBuilder() brokers.SmartContractBuilder {
+	return &MockSmartContractBuilder{contractAddress: m.contractAddress}
+}
+
+func (m *MockBrokerClient) Close() {
+	// No-op for mock
+}
+
+// MockSmartContractBuilder implements brokers.SmartContractBuilder for testing
+type MockSmartContractBuilder struct {
+	contractAddress string
+}
+
+func (m *MockSmartContractBuilder) BuildSwapAndTransfer(params ibcmemo.SwapMemoParams) (*ibcmemo.WasmMemo, error) {
+	return ibcmemo.NewWasmMemo(m.contractAddress, ibcmemo.NewWasmMsg(
+		ibcmemo.NewSwapAndAction(
+			ibcmemo.NewUserSwap("osmosis-poolmanager", []ibcmemo.SwapOperation{{Pool: "1", DenomIn: params.TokenInDenom, DenomOut: params.TokenOutDenom}}),
+			ibcmemo.NewMinAsset(params.TokenOutDenom, params.MinOutputAmount),
+			params.TimeoutTimestamp,
+			ibcmemo.NewTransferAction(params.ReceiverAddress),
+		),
+	)), nil
+}
+
+func (m *MockSmartContractBuilder) BuildSwapAndForward(params ibcmemo.SwapAndForwardParams) (*ibcmemo.WasmMemo, error) {
+	return ibcmemo.NewWasmMemo(m.contractAddress, ibcmemo.NewWasmMsg(
+		ibcmemo.NewSwapAndAction(
+			ibcmemo.NewUserSwap("osmosis-poolmanager", []ibcmemo.SwapOperation{{Pool: "1", DenomIn: params.TokenInDenom, DenomOut: params.TokenOutDenom}}),
+			ibcmemo.NewMinAsset(params.TokenOutDenom, params.MinOutputAmount),
+			params.TimeoutTimestamp,
+			ibcmemo.NewIBCTransferAction(params.SourceChannel, params.ForwardReceiver, params.ForwardMemo, params.RecoverAddress),
+		),
+	)), nil
 }
 
 // setupTestPathfinder creates a solver with test chains and a mock broker client
@@ -329,19 +417,20 @@ func setupTestPathfinder() (*router.Pathfinder, *router.RouteIndex) {
 	}
 
 	// Create mock osmosis broker client
-	brokerClients := map[string]router.BrokerClient{
-		"osmosis": &MockBrokerClient{
-			brokerType: "osmosis-sqs",
-			swapFunc: func(tokenIn, amountIn, tokenOut string, singleRoute *bool) (*router.SwapResult, error) {
+	brokerClients := map[string]brokers.BrokerClient{
+		"osmosis-sqs": &MockBrokerClient{
+			brokerType:      "osmosis-sqs",
+			contractAddress: "osmo10a3k4hvk37cc4hnxctw4p95fhscd2z6h2rmx0aukc6rm8u9qqx9smfsh7u",
+			swapFunc: func(tokenIn, amountIn, tokenOut string, singleRoute *bool) (*brokers.SwapResult, error) {
 				// Simulate realistic swap
-				return &router.SwapResult{
+				return &brokers.SwapResult{
 					AmountIn:     amountIn,
 					AmountOut:    "980000", // ~2% slippage
 					PriceImpact:  "0.015",
 					EffectiveFee: "0.005",
-					RouteData: map[string]interface{}{
-						"pools": []int{1, 678},
-						"route": []string{tokenIn, "uosmo", tokenOut},
+					RouteData: &MockRouteData{
+						operations:    []ibcmemo.SwapOperation{{Pool: "1", DenomIn: tokenIn, DenomOut: tokenOut}},
+						swapVenueName: "osmosis-poolmanager",
 					},
 				}, nil
 			},
@@ -413,11 +502,11 @@ func TestPathfinder_BrokerSwapRoute(t *testing.T) {
 	assert.Equal(t, brokerRoute.Path[1], "osmosis-1")
 	assert.Equal(t, brokerRoute.Path[2], "juno-1")
 
-	// Verify inbound leg (Cosmos -> Osmosis)
-	assert.NotNil(t, brokerRoute.InboundLeg)
-	assert.Equal(t, brokerRoute.InboundLeg.FromChain, "cosmoshub-4")
-	assert.Equal(t, brokerRoute.InboundLeg.ToChain, "osmosis-1")
-	assert.Equal(t, brokerRoute.InboundLeg.Amount, "1000000")
+	// Verify inbound legs (Cosmos -> Osmosis)
+	assert.Equal(t, 1, len(brokerRoute.InboundLegs))
+	assert.Equal(t, brokerRoute.InboundLegs[0].FromChain, "cosmoshub-4")
+	assert.Equal(t, brokerRoute.InboundLegs[0].ToChain, "osmosis-1")
+	assert.Equal(t, brokerRoute.InboundLegs[0].Amount, "1000000")
 
 	// Verify swap details
 	assert.NotNil(t, brokerRoute.Swap)
@@ -434,13 +523,14 @@ func TestPathfinder_BrokerSwapRoute(t *testing.T) {
 
 	// Verify PFM support
 	t.Logf("OutboundSupportsPFM: %v", brokerRoute.OutboundSupportsPFM)
+	// Note: With SmartRoute = nil (default), execution data is not generated
+	// This is expected - execution data is only built when SmartRoute = true
 	if brokerRoute.Execution != nil {
-		t.Logf("Execution Memo: %s", brokerRoute.Execution.Memo)
-		if brokerRoute.OutboundSupportsPFM && brokerRoute.Execution.Memo == "" {
-			t.Error("Expected non-empty execution memo when PFM is supported")
+		if brokerRoute.Execution.Memo != nil {
+			t.Logf("Execution Memo: %s", *brokerRoute.Execution.Memo)
 		}
 	} else {
-		t.Log("Note: Execution data not available (ibc-hooks contract not configured in test)")
+		t.Log("Note: Execution data not available (SmartRoute not enabled in test)")
 	}
 	if !brokerRoute.OutboundSupportsPFM {
 		t.Log("Note: Outbound PFM not supported, will require manual forwarding")
@@ -626,7 +716,7 @@ func TestPathfinder_GetChainInfo(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, brokerChain.Name, "Osmosis")
 	assert.True(t, brokerChain.Broker)
-	assert.Equal(t, brokerChain.BrokerId, "osmosis")
+	assert.Equal(t, brokerChain.BrokerId, "osmosis-sqs")
 
 	// Test non-existent chain
 	_, err = pathfinder.GetChainInfo("nonexistent-1")
