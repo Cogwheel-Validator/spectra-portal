@@ -103,6 +103,11 @@ func (o *SqsBroker) GetMemoBuilder() ibcmemo.MemoBuilder {
 	return o.memoBuilder
 }
 
+// GetSmartContractBuilder returns the smart contract builder for Osmosis
+func (o *SqsBroker) GetSmartContractBuilder() brokers.SmartContractBuilder {
+	return o.smartContractBuilder
+}
+
 // Close cleans up resources used by the broker client
 func (o *SqsBroker) Close() {
 	if o.client != nil {

@@ -20,11 +20,28 @@ type BrokerClient interface {
 	// GetBrokerType returns the type of broker (e.g., "osmosis-sqs", "astroport", etc.)
 	GetBrokerType() string
 
-	// GetMemoBuilder returns the memo builder for this broker
+	// GetMemoBuilder returns the memo builder for this broker (for IBC transfers with hooks)
 	GetMemoBuilder() ibcmemo.MemoBuilder
+
+	// GetSmartContractBuilder returns the smart contract builder for this broker
+	// Used when source is the broker chain (direct contract execution, no IBC needed)
+	GetSmartContractBuilder() SmartContractBuilder
 
 	// Close cleans up resources used by the broker client
 	Close()
+}
+
+// SmartContractBuilder builds data structures for direct smart contract execution.
+// This is used when the source chain IS the broker chain, so no IBC memo is needed.
+// Each broker implements this with their specific contract interface.
+type SmartContractBuilder interface {
+	// BuildSwapAndTransfer builds a smart contract call for swap + transfer to receiver on same chain.
+	// Used when: Source == Broker == Destination (same-chain swap)
+	BuildSwapAndTransfer(params ibcmemo.SwapMemoParams) (*ibcmemo.WasmMemo, error)
+
+	// BuildSwapAndForward builds a smart contract call for swap + IBC forward.
+	// Used when: Source == Broker, Destination != Broker (swap then IBC out)
+	BuildSwapAndForward(params ibcmemo.SwapAndForwardParams) (*ibcmemo.WasmMemo, error)
 }
 
 // SwapResult contains standardized swap information from any broker DEX.

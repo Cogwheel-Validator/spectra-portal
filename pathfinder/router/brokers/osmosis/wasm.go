@@ -3,8 +3,12 @@ package osmosis
 import (
 	"fmt"
 
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
 	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
 )
+
+// Ensure SmartContractBuilder implements brokers.SmartContractBuilder
+var _ brokers.SmartContractBuilder = (*SmartContractBuilder)(nil)
 
 type SmartContractBuilder struct {
 	contractAddress string

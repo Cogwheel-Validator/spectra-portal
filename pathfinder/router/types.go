@@ -125,4 +125,3 @@ type MultiHopInboundResult struct {
 	TokenIn            *TokenInfo    // Token info on source chain
 	IntermediateTokens []*TokenInfo  // Token info on intermediate chains
 }
-
