@@ -13,7 +13,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file pathfinder_route.proto.
  */
 export const file_pathfinder_route: GenFile = /*@__PURE__*/
-  fileDesc("ChZwYXRoZmluZGVyX3JvdXRlLnByb3RvEg1wYXRoZmluZGVyLnYxIrYCCg9GaW5kUGF0aFJlcXVlc3QSGgoKY2hhaW5fZnJvbRgBIAEoCUIGukgDyAEBEicKEHRva2VuX2Zyb21fZGVub20YAiABKAlCDbpICsgBAXIFEAEYgAESGQoJYW1vdW50X2luGAMgASgJQga6SAPIAQESGAoIY2hhaW5fdG8YBCABKAlCBrpIA8gBARIgCg50b2tlbl90b19kZW5vbRgFIAEoCUIIukgFcgMYgAESJAoOc2VuZGVyX2FkZHJlc3MYBiABKAlCDLpICcgBAXIEECYYRBImChByZWNlaXZlcl9hZGRyZXNzGAcgASgJQgy6SAnIAQFyBBAmGEQSFAoMc2luZ2xlX3JvdXRlGAggASgIEiMKDHNsaXBwYWdlX2JwcxgJIAEoDUINukgKyAEAKgUYkE4oACLaAQoQRmluZFBhdGhSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSLAoGZGlyZWN0GAMgASgLMhoucGF0aGZpbmRlci52MS5EaXJlY3RSb3V0ZUgAEjAKCGluZGlyZWN0GAQgASgLMhwucGF0aGZpbmRlci52MS5JbmRpcmVjdFJvdXRlSAASNQoLYnJva2VyX3N3YXAYBSABKAsyHi5wYXRoZmluZGVyLnYxLkJyb2tlclN3YXBSb3V0ZUgAQgcKBXJvdXRlIjYKC0RpcmVjdFJvdXRlEicKCHRyYW5zZmVyGAEgASgLMhUucGF0aGZpbmRlci52MS5JQkNMZWcigwEKDUluZGlyZWN0Um91dGUSDAoEcGF0aBgBIAMoCRIjCgRsZWdzGAIgAygLMhUucGF0aGZpbmRlci52MS5JQkNMZWcSFAoMc3VwcG9ydHNfcGZtGAMgASgIEhcKD3BmbV9zdGFydF9jaGFpbhgEIAEoCRIQCghwZm1fbWVtbxgFIAEoCSL4AQoPQnJva2VyU3dhcFJvdXRlEgwKBHBhdGgYASADKAkSKwoMaW5ib3VuZF9sZWdzGAIgAygLMhUucGF0aGZpbmRlci52MS5JQkNMZWcSJgoEc3dhcBgDIAEoCzIYLnBhdGhmaW5kZXIudjEuU3dhcFF1b3RlEiwKDW91dGJvdW5kX2xlZ3MYBCADKAsyFS5wYXRoZmluZGVyLnYxLklCQ0xlZxIdChVvdXRib3VuZF9zdXBwb3J0c19wZm0YBSABKAgSNQoJZXhlY3V0aW9uGAYgASgLMiIucGF0aGZpbmRlci52MS5Ccm9rZXJFeGVjdXRpb25EYXRhIpUBChNCcm9rZXJFeGVjdXRpb25EYXRhEgwKBG1lbW8YASABKAkSFAoMaWJjX3JlY2VpdmVyGAIgASgJEhcKD3JlY292ZXJfYWRkcmVzcxgDIAEoCRIZChFtaW5fb3V0cHV0X2Ftb3VudBgEIAEoCRIRCgl1c2VzX3dhc20YBSABKAgSEwoLZGVzY3JpcHRpb24YBiABKAkiiQEKBklCQ0xlZxISCgpmcm9tX2NoYWluGAEgASgJEhAKCHRvX2NoYWluGAIgASgJEg8KB2NoYW5uZWwYAyABKAkSDAoEcG9ydBgEIAEoCRIqCgV0b2tlbhgFIAEoCzIbLnBhdGhmaW5kZXIudjEuVG9rZW5NYXBwaW5nEg4KBmFtb3VudBgGIAEoCSJgCgxUb2tlbk1hcHBpbmcSEwoLY2hhaW5fZGVub20YASABKAkSEgoKYmFzZV9kZW5vbRgCIAEoCRIUCgxvcmlnaW5fY2hhaW4YAyABKAkSEQoJaXNfbmF0aXZlGAQgASgIIpsCCglTd2FwUXVvdGUSDgoGYnJva2VyGAEgASgJEi0KCHRva2VuX2luGAIgASgLMhsucGF0aGZpbmRlci52MS5Ub2tlbk1hcHBpbmcSLgoJdG9rZW5fb3V0GAMgASgLMhsucGF0aGZpbmRlci52MS5Ub2tlbk1hcHBpbmcSEQoJYW1vdW50X2luGAQgASgJEhIKCmFtb3VudF9vdXQYBSABKAkSFAoMcHJpY2VfaW1wYWN0GAYgASgJEhUKDWVmZmVjdGl2ZV9mZWUYByABKAkSPQoSb3Ntb3Npc19yb3V0ZV9kYXRhGAggASgLMh8ucGF0aGZpbmRlci52MS5Pc21vc2lzUm91dGVEYXRhSABCDAoKcm91dGVfZGF0YSJ2ChBPc21vc2lzUm91dGVEYXRhEisKBnJvdXRlcxgBIAMoCzIbLnBhdGhmaW5kZXIudjEuT3Ntb3Npc1JvdXRlEhUKDWxpcXVpZGl0eV9jYXAYAiABKAkSHgoWbGlxdWlkaXR5X2NhcF9vdmVyZmxvdxgDIAEoCCJ1CgxPc21vc2lzUm91dGUSKQoFcG9vbHMYASADKAsyGi5wYXRoZmluZGVyLnYxLk9zbW9zaXNQb29sEhMKC2hhc19jd19wb29sGAIgASgIEhIKCm91dF9hbW91bnQYAyABKAkSEQoJaW5fYW1vdW50GAQgASgJIoEBCgtPc21vc2lzUG9vbBIKCgJpZBgBIAEoBRIMCgR0eXBlGAIgASgFEhUKDXNwcmVhZF9mYWN0b3IYAyABKAkSFwoPdG9rZW5fb3V0X2Rlbm9tGAQgASgJEhEKCXRha2VyX2ZlZRgFIAEoCRIVCg1saXF1aWRpdHlfY2FwGAYgASgJIkwKEkxvb2t1cERlbm9tUmVxdWVzdBIYCghjaGFpbl9pZBgBIAEoCUIGukgDyAEBEhwKBWRlbm9tGAIgASgJQg26SArIAQFyBRABGIABIrkBChNMb29rdXBEZW5vbVJlc3BvbnNlEg0KBWZvdW5kGAEgASgIEhMKC2NoYWluX2Rlbm9tGAIgASgJEhIKCmJhc2VfZGVub20YAyABKAkSFAoMb3JpZ2luX2NoYWluGAQgASgJEhEKCWlzX25hdGl2ZRgFIAEoCBIQCghpYmNfcGF0aBgGIAEoCRIvCgxhdmFpbGFibGVfb24YByADKAsyGS5wYXRoZmluZGVyLnYxLkNoYWluRGVub20iVAoKQ2hhaW5EZW5vbRIQCghjaGFpbl9pZBgBIAEoCRISCgpjaGFpbl9uYW1lGAIgASgJEg0KBWRlbm9tGAMgASgJEhEKCWlzX25hdGl2ZRgEIAEoCCJmChVHZXRUb2tlbkRlbm9tc1JlcXVlc3QSGgoKYmFzZV9kZW5vbRgBIAEoCUIGukgDyAEBEhwKDG9yaWdpbl9jaGFpbhgCIAEoCUIGukgDyAEBEhMKC29uX2NoYWluX2lkGAMgASgJInwKFkdldFRva2VuRGVub21zUmVzcG9uc2USDQoFZm91bmQYASABKAgSEgoKYmFzZV9kZW5vbRgCIAEoCRIUCgxvcmlnaW5fY2hhaW4YAyABKAkSKQoGZGVub21zGAQgAygLMhkucGF0aGZpbmRlci52MS5DaGFpbkRlbm9tIjEKFUdldENoYWluVG9rZW5zUmVxdWVzdBIYCghjaGFpbl9pZBgBIAEoCUIGukgDyAEBIqMBChZHZXRDaGFpblRva2Vuc1Jlc3BvbnNlEhAKCGNoYWluX2lkGAEgASgJEhIKCmNoYWluX25hbWUYAiABKAkSMgoNbmF0aXZlX3Rva2VucxgDIAMoCzIbLnBhdGhmaW5kZXIudjEuVG9rZW5EZXRhaWxzEi8KCmliY190b2tlbnMYBCADKAsyGy5wYXRoZmluZGVyLnYxLlRva2VuRGV0YWlscyJ8CgxUb2tlbkRldGFpbHMSDQoFZGVub20YASABKAkSDgoGc3ltYm9sGAIgASgJEhIKCmJhc2VfZGVub20YAyABKAkSFAoMb3JpZ2luX2NoYWluGAQgASgJEhAKCGRlY2ltYWxzGAUgASgFEhEKCWlzX25hdGl2ZRgGIAEoCCI+CiFQYXRoZmluZGVyU3VwcG9ydGVkQ2hhaW5zUmVzcG9uc2USGQoJY2hhaW5faWRzGAEgAygJQga6SAPIAQEiQgoQQ2hhaW5JbmZvUmVxdWVzdBIYCghjaGFpbl9pZBgBIAEoCUIGukgDyAEBEhQKDHNob3dfc3ltYm9scxgCIAEoCCJBChFDaGFpbkluZm9SZXNwb25zZRIsCgpjaGFpbl9pbmZvGAEgASgLMhgucGF0aGZpbmRlci52MS5DaGFpbkluZm8igAEKCUNoYWluSW5mbxIQCghjaGFpbl9pZBgBIAEoCRISCgpjaGFpbl9uYW1lGAIgASgJEg8KB2hhc19wZm0YAyABKAgSEQoJaXNfYnJva2VyGAQgASgIEikKBnJvdXRlcxgFIAMoCzIZLnBhdGhmaW5kZXIudjEuQmFzaWNSb3V0ZSJ/CglUb2tlbkluZm8SEwoLY2hhaW5fZGVub20YASABKAkSEQoJaWJjX2Rlbm9tGAIgASgJEhIKCmJhc2VfZGVub20YAyABKAkSFAoMb3JpZ2luX2NoYWluGAQgASgJEhAKCGRlY2ltYWxzGAUgASgFEg4KBnN5bWJvbBgGIAEoCSKFAgoKQmFzaWNSb3V0ZRIQCgh0b19jaGFpbhgBIAEoCRITCgt0b19jaGFpbl9pZBgCIAEoCRIVCg1jb25uZWN0aW9uX2lkGAMgASgJEhIKCmNoYW5uZWxfaWQYBCABKAkSDwoHcG9ydF9pZBgFIAEoCRJECg5hbGxvd2VkX3Rva2VucxgGIAMoCzIsLnBhdGhmaW5kZXIudjEuQmFzaWNSb3V0ZS5BbGxvd2VkVG9rZW5zRW50cnkaTgoSQWxsb3dlZFRva2Vuc0VudHJ5EgsKA2tleRgBIAEoCRInCgV2YWx1ZRgCIAEoCzIYLnBhdGhmaW5kZXIudjEuVG9rZW5JbmZvOgI4ATLGBAoRUGF0aGZpbmRlclNlcnZpY2USUAoIRmluZFBhdGgSHi5wYXRoZmluZGVyLnYxLkZpbmRQYXRoUmVxdWVzdBofLnBhdGhmaW5kZXIudjEuRmluZFBhdGhSZXNwb25zZSIDkAIBElkKC0xvb2t1cERlbm9tEiEucGF0aGZpbmRlci52MS5Mb29rdXBEZW5vbVJlcXVlc3QaIi5wYXRoZmluZGVyLnYxLkxvb2t1cERlbm9tUmVzcG9uc2UiA5ACARJiCg5HZXRUb2tlbkRlbm9tcxIkLnBhdGhmaW5kZXIudjEuR2V0VG9rZW5EZW5vbXNSZXF1ZXN0GiUucGF0aGZpbmRlci52MS5HZXRUb2tlbkRlbm9tc1Jlc3BvbnNlIgOQAgESVgoMR2V0Q2hhaW5JbmZvEh8ucGF0aGZpbmRlci52MS5DaGFpbkluZm9SZXF1ZXN0GiAucGF0aGZpbmRlci52MS5DaGFpbkluZm9SZXNwb25zZSIDkAIBEmQKE0xpc3RTdXBwb3J0ZWRDaGFpbnMSFi5nb29nbGUucHJvdG9idWYuRW1wdHkaMC5wYXRoZmluZGVyLnYxLlBhdGhmaW5kZXJTdXBwb3J0ZWRDaGFpbnNSZXNwb25zZSIDkAIBEmIKDkdldENoYWluVG9rZW5zEiQucGF0aGZpbmRlci52MS5HZXRDaGFpblRva2Vuc1JlcXVlc3QaJS5wYXRoZmluZGVyLnYxLkdldENoYWluVG9rZW5zUmVzcG9uc2UiA5ACAUJBWj9naXRodWIuY29tL0NvZ3doZWVsLVZhbGlkYXRvci9zcGVjdHJhLWliYy1odWIvcGF0aGZpbmRlci9ycGMvdjFiBnByb3RvMw", [file_buf_validate_validate, file_google_protobuf_empty]);
+  fileDesc("ChZwYXRoZmluZGVyX3JvdXRlLnByb3RvEg1wYXRoZmluZGVyLnYxIrUCCg9GaW5kUGF0aFJlcXVlc3QSGgoKY2hhaW5fZnJvbRgBIAEoCUIGukgDyAEBEicKEHRva2VuX2Zyb21fZGVub20YAiABKAlCDbpICsgBAXIFEAEYgAESGQoJYW1vdW50X2luGAMgASgJQga6SAPIAQESGAoIY2hhaW5fdG8YBCABKAlCBrpIA8gBARIgCg50b2tlbl90b19kZW5vbRgFIAEoCUIIukgFcgMYgAESJAoOc2VuZGVyX2FkZHJlc3MYBiABKAlCDLpICcgBAXIEECYYRBImChByZWNlaXZlcl9hZGRyZXNzGAcgASgJQgy6SAnIAQFyBBAmGEQSEwoLc21hcnRfcm91dGUYCCABKAgSIwoMc2xpcHBhZ2VfYnBzGAkgASgNQg26SArIAQAqBRiQTigAItoBChBGaW5kUGF0aFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSFQoNZXJyb3JfbWVzc2FnZRgCIAEoCRIsCgZkaXJlY3QYAyABKAsyGi5wYXRoZmluZGVyLnYxLkRpcmVjdFJvdXRlSAASMAoIaW5kaXJlY3QYBCABKAsyHC5wYXRoZmluZGVyLnYxLkluZGlyZWN0Um91dGVIABI1Cgticm9rZXJfc3dhcBgFIAEoCzIeLnBhdGhmaW5kZXIudjEuQnJva2VyU3dhcFJvdXRlSABCBwoFcm91dGUiNgoLRGlyZWN0Um91dGUSJwoIdHJhbnNmZXIYASABKAsyFS5wYXRoZmluZGVyLnYxLklCQ0xlZyKDAQoNSW5kaXJlY3RSb3V0ZRIMCgRwYXRoGAEgAygJEiMKBGxlZ3MYAiADKAsyFS5wYXRoZmluZGVyLnYxLklCQ0xlZxIUCgxzdXBwb3J0c19wZm0YAyABKAgSFwoPcGZtX3N0YXJ0X2NoYWluGAQgASgJEhAKCHBmbV9tZW1vGAUgASgJIvgBCg9Ccm9rZXJTd2FwUm91dGUSDAoEcGF0aBgBIAMoCRIrCgxpbmJvdW5kX2xlZ3MYAiADKAsyFS5wYXRoZmluZGVyLnYxLklCQ0xlZxImCgRzd2FwGAMgASgLMhgucGF0aGZpbmRlci52MS5Td2FwUXVvdGUSLAoNb3V0Ym91bmRfbGVncxgEIAMoCzIVLnBhdGhmaW5kZXIudjEuSUJDTGVnEh0KFW91dGJvdW5kX3N1cHBvcnRzX3BmbRgFIAEoCBI1CglleGVjdXRpb24YBiABKAsyIi5wYXRoZmluZGVyLnYxLkJyb2tlckV4ZWN1dGlvbkRhdGEijAIKE0Jyb2tlckV4ZWN1dGlvbkRhdGESEQoEbWVtbxgBIAEoCUgAiAEBEjkKE3NtYXJ0X2NvbnRyYWN0X2RhdGEYAiABKAsyFy5wYXRoZmluZGVyLnYxLldhc21EYXRhSAGIAQESGQoMaWJjX3JlY2VpdmVyGAMgASgJSAKIAQESFwoPcmVjb3Zlcl9hZGRyZXNzGAQgASgJEhkKEW1pbl9vdXRwdXRfYW1vdW50GAUgASgJEhEKCXVzZXNfd2FzbRgGIAEoCBITCgtkZXNjcmlwdGlvbhgHIAEoCUIHCgVfbWVtb0IWChRfc21hcnRfY29udHJhY3RfZGF0YUIPCg1faWJjX3JlY2VpdmVyIokBCgZJQkNMZWcSEgoKZnJvbV9jaGFpbhgBIAEoCRIQCgh0b19jaGFpbhgCIAEoCRIPCgdjaGFubmVsGAMgASgJEgwKBHBvcnQYBCABKAkSKgoFdG9rZW4YBSABKAsyGy5wYXRoZmluZGVyLnYxLlRva2VuTWFwcGluZxIOCgZhbW91bnQYBiABKAkiYAoMVG9rZW5NYXBwaW5nEhMKC2NoYWluX2Rlbm9tGAEgASgJEhIKCmJhc2VfZGVub20YAiABKAkSFAoMb3JpZ2luX2NoYWluGAMgASgJEhEKCWlzX25hdGl2ZRgEIAEoCCKbAgoJU3dhcFF1b3RlEg4KBmJyb2tlchgBIAEoCRItCgh0b2tlbl9pbhgCIAEoCzIbLnBhdGhmaW5kZXIudjEuVG9rZW5NYXBwaW5nEi4KCXRva2VuX291dBgDIAEoCzIbLnBhdGhmaW5kZXIudjEuVG9rZW5NYXBwaW5nEhEKCWFtb3VudF9pbhgEIAEoCRISCgphbW91bnRfb3V0GAUgASgJEhQKDHByaWNlX2ltcGFjdBgGIAEoCRIVCg1lZmZlY3RpdmVfZmVlGAcgASgJEj0KEm9zbW9zaXNfcm91dGVfZGF0YRgIIAEoCzIfLnBhdGhmaW5kZXIudjEuT3Ntb3Npc1JvdXRlRGF0YUgAQgwKCnJvdXRlX2RhdGEidgoQT3Ntb3Npc1JvdXRlRGF0YRIrCgZyb3V0ZXMYASADKAsyGy5wYXRoZmluZGVyLnYxLk9zbW9zaXNSb3V0ZRIVCg1saXF1aWRpdHlfY2FwGAIgASgJEh4KFmxpcXVpZGl0eV9jYXBfb3ZlcmZsb3cYAyABKAgidQoMT3Ntb3Npc1JvdXRlEikKBXBvb2xzGAEgAygLMhoucGF0aGZpbmRlci52MS5Pc21vc2lzUG9vbBITCgtoYXNfY3dfcG9vbBgCIAEoCBISCgpvdXRfYW1vdW50GAMgASgJEhEKCWluX2Ftb3VudBgEIAEoCSKBAQoLT3Ntb3Npc1Bvb2wSCgoCaWQYASABKAUSDAoEdHlwZRgCIAEoBRIVCg1zcHJlYWRfZmFjdG9yGAMgASgJEhcKD3Rva2VuX291dF9kZW5vbRgEIAEoCRIRCgl0YWtlcl9mZWUYBSABKAkSFQoNbGlxdWlkaXR5X2NhcBgGIAEoCSJMChJMb29rdXBEZW5vbVJlcXVlc3QSGAoIY2hhaW5faWQYASABKAlCBrpIA8gBARIcCgVkZW5vbRgCIAEoCUINukgKyAEBcgUQARiAASK5AQoTTG9va3VwRGVub21SZXNwb25zZRINCgVmb3VuZBgBIAEoCBITCgtjaGFpbl9kZW5vbRgCIAEoCRISCgpiYXNlX2Rlbm9tGAMgASgJEhQKDG9yaWdpbl9jaGFpbhgEIAEoCRIRCglpc19uYXRpdmUYBSABKAgSEAoIaWJjX3BhdGgYBiABKAkSLwoMYXZhaWxhYmxlX29uGAcgAygLMhkucGF0aGZpbmRlci52MS5DaGFpbkRlbm9tIlQKCkNoYWluRGVub20SEAoIY2hhaW5faWQYASABKAkSEgoKY2hhaW5fbmFtZRgCIAEoCRINCgVkZW5vbRgDIAEoCRIRCglpc19uYXRpdmUYBCABKAgiZgoVR2V0VG9rZW5EZW5vbXNSZXF1ZXN0EhoKCmJhc2VfZGVub20YASABKAlCBrpIA8gBARIcCgxvcmlnaW5fY2hhaW4YAiABKAlCBrpIA8gBARITCgtvbl9jaGFpbl9pZBgDIAEoCSJ8ChZHZXRUb2tlbkRlbm9tc1Jlc3BvbnNlEg0KBWZvdW5kGAEgASgIEhIKCmJhc2VfZGVub20YAiABKAkSFAoMb3JpZ2luX2NoYWluGAMgASgJEikKBmRlbm9tcxgEIAMoCzIZLnBhdGhmaW5kZXIudjEuQ2hhaW5EZW5vbSIxChVHZXRDaGFpblRva2Vuc1JlcXVlc3QSGAoIY2hhaW5faWQYASABKAlCBrpIA8gBASKjAQoWR2V0Q2hhaW5Ub2tlbnNSZXNwb25zZRIQCghjaGFpbl9pZBgBIAEoCRISCgpjaGFpbl9uYW1lGAIgASgJEjIKDW5hdGl2ZV90b2tlbnMYAyADKAsyGy5wYXRoZmluZGVyLnYxLlRva2VuRGV0YWlscxIvCgppYmNfdG9rZW5zGAQgAygLMhsucGF0aGZpbmRlci52MS5Ub2tlbkRldGFpbHMifAoMVG9rZW5EZXRhaWxzEg0KBWRlbm9tGAEgASgJEg4KBnN5bWJvbBgCIAEoCRISCgpiYXNlX2Rlbm9tGAMgASgJEhQKDG9yaWdpbl9jaGFpbhgEIAEoCRIQCghkZWNpbWFscxgFIAEoBRIRCglpc19uYXRpdmUYBiABKAgiPgohUGF0aGZpbmRlclN1cHBvcnRlZENoYWluc1Jlc3BvbnNlEhkKCWNoYWluX2lkcxgBIAMoCUIGukgDyAEBIkIKEENoYWluSW5mb1JlcXVlc3QSGAoIY2hhaW5faWQYASABKAlCBrpIA8gBARIUCgxzaG93X3N5bWJvbHMYAiABKAgiQQoRQ2hhaW5JbmZvUmVzcG9uc2USLAoKY2hhaW5faW5mbxgBIAEoCzIYLnBhdGhmaW5kZXIudjEuQ2hhaW5JbmZvIoABCglDaGFpbkluZm8SEAoIY2hhaW5faWQYASABKAkSEgoKY2hhaW5fbmFtZRgCIAEoCRIPCgdoYXNfcGZtGAMgASgIEhEKCWlzX2Jyb2tlchgEIAEoCBIpCgZyb3V0ZXMYBSADKAsyGS5wYXRoZmluZGVyLnYxLkJhc2ljUm91dGUifwoJVG9rZW5JbmZvEhMKC2NoYWluX2Rlbm9tGAEgASgJEhEKCWliY19kZW5vbRgCIAEoCRISCgpiYXNlX2Rlbm9tGAMgASgJEhQKDG9yaWdpbl9jaGFpbhgEIAEoCRIQCghkZWNpbWFscxgFIAEoBRIOCgZzeW1ib2wYBiABKAkihQIKCkJhc2ljUm91dGUSEAoIdG9fY2hhaW4YASABKAkSEwoLdG9fY2hhaW5faWQYAiABKAkSFQoNY29ubmVjdGlvbl9pZBgDIAEoCRISCgpjaGFubmVsX2lkGAQgASgJEg8KB3BvcnRfaWQYBSABKAkSRAoOYWxsb3dlZF90b2tlbnMYBiADKAsyLC5wYXRoZmluZGVyLnYxLkJhc2ljUm91dGUuQWxsb3dlZFRva2Vuc0VudHJ5Gk4KEkFsbG93ZWRUb2tlbnNFbnRyeRILCgNrZXkYASABKAkSJwoFdmFsdWUYAiABKAsyGC5wYXRoZmluZGVyLnYxLlRva2VuSW5mbzoCOAEiQQoIV2FzbURhdGESEAoIY29udHJhY3QYASABKAkSIwoDbXNnGAIgASgLMhYucGF0aGZpbmRlci52MS5XYXNtTXNnIkAKB1dhc21Nc2cSNQoPc3dhcF9hbmRfYWN0aW9uGAEgASgLMhwucGF0aGZpbmRlci52MS5Td2FwQW5kQWN0aW9uIs8BCg1Td2FwQW5kQWN0aW9uEioKCXVzZXJfc3dhcBgBIAEoCzIXLnBhdGhmaW5kZXIudjEuVXNlclN3YXASKgoJbWluX2Fzc2V0GAIgASgLMhcucGF0aGZpbmRlci52MS5NaW5Bc3NldBIZChF0aW1lb3V0X3RpbWVzdGFtcBgDIAEoAxI3ChBwb3N0X3N3YXBfYWN0aW9uGAQgASgLMh0ucGF0aGZpbmRlci52MS5Qb3N0U3dhcEFjdGlvbhISCgphZmZpbGlhdGVzGAUgAygJIl0KEFN3YXBFeGFjdEFzc2V0SW4SFwoPc3dhcF92ZW51ZV9uYW1lGAEgASgJEjAKCm9wZXJhdGlvbnMYAiADKAsyHC5wYXRoZmluZGVyLnYxLlN3YXBPcGVyYXRpb24iaAoNU3dhcE9wZXJhdGlvbhIMCgRwb29sGAEgASgJEhAKCGRlbm9tX2luGAIgASgJEhEKCWRlbm9tX291dBgDIAEoCRIWCglpbnRlcmZhY2UYBCABKAlIAIgBAUIMCgpfaW50ZXJmYWNlIjAKCE1pbkFzc2V0EiQKBm5hdGl2ZRgBIAEoCzIULnBhdGhmaW5kZXIudjEuQXNzZXQiJgoFQXNzZXQSDgoGYW1vdW50GAEgASgJEg0KBWRlbm9tGAIgASgJInsKDlBvc3RTd2FwQWN0aW9uEjIKDGliY190cmFuc2ZlchgBIAEoCzIaLnBhdGhmaW5kZXIudjEuSUJDVHJhbnNmZXJIABIrCgh0cmFuc2ZlchgCIAEoCzIXLnBhdGhmaW5kZXIudjEuVHJhbnNmZXJIAEIICgZhY3Rpb24iNwoLSUJDVHJhbnNmZXISKAoIaWJjX2luZm8YASABKAsyFi5wYXRoZmluZGVyLnYxLklCQ0luZm8iHgoIVHJhbnNmZXISEgoKdG9fYWRkcmVzcxgBIAEoCSJaCgdJQkNJbmZvEgwKBG1lbW8YASABKAkSEAoIcmVjZWl2ZXIYAiABKAkSFwoPcmVjb3Zlcl9hZGRyZXNzGAMgASgJEhYKDnNvdXJjZV9jaGFubmVsGAQgASgJIkgKCFVzZXJTd2FwEjwKE3N3YXBfZXhhY3RfYXNzZXRfaW4YASABKAsyHy5wYXRoZmluZGVyLnYxLlN3YXBFeGFjdEFzc2V0SW4yxgQKEVBhdGhmaW5kZXJTZXJ2aWNlElAKCEZpbmRQYXRoEh4ucGF0aGZpbmRlci52MS5GaW5kUGF0aFJlcXVlc3QaHy5wYXRoZmluZGVyLnYxLkZpbmRQYXRoUmVzcG9uc2UiA5ACARJZCgtMb29rdXBEZW5vbRIhLnBhdGhmaW5kZXIudjEuTG9va3VwRGVub21SZXF1ZXN0GiIucGF0aGZpbmRlci52MS5Mb29rdXBEZW5vbVJlc3BvbnNlIgOQAgESYgoOR2V0VG9rZW5EZW5vbXMSJC5wYXRoZmluZGVyLnYxLkdldFRva2VuRGVub21zUmVxdWVzdBolLnBhdGhmaW5kZXIudjEuR2V0VG9rZW5EZW5vbXNSZXNwb25zZSIDkAIBElYKDEdldENoYWluSW5mbxIfLnBhdGhmaW5kZXIudjEuQ2hhaW5JbmZvUmVxdWVzdBogLnBhdGhmaW5kZXIudjEuQ2hhaW5JbmZvUmVzcG9uc2UiA5ACARJkChNMaXN0U3VwcG9ydGVkQ2hhaW5zEhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5GjAucGF0aGZpbmRlci52MS5QYXRoZmluZGVyU3VwcG9ydGVkQ2hhaW5zUmVzcG9uc2UiA5ACARJiCg5HZXRDaGFpblRva2VucxIkLnBhdGhmaW5kZXIudjEuR2V0Q2hhaW5Ub2tlbnNSZXF1ZXN0GiUucGF0aGZpbmRlci52MS5HZXRDaGFpblRva2Vuc1Jlc3BvbnNlIgOQAgFCQVo/Z2l0aHViLmNvbS9Db2d3aGVlbC1WYWxpZGF0b3Ivc3BlY3RyYS1pYmMtaHViL3BhdGhmaW5kZXIvcnBjL3YxYgZwcm90bzM", [file_buf_validate_validate, file_google_protobuf_empty]);
 
 /**
  * FindPathRequest - Find a route between chains
@@ -82,11 +82,11 @@ export type FindPathRequest = Message<"pathfinder.v1.FindPathRequest"> & {
   receiverAddress: string;
 
   /**
-   * If true, only return a single route, if false, return all possible routes
+   * If true, return a smart route, if false, return a normal route
    *
-   * @generated from field: bool single_route = 8;
+   * @generated from field: bool smart_route = 8;
    */
-  singleRoute: boolean;
+  smartRoute: boolean;
 
   /**
    * Slippage in basis points (e.g., 100 = 1%, 1000 = 10%)
@@ -274,42 +274,49 @@ export type BrokerExecutionData = Message<"pathfinder.v1.BrokerExecutionData"> &
   /**
    * The IBC memo to use with MsgTransfer (contains wasm swap_and_action)
    *
-   * @generated from field: string memo = 1;
+   * @generated from field: optional string memo = 1;
    */
-  memo: string;
+  memo?: string;
+
+  /**
+   * The smart contract data to use with the swap and transfer
+   *
+   * @generated from field: optional pathfinder.v1.WasmData smart_contract_data = 2;
+   */
+  smartContractData?: WasmData;
 
   /**
    * Receiver address for MsgTransfer (the ibc-hooks contract)
    *
-   * @generated from field: string ibc_receiver = 2;
+   * @generated from field: optional string ibc_receiver = 3;
    */
-  ibcReceiver: string;
+  ibcReceiver?: string;
 
   /**
    * Recovery address on broker chain (where funds go if swap/forward fails)
    *
-   * @generated from field: string recover_address = 3;
+   * @generated from field: string recover_address = 4;
    */
   recoverAddress: string;
 
   /**
    * Minimum output amount after slippage (1% default)
    *
-   * @generated from field: string min_output_amount = 4;
+   * @generated from field: string min_output_amount = 5;
    */
   minOutputAmount: string;
 
   /**
    * True if using wasm ibc-hooks (vs simple PFM)
    *
-   * @generated from field: bool uses_wasm = 5;
+   * @generated from field: bool uses_wasm = 6;
    */
   usesWasm: boolean;
 
   /**
    * Human-readable description
    *
-   * @generated from field: string description = 6;
+   * @generated from field: string description = 7;
    */
   description: string;
 };
@@ -1051,6 +1058,291 @@ export type BasicRoute = Message<"pathfinder.v1.BasicRoute"> & {
  */
 export const BasicRouteSchema: GenMessage<BasicRoute> = /*@__PURE__*/
   messageDesc(file_pathfinder_route, 25);
+
+/**
+ * @generated from message pathfinder.v1.WasmData
+ */
+export type WasmData = Message<"pathfinder.v1.WasmData"> & {
+  /**
+   * @generated from field: string contract = 1;
+   */
+  contract: string;
+
+  /**
+   * @generated from field: pathfinder.v1.WasmMsg msg = 2;
+   */
+  msg?: WasmMsg;
+};
+
+/**
+ * Describes the message pathfinder.v1.WasmData.
+ * Use `create(WasmDataSchema)` to create a new message.
+ */
+export const WasmDataSchema: GenMessage<WasmData> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 26);
+
+/**
+ * @generated from message pathfinder.v1.WasmMsg
+ */
+export type WasmMsg = Message<"pathfinder.v1.WasmMsg"> & {
+  /**
+   * @generated from field: pathfinder.v1.SwapAndAction swap_and_action = 1;
+   */
+  swapAndAction?: SwapAndAction;
+};
+
+/**
+ * Describes the message pathfinder.v1.WasmMsg.
+ * Use `create(WasmMsgSchema)` to create a new message.
+ */
+export const WasmMsgSchema: GenMessage<WasmMsg> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 27);
+
+/**
+ * @generated from message pathfinder.v1.SwapAndAction
+ */
+export type SwapAndAction = Message<"pathfinder.v1.SwapAndAction"> & {
+  /**
+   * SwapAndAction is the entry point contract message structure
+   *
+   * @generated from field: pathfinder.v1.UserSwap user_swap = 1;
+   */
+  userSwap?: UserSwap;
+
+  /**
+   * @generated from field: pathfinder.v1.MinAsset min_asset = 2;
+   */
+  minAsset?: MinAsset;
+
+  /**
+   * @generated from field: int64 timeout_timestamp = 3;
+   */
+  timeoutTimestamp: bigint;
+
+  /**
+   * @generated from field: pathfinder.v1.PostSwapAction post_swap_action = 4;
+   */
+  postSwapAction?: PostSwapAction;
+
+  /**
+   * @generated from field: repeated string affiliates = 5;
+   */
+  affiliates: string[];
+};
+
+/**
+ * Describes the message pathfinder.v1.SwapAndAction.
+ * Use `create(SwapAndActionSchema)` to create a new message.
+ */
+export const SwapAndActionSchema: GenMessage<SwapAndAction> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 28);
+
+/**
+ * @generated from message pathfinder.v1.SwapExactAssetIn
+ */
+export type SwapExactAssetIn = Message<"pathfinder.v1.SwapExactAssetIn"> & {
+  /**
+   * @generated from field: string swap_venue_name = 1;
+   */
+  swapVenueName: string;
+
+  /**
+   * @generated from field: repeated pathfinder.v1.SwapOperation operations = 2;
+   */
+  operations: SwapOperation[];
+};
+
+/**
+ * Describes the message pathfinder.v1.SwapExactAssetIn.
+ * Use `create(SwapExactAssetInSchema)` to create a new message.
+ */
+export const SwapExactAssetInSchema: GenMessage<SwapExactAssetIn> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 29);
+
+/**
+ * @generated from message pathfinder.v1.SwapOperation
+ */
+export type SwapOperation = Message<"pathfinder.v1.SwapOperation"> & {
+  /**
+   * @generated from field: string pool = 1;
+   */
+  pool: string;
+
+  /**
+   * @generated from field: string denom_in = 2;
+   */
+  denomIn: string;
+
+  /**
+   * @generated from field: string denom_out = 3;
+   */
+  denomOut: string;
+
+  /**
+   * Interface is used by some DEXs (like Injective), optional
+   *
+   * @generated from field: optional string interface = 4;
+   */
+  interface?: string;
+};
+
+/**
+ * Describes the message pathfinder.v1.SwapOperation.
+ * Use `create(SwapOperationSchema)` to create a new message.
+ */
+export const SwapOperationSchema: GenMessage<SwapOperation> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 30);
+
+/**
+ * @generated from message pathfinder.v1.MinAsset
+ */
+export type MinAsset = Message<"pathfinder.v1.MinAsset"> & {
+  /**
+   * @generated from field: pathfinder.v1.Asset native = 1;
+   */
+  native?: Asset;
+};
+
+/**
+ * Describes the message pathfinder.v1.MinAsset.
+ * Use `create(MinAssetSchema)` to create a new message.
+ */
+export const MinAssetSchema: GenMessage<MinAsset> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 31);
+
+/**
+ * @generated from message pathfinder.v1.Asset
+ */
+export type Asset = Message<"pathfinder.v1.Asset"> & {
+  /**
+   * @generated from field: string amount = 1;
+   */
+  amount: string;
+
+  /**
+   * @generated from field: string denom = 2;
+   */
+  denom: string;
+};
+
+/**
+ * Describes the message pathfinder.v1.Asset.
+ * Use `create(AssetSchema)` to create a new message.
+ */
+export const AssetSchema: GenMessage<Asset> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 32);
+
+/**
+ * @generated from message pathfinder.v1.PostSwapAction
+ */
+export type PostSwapAction = Message<"pathfinder.v1.PostSwapAction"> & {
+  /**
+   * @generated from oneof pathfinder.v1.PostSwapAction.action
+   */
+  action: {
+    /**
+     * @generated from field: pathfinder.v1.IBCTransfer ibc_transfer = 1;
+     */
+    value: IBCTransfer;
+    case: "ibcTransfer";
+  } | {
+    /**
+     * @generated from field: pathfinder.v1.Transfer transfer = 2;
+     */
+    value: Transfer;
+    case: "transfer";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message pathfinder.v1.PostSwapAction.
+ * Use `create(PostSwapActionSchema)` to create a new message.
+ */
+export const PostSwapActionSchema: GenMessage<PostSwapAction> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 33);
+
+/**
+ * @generated from message pathfinder.v1.IBCTransfer
+ */
+export type IBCTransfer = Message<"pathfinder.v1.IBCTransfer"> & {
+  /**
+   * @generated from field: pathfinder.v1.IBCInfo ibc_info = 1;
+   */
+  ibcInfo?: IBCInfo;
+};
+
+/**
+ * Describes the message pathfinder.v1.IBCTransfer.
+ * Use `create(IBCTransferSchema)` to create a new message.
+ */
+export const IBCTransferSchema: GenMessage<IBCTransfer> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 34);
+
+/**
+ * @generated from message pathfinder.v1.Transfer
+ */
+export type Transfer = Message<"pathfinder.v1.Transfer"> & {
+  /**
+   * @generated from field: string to_address = 1;
+   */
+  toAddress: string;
+};
+
+/**
+ * Describes the message pathfinder.v1.Transfer.
+ * Use `create(TransferSchema)` to create a new message.
+ */
+export const TransferSchema: GenMessage<Transfer> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 35);
+
+/**
+ * @generated from message pathfinder.v1.IBCInfo
+ */
+export type IBCInfo = Message<"pathfinder.v1.IBCInfo"> & {
+  /**
+   * @generated from field: string memo = 1;
+   */
+  memo: string;
+
+  /**
+   * @generated from field: string receiver = 2;
+   */
+  receiver: string;
+
+  /**
+   * @generated from field: string recover_address = 3;
+   */
+  recoverAddress: string;
+
+  /**
+   * @generated from field: string source_channel = 4;
+   */
+  sourceChannel: string;
+};
+
+/**
+ * Describes the message pathfinder.v1.IBCInfo.
+ * Use `create(IBCInfoSchema)` to create a new message.
+ */
+export const IBCInfoSchema: GenMessage<IBCInfo> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 36);
+
+/**
+ * @generated from message pathfinder.v1.UserSwap
+ */
+export type UserSwap = Message<"pathfinder.v1.UserSwap"> & {
+  /**
+   * @generated from field: pathfinder.v1.SwapExactAssetIn swap_exact_asset_in = 1;
+   */
+  swapExactAssetIn?: SwapExactAssetIn;
+};
+
+/**
+ * Describes the message pathfinder.v1.UserSwap.
+ * Use `create(UserSwapSchema)` to create a new message.
+ */
+export const UserSwapSchema: GenMessage<UserSwap> = /*@__PURE__*/
+  messageDesc(file_pathfinder_route, 37);
 
 /**
  * PathfinderService provides route discovery and validation for IBC transfers and swaps

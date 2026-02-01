@@ -87,8 +87,8 @@ message FindPathRequest {
         (buf.validate.field).string.min_len = 38, 
         (buf.validate.field).string.max_len = 68];
     
-    // If true, only return a single route, if false, return all possible routes
-    bool single_route = 8;
+    // If true, return a smart route, if false, return a normal route
+    bool smart_route = 8;
 
     // Slippage in basis points (e.g., 100 = 1%, 1000 = 10%)
     // Must be less than 10000
@@ -146,17 +146,19 @@ message BrokerSwapRoute {
 // BrokerExecutionData contains ready-to-use transaction data
 message BrokerExecutionData {
     // The IBC memo to use with MsgTransfer (contains wasm swap_and_action)
-    string memo = 1;
+    optional string memo = 1;
+    // The smart contract data to use with the swap and transfer
+    optional WasmData smart_contract_data = 2;
     // Receiver address for MsgTransfer (the ibc-hooks contract)
-    string ibc_receiver = 2;
+    optional string ibc_receiver = 3;
     // Recovery address on broker chain (where funds go if swap/forward fails)
-    string recover_address = 3;
+    string recover_address = 4;
     // Minimum output amount after slippage (1% default)
-    string min_output_amount = 4;
+    string min_output_amount = 5;
     // True if using wasm ibc-hooks (vs simple PFM)
-    bool uses_wasm = 5;
+    bool uses_wasm = 6;
     // Human-readable description
-    string description = 6;
+    string description = 7;
 }
 
 message IBCLeg {
@@ -345,3 +347,70 @@ message BasicRoute {
     string port_id = 5;
     map<string, TokenInfo> allowed_tokens = 6;
 }
+
+message WasmData {
+
+    string contract = 1;
+    WasmMsg msg = 2;
+}
+
+message WasmMsg {
+    SwapAndAction swap_and_action = 1;
+}
+
+message SwapAndAction {
+    // SwapAndAction is the entry point contract message structure
+    UserSwap user_swap = 1;
+    MinAsset min_asset = 2;
+    int64 timeout_timestamp = 3;
+    PostSwapAction post_swap_action = 4;
+    repeated string affiliates = 5;
+}
+    
+message SwapExactAssetIn {
+    string swap_venue_name = 1;
+    repeated SwapOperation operations = 2;
+}
+
+message SwapOperation {
+    string pool = 1;
+    string denom_in = 2;
+    string denom_out = 3;
+    // Interface is used by some DEXs (like Injective), optional
+    optional string interface = 4;
+}
+
+message MinAsset {
+    Asset native = 1;
+}
+
+message Asset {
+    string amount = 1;
+    string denom = 2;
+}
+
+message PostSwapAction {
+    oneof action {
+        IBCTransfer ibc_transfer = 1;
+        Transfer transfer = 2;
+    }
+}
+
+message IBCTransfer {
+    IBCInfo ibc_info = 1;
+}
+
+message Transfer {
+    string to_address = 1;
+}
+
+message IBCInfo {
+    string memo = 1;
+    string receiver = 2;
+    string recover_address = 3;
+    string source_channel = 4;
+}
+
+message UserSwap {
+    SwapExactAssetIn swap_exact_asset_in = 1;
+}   
