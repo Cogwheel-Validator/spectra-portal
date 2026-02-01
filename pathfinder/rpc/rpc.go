@@ -242,7 +242,7 @@ func (s *Server) logServerInfo(protocol string) {
 		Msg("Spectra's Pathfinder RPC Server starting")
 
 	Logger.Info().Msg("Available endpoints:")
-	Logger.Info().Msg("\tRPC: /rpc.v1.PathfinderService/*")
+	Logger.Info().Msg("\tRPC: /pathfinder.v1.PathfinderService/*")
 	Logger.Info().Msg("\tHealth: /server/health")
 	Logger.Info().Msg("\tReady: /server/ready")
 

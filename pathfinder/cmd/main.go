@@ -10,6 +10,8 @@ import (
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/config"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers/osmosis"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc"
 	"github.com/rs/zerolog"
 )
@@ -58,26 +60,37 @@ func main() {
 	}
 
 	// Initialize broker clients
-	brokerClients := make(map[string]router.BrokerClient)
+	brokerClients := make(map[string]brokers.BrokerClient)
 
 	// Initialize Osmosis SQS broker if configured
 	if rpcConfig.SqsMainUrl != "" {
-		var osmosisBroker *router.OsmosisSqsBroker
+		// Get Osmosis chain contract address
+		var osmosisContractAddress string
+		for _, chain := range chains {
+			if chain.BrokerId == "osmosis-sqs" {
+				osmosisContractAddress = chain.IBCHooksContract
+				break
+			}
+		}
+
+		var osmosisBroker *osmosis.SqsBroker
 		if len(rpcConfig.BackupSqsUrls) > 0 {
-			osmosisBroker = router.NewOsmosisSqsBrokerWithFailover(
+			osmosisBroker = osmosis.NewSqsBrokerWithFailover(
 				rpcConfig.SqsMainUrl,
 				rpcConfig.BackupSqsUrls,
+				osmosisContractAddress,
 			)
 			log.Info().
 				Str("primary", rpcConfig.SqsMainUrl).
 				Int("backups", len(rpcConfig.BackupSqsUrls)).
 				Msg("Osmosis SQS broker initialized with failover")
 		} else {
-			osmosisBroker = router.NewOsmosisSqsBroker(rpcConfig.SqsMainUrl)
+			osmosisBroker = osmosis.NewSqsBroker(rpcConfig.SqsMainUrl, osmosisContractAddress)
 			log.Info().
 				Str("url", rpcConfig.SqsMainUrl).
 				Msg("Osmosis SQS broker initialized")
 		}
+		// Register with broker ID from config (osmosis-sqs) to match chain config broker_id
 		brokerClients["osmosis-sqs"] = osmosisBroker
 	}
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/output"
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -105,7 +106,7 @@ func (l *ChainConfigLoader) ConvertToRouterTypes(config *output.PathfinderConfig
 // brokerClients should contain configured broker clients (e.g., Osmosis SQS client).
 func (l *ChainConfigLoader) InitializePathfinder(
 	configPath string,
-	brokerClients map[string]router.BrokerClient,
+	brokerClients map[string]brokers.BrokerClient,
 ) (*router.Pathfinder, error) {
 	chains, err := l.LoadFromFile(configPath)
 	if err != nil {
