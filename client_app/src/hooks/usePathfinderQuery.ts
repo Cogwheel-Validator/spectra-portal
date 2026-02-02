@@ -21,7 +21,7 @@ export interface PathfinderQueryParams {
     tokenToDenom?: string;
     senderAddress: string;
     receiverAddress: string;
-    singleRoute?: boolean;
+    smartRoute?: boolean;
     slippageBps?: number;
 }
 
@@ -157,7 +157,7 @@ export function usePathfinderQuery(
                     tokenToDenom: params.tokenToDenom || "",
                     senderAddress: params.senderAddress,
                     receiverAddress: params.receiverAddress,
-                    singleRoute: params.singleRoute ?? false,
+                    smartRoute: params.smartRoute ?? false,
                     slippageBps: params.slippageBps ?? 100, // Default 1% slippage
                 };
 
@@ -312,13 +312,17 @@ export function getRouteStepCount(response: FindPathResponse, mode: "manual" | "
             const route = response.route.value;
             if (mode === "smart" && route.execution?.usesWasm) {
                 // Smart contract WASM execution: 1 transaction for inbound+swap+outbound
-                return route.inboundLeg ? 1 : route.outboundLegs.length > 0 ? 1 : 1;
+                return route.inboundLegs.length > 0
+                    ? route.inboundLegs.length
+                    : route.outboundLegs.length > 0
+                      ? route.outboundLegs.length
+                      : 1;
             }
             // Manual mode: count each leg
             let steps = 0;
-            if (route.inboundLeg) steps++;
-            steps++; // Swap always counts as 1
-            steps += route.outboundLegs.length;
+            if (route.inboundLegs.length > 0) steps += route.inboundLegs.length;
+            if (route.swap) steps++; // Swap always counts as 1
+            if (route.outboundLegs.length > 0) steps += route.outboundLegs.length;
             return steps;
         }
         default:

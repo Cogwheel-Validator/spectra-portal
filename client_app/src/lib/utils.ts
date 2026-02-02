@@ -153,8 +153,8 @@ export interface SlippageErrorInfo {
  * - "token amount calculated (X) is lesser than min amount (Y)"
  * - "minimum receive amount: X, actual: Y"
  * - "slippage exceeded"
- * 
- * Usage: 
+ *
+ * Usage:
  * - For now it should mark the Osmosis swap error I think?
  * - Should also cover some edge cases
  * - Todo: change this section a bit
@@ -196,12 +196,12 @@ export function parseSlippageError(errorMessage: string): SlippageErrorInfo {
     if (slippagePattern.test(errorMessage)) {
         return {
             isSlippageError: true,
-             // Suggest 2% if we can't parse the exact amounts
-             // This kinda sucks at the momen becaus the user could set higher slipage but it is okay
-             // This is just some idea to try to standardize this in the future so that teh Portal app doesn't just
-             // rely on the Osmosis SQS for example
-             // TODO leave this part as it is, it probably won't be used in this form but to future me this will need
-             // a rework when some new pathfinder brokers are added
+            // Suggest 2% if we can't parse the exact amounts
+            // This kinda sucks at the momen becaus the user could set higher slipage but it is okay
+            // This is just some idea to try to standardize this in the future so that teh Portal app doesn't just
+            // rely on the Osmosis SQS for example
+            // TODO leave this part as it is, it probably won't be used in this form but to future me this will need
+            // a rework when some new pathfinder brokers are added
             suggestedSlippageBps: 200,
         };
     }

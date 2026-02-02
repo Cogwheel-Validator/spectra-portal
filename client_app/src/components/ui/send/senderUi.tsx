@@ -99,7 +99,7 @@ export default function SendUI({
         const directIds = new Set(directlyConnected.map((c) => c.id));
 
         // Add chains reachable via broker chains
-        const viabroker: ClientChain[] = [];
+        const viaBroker: ClientChain[] = [];
         for (const broker of brokerChains) {
             // Check if source chain can reach the broker
             const sourceChain = getChainById(sendChain);
@@ -110,15 +110,15 @@ export default function SendUI({
                 for (const connected of broker.connected_chains) {
                     if (!directIds.has(connected.id) && connected.id !== sendChain) {
                         const chain = getChainById(connected.id);
-                        if (chain && !viabroker.some((c) => c.id === chain.id)) {
-                            viabroker.push(chain);
+                        if (chain && !viaBroker.some((c) => c.id === chain.id)) {
+                            viaBroker.push(chain);
                         }
                     }
                 }
             }
         }
 
-        return [...directlyConnected, ...viabroker];
+        return [...directlyConnected, ...viaBroker];
     }, [sendChain, getConnectedChains, brokerChains, getChainById]);
 
     // Base tokens available on chains (without balance sorting)
@@ -222,7 +222,7 @@ export default function SendUI({
             tokenToDenom: selectedReceiveToken?.denom ?? "",
             senderAddress,
             receiverAddress,
-            singleRoute: false,
+            smartRoute: false,
             slippageBps: slippageBps,
         };
     }, [
