@@ -1,23 +1,21 @@
 "use client";
 
-import { AlertCircle, ArrowDown, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { ArrowDown, ArrowRight } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ClientChain, ClientConfig, ClientToken } from "@/components/modules/tomlTypes";
-import AmountInput from "@/components/ui/send/amountInput";
-import AssetDropdown from "@/components/ui/send/assetDropdown";
-import ChainDropdown from "@/components/ui/send/chainDropdown";
+import FromSection from "@/components/ui/send/fromSection";
+import RouteDisplay from "@/components/ui/send/routeDisplay";
+import ToSection from "@/components/ui/send/toSection";
+import TransferButton from "@/components/ui/send/transferButton";
 import TransferModeToggle from "@/components/ui/send/transferModeToggle";
 import WalletConnect from "@/components/ui/wallet/walletConnect";
-import { type TransferMode, useTransfer } from "@/context/transferContext";
+import { useTransfer } from "@/context/transferContext";
 import { useWallet } from "@/context/walletContext";
+import { useBalanceValidation } from "@/hooks/useBalanceValidation";
 import { useDebouncedCallback } from "@/hooks/useDebounce";
-import {
-    getRouteStepCount,
-    routeSupportsPfm,
-    usePathfinderQuery,
-} from "@/hooks/usePathfinderQuery";
-import { useGetAddressBalance } from "@/lib/apiQueries/fetchApiData";
+import { usePathfinderQuery } from "@/hooks/usePathfinderQuery";
+import { useRouteInfo } from "@/hooks/useRouteInfo";
+import { useTransferFormState } from "@/hooks/useTransferFormState";
 import { humanToBaseUnits } from "@/lib/utils";
 
 interface SendUIProps {
@@ -37,19 +35,31 @@ export default function SendUI({
     receiveToken: initialReceiveToken = "",
     amount: initialAmount = "",
 }: SendUIProps) {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const [isPending, startTransition] = useTransition();
     const { isConnectedToChain, getAddress } = useWallet();
     const transfer = useTransfer();
 
-    // Local state for form inputs
-    const [sendChain, setSendChain] = useState(initialSendChain);
-    const [receiveChain, setReceiveChain] = useState(initialReceiveChain);
-    const [sendToken, setSendToken] = useState(initialSendToken);
-    const [receiveToken, setReceiveToken] = useState(initialReceiveToken);
-    const [amount, setAmount] = useState(initialAmount);
-    const [mode, setMode] = useState<TransferMode>("manual");
+    // Form state management
+    const {
+        sendChain,
+        receiveChain,
+        sendToken,
+        receiveToken,
+        amount,
+        mode,
+        isPending,
+        setMode,
+        handleSendChainChange,
+        handleReceiveChainChange,
+        handleSendTokenChange,
+        handleReceiveTokenChange,
+        handleAmountChange,
+    } = useTransferFormState({
+        initialSendChain,
+        initialReceiveChain,
+        initialSendToken,
+        initialReceiveToken,
+        initialAmount,
+    });
 
     // Helper functions
     const getChainById = useCallback(
@@ -101,12 +111,10 @@ export default function SendUI({
         // Add chains reachable via broker chains
         const viaBroker: ClientChain[] = [];
         for (const broker of brokerChains) {
-            // Check if source chain can reach the broker
             const sourceChain = getChainById(sendChain);
             const canReachBroker = sourceChain?.connected_chains.some((cc) => cc.id === broker.id);
 
             if (canReachBroker || sendChain === broker.id) {
-                // Add all chains connected to the broker that aren't already in the list
                 for (const connected of broker.connected_chains) {
                     if (!directIds.has(connected.id) && connected.id !== sendChain) {
                         const chain = getChainById(connected.id);
@@ -137,18 +145,17 @@ export default function SendUI({
         [receiveChain, getAddress],
     );
 
-    // Fetch sender's balance on the source chain
-    const { data: senderBalance, isLoading: balanceLoading } = useGetAddressBalance(
-        sendChain,
-        senderAddress,
-    );
+    // Balance validation hook - get sender balance for sorting tokens
+    const { senderBalance } = useBalanceValidation(sendChain, senderAddress, null, amount);
 
     // All tokens available on source chain, sorted by user's balance
     const availableSendTokens = useMemo(() => {
-        // If we have balance data, sort by balance (highest first)
         if (senderBalance?.balances) {
             const balanceMap = new Map(
-                senderBalance.balances.map((b) => [b.denom, BigInt(b.amount)]),
+                senderBalance.balances.map((b: { denom: string; amount: string }) => [
+                    b.denom,
+                    BigInt(b.amount),
+                ]),
             );
 
             return [...baseSendTokens].sort((a, b) => {
@@ -173,37 +180,15 @@ export default function SendUI({
         [availableReceiveTokens, receiveToken],
     );
 
-    // Check if user has sufficient balance for the selected token
-    const tokenBalance = useMemo(() => {
-        if (!senderBalance || !selectedSendToken) return null;
-        const balance = senderBalance.balances.find((b) => b.denom === selectedSendToken.denom);
-        return balance ? balance.amount : "0";
-    }, [senderBalance, selectedSendToken]);
-
-    // Format balance for display
-    const formattedBalance = useMemo(() => {
-        if (!tokenBalance || !selectedSendToken) return null;
-        const decimals = selectedSendToken.decimals ?? 6;
-        const value = Number(tokenBalance) / 10 ** decimals;
-        return value.toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            // even if the token has more decimals than 6, we only want to display 6 decimal places
-            maximumFractionDigits: decimals > 6 ? 6 : decimals,
-        });
-    }, [tokenBalance, selectedSendToken]);
-
-    // Check if user has enough balance
-    const insufficientBalance = useMemo(() => {
-        if (!tokenBalance || !amount || !selectedSendToken) return false;
-        const decimals = selectedSendToken.decimals ?? 6;
-        const amountInSmallestUnit = BigInt(Math.floor(Number(amount) * 10 ** decimals));
-        const balanceInSmallestUnit = BigInt(tokenBalance);
-        return amountInSmallestUnit > balanceInSmallestUnit;
-    }, [tokenBalance, amount, selectedSendToken]);
+    // Recompute balance validation with selected token
+    const {
+        formattedBalance: finalFormattedBalance,
+        insufficientBalance: finalInsufficientBalance,
+        balanceLoading: finalBalanceLoading,
+    } = useBalanceValidation(sendChain, senderAddress, selectedSendToken, amount);
 
     // Convert amount to base units (with decimals) for pathfinder
     const amountInBaseUnits = useMemo(() => {
-        // call the util function just wrapped in with use Memo
         return humanToBaseUnits(amount, selectedSendToken?.decimals ?? 6);
     }, [amount, selectedSendToken]);
 
@@ -261,24 +246,11 @@ export default function SendUI({
         staleAfterMs: 15000,
     });
 
-    // Route analysis
-    const supportsPfm = useMemo(() => {
-        return pathfinderResponse ? routeSupportsPfm(pathfinderResponse) : false;
-    }, [pathfinderResponse]);
+    // Route information hook
+    const { routeInfo, supportsPfm, supportsWasm, isDirectRoute, intermediateChainIds } =
+        useRouteInfo(pathfinderResponse, mode);
 
-    const supportsWasm = useMemo(() => {
-        if (!pathfinderResponse?.success) return false;
-        if (pathfinderResponse.route.case === "brokerSwap") {
-            return pathfinderResponse.route.value.execution?.usesWasm ?? false;
-        }
-        return false;
-    }, [pathfinderResponse]);
-
-    const stepCount = useMemo(() => {
-        return pathfinderResponse ? getRouteStepCount(pathfinderResponse, mode) : 0;
-    }, [pathfinderResponse, mode]);
-
-    // Extract stable setters from transfer context to avoid dependency issues
+    // Extract stable setters from transfer context
     const {
         setPathfinderResponse,
         setFromChain,
@@ -290,14 +262,7 @@ export default function SendUI({
         setReceiverAddress,
         setMode: setTransferMode,
         setSlippage,
-        state: transferState,
     } = transfer;
-
-    // Determine if this is a direct route (no PFM or WASM available)
-    const isDirectRoute = useMemo(() => {
-        if (!pathfinderResponse?.success) return false;
-        return pathfinderResponse.route.case === "direct";
-    }, [pathfinderResponse]);
 
     // Update transfer context when pathfinder response changes
     useEffect(() => {
@@ -333,123 +298,16 @@ export default function SendUI({
         setTransferMode,
     ]);
 
-    // URL update logic
-    const updateURL = useCallback(
-        (
-            updates: Partial<{
-                from_chain: string;
-                to_chain: string;
-                send_asset: string;
-                receive_asset: string;
-                amount: string;
-            }>,
-        ) => {
-            startTransition(() => {
-                const params = new URLSearchParams(searchParams.toString());
-                Object.entries(updates).forEach(([key, value]) => {
-                    if (value !== undefined) {
-                        if (value) params.set(key, value);
-                        else params.delete(key);
-                    }
-                });
-                router.push(`/transfer?${params.toString()}`, { scroll: false });
-            });
-        },
-        [router, searchParams],
-    );
-
-    // Event handlers
-    const handleSendChainChange = useCallback(
-        (chainId: string) => {
-            setSendChain(chainId);
-            setSendToken("");
-            setReceiveChain("");
-            setReceiveToken("");
-            setAmount("");
-            updateURL({
-                from_chain: chainId,
-                send_asset: "",
-                to_chain: "",
-                receive_asset: "",
-                amount: "",
-            });
-        },
-        [updateURL],
-    );
-
-    const handleReceiveChainChange = useCallback(
-        (chainId: string) => {
-            setReceiveChain(chainId);
-            setReceiveToken("");
-            updateURL({ to_chain: chainId, receive_asset: "" });
-        },
-        [updateURL],
-    );
-
-    const handleSendTokenChange = useCallback(
-        (tokenSymbol: string) => {
-            setSendToken(tokenSymbol);
-            updateURL({ send_asset: tokenSymbol });
-        },
-        [updateURL],
-    );
-
-    const handleReceiveTokenChange = useCallback(
-        (tokenSymbol: string) => {
-            setReceiveToken(tokenSymbol);
-            updateURL({ receive_asset: tokenSymbol });
-        },
-        [updateURL],
-    );
-
-    // Debounced URL update for amount using callback hook
-    const debouncedUpdateURL = useDebouncedCallback((value: string) => {
-        updateURL({ amount: value });
-    }, 2000);
-
-    const handleAmountChange = useCallback(
-        (value: string) => {
-            setAmount(value);
-            debouncedUpdateURL(value);
-        },
-        [debouncedUpdateURL],
-    );
-
-    // Extract intermediate chains from pathfinder response
-    const intermediateChainIds = useMemo(() => {
-        if (!pathfinderResponse?.success) return [];
-
-        let chainPath: string[] = [];
-        switch (pathfinderResponse.route.case) {
-            case "indirect":
-                chainPath = pathfinderResponse.route.value.path;
-                break;
-            case "brokerSwap":
-                chainPath = pathfinderResponse.route.value.path;
-                break;
-            default:
-                return [];
-        }
-
-        // Return intermediate chains (excluding first and last)
-        if (chainPath.length > 2) {
-            return chainPath.slice(1, -1);
-        }
-        return [];
-    }, [pathfinderResponse]);
-
-    // Required chains for wallet connection (including intermediate chains for multi-hop routes)
+    // Required chains for wallet connection (including intermediate chains)
     const requiredChains = useMemo(() => {
         const chains: ClientChain[] = [];
         const addedIds = new Set<string>();
 
-        // Add source chain
         if (sendChainData) {
             chains.push(sendChainData);
             addedIds.add(sendChainData.id);
         }
 
-        // Add intermediate chains from the route (for broker swaps and indirect routes)
         for (const chainId of intermediateChainIds) {
             if (!addedIds.has(chainId)) {
                 const chain = getChainById(chainId);
@@ -460,7 +318,6 @@ export default function SendUI({
             }
         }
 
-        // Add destination chain
         if (receiveChainData && !addedIds.has(receiveChainData.id)) {
             chains.push(receiveChainData);
         }
@@ -471,7 +328,6 @@ export default function SendUI({
     // Validation
     const isWalletReady = useMemo(() => {
         if (!sendChain || !receiveChain) return false;
-        // Check that all required chains are connected
         return requiredChains.every((chain) => isConnectedToChain(chain.id));
     }, [sendChain, receiveChain, requiredChains, isConnectedToChain]);
 
@@ -482,8 +338,8 @@ export default function SendUI({
             !routeLoading &&
             !routePending &&
             Number.parseFloat(amount) > 0 &&
-            !insufficientBalance &&
-            !balanceLoading
+            !finalInsufficientBalance &&
+            !finalBalanceLoading
         );
     }, [
         isWalletReady,
@@ -491,8 +347,8 @@ export default function SendUI({
         routeLoading,
         routePending,
         amount,
-        insufficientBalance,
-        balanceLoading,
+        finalInsufficientBalance,
+        finalBalanceLoading,
     ]);
 
     const { startPreparing } = transfer;
@@ -501,17 +357,15 @@ export default function SendUI({
     const handleSubmit = useCallback(async () => {
         if (!canSubmit || !pathfinderResponse) return;
 
-        // If quote is stale, refresh it first to get latest prices
+        // If quote is stale, refresh it first
         if (routeIsStale) {
             setIsRefreshing(true);
             try {
                 const freshResponse = await refetchFresh();
                 if (!freshResponse?.success) {
-                    // If refresh failed, don't proceed
                     setIsRefreshing(false);
                     return;
                 }
-                // Update context with fresh response before starting
                 setPathfinderResponse(freshResponse);
             } catch {
                 setIsRefreshing(false);
@@ -520,7 +374,6 @@ export default function SendUI({
             setIsRefreshing(false);
         }
 
-        // Trigger the transfer flow - TaskProvider will handle execution
         startPreparing();
     }, [
         canSubmit,
@@ -531,58 +384,17 @@ export default function SendUI({
         startPreparing,
     ]);
 
-    // Extract route info for display
-    const routeInfo = useMemo(() => {
-        if (!pathfinderResponse?.success) return null;
+    // Debounced URL update for amount
+    const debouncedUpdateURL = useDebouncedCallback((_value: string) => {
+        // This is handled inside useTransferFormState now
+    }, 2000);
 
-        let routeType = "";
-        let expectedOutput = "";
-        let priceImpact = 0;
-        let priceImpactBps = 0;
-        let priceImpactColor = "";
-
-        switch (pathfinderResponse.route.case) {
-            case "direct":
-                routeType = "Direct Transfer";
-                expectedOutput = pathfinderResponse.route.value.transfer?.amount ?? "0";
-                break;
-            case "indirect": {
-                routeType = "Multi-hop Transfer";
-                const legs = pathfinderResponse.route.value.legs;
-                expectedOutput = legs[legs.length - 1]?.amount ?? "0";
-                break;
-            }
-            case "brokerSwap":
-                routeType = "Swap & Transfer";
-                expectedOutput = pathfinderResponse.route.value.swap?.amountOut ?? "0";
-                priceImpact = Number.parseFloat(
-                    pathfinderResponse.route.value.swap?.priceImpact ?? "0",
-                );
-                priceImpactBps = Math.round(priceImpact * 10000);
-
-                // It is retarded but for some reason the Tailwind CSS keeps ****ing me and not renderind the color
-                // as intended, let it just work directly with the style and just move on...
-                if (priceImpactBps < -500) {
-                    priceImpactColor = "#e11d48"; // rose-600
-                } else if (priceImpactBps < -250) {
-                    priceImpactColor = "#f87171"; // red-400
-                } else if (priceImpactBps < -100) {
-                    priceImpactColor = "#facc15"; // yellow-400
-                } else {
-                    priceImpactColor = "#4ade80"; // green-400
-                }
-                break;
-        }
-
-        return {
-            routeType,
-            expectedOutput,
-            priceImpact,
-            priceImpactBps,
-            priceImpactColor,
-            stepCount,
-        };
-    }, [pathfinderResponse, stepCount]);
+    const wrappedHandleAmountChange = useCallback(
+        (value: string) => {
+            handleAmountChange(value, debouncedUpdateURL);
+        },
+        [handleAmountChange, debouncedUpdateURL],
+    );
 
     return (
         <div className="space-y-4 lg:space-y-5">
@@ -592,80 +404,30 @@ export default function SendUI({
                 <WalletConnect requiredChains={requiredChains} availableChains={config.chains} />
             </div>
 
-            {/* Main Transfer Section - Horizontal on PC, Vertical on Mobile */}
+            {/* Main Transfer Section */}
             <div className="flex flex-col lg:flex-row lg:items-stretch gap-4 lg:gap-6">
-                {/* From Section */}
-                <div className="flex-1 bg-slate-800/30 rounded-xl p-4 lg:p-5 border border-slate-700/50 space-y-3">
-                    <h2 className="text-base lg:text-lg font-semibold text-white flex items-center gap-2">
-                        <span className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-orange-500 flex items-center justify-center text-xs lg:text-sm font-bold">
-                            1
-                        </span>
-                        From
-                    </h2>
+                <FromSection
+                    chains={config.chains}
+                    availableSendTokens={availableSendTokens}
+                    selectedSendToken={selectedSendToken}
+                    sendChain={sendChain}
+                    sendToken={sendToken}
+                    amount={amount}
+                    senderAddress={senderAddress}
+                    receiveChain={receiveChain}
+                    receiveToken={receiveToken}
+                    formattedBalance={finalFormattedBalance}
+                    insufficientBalance={finalInsufficientBalance}
+                    balanceLoading={finalBalanceLoading}
+                    routeLoading={routeLoading}
+                    routePending={routePending}
+                    isPending={isPending}
+                    onSendChainChange={handleSendChainChange}
+                    onSendTokenChange={handleSendTokenChange}
+                    onAmountChange={wrappedHandleAmountChange}
+                />
 
-                    <div className="space-y-3">
-                        <ChainDropdown
-                            chains={config.chains}
-                            selectedChainId={sendChain}
-                            onSelect={handleSendChainChange}
-                            placeholder="Select source chain"
-                            disabled={isPending}
-                            label="Chain"
-                            variant="from"
-                        />
-
-                        <AssetDropdown
-                            tokens={availableSendTokens}
-                            selectedSymbol={sendToken}
-                            onSelect={handleSendTokenChange}
-                            placeholder="Select asset to send"
-                            disabled={isPending || !sendChain}
-                            label="Asset"
-                        />
-
-                        {/* Amount Input - under From section */}
-                        <div className="space-y-2">
-                            <AmountInput
-                                value={amount}
-                                onChange={handleAmountChange}
-                                token={selectedSendToken}
-                                disabled={isPending || !receiveChain || !receiveToken}
-                                isLoading={routeLoading || routePending}
-                                label="Amount to Send"
-                            />
-
-                            {/* Balance Display */}
-                            {selectedSendToken && senderAddress && (
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-slate-400">Available:</span>
-                                    {balanceLoading ? (
-                                        <span className="text-slate-400">Loading...</span>
-                                    ) : formattedBalance !== null ? (
-                                        <span
-                                            className={`font-medium ${insufficientBalance ? "text-red-400" : "text-slate-300"}`}
-                                        >
-                                            {formattedBalance} {selectedSendToken.symbol}
-                                        </span>
-                                    ) : (
-                                        <span className="text-slate-400">
-                                            0 {selectedSendToken.symbol}
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Insufficient Balance Warning */}
-                            {insufficientBalance && (
-                                <div className="flex items-center gap-2 text-red-400 text-xs">
-                                    <AlertCircle className="w-3 h-3" />
-                                    <span>Insufficient balance</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Arrow Separator - Down on mobile, Right on PC */}
+                {/* Arrow Separator */}
                 <div className="flex justify-center items-center lg:self-center">
                     <div className="p-2 lg:p-3 bg-slate-700/50 rounded-full">
                         <ArrowDown className="w-5 h-5 lg:hidden text-slate-400" />
@@ -673,41 +435,21 @@ export default function SendUI({
                     </div>
                 </div>
 
-                {/* To Section */}
-                <div className="flex-1 bg-slate-800/30 rounded-xl p-4 lg:p-5 border border-slate-700/50 space-y-3">
-                    <h2 className="text-base lg:text-lg font-semibold text-white flex items-center gap-2">
-                        <span className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-teal-500 flex items-center justify-center text-xs lg:text-sm font-bold">
-                            2
-                        </span>
-                        To
-                    </h2>
-
-                    <div className="space-y-3">
-                        <ChainDropdown
-                            chains={availableReceiveChains}
-                            selectedChainId={receiveChain}
-                            onSelect={handleReceiveChainChange}
-                            placeholder="Select destination chain"
-                            disabled={isPending || !sendChain}
-                            label="Chain"
-                            variant="to"
-                        />
-
-                        <AssetDropdown
-                            tokens={availableReceiveTokens}
-                            selectedSymbol={receiveToken}
-                            onSelect={handleReceiveTokenChange}
-                            placeholder="Select asset to receive"
-                            disabled={isPending || !receiveChain}
-                            label="Asset (optional)"
-                        />
-                    </div>
-                </div>
+                <ToSection
+                    availableReceiveChains={availableReceiveChains}
+                    availableReceiveTokens={availableReceiveTokens}
+                    receiveChain={receiveChain}
+                    receiveToken={receiveToken}
+                    sendChain={sendChain}
+                    isPending={isPending}
+                    onReceiveChainChange={handleReceiveChainChange}
+                    onReceiveTokenChange={handleReceiveTokenChange}
+                />
             </div>
 
-            {/* Route Info + Mode + Submit - Compact on PC */}
+            {/* Route Info + Mode + Submit */}
             <div className="space-y-3 lg:space-y-4">
-                {/* Transfer Mode Toggle - Always show when pathfinder response is available */}
+                {/* Transfer Mode Toggle */}
                 {pathfinderResponse?.success && (
                     <div className="bg-slate-800/30 rounded-xl p-4 lg:p-5 border border-slate-700/50">
                         <TransferModeToggle
@@ -723,141 +465,31 @@ export default function SendUI({
                     </div>
                 )}
 
-                {/* Route Information */}
-                {(routeLoading || routePending) && amount && Number.parseFloat(amount) > 0 && (
-                    <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/50">
-                        <div className="flex items-center gap-3">
-                            <Loader2 className="w-4 h-4 text-teal-400 animate-spin" />
-                            <span className="text-slate-300 text-sm">
-                                Calculating best route...
-                            </span>
-                        </div>
-                    </div>
-                )}
-
-                {routeError && (
-                    <div className="bg-red-500/10 rounded-xl p-4 border border-red-500/30">
-                        <div className="flex items-center gap-3">
-                            <AlertCircle className="w-4 h-4 text-red-400" />
-                            <span className="text-red-300 text-sm">{routeError}</span>
-                        </div>
-                    </div>
-                )}
-
-                {routeInfo && !routeLoading && !routePending && (
-                    <div
-                        className={`rounded-xl p-4 border ${
-                            routeIsStale
-                                ? "bg-amber-500/10 border-amber-500/30"
-                                : "bg-linear-to-r from-teal-500/10 to-emerald-500/10 border-teal-500/30"
-                        }`}
-                    >
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-base font-semibold text-white">Route Summary</h3>
-                            <div className="flex items-center gap-2">
-                                {quoteAgeSeconds !== null && (
-                                    <span
-                                        className={`text-xs ${routeIsStale ? "text-amber-400" : "text-slate-400"}`}
-                                    >
-                                        {quoteAgeSeconds}s ago
-                                    </span>
-                                )}
-                                {routeIsStale ? (
-                                    <AlertCircle className="w-4 h-4 text-amber-400" />
-                                ) : (
-                                    <CheckCircle2 className="w-4 h-4 text-teal-400" />
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Stale quote warning */}
-                        {routeIsStale && (
-                            <div className="mb-3 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                                <p className="text-amber-300 text-xs">
-                                    Quote may be outdated. Price will be refreshed before execution.
-                                </p>
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                            <div>
-                                <span className="text-slate-400 text-xs">Route Type</span>
-                                <p className="text-white font-medium">{routeInfo.routeType}</p>
-                            </div>
-                            <div>
-                                <span className="text-slate-400 text-xs">Steps</span>
-                                <p className="text-white font-medium">
-                                    {routeInfo.stepCount} tx{routeInfo.stepCount !== 1 ? "s" : ""}
-                                </p>
-                            </div>
-                            {routeInfo.priceImpactBps !== 0 &&
-                                Math.abs(routeInfo.priceImpactBps) > 1 && (
-                                    <div>
-                                        <span className="text-slate-400 text-xs">Price Impact</span>
-                                        <p
-                                            className="font-medium"
-                                            style={{ color: routeInfo.priceImpactColor }}
-                                        >
-                                            {(routeInfo.priceImpact * 100).toFixed(2)}%
-                                        </p>
-                                    </div>
-                                )}
-                            {selectedReceiveToken && (
-                                <div>
-                                    <span className="text-slate-400 text-xs">Expected Output</span>
-                                    <p className="text-white font-medium">
-                                        ~
-                                        {(
-                                            Number.parseFloat(routeInfo.expectedOutput) /
-                                            10 ** selectedReceiveToken.decimals
-                                        ).toLocaleString()}{" "}
-                                        {selectedReceiveToken.symbol}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
+                {/* Route Display */}
+                <RouteDisplay
+                    routeLoading={routeLoading}
+                    routePending={routePending}
+                    routeError={routeError}
+                    routeInfo={routeInfo}
+                    routeIsStale={routeIsStale}
+                    quoteAgeSeconds={quoteAgeSeconds}
+                    selectedReceiveToken={selectedReceiveToken}
+                    amount={amount}
+                />
 
                 {/* Submit Button */}
-                <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={!canSubmit || isPending || isRefreshing}
-                    className={`
-                        w-full py-3 lg:py-4 px-6 rounded-xl font-bold text-base lg:text-lg
-                        transition-all duration-300 flex items-center justify-center gap-3
-                        ${
-                            canSubmit && !isRefreshing
-                                ? "bg-linear-to-r from-teal-500 to-emerald-500 text-white hover:from-teal-400 hover:to-emerald-400 shadow-lg shadow-teal-500/25"
-                                : "bg-slate-700 text-slate-400 cursor-not-allowed"
-                        }
-                    `}
-                >
-                    {!isWalletReady ? (
-                        "Connect Wallet to Both Chains"
-                    ) : !pathfinderResponse?.success ? (
-                        "Enter Transfer Details"
-                    ) : routeLoading || routePending ? (
-                        <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Computing...
-                        </>
-                    ) : isRefreshing ? (
-                        <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Refreshing quote...
-                        </>
-                    ) : (
-                        <>
-                            {mode === "smart" ? "Smart Transfer" : "Manual Transfer"}
-                            {routeIsStale && (
-                                <span className="text-xs opacity-75">(will refresh)</span>
-                            )}
-                            <ArrowRight className="w-5 h-5" />
-                        </>
-                    )}
-                </button>
+                <TransferButton
+                    canSubmit={canSubmit}
+                    isPending={isPending}
+                    isRefreshing={isRefreshing}
+                    isWalletReady={isWalletReady}
+                    pathfinderSuccess={pathfinderResponse?.success ?? false}
+                    routeLoading={routeLoading}
+                    routePending={routePending}
+                    routeIsStale={routeIsStale}
+                    mode={mode}
+                    onSubmit={handleSubmit}
+                />
             </div>
         </div>
     );
