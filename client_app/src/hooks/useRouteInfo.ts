@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { TransferMode } from "@/context/transferContext";
 import { getRouteStepCount, routeSupportsPfm } from "@/hooks/usePathfinderQuery";
+import type { FindPathResponse } from "@/lib/generated/pathfinder/pathfinder_route_pb";
 
 export interface RouteInfo {
     routeType: string;
@@ -11,7 +12,7 @@ export interface RouteInfo {
     stepCount: number;
 }
 
-export function useRouteInfo(pathfinderResponse: any, mode: TransferMode) {
+export function useRouteInfo(pathfinderResponse: FindPathResponse | null, mode: TransferMode) {
     const supportsPfm = useMemo(() => {
         return pathfinderResponse ? routeSupportsPfm(pathfinderResponse) : false;
     }, [pathfinderResponse]);
@@ -89,19 +90,17 @@ export function useRouteInfo(pathfinderResponse: any, mode: TransferMode) {
         let chainPath: string[] = [];
         switch (pathfinderResponse.route.case) {
             case "indirect":
-                chainPath = pathfinderResponse.route.value.path;
+                chainPath = pathfinderResponse.route.value.legs.map((leg) => leg.toChain);
                 break;
             case "brokerSwap":
-                chainPath = pathfinderResponse.route.value.path;
+                chainPath.push(pathfinderResponse.route.value.swap?.broker ?? "");
+                chainPath.push(...pathfinderResponse.route.value.outboundLegs.map((leg) => leg.toChain));
+                chainPath.push(...pathfinderResponse.route.value.inboundLegs.map((leg) => leg.toChain));
                 break;
             default:
-                return [];
+                chainPath = [];
         }
-
-        if (chainPath.length > 2) {
-            return chainPath.slice(1, -1);
-        }
-        return [];
+        return chainPath;
     }, [pathfinderResponse]);
 
     return {

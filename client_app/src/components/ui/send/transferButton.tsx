@@ -1,11 +1,12 @@
 import { ArrowRight, Loader2 } from "lucide-react";
+import type { ClientChain } from "@/components/modules/tomlTypes";
 import type { TransferMode } from "@/context/transferContext";
 
 interface TransferButtonProps {
     canSubmit: boolean;
     isPending: boolean;
     isRefreshing: boolean;
-    isWalletReady: boolean;
+    isWalletReady: { ready: boolean, missingChains: ClientChain[], multiHop: boolean };
     pathfinderSuccess: boolean;
     routeLoading: boolean;
     routePending: boolean;
@@ -27,8 +28,16 @@ export default function TransferButton({
     onSubmit,
 }: TransferButtonProps) {
     const getButtonText = () => {
-        if (!isWalletReady) {
-            return "Connect Wallet to Both Chains";
+        if (!isWalletReady.ready) {
+            const nMissing = isWalletReady.missingChains.length
+            if (nMissing === 1) {
+                return `Connect Wallet to ${isWalletReady.missingChains[0].id}`;
+            } else if (nMissing === 2 && !isWalletReady.multiHop) {
+                return `Connect Wallet to Both Chains`;
+            } else if (nMissing >= 1 && isWalletReady.multiHop) {
+                // at this point we have more than 2 missing chains and it is a multi-hop route
+                return `Connect Wallet to additional chains`;
+            }
         }
         if (!pathfinderSuccess) {
             return "Enter Transfer Details";

@@ -16,6 +16,7 @@ import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { usePathfinderQuery } from "@/hooks/usePathfinderQuery";
 import { useRouteInfo } from "@/hooks/useRouteInfo";
 import { useTransferFormState } from "@/hooks/useTransferFormState";
+import  clientLogger from "@/lib/clientLogger";
 import { humanToBaseUnits } from "@/lib/utils";
 
 interface SendUIProps {
@@ -341,6 +342,8 @@ export default function SendUI({
             addedIds.add(sendChainData.id);
         }
 
+        clientLogger.info("intermediate chains", intermediateChainIds)
+
         for (const chainId of intermediateChainIds) {
             if (!addedIds.has(chainId)) {
                 const chain = getChainById(chainId);
@@ -355,18 +358,24 @@ export default function SendUI({
             chains.push(receiveChainData);
         }
 
+        clientLogger.info("required chains", chains)
+        clientLogger.info("addedIds", addedIds)
+        clientLogger.info("receiveChainData", receiveChainData)
+
         return chains;
     }, [sendChainData, receiveChainData, intermediateChainIds, getChainById]);
 
     // Validation
     const isWalletReady = useMemo(() => {
-        if (!sendChain || !receiveChain) return false;
-        return requiredChains.every((chain) => isConnectedToChain(chain.id));
-    }, [sendChain, receiveChain, requiredChains, isConnectedToChain]);
+        const nRequired = requiredChains.length
+        const missingChains = requiredChains.filter((chain) => !isConnectedToChain(chain.id));
+        if (missingChains.length > 0) return { ready: false, missingChains, multiHop: nRequired > 2 };
+        return { ready: true, missingChains: [], multiHop: nRequired > 2 };
+    }, [requiredChains, isConnectedToChain]);
 
     const canSubmit = useMemo(() => {
         return (
-            isWalletReady &&
+            isWalletReady.ready &&
             pathfinderResponse?.success === true &&
             !routeLoading &&
             !routePending &&
