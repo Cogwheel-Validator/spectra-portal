@@ -194,8 +194,8 @@ export default function SendUI({
 
     const slippageBps = transfer.state.slippageBps;
 
-    // Pathfinder query with debounce
-    const pathfinderParams = useMemo(() => {
+    // Base parameters for pathfinder queries
+    const basePathfinderParams = useMemo(() => {
         if (!sendChain || !receiveChain || !sendToken || !senderAddress || !receiverAddress) {
             return null;
         }
@@ -207,7 +207,6 @@ export default function SendUI({
             tokenToDenom: selectedReceiveToken?.denom ?? "",
             senderAddress,
             receiverAddress,
-            smartRoute: false,
             slippageBps: slippageBps,
         };
     }, [
@@ -222,6 +221,24 @@ export default function SendUI({
         slippageBps,
     ]);
 
+    const addressesPresent = useMemo(() => {
+        if (senderAddress.length > 0 && receiverAddress.length > 0) {
+            return true;
+        }
+        return false;
+    }, [senderAddress, receiverAddress]);
+
+    // Separate parameters for smart and manual modes
+    const smartPathfinderParams = useMemo(() => {
+        if (!basePathfinderParams) return null;
+        return { ...basePathfinderParams, smartRoute: true };
+    }, [basePathfinderParams]);
+
+    const manualPathfinderParams = useMemo(() => {
+        if (!basePathfinderParams) return null;
+        return { ...basePathfinderParams, smartRoute: false };
+    }, [basePathfinderParams]);
+
     const isReadyToQuery = !!(
         sendChain &&
         receiveChain &&
@@ -232,6 +249,26 @@ export default function SendUI({
         receiverAddress
     );
 
+    const queryOptions = {
+        debounceMs: 2000,
+        autoRefreshMs: 20000,
+        staleAfterMs: 15000,
+    };
+
+    // Separate queries for smart and manual modes
+    const smartQuery = usePathfinderQuery(
+        smartPathfinderParams,
+        isReadyToQuery && mode === "smart",
+        queryOptions,
+    );
+
+    const manualQuery = usePathfinderQuery(
+        manualPathfinderParams,
+        isReadyToQuery && mode === "manual",
+        queryOptions,
+    );
+
+    // Select the appropriate query based on current mode
     const {
         data: pathfinderResponse,
         isLoading: routeLoading,
@@ -240,11 +277,7 @@ export default function SendUI({
         isStale: routeIsStale,
         quoteAgeSeconds,
         refetchFresh,
-    } = usePathfinderQuery(pathfinderParams, isReadyToQuery, {
-        debounceMs: 2000,
-        autoRefreshMs: 30000,
-        staleAfterMs: 15000,
-    });
+    } = mode === "smart" ? smartQuery : manualQuery;
 
     // Route information hook
     const { routeInfo, supportsPfm, supportsWasm, isDirectRoute, intermediateChainIds } =
@@ -467,6 +500,7 @@ export default function SendUI({
 
                 {/* Route Display */}
                 <RouteDisplay
+                    addressesPresent={addressesPresent}
                     routeLoading={routeLoading}
                     routePending={routePending}
                     routeError={routeError}

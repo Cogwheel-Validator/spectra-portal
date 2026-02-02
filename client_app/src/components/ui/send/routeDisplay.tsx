@@ -3,6 +3,8 @@ import type { ClientToken } from "@/components/modules/tomlTypes";
 import type { RouteInfo } from "@/hooks/useRouteInfo";
 
 interface RouteDisplayProps {
+    // sender and receiver address are present and the wallet is connected
+    addressesPresent: boolean;
     routeLoading: boolean;
     routePending: boolean;
     routeError: string | null;
@@ -14,6 +16,7 @@ interface RouteDisplayProps {
 }
 
 export default function RouteDisplay({
+    addressesPresent,
     routeLoading,
     routePending,
     routeError,
@@ -23,7 +26,7 @@ export default function RouteDisplay({
     selectedReceiveToken,
     amount,
 }: RouteDisplayProps) {
-    if ((routeLoading || routePending) && amount && Number.parseFloat(amount) > 0) {
+    if ((routeLoading || routePending) && amount && Number.parseFloat(amount) > 0 && addressesPresent) {
         return (
             <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/50">
                 <div className="flex items-center gap-3">
