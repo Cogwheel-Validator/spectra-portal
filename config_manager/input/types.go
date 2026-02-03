@@ -57,9 +57,6 @@ type ChainMeta struct {
 	// Required if IsBroker is true and you want to generate executable swap memos
 	IBCHooksContract string `toml:"ibc_hooks_contract,omitempty"`
 
-	// Optional: Set to true if this chain supports Packet Forward Middleware
-	HasPFM *bool `toml:"has_pfm,omitempty"`
-
 	// RPC and REST endpoints
 	RPCs []APIEndpoint `toml:"rpcs"`
 	Rest []APIEndpoint `toml:"rest"`
@@ -174,4 +171,11 @@ type AllowedExplorer struct {
 	WebsiteURL           string `toml:"website_url"`
 	ContactEmail         string `toml:"contact_email"`
 	GithubProfile        string `toml:"github_profile"`
+}
+
+type IbcParams struct {
+	Params struct {
+		SendEnabled    bool `json:"send_enabled"`
+		ReceiveEnabled bool `json:"receive_enabled"`
+	} `json:"params"`
 }

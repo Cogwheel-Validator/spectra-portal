@@ -3,6 +3,8 @@ package enriched
 import (
 	"fmt"
 	"log"
+	"math/rand"
+	"regexp"
 	"strings"
 	"time"
 
@@ -151,11 +153,6 @@ func (b *Builder) buildChainConfig(
 		KeplrChainConfig: keplrConfig,
 	}
 
-	// Set PFM support (from input or default to false)
-	if chain.HasPFM != nil {
-		config.HasPFM = *chain.HasPFM
-	}
-
 	// Convert REST/RPC endpoints
 	config.HealthyRPCs = b.convertEndpoints(chain.RPCs, false)
 	config.HealthyRests = b.convertEndpoints(chain.Rest, true)
@@ -168,6 +165,15 @@ func (b *Builder) buildChainConfig(
 
 	// Build IBC tokens (computed, not queried)
 	config.IBCTokens = routeBuilder.BuildIBCTokensForChain(chain.ID)
+
+	// Get the additional node info from the REST endpoint
+	randomRestEndpoint := config.HealthyRests[rand.Intn(len(config.HealthyRests))]
+	additionalNodeInfo, err := query.GetAdditionalNodeInfo(randomRestEndpoint.URL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get additional node info for chain %s: %v", chain.ID, err)
+	}
+	config.CosmosSdkVersion = additionalNodeInfo.ApplicationVersion.CosmosSdkVersion
+	config.HasPFM = findPfmSupport(additionalNodeInfo)
 
 	log.Printf("Chain %s: %d routes, %d native tokens, %d IBC tokens",
 		chain.ID, len(config.Routes), len(config.NativeTokens), len(config.IBCTokens))
@@ -261,4 +267,16 @@ func (b *Builder) findExplorerDetails(explorerURL string) (ExplorerDetails, erro
 		}
 	}
 	return ExplorerDetails{}, fmt.Errorf("explorer not found for chain %s", explorerURL)
+}
+
+func findPfmSupport(additionalNodeInfo query.NodeInfoResponse) bool {
+	// The dependency is marked with github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 for example
+	// So anything matching this url path should be a PFM support
+	match := regexp.MustCompile(`github\.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v\d+`)
+	for _, buildDep := range additionalNodeInfo.ApplicationVersion.BuildDeps {
+		if match.MatchString(buildDep.Path) {
+			return true
+		}
+	}
+	return false
 }

@@ -10,7 +10,6 @@ import (
 
 // createTestInputConfigs creates mock input configs for testing
 func createTestInputConfigs() map[string]*input.ChainInput {
-	pfmTrue := true
 	return map[string]*input.ChainInput{
 		"atomone-1": {
 			Chain: input.ChainMeta{
@@ -41,7 +40,6 @@ func createTestInputConfigs() map[string]*input.ChainInput {
 				Bech32Prefix:      "osmo",
 				IsBroker:          true,
 				BrokerID:          "osmosis-sqs",
-				HasPFM:            &pfmTrue,
 				RPCs:              []input.APIEndpoint{{URL: "https://osmosis-rpc.example.com"}},
 				Rest:              []input.APIEndpoint{{URL: "https://osmosis-api.example.com"}},
 				KeplrJSONFileName: &[]string{"osmosis.json"}[0],

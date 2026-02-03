@@ -8,9 +8,6 @@ slip44 = 118
 bech32_prefix = "symphony"
 keplr_json = "symphony.json"
 
-# Packet Forward Middleware support
-has_pfm = false
-
 # RPC endpoints
 [[chain.rpcs]]
 url = "https://symphony-rpc.cogwheel.zone"

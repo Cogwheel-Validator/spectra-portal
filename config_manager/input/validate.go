@@ -1,6 +1,7 @@
 package input
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -122,29 +123,19 @@ func (v *Validator) ValidateAll(configs map[string]*ChainInput) (map[string]*Val
 func (v *Validator) validateRequired(config *ChainInput, result *ValidationResult) {
 	chain := config.Chain
 
-	if chain.Name == "" {
-		result.Errors = append(result.Errors, &ValidationError{"chain.name", "is required"})
+	// Validate chain fields
+	chainFields := map[string]string{
+		"name":          chain.Name,
+		"id":            chain.ID,
+		"type":          chain.Type,
+		"registry":      chain.Registry,
+		"explorer_url":  chain.ExplorerURL,
+		"bech32_prefix": chain.Bech32Prefix,
 	}
-	if chain.ID == "" {
-		result.Errors = append(result.Errors, &ValidationError{"chain.id", "is required"})
-	}
-	if chain.Type == "" {
-		result.Errors = append(result.Errors, &ValidationError{"chain.type", "is required"})
-	}
-	if chain.Registry == "" {
-		result.Errors = append(result.Errors, &ValidationError{"chain.registry", "is required"})
-	}
-	if chain.ExplorerURL == "" {
-		result.Errors = append(result.Errors, &ValidationError{"chain.explorer_url", "is required"})
-	}
-	if chain.Bech32Prefix == "" {
-		result.Errors = append(result.Errors, &ValidationError{"chain.bech32_prefix", "is required"})
-	}
-	if len(chain.RPCs) == 0 {
-		result.Errors = append(result.Errors, &ValidationError{"chain.rpcs", "at least one RPC endpoint is required"})
-	}
-	if len(chain.Rest) == 0 {
-		result.Errors = append(result.Errors, &ValidationError{"chain.rest", "at least one REST endpoint is required"})
+	for fieldName, fieldValue := range chainFields {
+		if fieldValue == "" {
+			result.Errors = append(result.Errors, &ValidationError{"chain." + fieldName, "is required"})
+		}
 	}
 
 	// Validate tokens
@@ -374,6 +365,28 @@ func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult
 	}
 	if !restReachable && len(config.Chain.Rest) > 0 {
 		result.Warnings = append(result.Warnings, "no REST endpoints are currently reachable")
+	}
+	// Check if the network has IBC transfers enabled
+	for _, rest := range config.Chain.Rest {
+		resp, err := v.httpClient.Get(rest.URL + "/ibc/apps/transfer/v1/params")
+		if err != nil {
+			// Just log it for now
+			log.Printf("failed to get IBC params for %s: %v", rest.URL, err)
+			continue
+		}
+		var ibcParams IbcParams
+		if resp.StatusCode != http.StatusOK {
+			if err := json.NewDecoder(resp.Body).Decode(&ibcParams); err != nil {
+				log.Printf("failed to unmarshal IBC params: %v", err)
+				continue
+			}
+		}
+		if !ibcParams.Params.SendEnabled {
+			result.Warnings = append(result.Warnings, "IBC transfers are not enabled on the network")
+		}
+		if !ibcParams.Params.ReceiveEnabled {
+			result.Warnings = append(result.Warnings, "IBC transfers are not enabled on the network")
+		}
 	}
 }
 

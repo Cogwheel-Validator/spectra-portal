@@ -8,9 +8,6 @@ slip44 = 118
 bech32_prefix = "cosmos"
 keplr_json = "cosmoshub.json"
 
-# Packet Forward Middleware support
-has_pfm = true
-
 # RPC endpoints
 [[chain.rpcs]]
 url = "https://rpc.cosmoshub-4.citizenweb3.com/"

@@ -27,8 +27,10 @@ type ChainConfig struct {
 	// IBC hooks contract address for swap operations (e.g., Osmosis entry point contract)
 	IBCHooksContract string `json:"ibc_hooks_contract,omitempty"`
 
-	// Middleware support (detected from chain or manually set)
+	// Middleware support detected from the REST endpoint
 	HasPFM bool `json:"has_pfm"`
+
+	CosmosSdkVersion string `json:"cosmos_sdk_version"`
 
 	// Verified endpoints (after health checks)
 	HealthyRPCs  []Endpoint `json:"healthy_rpcs"`

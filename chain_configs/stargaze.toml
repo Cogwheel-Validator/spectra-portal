@@ -13,8 +13,6 @@ broker_id = ""
 
 keplr_json = "stargaze.json"
 
-has_pfm = false
-
 # RPC endpoints
 [[chain.rpcs]]
 url = "https://stargaze-rpc.polkachu.com"

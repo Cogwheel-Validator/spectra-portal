@@ -81,11 +81,17 @@ type NodeStatus struct {
 type NodeInfoResponse struct {
 	DefaultNodeInfo    DefaultNodeInfo `json:"default_node_info"`
 	ApplicationVersion struct {
-		AppName          string `json:"app_name"`
-		Version          string `json:"version"`
-		GitCommit        string `json:"git_commit"`
-		CosmosSdkVersion string `json:"cosmos_sdk_version"`
+		AppName          string      `json:"app_name"`
+		Version          string      `json:"version"`
+		GitCommit        string      `json:"git_commit"`
+		CosmosSdkVersion string      `json:"cosmos_sdk_version"`
+		BuildDeps        []BuildDeps `json:"build_deps"`
 	} `json:"application_version"`
+}
+
+type BuildDeps struct {
+	Path    string `json:"path"`
+	Version string `json:"version"`
 }
 
 // DefaultNodeInfo type is part of the NodeInfoResponse, it represents

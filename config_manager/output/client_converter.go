@@ -3,13 +3,11 @@ package output
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/enriched"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/query"
 )
 
 // ClientConverter converts enriched configs to frontend-compatible format.
@@ -91,14 +89,7 @@ func (c *ClientConverter) convertChain(
 	clientChain.RPCEndpoints = c.convertEndpoints(chain.HealthyRPCs)
 	clientChain.RESTEndpoints = c.convertEndpoints(chain.HealthyRests)
 
-	// Get the Cosmos SDK version from the REST endpoint
-	// nosemgrep
-	randomRestEndpoint := clientChain.RESTEndpoints[rand.Intn(len(clientChain.RESTEndpoints))]
-	cosmosSdkVersion, err := query.GetCosmosSdkVersion(randomRestEndpoint.URL)
-	if err != nil {
-		log.Fatalf("failed to get Cosmos SDK version: %v", err)
-	}
-	clientChain.CosmosSdkVersion = cosmosSdkVersion
+	clientChain.CosmosSdkVersion = chain.CosmosSdkVersion
 
 	// Track all allowed tokens that can traverse to other chains via simple map tied to their on chain denom
 	// with their allowd chain destinations

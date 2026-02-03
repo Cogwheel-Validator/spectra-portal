@@ -8,9 +8,6 @@ slip44 = 118
 bech32_prefix = "juno"
 keplr_json = "juno.json"
 
-# Packet Forward Middleware support
-has_pfm = true
-
 # RPC endpoints
 [[chain.rpcs]]
 url = "https://juno-rpc.cogwheel.zone"

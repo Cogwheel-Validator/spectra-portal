@@ -8,9 +8,6 @@ slip44 = 118
 bech32_prefix = "noble"
 keplr_json = "noble.json"
 
-# Packet Forward Middleware support
-has_pfm = true
-
 # RPC endpoints
 [[chain.rpcs]]
 url = "https://noble-rpc.polkachu.com"

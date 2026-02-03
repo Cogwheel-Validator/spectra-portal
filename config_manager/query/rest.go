@@ -188,25 +188,25 @@ func ValidateRestEndpoints(
 }
 
 /*
-Get the Cosmos SDK version from the REST endpoint
+Get the additional node info from the REST endpoint
 
 Parameters:
 
-- healthyRestEndpoint - the healthy REST endpoint to get the Cosmos SDK version from
+- healthyRestEndpoint - the healthy REST endpoint to get the additional node info from
 
 Returns:
-- the Cosmos SDK version
+- the additional node info
 - error if the request fails
 
 Only used within the client config generation for now
 */
-func GetCosmosSdkVersion(healthyRestEndpoint string) (string, error) {
+func GetAdditionalNodeInfo(healthyRestEndpoint string) (NodeInfoResponse, error) {
 	client := http.Client{
 		Timeout: 10 * time.Second,
 	}
 	resp, err := client.Get(healthyRestEndpoint + "/cosmos/base/tendermint/v1beta1/node_info")
 	if err != nil {
-		return "", err
+		return NodeInfoResponse{}, err
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -215,14 +215,14 @@ func GetCosmosSdkVersion(healthyRestEndpoint string) (string, error) {
 	}()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return NodeInfoResponse{}, err
 	}
 	var response NodeInfoResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return "", err
+		return NodeInfoResponse{}, err
 	}
-	return response.ApplicationVersion.CosmosSdkVersion, nil
+	return response, nil
 }
 
 /*

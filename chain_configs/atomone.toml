@@ -8,9 +8,6 @@ slip44 = 118
 bech32_prefix = "atone"
 keplr_json = "atomone.json"
 
-# Packet Forward Middleware support
-has_pfm = false
-
 # RPC endpoints
 [[chain.rpcs]]
 url = "https://atomone-rpc.cogwheel.zone"
