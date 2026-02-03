@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -52,7 +53,14 @@ func (c *ClientConverter) Convert(reg *enriched.RegistryConfig) (*ClientConfig, 
 	// Track unique tokens for the AllTokens summary
 	tokenTracker := make(map[string]*ClientTokenSummary) // key: originChain:baseDenom
 
-	for _, chainConfig := range reg.Chains {
+	chainIDs := make([]string, 0, len(reg.Chains))
+	for chainID := range reg.Chains {
+		chainIDs = append(chainIDs, chainID)
+	}
+	sort.Strings(chainIDs)
+
+	for _, chainID := range chainIDs {
+		chainConfig := reg.Chains[chainID]
 		clientChain := c.convertChain(chainConfig, reg, tokenTracker)
 		config.Chains = append(config.Chains, clientChain)
 	}
@@ -61,6 +69,10 @@ func (c *ClientConverter) Convert(reg *enriched.RegistryConfig) (*ClientConfig, 
 	for _, token := range tokenTracker {
 		config.AllTokens = append(config.AllTokens, *token)
 	}
+
+	slices.SortStableFunc(config.AllTokens, func(a, b ClientTokenSummary) int {
+		return strings.Compare(a.BaseDenom, b.BaseDenom)
+	})
 
 	return config, nil
 }
@@ -88,6 +100,13 @@ func (c *ClientConverter) convertChain(
 	// Convert healthy endpoints
 	clientChain.RPCEndpoints = c.convertEndpoints(chain.HealthyRPCs)
 	clientChain.RESTEndpoints = c.convertEndpoints(chain.HealthyRests)
+
+	slices.SortStableFunc(clientChain.RPCEndpoints, func(a, b ClientEndpoint) int {
+		return strings.Compare(a.URL, b.URL)
+	})
+	slices.SortStableFunc(clientChain.RESTEndpoints, func(a, b ClientEndpoint) int {
+		return strings.Compare(a.URL, b.URL)
+	})
 
 	clientChain.CosmosSdkVersion = chain.CosmosSdkVersion
 
@@ -121,6 +140,10 @@ func (c *ClientConverter) convertChain(
 			tokenTrajectories[token.Denom] = token.AllowedDestinations
 		}
 	}
+
+	slices.SortStableFunc(chain.IBCTokens, func(a, b enriched.IBCTokenConfig) int {
+		return strings.Compare(a.IBCDenom, b.IBCDenom)
+	})
 
 	// Convert IBC tokens
 	clientChain.IBCTokens = []ClientToken{} // no allocations needed, will be filled in below
@@ -174,8 +197,16 @@ func (c *ClientConverter) convertChain(
 		c.trackToken(tokenTracker, &clientToken)
 	}
 
+	slices.SortStableFunc(clientChain.IBCTokens, func(a, b ClientToken) int {
+		return strings.Compare(a.Denom, b.Denom)
+	})
+
 	// Build connected chains info
 	clientChain.ConnectedChains = c.buildConnectedChains(chain, reg)
+
+	slices.SortStableFunc(clientChain.ConnectedChains, func(a, b ConnectedChainInfo) int {
+		return strings.Compare(a.ID, b.ID)
+	})
 
 	return clientChain
 }

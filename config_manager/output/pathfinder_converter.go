@@ -2,6 +2,8 @@ package output
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/enriched"
@@ -32,6 +34,10 @@ func (c *PathfinderConverter) Convert(reg *enriched.RegistryConfig) (*Pathfinder
 		config.Chains = append(config.Chains, pathfinderChain)
 	}
 
+	slices.SortStableFunc(config.Chains, func(a, b PathfinderChain) int {
+		return strings.Compare(a.ID, b.ID)
+	})
+
 	return config, nil
 }
 
@@ -49,6 +55,10 @@ func (c *PathfinderConverter) convertChain(chain *enriched.ChainConfig) Pathfind
 	}
 
 	// Add all native tokens to the chain (including those with no allowed destinations)
+	slices.SortStableFunc(chain.NativeTokens, func(a, b enriched.TokenConfig) int {
+		return strings.Compare(a.Denom, b.Denom)
+	})
+
 	for _, token := range chain.NativeTokens {
 		pathfinderChain.NativeTokens = append(pathfinderChain.NativeTokens, PathfinderTokenInfo{
 			ChainDenom:  token.Denom,
@@ -59,6 +69,10 @@ func (c *PathfinderConverter) convertChain(chain *enriched.ChainConfig) Pathfind
 			Decimals:    token.Decimals,
 		})
 	}
+
+	slices.SortStableFunc(chain.Routes, func(a, b enriched.RouteConfig) int {
+		return strings.Compare(a.ToChainID, b.ToChainID)
+	})
 
 	for _, route := range chain.Routes {
 		pathfinderRoute := c.convertRoute(route)
@@ -83,6 +97,9 @@ func (c *PathfinderConverter) convertRoute(route enriched.RouteConfig) Pathfinde
 	// 1. Native tokens from the source chain
 	// 2. Tokens originating from the destination (unwinding)
 	// 3. Routable IBC tokens explicitly configured for this destination
+	slices.SortStableFunc(route.AllowedTokens, func(a, b enriched.RouteTokenInfo) int {
+		return strings.Compare(a.BaseDenom, b.BaseDenom)
+	})
 	for _, token := range route.AllowedTokens {
 		pathfinderRoute.AllowedTokens[token.SourceDenom] = PathfinderTokenInfo{
 			ChainDenom:  token.SourceDenom,
