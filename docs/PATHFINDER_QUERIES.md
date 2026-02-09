@@ -21,7 +21,7 @@ If you do not want to use any kind or ConnectRPC client you can always just make
 For a simple curl request you can do something like this to get the chain info for Juno:
 
 ```bash
-curl -X POST https://pathfinder.thespectra.io/rpc.v1.PathfinderService/GetChainInfo \
+curl -X POST https://pathfinder.thespectra.io/pathfinder.v1.PathfinderService/GetChainInfo \
 -H "Content-Type: application/json" \
 -H "Accept: application/json" \
 -d '{
@@ -32,7 +32,7 @@ curl -X POST https://pathfinder.thespectra.io/rpc.v1.PathfinderService/GetChainI
 For a frontend application you can import the  `@connectrpc/connect-web` or you can always just use the `fetch` API.
 
 ```typescript
-const response = await fetch("https://pathfinder.thespectra.io/rpc.v1.PathfinderService/GetChainInfo", {
+const response = await fetch("https://pathfinder.thespectra.io/pathfinder.v1.PathfinderService/GetChainInfo", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -51,7 +51,7 @@ import requests
 
 def get_chain_info(chain_id: str):
   response = requests.post(
-      "https://pathfinder.thespectra.io/rpc.v1.PathfinderService/GetChainInfo",
+      "https://pathfinder.thespectra.io/pathfinder.v1.PathfinderService/GetChainInfo",
       json={"chain_id": "juno-1"},
       headers={"Content-Type": "application/json", "Accept": "application/json"}
     )
@@ -73,7 +73,7 @@ import (
 )
 
 func main() {
-  response, err := http.Post("https://pathfinder.thespectra.io/rpc.v1.PathfinderService/GetChainInfo", "application/json", bytes.NewBuffer([]byte(`{"chain_id": "juno-1"}`)))
+  response, err := http.Post("https://pathfinder.thespectra.io/pathfinder.v1.PathfinderService/GetChainInfo", "application/json", bytes.NewBuffer([]byte(`{"chain_id": "juno-1"}`)))
   if err != nil {
     fmt.Println(err)
     return
@@ -108,21 +108,21 @@ To make a GET request you need to encode the data into the URL:
 ```bash
 curl --get --data-urlencode 'encoding=json' \
     --data-urlencode 'message={"chain_id": "juno-1"}' \
-    https://pathfinder.thespectra.io/rpc.v1.PathfinderService/GetChainInfo
+    https://pathfinder.thespectra.io/pathfinder.v1.PathfinderService/GetChainInfo
 ```
 
-There is another alternative to include the data within the url. You can access this request via browser `https://pathfinder.thespectra.io/rpc.v1.PathfinderService/GetChainInfo?encoding=json&message={"chain_id"%3a"juno-1"}` or you can do it via curl:
+There is another alternative to include the data within the url. You can access this request via browser `https://pathfinder.thespectra.io/pathfinder.v1.PathfinderService/GetChainInfo?encoding=json&message={"chain_id"%3a"juno-1"}` or you can do it via curl:
 
 ```bash
 curl  --get -H "Accept: application/json" --data-urlencode 'encoding=json' \
 --data-urlencode 'message={"chain_id": "juno-1"}' \
-https://pathfinder.thespectra.io/rpc.v1.PathfinderService/GetChainInfo
+https://pathfinder.thespectra.io/pathfinder.v1.PathfinderService/GetChainInfo
 ```
 
 For typescript you can use the `fetch` API like this:
 
 ```typescript
-const url = new URL("https://pathfinder.thespectra.io/rpc.v1.PathfinderService/GetChainInfo");
+const url = new URL("https://pathfinder.thespectra.io/pathfinder.v1.PathfinderService/GetChainInfo");
 url.searchParams.set("encoding", "json");
 url.searchParams.set("message", JSON.stringify({"chain_id": "juno-1"}));
 const response = await fetch(url);
@@ -183,7 +183,7 @@ To test out the gRPC protocol you can use the `grpcurl` command line tool. You c
 To make a basic CLI request you can do something like this:
 
 ```bash
-grpcurl -d '{"chain_id": "juno-1"}' pathfinder.thespectra.io rpc.v1.PathfinderService/GetChainInfo
+grpcurl -d '{"chain_id": "juno-1"}' pathfinder.thespectra.io pathfinder.v1.PathfinderService/GetChainInfo
 ```
 
 To get list of all the methods you can do something like this:
@@ -212,7 +212,7 @@ List of all methods:
   - LookupDenom
   - GetTokenDenoms
   - GetChainInfo
-  - GetPathfinderSupportedChains
+  - ListSupportedChains
   - GetChainTokens
 
 ### FindPath
@@ -230,7 +230,7 @@ The request should contain the following fields:
 - token_to_denom: The denom of the token on the destination chain.
 - sender_address: The address of the sender.
 - receiver_address: The address of the receiver.
-- single_route: Whether to return a single route or all possible routes(optional, default is false).
+- smart_route: Whether to return a smart route or a normal route(optional, default is false).
 - slippage_bps: The slippage in basis points(optional and only applicable if the swap is required, default is 100).
 
 To give additional flexibility, the token denoms can be entered in 2 different ways:
@@ -332,7 +332,6 @@ This can occure if both the source and destination chains are Osmosis. It will r
     "outbound_legs": [],
     "outbound_supports_pfm": false,
     "execution": {
-      "memo": "",
       "ibc_receiver": "",
       "recover_address": "",
       "min_output_amount": "10258",
@@ -425,9 +424,10 @@ This can occure if the source chain is a broker chain(Osmosis in this example) a
 }
 ```
 
-#### Swap + Multi-hop Route
+#### Swam and IBC Transfer
 
-This is a route that involves sending asset to the Broker Chain and making a swap. From there the asset that has been traded is then being sent to the destination chain. This usually happens when you want to send tokens from chain A, and want to recieve another token on chain B. But to receive it you need to swap it on Osmosis for example. This requires a carefuly execution of multiple transactions or one carefully planned out Wasm smart contract exectuion. Example:
+This is a route that nvlolves swapping on the Broket chain and sending the assets to some other chain. In case
+the query made to the pathfinder was with smart_route set to true the response will look like this:
 
 ```json
 {
@@ -435,29 +435,16 @@ This is a route that involves sending asset to the Broker Chain and making a swa
   "error_message": "",
   "broker_swap": {
     "path": [
-      "cosmoshub-4",
       "osmosis-1",
       "noble-1"
     ],
-    "inbound_leg": {
-      "from_chain": "cosmoshub-4",
-      "to_chain": "osmosis-1",
-      "channel": "channel-141",
-      "port": "transfer",
-      "token": {
-        "chain_denom": "uatom",
-        "base_denom": "uatom",
-        "origin_chain": "cosmoshub-4",
-        "is_native": true
-      },
-      "amount": "1000000"
-    },
+    "inbound_legs": [],
     "swap": {
       "broker": "osmosis-sqs",
       "token_in": {
-        "chain_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
-        "base_denom": "uatom",
-        "origin_chain": "cosmoshub-4",
+        "chain_denom": "ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB",
+        "base_denom": "uatone",
+        "origin_chain": "atomone-1",
         "is_native": false
       },
       "token_out": {
@@ -466,52 +453,37 @@ This is a route that involves sending asset to the Broker Chain and making a swa
         "origin_chain": "noble-1",
         "is_native": false
       },
-      "amount_in": "1000000",
-      "amount_out": "2526616",
-      "price_impact": "-0.003295431943627022",
-      "effective_fee": "0.001899400000000000",
+      "amount_in": "5000000",
+      "amount_out": "1577156",
+      "price_impact": "-0.010143078324373824",
+      "effective_fee": "0.009975000000000000",
       "osmosis_route_data": {
         "routes": [
           {
             "pools": [
               {
-                "id": 2477,
-                "type": 0,
-                "spread_factor": "0.002000000000000000",
-                "token_out_denom": "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
-                "taker_fee": "0.001500000000000000",
-                "liquidity_cap": "5043"
-              }
-            ],
-            "has_cw_pool": false,
-            "out_amount": "2021958",
-            "in_amount": "800000"
-          },
-          {
-            "pools": [
-              {
-                "id": 1135,
+                "id": 2648,
                 "type": 2,
-                "spread_factor": "0.002000000000000000",
-                "token_out_denom": "uosmo",
-                "taker_fee": "0.002000000000000000",
-                "liquidity_cap": "579978"
+                "spread_factor": "0.010000000000000000",
+                "token_out_denom": "factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC",
+                "taker_fee": "0.005000000000000000",
+                "liquidity_cap": "37685"
               },
               {
-                "id": 1464,
+                "id": 1943,
                 "type": 2,
                 "spread_factor": "0.000100000000000000",
                 "token_out_denom": "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
-                "taker_fee": "0.001500000000000000",
-                "liquidity_cap": "140042"
+                "taker_fee": "0.005000000000000000",
+                "liquidity_cap": "949322"
               }
             ],
             "has_cw_pool": false,
-            "out_amount": "504658",
-            "in_amount": "200000"
+            "out_amount": "1577156",
+            "in_amount": "5000000"
           }
         ],
-        "liquidity_cap": "725063",
+        "liquidity_cap": "987007",
         "liquidity_cap_overflow": false
       }
     },
@@ -527,17 +499,174 @@ This is a route that involves sending asset to the Broker Chain and making a swa
           "origin_chain": "noble-1",
           "is_native": false
         },
-        "amount": "2526616"
+        "amount": "1577156"
       }
     ],
     "outbound_supports_pfm": true,
     "execution": {
-      "memo": "{\"wasm\":{\"contract\":\"osmo10a3k4hvk37cc4hnxctw4p95fhscd2z6h2rmx0aukc6rm8u9qqx9smfsh7u\",\"msg\":{\"swap_and_action\":{\"user_swap\":{\"swap_exact_asset_in\":{\"swap_venue_name\":\"osmosis-poolmanager\",\"operations\":[{\"pool\":\"2477\",\"denom_in\":\"ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2\",\"denom_out\":\"ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4\"}]}},\"min_asset\":{\"native\":{\"denom\":\"ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4\",\"amount\":\"2526616\"}},\"timeout_timestamp\":1768245000419431853,\"post_swap_action\":{\"ibc_transfer\":{\"ibc_info\":{\"source_channel\":\"channel-750\",\"receiver\":\"noble1zjqm4lngspfqkp68psuv4suxwjfxftkenx9k4n\",\"memo\":\"\",\"recover_address\":\"osmo1zjqm4lngspfqkp68psuv4suxwjfxftken7rwm0\"}}},\"affiliates\":[]}}}}",
+      "smart_contract_data": {
+        "contract": "osmo10a3k4hvk37cc4hnxctw4p95fhscd2z6h2rmx0aukc6rm8u9qqx9smfsh7u",
+        "msg": {
+          "swap_and_action": {
+            "user_swap": {
+              "swap_exact_asset_in": {
+                "swap_venue_name": "osmosis-poolmanager",
+                "operations": [
+                  {
+                    "pool": "2648",
+                    "denom_in": "ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB",
+                    "denom_out": "factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC"
+                  },
+                  {
+                    "pool": "1943",
+                    "denom_in": "factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC",
+                    "denom_out": "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4"
+                  }
+                ]
+              }
+            },
+            "min_asset": {
+              "native": {
+                "amount": "1561384",
+                "denom": "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4"
+              }
+            },
+            "timeout_timestamp": "1770029170182608114",
+            "post_swap_action": {
+              "ibc_transfer": {
+                "ibc_info": {
+                  "memo": "",
+                  "receiver": "noble1zjqm4lngspfqkp68psuv4suxwjfxftkenx9k4n",
+                  "recover_address": "osmo1zjqm4lngspfqkp68psuv4suxwjfxftken7rwm0",
+                  "source_channel": "channel-750"
+                }
+              }
+            },
+            "affiliates": []
+          }
+        }
+      },
+      "recover_address": "",
+      "min_output_amount": "1561384",
+      "uses_wasm": true,
+      "description": "Smart contract swap on osmosis-1 then IBC to noble-1"
+    }
+  }
+}
+```
+
+Under the execution field you will find the data required to execute the transaction. This is the data
+required to execute the transaction by using smart_contract_data. You can then pass this info to the wallet on
+the wallet to execute the transaction. The con for this is that smart route queries the broker interface
+( Osmosis SQS in this example ) using singe_route parameter. What this means is the trade route might not the
+most price efficient route. If you want to get the best possible price with the least slippage go for the
+manual route.
+
+#### Swap + Multi-hop Route
+
+This is a route that involves sending asset to the Broker Chain and making a swap. From there the asset that has been traded is then being sent to the destination chain. This usually happens when you want to send tokens from chain A, and want to recieve another token on chain B. But to receive it you need to swap it on Osmosis for example. This requires a carefuly execution of multiple transactions or one carefully planned out Wasm smart contract exectuion. Example:
+
+```json
+{
+  "success": true,
+  "error_message": "",
+  "broker_swap": {
+    "path": [
+      "cosmoshub-4",
+      "osmosis-1",
+      "juno-1"
+    ],
+    "inbound_legs": [
+      {
+        "from_chain": "cosmoshub-4",
+        "to_chain": "osmosis-1",
+        "channel": "channel-141",
+        "port": "transfer",
+        "token": {
+          "chain_denom": "uatom",
+          "base_denom": "uatom",
+          "origin_chain": "cosmoshub-4",
+          "is_native": true
+        },
+        "amount": "5000000"
+      }
+    ],
+    "swap": {
+      "broker": "osmosis-sqs",
+      "token_in": {
+        "chain_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+        "base_denom": "uatom",
+        "origin_chain": "cosmoshub-4",
+        "is_native": false
+      },
+      "token_out": {
+        "chain_denom": "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
+        "base_denom": "uusdc",
+        "origin_chain": "noble-1",
+        "is_native": false
+      },
+      "amount_in": "5000000",
+      "amount_out": "9680597",
+      "price_impact": "-0.002367475333974154",
+      "effective_fee": "0.001500000000000000",
+      "osmosis_route_data": {
+        "routes": [
+          {
+            "pools": [
+              {
+                "id": 1282,
+                "type": 2,
+                "spread_factor": "0.000500000000000000",
+                "token_out_denom": "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
+                "taker_fee": "0.001500000000000000",
+                "liquidity_cap": "19171"
+              }
+            ],
+            "has_cw_pool": false,
+            "out_amount": "9680597",
+            "in_amount": "5000000"
+          }
+        ],
+        "liquidity_cap": "19171",
+        "liquidity_cap_overflow": false
+      }
+    },
+    "outbound_legs": [
+      {
+        "from_chain": "osmosis-1",
+        "to_chain": "noble-1",
+        "channel": "channel-750",
+        "port": "transfer",
+        "token": {
+          "chain_denom": "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
+          "base_denom": "uusdc",
+          "origin_chain": "noble-1",
+          "is_native": false
+        },
+        "amount": "9680597"
+      },
+      {
+        "from_chain": "noble-1",
+        "to_chain": "juno-1",
+        "channel": "channel-3",
+        "port": "transfer",
+        "token": {
+          "chain_denom": "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
+          "base_denom": "uusdc",
+          "origin_chain": "noble-1",
+          "is_native": false
+        },
+        "amount": "9680597"
+      }
+    ],
+    "outbound_supports_pfm": true,
+    "execution": {
+      "memo": "{\"wasm\":{\"contract\":\"osmo10a3k4hvk37cc4hnxctw4p95fhscd2z6h2rmx0aukc6rm8u9qqx9smfsh7u\",\"msg\":{\"swap_and_action\":{\"user_swap\":{\"swap_exact_asset_in\":{\"swap_venue_name\":\"osmosis-poolmanager\",\"operations\":[{\"pool\":\"1282\",\"denom_in\":\"ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2\",\"denom_out\":\"ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4\"}]}},\"min_asset\":{\"native\":{\"amount\":\"9583791\",\"denom\":\"ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4\"}},\"timeout_timestamp\":1770033664299672923,\"post_swap_action\":{\"ibc_transfer\":{\"ibc_info\":{\"memo\":\"{\\\"forward\\\":{\\\"channel\\\":\\\"channel-3\\\",\\\"port\\\":\\\"transfer\\\",\\\"receiver\\\":\\\"juno1zjqm4lngspfqkp68psuv4suxwjfxftkedhn92p\\\",\\\"retries\\\":2,\\\"timeout\\\":1770033664299672706}}\",\"receiver\":\"pfm\",\"recover_address\":\"osmo1zjqm4lngspfqkp68psuv4suxwjfxftken7rwm0\",\"source_channel\":\"channel-750\"}}},\"affiliates\":[]}}}}",
       "ibc_receiver": "osmo10a3k4hvk37cc4hnxctw4p95fhscd2z6h2rmx0aukc6rm8u9qqx9smfsh7u",
       "recover_address": "osmo1zjqm4lngspfqkp68psuv4suxwjfxftken7rwm0",
-      "min_output_amount": "2526616",
+      "min_output_amount": "9583791",
       "uses_wasm": true,
-      "description": "IBC transfer with swap on osmosis-1 and forward to noble-1"
+      "description": "IBC transfer with swap on osmosis-1 and forward via 2 hops to juno-1"
     }
   }
 }
