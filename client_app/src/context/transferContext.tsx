@@ -2,7 +2,7 @@
 
 import { createContext, type ReactNode, useCallback, useContext, useReducer } from "react";
 import type { ClientToken } from "@/components/modules/tomlTypes";
-import type { FindPathResponse } from "@/lib/generated/pathfinder/pathfinder_route_pb";
+import type { FindPathResponse, WasmData } from "@/lib/generated/pathfinder/pathfinder_route_pb";
 
 // ============================================================================
 // Types
@@ -23,7 +23,7 @@ export type RouteType = "direct" | "indirect" | "brokerSwap";
  */
 export interface TransferStep {
     id: string;
-    type: "ibc_transfer" | "swap" | "pfm_transfer" | "wasm_execution";
+    type: "ibc_transfer" | "swap" | "mult-hop" | "wasm-execution" | "multi-hop + swap";
     fromChain: string;
     toChain: string;
     status: "pending" | "signing" | "broadcasting" | "confirming" | "completed" | "failed";
@@ -35,7 +35,12 @@ export interface TransferStep {
         amount?: string;
         denom?: string;
         memo?: string;
+        smartContractData?: WasmData;
     };
+    // Only applicable for multi-hop, multi-hop + swap and wasm-execution if the transfer mode is "smart", 
+    // should store path data, or in this case chain ids. Usable for tracking. If the transfer mode is "manual",
+    // this is not applicable.
+    transferOrder?: string[];
 }
 
 /**
@@ -524,14 +529,20 @@ export function generateStepsFromResponse(
             if (mode === "smart" && route.supportsPfm) {
                 // Single PFM transaction
                 steps.push({
-                    id: "pfm-transfer",
-                    type: "pfm_transfer",
-                    fromChain: route.legs[0]?.fromChain ?? "",
-                    toChain: route.legs[route.legs.length - 1]?.toChain ?? "",
+                    id: "mult-hop",
+                    type: "mult-hop",
+                    fromChain: route.pfmStartChain,
+                    // Because that is where the assets need to be sent in order to be forwarded
+                    toChain: route.path[1],
                     status: "pending",
                     metadata: {
+                        channel: route.legs[0].channel,
+                        port: route.legs[0].port,
+                        amount: route.legs[0].amount,
+                        denom: route.legs[0].token?.chainDenom,
                         memo: route.pfmMemo,
                     },
+                    transferOrder: route.path,
                 });
             } else {
                 // Manual: each leg is a separate step
@@ -556,35 +567,63 @@ export function generateStepsFromResponse(
 
         case "brokerSwap": {
             const route = response.route.value;
-            const execution = route.execution;
+            const execution = route.execution ?? undefined;
 
-            if (mode === "smart" && execution?.usesWasm) {
-                // Single WASM execution handles everything
+            if (
+                mode === "smart" && 
+                execution?.usesWasm && 
+                execution?.smartContractData !== undefined &&
+                route.inboundLegs.length === 0
+            ) {
+                // Single WASM execution handles everything, and the start chain is the broker chain
                 steps.push({
                     id: "wasm-execution",
-                    type: "wasm_execution",
-                    fromChain: route.path[0] ?? "",
-                    toChain: route.path[route.path.length - 1] ?? "",
+                    type: "wasm-execution",
+                    fromChain: route.path[0],
+                    // Only maybe needed for some visual aspect
+                    toChain: route.path[route.path.length - 1],
                     status: "pending",
                     metadata: {
+                        smartContractData: execution.smartContractData,
+                    },
+                    transferOrder: route.path,
+                });
+            } else if (mode === "smart" && execution?.memo && execution.memo.length > 0) {
+                // Multi-hop + swap because we have a memo with a PFM forward and a swap
+                steps.push({
+                    id: "multi-hop-swap",
+                    type: "multi-hop + swap",
+                    fromChain: route.path[0],
+                    // Because that is where the assets need to be sent in order to be forwarded
+                    // and the wasm-swap is on the second chain or forwarded to
+                    toChain: route.path[1],
+                    status: "pending",
+                    metadata: {
+                        channel: route.inboundLegs[0].channel,
+                        port: route.inboundLegs[0].port,
+                        amount: route.inboundLegs[0].amount,
+                        denom: route.inboundLegs[0].token?.chainDenom,
                         memo: execution.memo,
                     },
+                    transferOrder: route.path,
                 });
             } else {
                 // Manual: separate steps for inbound, swap, outbound
-                if (route.inboundLeg) {
-                    steps.push({
-                        id: "inbound",
-                        type: "ibc_transfer",
-                        fromChain: route.inboundLeg.fromChain,
-                        toChain: route.inboundLeg.toChain,
-                        status: "pending",
-                        metadata: {
-                            channel: route.inboundLeg.channel,
-                            port: route.inboundLeg.port,
-                            amount: route.inboundLeg.amount,
-                            denom: route.inboundLeg.token?.chainDenom,
-                        },
+                if (route.inboundLegs.length > 0) {
+                    route.inboundLegs.forEach((leg, i) => {
+                        steps.push({
+                            id: `inbound-${i+1}`,
+                            type: "ibc_transfer",
+                            fromChain: leg.fromChain,
+                            toChain: leg.toChain,
+                            status: "pending",
+                            metadata: {
+                                channel: leg.channel,
+                                port: leg.port,
+                                amount: leg.amount,
+                                denom: leg.token?.chainDenom,
+                            },
+                        });
                     });
                 }
 
@@ -592,8 +631,9 @@ export function generateStepsFromResponse(
                     steps.push({
                         id: "swap",
                         type: "swap",
-                        fromChain: route.path[route.inboundLeg ? 1 : 0] ?? "",
-                        toChain: route.path[route.inboundLeg ? 1 : 0] ?? "",
+                        fromChain: route.path[route.inboundLegs.length],
+                        // it is a swap hence why just same to chain
+                        toChain: route.path[route.inboundLegs.length],
                         status: "pending",
                         metadata: {
                             amount: route.swap.amountIn,

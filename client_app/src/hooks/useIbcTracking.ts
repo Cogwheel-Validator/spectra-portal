@@ -226,10 +226,93 @@ export function useIbcTracking() {
         [getPacketData, waitForConfirmation],
     );
 
+    /**
+     * Track a smart transfer (single tx with memo) across multiple hops by following packet data.
+     * Uses send_packet from source tx, then for each hop: query recv_packet on next chain,
+     * then extract send_packet from that tx for the next hop (PFM/forwarding).
+     */
+    const trackSmartTransferMultiHop = useCallback(
+        async (
+            sourceChainId: string,
+            sourceTxHash: string,
+            chainPath: string[],
+            chains: ClientChain[],
+            options: TrackingOptions = {},
+        ): Promise<IbcTrackingResult> => {
+            if (chainPath.length < 2) {
+                return { success: true, txHash: sourceTxHash };
+            }
+
+            let packetDataResult: { packetData: PacketData; timestamp: string } | null =
+                await getPacketData(sourceChainId, sourceTxHash);
+            if (!packetDataResult) {
+                for (let attempt = 1; attempt <= (options.maxAttempts ?? 60); attempt++) {
+                    await new Promise((r) => setTimeout(r, options.pollInterval ?? 10000));
+                    packetDataResult = await getPacketData(sourceChainId, sourceTxHash);
+                    if (packetDataResult) break;
+                }
+            }
+            if (!packetDataResult) {
+                return {
+                    success: false,
+                    error: "Could not extract IBC packet data from source transaction",
+                };
+            }
+
+            let currentPacketData = packetDataResult.packetData;
+            let sourceTxTimestamp = packetDataResult.timestamp;
+
+            for (let hop = 0; hop < chainPath.length - 1; hop++) {
+                const destChainId = chainPath[hop + 1];
+                const destChain = chains.find((c) => c.id === destChainId);
+                if (!destChain) {
+                    return { success: false, error: `Chain config not found: ${destChainId}` };
+                }
+
+                const result = await waitForConfirmation(
+                    destChain,
+                    currentPacketData,
+                    sourceTxTimestamp,
+                    options,
+                );
+                if (!result.success) return result;
+
+                if (hop + 1 === chainPath.length - 1) {
+                    return result;
+                }
+
+                const nextTxHash = result.txHash;
+                if (!nextTxHash) return result;
+                const recvTxResponse = await fetchTransactionByHash(destChainId, nextTxHash);
+                if (!recvTxResponse?.tx_response) {
+                    return {
+                        success: false,
+                        error: `Could not fetch relay tx on ${destChainId}`,
+                        txHash: result.txHash,
+                    };
+                }
+                const nextSendPacket = extractSendPacket(recvTxResponse);
+                if (!nextSendPacket) {
+                    return {
+                        success: false,
+                        error: `No send_packet in relay tx on ${destChainId}`,
+                        txHash: result.txHash,
+                    };
+                }
+                currentPacketData = nextSendPacket;
+                sourceTxTimestamp = recvTxResponse.tx_response.timestamp;
+            }
+
+            return { success: true };
+        },
+        [getPacketData, waitForConfirmation],
+    );
+
     return {
         getPacketData,
         waitForConfirmation,
         trackIbcTransfer,
+        trackSmartTransferMultiHop,
         cancelTracking,
     };
 }

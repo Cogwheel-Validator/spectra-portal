@@ -18,6 +18,10 @@ import type { ClientChain } from "@/components/modules/tomlTypes";
 import { getRandomHealthyRpcImperative } from "@/lib/apiQueries/featchHealthyEndpoint";
 import clientLogger from "@/lib/clientLogger";
 import {
+    createWasmAminoConverters,
+    wasmTypes,
+} from "@cosmjs/cosmwasm-stargate";
+import {
     MsgSplitRouteSwapExactAmountIn,
     MsgSwapExactAmountIn,
 } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/tx";
@@ -488,8 +492,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                 const isLedger = key.isNanoLedger;
                 const offlineSigner = await wallet.getOfflineSignerAuto(chainId);
 
-                // Create registry with Osmosis types
-                const registry = new Registry(defaultRegistryTypes);
+                // Create registry with Osmosis + CosmWasm types
+                const registry = new Registry([...defaultRegistryTypes, ...wasmTypes]);
                 registry.register(
                     "/osmosis.poolmanager.v1beta1.MsgSwapExactAmountIn",
                     MsgSwapExactAmountIn as GeneratedType,
@@ -499,7 +503,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     MsgSplitRouteSwapExactAmountIn as GeneratedType,
                 );
 
-                const aminoTypes = new AminoTypes(createDefaultAminoConverters());
+                const aminoTypes = new AminoTypes({
+                    ...createDefaultAminoConverters(),
+                    ...createWasmAminoConverters(),
+                });
 
                 // Get fee currency and gas price
                 const feeCurrency = configToUse.keplr_chain_config.fee_currencies[0];

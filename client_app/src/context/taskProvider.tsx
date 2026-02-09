@@ -1,5 +1,6 @@
 "use client";
 
+import { toUtf8 } from "@cosmjs/encoding";
 import type { EncodeObject } from "@cosmjs/proto-signing";
 import {
     createContext,
@@ -21,6 +22,7 @@ import type {
 import type {
     BrokerSwapRoute,
     FindPathResponse,
+    WasmMsg,
 } from "@/lib/generated/pathfinder/pathfinder_route_pb";
 import {
     AddTransactionToDb,
@@ -225,6 +227,25 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         [],
     );
 
+    const createWasmExecutionMessage = useCallback(
+        (
+            sender: string,
+            contract: string,
+            msg: WasmMsg,
+        ): EncodeObject => {
+            const msgBytes = toUtf8(JSON.stringify(msg));
+            return {
+                typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+                value: {
+                    sender,
+                    contract,
+                    msg: msgBytes,
+                    funds: [],
+                },
+            };
+        },
+        [],
+    );
     /**
      * Execute a single transfer step
      */
@@ -249,10 +270,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
             try {
                 let message: EncodeObject;
+                let tx_memo: string 
 
                 switch (step.type) {
                     case "ibc_transfer":
-                    case "pfm_transfer": {
+                    case "mult-hop": {
                         const receiverAddress =
                             getAddress(step.toChain) || transfer.state.receiverAddress;
                         if (!receiverAddress) {
@@ -274,10 +296,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                             },
                             step.metadata?.memo || "",
                         );
+                        tx_memo = "Spectra IBC transfer"
                         break;
                     }
 
-                    case "wasm_execution": {
+                    case "wasm-execution": {
                         // For WASM execution, the receiver is the contract address
                         const execution = (
                             transfer.state.pathfinderResponse?.route.value as BrokerSwapRoute
@@ -289,7 +312,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                         // Get the first leg info for the IBC transfer
                         const brokerRoute = transfer.state.pathfinderResponse?.route
                             .value as BrokerSwapRoute;
-                        const firstLeg = brokerRoute?.inboundLeg;
+                        const firstLeg = brokerRoute?.inboundLegs[0];
 
                         if (!firstLeg) {
                             // If no inbound leg, we're starting from the broker chain
@@ -300,17 +323,12 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                             };
                         }
 
-                        message = createIbcTransferMessage(
+                        message = createWasmExecutionMessage(
                             senderAddress,
-                            execution.ibcReceiver,
-                            firstLeg.channel,
-                            firstLeg.port,
-                            {
-                                amount: firstLeg.amount,
-                                denom: firstLeg.token?.chainDenom || "",
-                            },
-                            execution.memo,
+                            execution.smartContractData?.contract as string,
+                            execution.smartContractData?.msg as WasmMsg,
                         );
+                        tx_memo = "Spectra WASM execution"
                         break;
                     }
 
@@ -365,6 +383,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                                 swapData.amountOut, // Use expected output as minimum
                             );
                         }
+                        tx_memo = "Spectra Osmosis Swap"
                         break;
                     }
 
@@ -373,7 +392,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 const result = await sendTransaction(step.fromChain, [message], {
-                    memo: "Spectra IBC Transfer",
+                    memo: tx_memo,
                     chainConfig,
                 });
 
@@ -406,6 +425,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             createIbcTransferMessage,
             createSwapMessage,
             createSplitRouteSwapMessage,
+            createWasmExecutionMessage,
         ],
     );
 
@@ -485,8 +505,9 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                         // Check if this is an IBC transfer that needs tracking
                         const isIbcStep =
                             step.type === "ibc_transfer" ||
-                            step.type === "pfm_transfer" ||
-                            step.type === "wasm_execution";
+                            step.type === "mult-hop" ||
+                            step.type === "wasm-execution" ||
+                            step.type === "multi-hop + swap";
 
                         if (isIbcStep && i < steps.length - 1) {
                             // Update to "confirming" status while we track
