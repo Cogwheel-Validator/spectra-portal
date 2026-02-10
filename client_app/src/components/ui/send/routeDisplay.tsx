@@ -26,7 +26,12 @@ export default function RouteDisplay({
     selectedReceiveToken,
     amount,
 }: RouteDisplayProps) {
-    if ((routeLoading || routePending) && amount && Number.parseFloat(amount) > 0 && addressesPresent) {
+    if (
+        (routeLoading || routePending) &&
+        amount &&
+        Number.parseFloat(amount) > 0 &&
+        addressesPresent
+    ) {
         return (
             <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/50">
                 <div className="flex items-center gap-3">
@@ -122,4 +127,3 @@ export default function RouteDisplay({
         </div>
     );
 }
-

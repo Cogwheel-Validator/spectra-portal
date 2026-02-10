@@ -1,6 +1,7 @@
 "use client";
 
 import { Buffer } from "node:buffer";
+import { createWasmAminoConverters, wasmTypes } from "@cosmjs/cosmwasm-stargate";
 import { type EncodeObject, type GeneratedType, Registry } from "@cosmjs/proto-signing";
 import {
     AminoTypes,
@@ -17,10 +18,6 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useS
 import type { ClientChain } from "@/components/modules/tomlTypes";
 import { getRandomHealthyRpcImperative } from "@/lib/apiQueries/featchHealthyEndpoint";
 import clientLogger from "@/lib/clientLogger";
-import {
-    createWasmAminoConverters,
-    wasmTypes,
-} from "@cosmjs/cosmwasm-stargate";
 import {
     MsgSplitRouteSwapExactAmountIn,
     MsgSwapExactAmountIn,

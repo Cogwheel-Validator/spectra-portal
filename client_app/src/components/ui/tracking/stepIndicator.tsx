@@ -53,11 +53,13 @@ export default function StepIndicator({ step, index, isActive, isLast }: StepInd
         switch (step.type) {
             case "ibc_transfer":
                 return "IBC Transfer";
-            case "pfm_transfer":
-                return "PFM Transfer";
+            case "multi-hop":
+                return "Multi-Hop";
+            case "multi-hop + swap":
+                return "Multi-Hop + Swap";
             case "swap":
                 return "DEX Swap";
-            case "wasm_execution":
+            case "wasm-execution":
                 return "Smart Contract";
             default:
                 return step.type;

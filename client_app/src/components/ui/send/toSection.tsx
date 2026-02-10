@@ -49,10 +49,9 @@ export default function ToSection({
                     onSelect={onReceiveTokenChange}
                     placeholder="Select asset to receive"
                     disabled={isPending || !receiveChain}
-                    label="Asset (optional)"
+                    label="Asset"
                 />
             </div>
         </div>
     );
 }
-

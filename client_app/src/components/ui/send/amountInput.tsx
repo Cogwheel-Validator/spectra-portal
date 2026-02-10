@@ -8,7 +8,6 @@ interface AmountInputProps {
     onChange: (value: string) => void;
     token: ClientToken | null;
     disabled?: boolean;
-    isLoading?: boolean;
     balance?: string;
     label?: string;
 }
@@ -18,7 +17,6 @@ export default function AmountInput({
     onChange,
     token,
     disabled = false,
-    isLoading = false,
     balance,
     label = "Amount",
 }: AmountInputProps) {
@@ -108,13 +106,6 @@ export default function AmountInput({
                             </div>
                         )}
                         <span className="text-slate-300 font-medium">{token.symbol}</span>
-                    </div>
-                )}
-
-                {/* Loading Indicator */}
-                {isLoading && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                        <div className="w-5 h-5 border-2 border-slate-600 border-t-teal-400 rounded-full animate-spin" />
                     </div>
                 )}
             </div>

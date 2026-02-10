@@ -15,6 +15,8 @@ export interface IbcTrackingResult {
     success: boolean;
     txHash?: string;
     error?: string;
+    nextSendPacket?: PacketData;
+    recvTimestamp?: string;
 }
 
 export interface TrackingOptions {
@@ -22,4 +24,5 @@ export interface TrackingOptions {
     pollInterval?: number; // Milliseconds between polls (default: 10000 = 10s)
     timeout?: number; // Total timeout in ms (default: 10 minutes)
     onProgress?: (attempt: number, maxAttempts: number) => void;
+    onHopComplete?: (completedChains: number, totalChains: number) => void;
 }

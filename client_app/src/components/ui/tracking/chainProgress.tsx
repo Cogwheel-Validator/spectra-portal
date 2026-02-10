@@ -10,6 +10,10 @@ interface ChainProgressProps {
     currentChainIndex: number;
     config: ClientConfig;
     status: "pending" | "executing" | "completed" | "failed";
+    // When set (multi-hop tracking), progress bar and chain states use this 0–100% instead of step-based index
+    progressPercent?: number | null;
+    // Total chains in path for multi-hop (e.g. 4 → 25% per chain); used with progressPercent
+    progressTotalChains?: number | null;
 }
 
 export default function ChainProgress({
@@ -17,18 +21,46 @@ export default function ChainProgress({
     currentChainIndex,
     config,
     status,
+    progressPercent,
+    progressTotalChains,
 }: ChainProgressProps) {
     const getChainData = (chainId: string) => {
         return config.chains.find((c) => c.id === chainId);
     };
 
+    // Multi-hop mode: derive completed/active from percentage (e.g. 4 chains, 50% → 2 completed, chain 2 active)
+    const usePercentProgress =
+        progressPercent != null &&
+        progressTotalChains != null &&
+        progressTotalChains > 0 &&
+        chainPath.length > 0;
+    const completedChains = usePercentProgress
+        ? Math.min(Math.round((progressPercent / 100) * progressTotalChains), chainPath.length)
+        : null;
+    const effectiveChainIndex =
+        usePercentProgress && completedChains !== null
+            ? Math.min(completedChains, chainPath.length - 1)
+            : currentChainIndex;
+
     const getChainStatus = (index: number) => {
         if (status === "completed") return "completed";
-        if (status === "failed" && index === currentChainIndex) return "failed";
+        if (status === "failed" && index === effectiveChainIndex) return "failed";
+        if (usePercentProgress && completedChains !== null) {
+            if (index < completedChains) return "completed";
+            if (index === completedChains && status === "executing") return "active";
+            return "pending";
+        }
         if (index < currentChainIndex) return "completed";
         if (index === currentChainIndex) return "active";
         return "pending";
     };
+
+    const progressBarWidth =
+        usePercentProgress && progressPercent != null
+            ? `${Math.min(100, Math.max(0, progressPercent))}%`
+            : status === "completed"
+              ? "100%"
+              : `${(currentChainIndex / Math.max(1, chainPath.length - 1)) * 100}%`;
 
     return (
         <div className="relative">
@@ -42,12 +74,7 @@ export default function ChainProgress({
                     <motion.div
                         className="absolute left-0 top-0 h-1 bg-linear-to-r from-teal-500 to-emerald-500 rounded-full z-10"
                         initial={{ width: "0%" }}
-                        animate={{
-                            width:
-                                status === "completed"
-                                    ? "100%"
-                                    : `${(currentChainIndex / (chainPath.length - 1)) * 100}%`,
-                        }}
+                        animate={{ width: progressBarWidth }}
                         transition={{ duration: 0.5, ease: "easeOut" }}
                     />
                 </div>
@@ -173,7 +200,9 @@ export default function ChainProgress({
                                     ? "Source"
                                     : index === chainPath.length - 1
                                       ? "Destination"
-                                      : `Step ${index}`}
+                                      : usePercentProgress && progressTotalChains != null
+                                        ? `${index}/${progressTotalChains}`
+                                        : `Step ${index}`}
                             </p>
                         </div>
                     );

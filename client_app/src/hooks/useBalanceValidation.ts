@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { AddressSpendableBalanceResponse } from "@/components/modules/cosmosApiData";
 import type { ClientToken } from "@/components/modules/tomlTypes";
 import { useGetAddressBalance } from "@/lib/apiQueries/fetchApiData";
 
@@ -7,7 +8,7 @@ interface UseBalanceValidationReturn {
     formattedBalance: string | null;
     insufficientBalance: boolean;
     balanceLoading: boolean;
-    senderBalance: any;
+    senderBalance: AddressSpendableBalanceResponse | undefined;
 }
 
 export function useBalanceValidation(
@@ -53,4 +54,3 @@ export function useBalanceValidation(
         senderBalance,
     };
 }
-

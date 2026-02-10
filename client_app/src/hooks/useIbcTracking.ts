@@ -6,7 +6,7 @@ import type { ClientChain } from "@/components/modules/tomlTypes";
 import { fetchTransactionByHash } from "@/lib/apiQueries/fetchApiData";
 import clientLogger from "@/lib/clientLogger";
 import type { IbcTrackingResult, PacketData, TrackingOptions } from "./ibcTracking/types";
-import { extractSendPacket, queryIbcReceive } from "./ibcTracking/util";
+import { extractSendPacket, gatherEventPktData, queryIbcReceive } from "./ibcTracking/util";
 
 /**
  * Hook for tracking IBC transactions across chains
@@ -113,10 +113,22 @@ export function useIbcTracking() {
                     // We got a valid transaction response (already verified in queryIbcReceive)
                     const txResponse = receiveResult.tx_responses[0];
                     if (txResponse.code === 0) {
+                        // Extract send_packet from the recv transaction for multi-hop forwarding
+                        // When PFM or wasm forwarding is involved, the recv tx also contains
+                        // a send_packet event for the next hop
+                        const sendPacketEvent = txResponse.events.find(
+                            (e) => e.type === "send_packet",
+                        );
+                        const nextSendPacket = sendPacketEvent
+                            ? (gatherEventPktData(sendPacketEvent) ?? undefined)
+                            : undefined;
+
                         // Transaction succeeded
                         return {
                             success: true,
                             txHash: txResponse.txhash,
+                            nextSendPacket,
+                            recvTimestamp: txResponse.timestamp,
                         };
                     } else {
                         // Transaction failed on destination chain
@@ -228,9 +240,12 @@ export function useIbcTracking() {
 
     /**
      * Track a smart transfer (single tx with memo) across multiple hops by following packet data.
-     * Uses send_packet from source tx, then for each hop: query recv_packet on next chain,
-     * then extract send_packet from that tx for the next hop (PFM/forwarding).
-     */
+     *
+     * Strategy: Use send_packet from source tx, then for each hop:
+     *   1. Query recv_packet on the next chain (using packet data from previous send_packet)
+     *   2. Extract send_packet from that recv transaction for the next hop (PFM/wasm forwarding)
+     *   3. Repeat until the final destination is reached
+     *     */
     const trackSmartTransferMultiHop = useCallback(
         async (
             sourceChainId: string,
@@ -243,6 +258,7 @@ export function useIbcTracking() {
                 return { success: true, txHash: sourceTxHash };
             }
 
+            // Step 1: Get the initial send_packet from the source transaction
             let packetDataResult: { packetData: PacketData; timestamp: string } | null =
                 await getPacketData(sourceChainId, sourceTxHash);
             if (!packetDataResult) {
@@ -262,6 +278,9 @@ export function useIbcTracking() {
             let currentPacketData = packetDataResult.packetData;
             let sourceTxTimestamp = packetDataResult.timestamp;
 
+            const totalChains = chainPath.length;
+
+            // Step 2: For each hop, wait for recv_packet on destination and extract send_packet for next hop
             for (let hop = 0; hop < chainPath.length - 1; hop++) {
                 const destChainId = chainPath[hop + 1];
                 const destChain = chains.find((c) => c.id === destChainId);
@@ -277,30 +296,28 @@ export function useIbcTracking() {
                 );
                 if (!result.success) return result;
 
+                // Report progress: this hop completed
+                const completedChains = hop + 1;
+                options.onHopComplete?.(completedChains, totalChains);
+
+                // If this was the final hop, we're done
                 if (hop + 1 === chainPath.length - 1) {
+                    options.onHopComplete?.(totalChains, totalChains);
                     return result;
                 }
 
-                const nextTxHash = result.txHash;
-                if (!nextTxHash) return result;
-                const recvTxResponse = await fetchTransactionByHash(destChainId, nextTxHash);
-                if (!recvTxResponse?.tx_response) {
+                // For intermediate hops: use the send_packet extracted from the recv transaction
+                // This is the packet that was forwarded by PFM or wasm to the next chain
+                if (!result.nextSendPacket) {
                     return {
                         success: false,
-                        error: `Could not fetch relay tx on ${destChainId}`,
+                        error: `No send_packet found in relay tx on ${destChainId} — forwarding may have failed`,
                         txHash: result.txHash,
                     };
                 }
-                const nextSendPacket = extractSendPacket(recvTxResponse);
-                if (!nextSendPacket) {
-                    return {
-                        success: false,
-                        error: `No send_packet in relay tx on ${destChainId}`,
-                        txHash: result.txHash,
-                    };
-                }
-                currentPacketData = nextSendPacket;
-                sourceTxTimestamp = recvTxResponse.tx_response.timestamp;
+
+                currentPacketData = result.nextSendPacket;
+                sourceTxTimestamp = result.recvTimestamp ?? sourceTxTimestamp;
             }
 
             return { success: true };

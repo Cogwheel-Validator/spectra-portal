@@ -41,7 +41,7 @@ export default function TransferModeToggle({
     };
 
     const getSlippageDisplay = () => {
-        return (slippageBps / 100).toFixed(slippageBps % 100 === 0 ? 0 : 1) + "%";
+        return `${(slippageBps / 100).toFixed(slippageBps % 100 === 0 ? 0 : 1)}%`;
     };
 
     return (

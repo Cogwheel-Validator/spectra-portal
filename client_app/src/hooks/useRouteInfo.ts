@@ -94,8 +94,12 @@ export function useRouteInfo(pathfinderResponse: FindPathResponse | null, mode: 
                 break;
             case "brokerSwap":
                 chainPath.push(pathfinderResponse.route.value.swap?.broker ?? "");
-                chainPath.push(...pathfinderResponse.route.value.outboundLegs.map((leg) => leg.toChain));
-                chainPath.push(...pathfinderResponse.route.value.inboundLegs.map((leg) => leg.toChain));
+                chainPath.push(
+                    ...pathfinderResponse.route.value.outboundLegs.map((leg) => leg.toChain),
+                );
+                chainPath.push(
+                    ...pathfinderResponse.route.value.inboundLegs.map((leg) => leg.toChain),
+                );
                 break;
             default:
                 chainPath = [];
@@ -111,4 +115,3 @@ export function useRouteInfo(pathfinderResponse: FindPathResponse | null, mode: 
         intermediateChainIds,
     };
 }
-

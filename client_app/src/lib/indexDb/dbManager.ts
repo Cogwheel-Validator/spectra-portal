@@ -7,7 +7,7 @@ import logger from "@/lib/clientLogger";
 
 // Database version and name
 // in case you need to update something in the database, you can increment the version
-const DB_VERSION: number = 1.1;
+const DB_VERSION: number = 1.2;
 const DB_NAME: string = "spectra_ibc";
 const TRANSACTION_STORE = "transactions";
 const MAX_TRANSACTIONS = 50;
@@ -32,6 +32,10 @@ export type TransactionRecord = {
     error: string | null;
     // confirmation weather the transaction involves a swap on the broker chain
     swapInvolved: boolean;
+    /** Multi-hop tracking: 0–100 percentage as each chain confirms (smart/wasm/PFM single-step transfers) */
+    multiHopProgress?: number | null;
+    /** Total chains in the path for multi-hop (e.g. 4 → 25% per chain) */
+    multiHopTotalChains?: number | null;
 };
 
 export type TransactionUpdate = {
@@ -40,6 +44,8 @@ export type TransactionUpdate = {
     currentStep?: number;
     error?: string | null;
     swapInvolved?: boolean;
+    multiHopProgress?: number | null;
+    multiHopTotalChains?: number | null;
 };
 
 /**
@@ -187,6 +193,12 @@ export function UpdateTransactionStatus(db: IDBDatabase, update: TransactionUpda
             }
             if (update.swapInvolved !== undefined) {
                 transaction.swapInvolved = update.swapInvolved;
+            }
+            if (update.multiHopProgress !== undefined) {
+                transaction.multiHopProgress = update.multiHopProgress;
+            }
+            if (update.multiHopTotalChains !== undefined) {
+                transaction.multiHopTotalChains = update.multiHopTotalChains;
             }
 
             const putRequest = store.put(transaction);

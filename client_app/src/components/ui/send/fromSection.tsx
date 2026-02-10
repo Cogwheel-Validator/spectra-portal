@@ -17,8 +17,6 @@ interface FromSectionProps {
     formattedBalance: string | null;
     insufficientBalance: boolean;
     balanceLoading: boolean;
-    routeLoading: boolean;
-    routePending: boolean;
     isPending: boolean;
     onSendChainChange: (chainId: string) => void;
     onSendTokenChange: (tokenSymbol: string) => void;
@@ -38,8 +36,6 @@ export default function FromSection({
     formattedBalance,
     insufficientBalance,
     balanceLoading,
-    routeLoading,
-    routePending,
     isPending,
     onSendChainChange,
     onSendTokenChange,
@@ -80,7 +76,6 @@ export default function FromSection({
                         onChange={onAmountChange}
                         token={selectedSendToken}
                         disabled={isPending || !receiveChain || !receiveToken}
-                        isLoading={routeLoading || routePending}
                         label="Amount to Send"
                     />
 
@@ -112,4 +107,3 @@ export default function FromSection({
         </div>
     );
 }
-

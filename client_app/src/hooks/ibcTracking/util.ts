@@ -138,8 +138,8 @@ export function verifyTransactionTimestamp(
         const sourceTime = new Date(sourceTxTimestamp).getTime();
 
         // Receive must happen after send (with small tolerance for clock skew)
-        // Allow up to 1 second before source due to clock differences
-        return receiveTime >= sourceTime - 1000;
+        // Allow up to 10 second before source due to clock differences
+        return receiveTime >= sourceTime - 10000;
     } catch {
         // If timestamp parsing fails, skip verification
         return true;

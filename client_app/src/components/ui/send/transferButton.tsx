@@ -6,7 +6,7 @@ interface TransferButtonProps {
     canSubmit: boolean;
     isPending: boolean;
     isRefreshing: boolean;
-    isWalletReady: { ready: boolean, missingChains: ClientChain[], multiHop: boolean };
+    isWalletReady: { ready: boolean; missingChains: ClientChain[]; multiHop: boolean };
     pathfinderSuccess: boolean;
     routeLoading: boolean;
     routePending: boolean;
@@ -29,7 +29,7 @@ export default function TransferButton({
 }: TransferButtonProps) {
     const getButtonText = () => {
         if (!isWalletReady.ready) {
-            const nMissing = isWalletReady.missingChains.length
+            const nMissing = isWalletReady.missingChains.length;
             if (nMissing === 1) {
                 return `Connect Wallet to ${isWalletReady.missingChains[0].id}`;
             } else if (nMissing === 2 && !isWalletReady.multiHop) {
@@ -86,4 +86,3 @@ export default function TransferButton({
         </button>
     );
 }
-
