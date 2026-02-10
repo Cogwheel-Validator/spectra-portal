@@ -298,13 +298,19 @@ func (s *Pathfinder) buildBrokerSwapResponse(
 		return models.RouteResponse{}, fmt.Errorf("no client configured for broker %s", hopInfo.BrokerChain)
 	}
 
-	// Determine the correct denoms to use on the broker chain
+	// Determine the correct denoms to use on the broker chain (Osmosis SQS expects broker-chain denoms)
 	var tokenInDenomOnBroker string
 	if hopInfo.SourceIsBroker {
 		// Source is the broker - token is already on broker, use ChainDenom directly
 		tokenInDenomOnBroker = hopInfo.TokenIn.ChainDenom
+	} else if len(hopInfo.InboundIntermediateTokens) > 0 {
+		// Multi-hop inbound (e.g. Cosmos Hub → Noble → Osmosis): token arrives at broker via last hop.
+		// TokenIn.IbcDenom is the denom on the first hop's destination (e.g. uusdc on Noble), not on the broker.
+		// Use the last intermediate token's IbcDenom, which is the denom when the token lands on the broker.
+		lastIntToken := hopInfo.InboundIntermediateTokens[len(hopInfo.InboundIntermediateTokens)-1]
+		tokenInDenomOnBroker = lastIntToken.IbcDenom
 	} else {
-		// Source is not broker - token will arrive via IBC, use IbcDenom
+		// Single-hop inbound - token goes source → broker, use TokenIn.IbcDenom (denom on broker)
 		tokenInDenomOnBroker = hopInfo.TokenIn.IbcDenom
 	}
 	// For the output token: use TokenOutOnBroker.ChainDenom (the denom on the broker chain)
