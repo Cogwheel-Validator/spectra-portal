@@ -13,7 +13,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file pathfinder_route.proto.
  */
 export const file_pathfinder_route: GenFile = /*@__PURE__*/
-  fileDesc("ChZwYXRoZmluZGVyX3JvdXRlLnByb3RvEg1wYXRoZmluZGVyLnYxIrUCCg9GaW5kUGF0aFJlcXVlc3QSGgoKY2hhaW5fZnJvbRgBIAEoCUIGukgDyAEBEicKEHRva2VuX2Zyb21fZGVub20YAiABKAlCDbpICsgBAXIFEAEYgAESGQoJYW1vdW50X2luGAMgASgJQga6SAPIAQESGAoIY2hhaW5fdG8YBCABKAlCBrpIA8gBARIgCg50b2tlbl90b19kZW5vbRgFIAEoCUIIukgFcgMYgAESJAoOc2VuZGVyX2FkZHJlc3MYBiABKAlCDLpICcgBAXIEECYYRBImChByZWNlaXZlcl9hZGRyZXNzGAcgASgJQgy6SAnIAQFyBBAmGEQSEwoLc21hcnRfcm91dGUYCCABKAgSIwoMc2xpcHBhZ2VfYnBzGAkgASgNQg26SArIAQAqBRiQTigAItoBChBGaW5kUGF0aFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSFQoNZXJyb3JfbWVzc2FnZRgCIAEoCRIsCgZkaXJlY3QYAyABKAsyGi5wYXRoZmluZGVyLnYxLkRpcmVjdFJvdXRlSAASMAoIaW5kaXJlY3QYBCABKAsyHC5wYXRoZmluZGVyLnYxLkluZGlyZWN0Um91dGVIABI1Cgticm9rZXJfc3dhcBgFIAEoCzIeLnBhdGhmaW5kZXIudjEuQnJva2VyU3dhcFJvdXRlSABCBwoFcm91dGUiNgoLRGlyZWN0Um91dGUSJwoIdHJhbnNmZXIYASABKAsyFS5wYXRoZmluZGVyLnYxLklCQ0xlZyKDAQoNSW5kaXJlY3RSb3V0ZRIMCgRwYXRoGAEgAygJEiMKBGxlZ3MYAiADKAsyFS5wYXRoZmluZGVyLnYxLklCQ0xlZxIUCgxzdXBwb3J0c19wZm0YAyABKAgSFwoPcGZtX3N0YXJ0X2NoYWluGAQgASgJEhAKCHBmbV9tZW1vGAUgASgJIvgBCg9Ccm9rZXJTd2FwUm91dGUSDAoEcGF0aBgBIAMoCRIrCgxpbmJvdW5kX2xlZ3MYAiADKAsyFS5wYXRoZmluZGVyLnYxLklCQ0xlZxImCgRzd2FwGAMgASgLMhgucGF0aGZpbmRlci52MS5Td2FwUXVvdGUSLAoNb3V0Ym91bmRfbGVncxgEIAMoCzIVLnBhdGhmaW5kZXIudjEuSUJDTGVnEh0KFW91dGJvdW5kX3N1cHBvcnRzX3BmbRgFIAEoCBI1CglleGVjdXRpb24YBiABKAsyIi5wYXRoZmluZGVyLnYxLkJyb2tlckV4ZWN1dGlvbkRhdGEijAIKE0Jyb2tlckV4ZWN1dGlvbkRhdGESEQoEbWVtbxgBIAEoCUgAiAEBEjkKE3NtYXJ0X2NvbnRyYWN0X2RhdGEYAiABKAsyFy5wYXRoZmluZGVyLnYxLldhc21EYXRhSAGIAQESGQoMaWJjX3JlY2VpdmVyGAMgASgJSAKIAQESFwoPcmVjb3Zlcl9hZGRyZXNzGAQgASgJEhkKEW1pbl9vdXRwdXRfYW1vdW50GAUgASgJEhEKCXVzZXNfd2FzbRgGIAEoCBITCgtkZXNjcmlwdGlvbhgHIAEoCUIHCgVfbWVtb0IWChRfc21hcnRfY29udHJhY3RfZGF0YUIPCg1faWJjX3JlY2VpdmVyIokBCgZJQkNMZWcSEgoKZnJvbV9jaGFpbhgBIAEoCRIQCgh0b19jaGFpbhgCIAEoCRIPCgdjaGFubmVsGAMgASgJEgwKBHBvcnQYBCABKAkSKgoFdG9rZW4YBSABKAsyGy5wYXRoZmluZGVyLnYxLlRva2VuTWFwcGluZxIOCgZhbW91bnQYBiABKAkiYAoMVG9rZW5NYXBwaW5nEhMKC2NoYWluX2Rlbm9tGAEgASgJEhIKCmJhc2VfZGVub20YAiABKAkSFAoMb3JpZ2luX2NoYWluGAMgASgJEhEKCWlzX25hdGl2ZRgEIAEoCCKbAgoJU3dhcFF1b3RlEg4KBmJyb2tlchgBIAEoCRItCgh0b2tlbl9pbhgCIAEoCzIbLnBhdGhmaW5kZXIudjEuVG9rZW5NYXBwaW5nEi4KCXRva2VuX291dBgDIAEoCzIbLnBhdGhmaW5kZXIudjEuVG9rZW5NYXBwaW5nEhEKCWFtb3VudF9pbhgEIAEoCRISCgphbW91bnRfb3V0GAUgASgJEhQKDHByaWNlX2ltcGFjdBgGIAEoCRIVCg1lZmZlY3RpdmVfZmVlGAcgASgJEj0KEm9zbW9zaXNfcm91dGVfZGF0YRgIIAEoCzIfLnBhdGhmaW5kZXIudjEuT3Ntb3Npc1JvdXRlRGF0YUgAQgwKCnJvdXRlX2RhdGEidgoQT3Ntb3Npc1JvdXRlRGF0YRIrCgZyb3V0ZXMYASADKAsyGy5wYXRoZmluZGVyLnYxLk9zbW9zaXNSb3V0ZRIVCg1saXF1aWRpdHlfY2FwGAIgASgJEh4KFmxpcXVpZGl0eV9jYXBfb3ZlcmZsb3cYAyABKAgidQoMT3Ntb3Npc1JvdXRlEikKBXBvb2xzGAEgAygLMhoucGF0aGZpbmRlci52MS5Pc21vc2lzUG9vbBITCgtoYXNfY3dfcG9vbBgCIAEoCBISCgpvdXRfYW1vdW50GAMgASgJEhEKCWluX2Ftb3VudBgEIAEoCSKBAQoLT3Ntb3Npc1Bvb2wSCgoCaWQYASABKAUSDAoEdHlwZRgCIAEoBRIVCg1zcHJlYWRfZmFjdG9yGAMgASgJEhcKD3Rva2VuX291dF9kZW5vbRgEIAEoCRIRCgl0YWtlcl9mZWUYBSABKAkSFQoNbGlxdWlkaXR5X2NhcBgGIAEoCSJMChJMb29rdXBEZW5vbVJlcXVlc3QSGAoIY2hhaW5faWQYASABKAlCBrpIA8gBARIcCgVkZW5vbRgCIAEoCUINukgKyAEBcgUQARiAASK5AQoTTG9va3VwRGVub21SZXNwb25zZRINCgVmb3VuZBgBIAEoCBITCgtjaGFpbl9kZW5vbRgCIAEoCRISCgpiYXNlX2Rlbm9tGAMgASgJEhQKDG9yaWdpbl9jaGFpbhgEIAEoCRIRCglpc19uYXRpdmUYBSABKAgSEAoIaWJjX3BhdGgYBiABKAkSLwoMYXZhaWxhYmxlX29uGAcgAygLMhkucGF0aGZpbmRlci52MS5DaGFpbkRlbm9tIlQKCkNoYWluRGVub20SEAoIY2hhaW5faWQYASABKAkSEgoKY2hhaW5fbmFtZRgCIAEoCRINCgVkZW5vbRgDIAEoCRIRCglpc19uYXRpdmUYBCABKAgiZgoVR2V0VG9rZW5EZW5vbXNSZXF1ZXN0EhoKCmJhc2VfZGVub20YASABKAlCBrpIA8gBARIcCgxvcmlnaW5fY2hhaW4YAiABKAlCBrpIA8gBARITCgtvbl9jaGFpbl9pZBgDIAEoCSJ8ChZHZXRUb2tlbkRlbm9tc1Jlc3BvbnNlEg0KBWZvdW5kGAEgASgIEhIKCmJhc2VfZGVub20YAiABKAkSFAoMb3JpZ2luX2NoYWluGAMgASgJEikKBmRlbm9tcxgEIAMoCzIZLnBhdGhmaW5kZXIudjEuQ2hhaW5EZW5vbSIxChVHZXRDaGFpblRva2Vuc1JlcXVlc3QSGAoIY2hhaW5faWQYASABKAlCBrpIA8gBASKjAQoWR2V0Q2hhaW5Ub2tlbnNSZXNwb25zZRIQCghjaGFpbl9pZBgBIAEoCRISCgpjaGFpbl9uYW1lGAIgASgJEjIKDW5hdGl2ZV90b2tlbnMYAyADKAsyGy5wYXRoZmluZGVyLnYxLlRva2VuRGV0YWlscxIvCgppYmNfdG9rZW5zGAQgAygLMhsucGF0aGZpbmRlci52MS5Ub2tlbkRldGFpbHMifAoMVG9rZW5EZXRhaWxzEg0KBWRlbm9tGAEgASgJEg4KBnN5bWJvbBgCIAEoCRISCgpiYXNlX2Rlbm9tGAMgASgJEhQKDG9yaWdpbl9jaGFpbhgEIAEoCRIQCghkZWNpbWFscxgFIAEoBRIRCglpc19uYXRpdmUYBiABKAgiPgohUGF0aGZpbmRlclN1cHBvcnRlZENoYWluc1Jlc3BvbnNlEhkKCWNoYWluX2lkcxgBIAMoCUIGukgDyAEBIkIKEENoYWluSW5mb1JlcXVlc3QSGAoIY2hhaW5faWQYASABKAlCBrpIA8gBARIUCgxzaG93X3N5bWJvbHMYAiABKAgiQQoRQ2hhaW5JbmZvUmVzcG9uc2USLAoKY2hhaW5faW5mbxgBIAEoCzIYLnBhdGhmaW5kZXIudjEuQ2hhaW5JbmZvIoABCglDaGFpbkluZm8SEAoIY2hhaW5faWQYASABKAkSEgoKY2hhaW5fbmFtZRgCIAEoCRIPCgdoYXNfcGZtGAMgASgIEhEKCWlzX2Jyb2tlchgEIAEoCBIpCgZyb3V0ZXMYBSADKAsyGS5wYXRoZmluZGVyLnYxLkJhc2ljUm91dGUifwoJVG9rZW5JbmZvEhMKC2NoYWluX2Rlbm9tGAEgASgJEhEKCWliY19kZW5vbRgCIAEoCRISCgpiYXNlX2Rlbm9tGAMgASgJEhQKDG9yaWdpbl9jaGFpbhgEIAEoCRIQCghkZWNpbWFscxgFIAEoBRIOCgZzeW1ib2wYBiABKAkihQIKCkJhc2ljUm91dGUSEAoIdG9fY2hhaW4YASABKAkSEwoLdG9fY2hhaW5faWQYAiABKAkSFQoNY29ubmVjdGlvbl9pZBgDIAEoCRISCgpjaGFubmVsX2lkGAQgASgJEg8KB3BvcnRfaWQYBSABKAkSRAoOYWxsb3dlZF90b2tlbnMYBiADKAsyLC5wYXRoZmluZGVyLnYxLkJhc2ljUm91dGUuQWxsb3dlZFRva2Vuc0VudHJ5Gk4KEkFsbG93ZWRUb2tlbnNFbnRyeRILCgNrZXkYASABKAkSJwoFdmFsdWUYAiABKAsyGC5wYXRoZmluZGVyLnYxLlRva2VuSW5mbzoCOAEiQQoIV2FzbURhdGESEAoIY29udHJhY3QYASABKAkSIwoDbXNnGAIgASgLMhYucGF0aGZpbmRlci52MS5XYXNtTXNnIkAKB1dhc21Nc2cSNQoPc3dhcF9hbmRfYWN0aW9uGAEgASgLMhwucGF0aGZpbmRlci52MS5Td2FwQW5kQWN0aW9uIs8BCg1Td2FwQW5kQWN0aW9uEioKCXVzZXJfc3dhcBgBIAEoCzIXLnBhdGhmaW5kZXIudjEuVXNlclN3YXASKgoJbWluX2Fzc2V0GAIgASgLMhcucGF0aGZpbmRlci52MS5NaW5Bc3NldBIZChF0aW1lb3V0X3RpbWVzdGFtcBgDIAEoAxI3ChBwb3N0X3N3YXBfYWN0aW9uGAQgASgLMh0ucGF0aGZpbmRlci52MS5Qb3N0U3dhcEFjdGlvbhISCgphZmZpbGlhdGVzGAUgAygJIl0KEFN3YXBFeGFjdEFzc2V0SW4SFwoPc3dhcF92ZW51ZV9uYW1lGAEgASgJEjAKCm9wZXJhdGlvbnMYAiADKAsyHC5wYXRoZmluZGVyLnYxLlN3YXBPcGVyYXRpb24iaAoNU3dhcE9wZXJhdGlvbhIMCgRwb29sGAEgASgJEhAKCGRlbm9tX2luGAIgASgJEhEKCWRlbm9tX291dBgDIAEoCRIWCglpbnRlcmZhY2UYBCABKAlIAIgBAUIMCgpfaW50ZXJmYWNlIjAKCE1pbkFzc2V0EiQKBm5hdGl2ZRgBIAEoCzIULnBhdGhmaW5kZXIudjEuQXNzZXQiJgoFQXNzZXQSDgoGYW1vdW50GAEgASgJEg0KBWRlbm9tGAIgASgJInsKDlBvc3RTd2FwQWN0aW9uEjIKDGliY190cmFuc2ZlchgBIAEoCzIaLnBhdGhmaW5kZXIudjEuSUJDVHJhbnNmZXJIABIrCgh0cmFuc2ZlchgCIAEoCzIXLnBhdGhmaW5kZXIudjEuVHJhbnNmZXJIAEIICgZhY3Rpb24iNwoLSUJDVHJhbnNmZXISKAoIaWJjX2luZm8YASABKAsyFi5wYXRoZmluZGVyLnYxLklCQ0luZm8iHgoIVHJhbnNmZXISEgoKdG9fYWRkcmVzcxgBIAEoCSJaCgdJQkNJbmZvEgwKBG1lbW8YASABKAkSEAoIcmVjZWl2ZXIYAiABKAkSFwoPcmVjb3Zlcl9hZGRyZXNzGAMgASgJEhYKDnNvdXJjZV9jaGFubmVsGAQgASgJIkgKCFVzZXJTd2FwEjwKE3N3YXBfZXhhY3RfYXNzZXRfaW4YASABKAsyHy5wYXRoZmluZGVyLnYxLlN3YXBFeGFjdEFzc2V0SW4yxgQKEVBhdGhmaW5kZXJTZXJ2aWNlElAKCEZpbmRQYXRoEh4ucGF0aGZpbmRlci52MS5GaW5kUGF0aFJlcXVlc3QaHy5wYXRoZmluZGVyLnYxLkZpbmRQYXRoUmVzcG9uc2UiA5ACARJZCgtMb29rdXBEZW5vbRIhLnBhdGhmaW5kZXIudjEuTG9va3VwRGVub21SZXF1ZXN0GiIucGF0aGZpbmRlci52MS5Mb29rdXBEZW5vbVJlc3BvbnNlIgOQAgESYgoOR2V0VG9rZW5EZW5vbXMSJC5wYXRoZmluZGVyLnYxLkdldFRva2VuRGVub21zUmVxdWVzdBolLnBhdGhmaW5kZXIudjEuR2V0VG9rZW5EZW5vbXNSZXNwb25zZSIDkAIBElYKDEdldENoYWluSW5mbxIfLnBhdGhmaW5kZXIudjEuQ2hhaW5JbmZvUmVxdWVzdBogLnBhdGhmaW5kZXIudjEuQ2hhaW5JbmZvUmVzcG9uc2UiA5ACARJkChNMaXN0U3VwcG9ydGVkQ2hhaW5zEhYuZ29vZ2xlLnByb3RvYnVmLkVtcHR5GjAucGF0aGZpbmRlci52MS5QYXRoZmluZGVyU3VwcG9ydGVkQ2hhaW5zUmVzcG9uc2UiA5ACARJiCg5HZXRDaGFpblRva2VucxIkLnBhdGhmaW5kZXIudjEuR2V0Q2hhaW5Ub2tlbnNSZXF1ZXN0GiUucGF0aGZpbmRlci52MS5HZXRDaGFpblRva2Vuc1Jlc3BvbnNlIgOQAgFCQVo/Z2l0aHViLmNvbS9Db2d3aGVlbC1WYWxpZGF0b3Ivc3BlY3RyYS1pYmMtaHViL3BhdGhmaW5kZXIvcnBjL3YxYgZwcm90bzM", [file_buf_validate_validate, file_google_protobuf_empty]);
+  fileDesc("ChZwYXRoZmluZGVyX3JvdXRlLnByb3RvEg1wYXRoZmluZGVyLnYxIrUCCg9GaW5kUGF0aFJlcXVlc3QSGgoKY2hhaW5fZnJvbRgBIAEoCUIGukgDyAEBEicKEHRva2VuX2Zyb21fZGVub20YAiABKAlCDbpICsgBAXIFEAEYgAESGQoJYW1vdW50X2luGAMgASgJQga6SAPIAQESGAoIY2hhaW5fdG8YBCABKAlCBrpIA8gBARIgCg50b2tlbl90b19kZW5vbRgFIAEoCUIIukgFcgMYgAESJAoOc2VuZGVyX2FkZHJlc3MYBiABKAlCDLpICcgBAXIEECYYRBImChByZWNlaXZlcl9hZGRyZXNzGAcgASgJQgy6SAnIAQFyBBAmGEQSEwoLc21hcnRfcm91dGUYCCABKAgSIwoMc2xpcHBhZ2VfYnBzGAkgASgNQg26SArIAQAqBRiQTigAIvYBChBGaW5kUGF0aFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSJAoNZXJyb3JfbWVzc2FnZRgCIAEoCVINZXJyb3JfbWVzc2FnZRIsCgZkaXJlY3QYAyABKAsyGi5wYXRoZmluZGVyLnYxLkRpcmVjdFJvdXRlSAASMAoIaW5kaXJlY3QYBCABKAsyHC5wYXRoZmluZGVyLnYxLkluZGlyZWN0Um91dGVIABJCCgticm9rZXJfc3dhcBgFIAEoCzIeLnBhdGhmaW5kZXIudjEuQnJva2VyU3dhcFJvdXRlSABSC2Jyb2tlcl9zd2FwQgcKBXJvdXRlIjYKC0RpcmVjdFJvdXRlEicKCHRyYW5zZmVyGAEgASgLMhUucGF0aGZpbmRlci52MS5JQkNMZWcirAEKDUluZGlyZWN0Um91dGUSDAoEcGF0aBgBIAMoCRIjCgRsZWdzGAIgAygLMhUucGF0aGZpbmRlci52MS5JQkNMZWcSIgoMc3VwcG9ydHNfcGZtGAMgASgIUgxzdXBwb3J0c19wZm0SKAoPcGZtX3N0YXJ0X2NoYWluGAQgASgJUg9wZm1fc3RhcnRfY2hhaW4SGgoIcGZtX21lbW8YBSABKAlSCHBmbV9tZW1vIqwCCg9Ccm9rZXJTd2FwUm91dGUSDAoEcGF0aBgBIAMoCRI5CgxpbmJvdW5kX2xlZ3MYAiADKAsyFS5wYXRoZmluZGVyLnYxLklCQ0xlZ1IMaW5ib3VuZF9sZWdzEiYKBHN3YXAYAyABKAsyGC5wYXRoZmluZGVyLnYxLlN3YXBRdW90ZRI7Cg1vdXRib3VuZF9sZWdzGAQgAygLMhUucGF0aGZpbmRlci52MS5JQkNMZWdSDW91dGJvdW5kX2xlZ3MSNAoVb3V0Ym91bmRfc3VwcG9ydHNfcGZtGAUgASgIUhVvdXRib3VuZF9zdXBwb3J0c19wZm0SNQoJZXhlY3V0aW9uGAYgASgLMiIucGF0aGZpbmRlci52MS5Ccm9rZXJFeGVjdXRpb25EYXRhIt4CChNCcm9rZXJFeGVjdXRpb25EYXRhEhEKBG1lbW8YASABKAlIAIgBARJOChNzbWFydF9jb250cmFjdF9kYXRhGAIgASgLMhcucGF0aGZpbmRlci52MS5XYXNtRGF0YUgBUhNzbWFydF9jb250cmFjdF9kYXRhiAEBEicKDGliY19yZWNlaXZlchgDIAEoCUgCUgxpYmNfcmVjZWl2ZXKIAQESKAoPcmVjb3Zlcl9hZGRyZXNzGAQgASgJUg9yZWNvdmVyX2FkZHJlc3MSLAoRbWluX291dHB1dF9hbW91bnQYBSABKAlSEW1pbl9vdXRwdXRfYW1vdW50EhwKCXVzZXNfd2FzbRgGIAEoCFIJdXNlc193YXNtEhMKC2Rlc2NyaXB0aW9uGAcgASgJQgcKBV9tZW1vQhYKFF9zbWFydF9jb250cmFjdF9kYXRhQg8KDV9pYmNfcmVjZWl2ZXIinwEKBklCQ0xlZxIeCgpmcm9tX2NoYWluGAEgASgJUgpmcm9tX2NoYWluEhoKCHRvX2NoYWluGAIgASgJUgh0b19jaGFpbhIPCgdjaGFubmVsGAMgASgJEgwKBHBvcnQYBCABKAkSKgoFdG9rZW4YBSABKAsyGy5wYXRoZmluZGVyLnYxLlRva2VuTWFwcGluZxIOCgZhbW91bnQYBiABKAkikgEKDFRva2VuTWFwcGluZxIgCgtjaGFpbl9kZW5vbRgBIAEoCVILY2hhaW5fZGVub20SHgoKYmFzZV9kZW5vbRgCIAEoCVIKYmFzZV9kZW5vbRIiCgxvcmlnaW5fY2hhaW4YAyABKAlSDG9yaWdpbl9jaGFpbhIcCglpc19uYXRpdmUYBCABKAhSCWlzX25hdGl2ZSL4AgoJU3dhcFF1b3RlEg4KBmJyb2tlchgBIAEoCRI3Cgh0b2tlbl9pbhgCIAEoCzIbLnBhdGhmaW5kZXIudjEuVG9rZW5NYXBwaW5nUgh0b2tlbl9pbhI5Cgl0b2tlbl9vdXQYAyABKAsyGy5wYXRoZmluZGVyLnYxLlRva2VuTWFwcGluZ1IJdG9rZW5fb3V0EhwKCWFtb3VudF9pbhgEIAEoCVIJYW1vdW50X2luEh4KCmFtb3VudF9vdXQYBSABKAlSCmFtb3VudF9vdXQSIgoMcHJpY2VfaW1wYWN0GAYgASgJUgxwcmljZV9pbXBhY3QSJAoNZWZmZWN0aXZlX2ZlZRgHIAEoCVINZWZmZWN0aXZlX2ZlZRJRChJvc21vc2lzX3JvdXRlX2RhdGEYCCABKAsyHy5wYXRoZmluZGVyLnYxLk9zbW9zaXNSb3V0ZURhdGFIAFISb3Ntb3Npc19yb3V0ZV9kYXRhQgwKCnJvdXRlX2RhdGEinQEKEE9zbW9zaXNSb3V0ZURhdGESKwoGcm91dGVzGAEgAygLMhsucGF0aGZpbmRlci52MS5Pc21vc2lzUm91dGUSJAoNbGlxdWlkaXR5X2NhcBgCIAEoCVINbGlxdWlkaXR5X2NhcBI2ChZsaXF1aWRpdHlfY2FwX292ZXJmbG93GAMgASgIUhZsaXF1aWRpdHlfY2FwX292ZXJmbG93IpkBCgxPc21vc2lzUm91dGUSKQoFcG9vbHMYASADKAsyGi5wYXRoZmluZGVyLnYxLk9zbW9zaXNQb29sEiAKC2hhc19jd19wb29sGAIgASgIUgtoYXNfY3dfcG9vbBIeCgpvdXRfYW1vdW50GAMgASgJUgpvdXRfYW1vdW50EhwKCWluX2Ftb3VudBgEIAEoCVIJaW5fYW1vdW50IrsBCgtPc21vc2lzUG9vbBIKCgJpZBgBIAEoBRIMCgR0eXBlGAIgASgFEiQKDXNwcmVhZF9mYWN0b3IYAyABKAlSDXNwcmVhZF9mYWN0b3ISKAoPdG9rZW5fb3V0X2Rlbm9tGAQgASgJUg90b2tlbl9vdXRfZGVub20SHAoJdGFrZXJfZmVlGAUgASgJUgl0YWtlcl9mZWUSJAoNbGlxdWlkaXR5X2NhcBgGIAEoCVINbGlxdWlkaXR5X2NhcCJMChJMb29rdXBEZW5vbVJlcXVlc3QSGAoIY2hhaW5faWQYASABKAlCBrpIA8gBARIcCgVkZW5vbRgCIAEoCUINukgKyAEBcgUQARiAASKDAgoTTG9va3VwRGVub21SZXNwb25zZRINCgVmb3VuZBgBIAEoCBIgCgtjaGFpbl9kZW5vbRgCIAEoCVILY2hhaW5fZGVub20SHgoKYmFzZV9kZW5vbRgDIAEoCVIKYmFzZV9kZW5vbRIiCgxvcmlnaW5fY2hhaW4YBCABKAlSDG9yaWdpbl9jaGFpbhIcCglpc19uYXRpdmUYBSABKAhSCWlzX25hdGl2ZRIaCghpYmNfcGF0aBgGIAEoCVIIaWJjX3BhdGgSPQoMYXZhaWxhYmxlX29uGAcgAygLMhkucGF0aGZpbmRlci52MS5DaGFpbkRlbm9tUgxhdmFpbGFibGVfb24idQoKQ2hhaW5EZW5vbRIaCghjaGFpbl9pZBgBIAEoCVIIY2hhaW5faWQSHgoKY2hhaW5fbmFtZRgCIAEoCVIKY2hhaW5fbmFtZRINCgVkZW5vbRgDIAEoCRIcCglpc19uYXRpdmUYBCABKAhSCWlzX25hdGl2ZSJmChVHZXRUb2tlbkRlbm9tc1JlcXVlc3QSGgoKYmFzZV9kZW5vbRgBIAEoCUIGukgDyAEBEhwKDG9yaWdpbl9jaGFpbhgCIAEoCUIGukgDyAEBEhMKC29uX2NoYWluX2lkGAMgASgJIpYBChZHZXRUb2tlbkRlbm9tc1Jlc3BvbnNlEg0KBWZvdW5kGAEgASgIEh4KCmJhc2VfZGVub20YAiABKAlSCmJhc2VfZGVub20SIgoMb3JpZ2luX2NoYWluGAMgASgJUgxvcmlnaW5fY2hhaW4SKQoGZGVub21zGAQgAygLMhkucGF0aGZpbmRlci52MS5DaGFpbkRlbm9tIjEKFUdldENoYWluVG9rZW5zUmVxdWVzdBIYCghjaGFpbl9pZBgBIAEoCUIGukgDyAEBItQBChZHZXRDaGFpblRva2Vuc1Jlc3BvbnNlEhoKCGNoYWluX2lkGAEgASgJUghjaGFpbl9pZBIeCgpjaGFpbl9uYW1lGAIgASgJUgpjaGFpbl9uYW1lEkEKDW5hdGl2ZV90b2tlbnMYAyADKAsyGy5wYXRoZmluZGVyLnYxLlRva2VuRGV0YWlsc1INbmF0aXZlX3Rva2VucxI7CgppYmNfdG9rZW5zGAQgAygLMhsucGF0aGZpbmRlci52MS5Ub2tlbkRldGFpbHNSCmliY190b2tlbnMioQEKDFRva2VuRGV0YWlscxINCgVkZW5vbRgBIAEoCRIOCgZzeW1ib2wYAiABKAkSHgoKYmFzZV9kZW5vbRgDIAEoCVIKYmFzZV9kZW5vbRIiCgxvcmlnaW5fY2hhaW4YBCABKAlSDG9yaWdpbl9jaGFpbhIQCghkZWNpbWFscxgFIAEoBRIcCglpc19uYXRpdmUYBiABKAhSCWlzX25hdGl2ZSJJCiFQYXRoZmluZGVyU3VwcG9ydGVkQ2hhaW5zUmVzcG9uc2USJAoJY2hhaW5faWRzGAEgAygJQga6SAPIAQFSCWNoYWluX2lkcyJCChBDaGFpbkluZm9SZXF1ZXN0EhgKCGNoYWluX2lkGAEgASgJQga6SAPIAQESFAoMc2hvd19zeW1ib2xzGAIgASgIIk0KEUNoYWluSW5mb1Jlc3BvbnNlEjgKCmNoYWluX2luZm8YASABKAsyGC5wYXRoZmluZGVyLnYxLkNoYWluSW5mb1IKY2hhaW5faW5mbyKqAQoJQ2hhaW5JbmZvEhoKCGNoYWluX2lkGAEgASgJUghjaGFpbl9pZBIeCgpjaGFpbl9uYW1lGAIgASgJUgpjaGFpbl9uYW1lEhgKB2hhc19wZm0YAyABKAhSB2hhc19wZm0SHAoJaXNfYnJva2VyGAQgASgIUglpc19icm9rZXISKQoGcm91dGVzGAUgAygLMhkucGF0aGZpbmRlci52MS5CYXNpY1JvdXRlIrEBCglUb2tlbkluZm8SIAoLY2hhaW5fZGVub20YASABKAlSC2NoYWluX2Rlbm9tEhwKCWliY19kZW5vbRgCIAEoCVIJaWJjX2Rlbm9tEh4KCmJhc2VfZGVub20YAyABKAlSCmJhc2VfZGVub20SIgoMb3JpZ2luX2NoYWluGAQgASgJUgxvcmlnaW5fY2hhaW4SEAoIZGVjaW1hbHMYBSABKAUSDgoGc3ltYm9sGAYgASgJItACCgpCYXNpY1JvdXRlEhoKCHRvX2NoYWluGAEgASgJUgh0b19jaGFpbhIgCgt0b19jaGFpbl9pZBgCIAEoCVILdG9fY2hhaW5faWQSJAoNY29ubmVjdGlvbl9pZBgDIAEoCVINY29ubmVjdGlvbl9pZBIeCgpjaGFubmVsX2lkGAQgASgJUgpjaGFubmVsX2lkEhgKB3BvcnRfaWQYBSABKAlSB3BvcnRfaWQSVAoOYWxsb3dlZF90b2tlbnMYBiADKAsyLC5wYXRoZmluZGVyLnYxLkJhc2ljUm91dGUuQWxsb3dlZFRva2Vuc0VudHJ5Ug5hbGxvd2VkX3Rva2VucxpOChJBbGxvd2VkVG9rZW5zRW50cnkSCwoDa2V5GAEgASgJEicKBXZhbHVlGAIgASgLMhgucGF0aGZpbmRlci52MS5Ub2tlbkluZm86AjgBIkEKCFdhc21EYXRhEhAKCGNvbnRyYWN0GAEgASgJEiMKA21zZxgCIAEoCzIWLnBhdGhmaW5kZXIudjEuV2FzbU1zZyJRCgdXYXNtTXNnEkYKD3N3YXBfYW5kX2FjdGlvbhgBIAEoCzIcLnBhdGhmaW5kZXIudjEuU3dhcEFuZEFjdGlvblIPc3dhcF9hbmRfYWN0aW9uIooCCg1Td2FwQW5kQWN0aW9uEjUKCXVzZXJfc3dhcBgBIAEoCzIXLnBhdGhmaW5kZXIudjEuVXNlclN3YXBSCXVzZXJfc3dhcBI1CgltaW5fYXNzZXQYAiABKAsyFy5wYXRoZmluZGVyLnYxLk1pbkFzc2V0UgltaW5fYXNzZXQSLAoRdGltZW91dF90aW1lc3RhbXAYAyABKANSEXRpbWVvdXRfdGltZXN0YW1wEkkKEHBvc3Rfc3dhcF9hY3Rpb24YBCABKAsyHS5wYXRoZmluZGVyLnYxLlBvc3RTd2FwQWN0aW9uUhBwb3N0X3N3YXBfYWN0aW9uEhIKCmFmZmlsaWF0ZXMYBSADKAkibgoQU3dhcEV4YWN0QXNzZXRJbhIoCg9zd2FwX3ZlbnVlX25hbWUYASABKAlSD3N3YXBfdmVudWVfbmFtZRIwCgpvcGVyYXRpb25zGAIgAygLMhwucGF0aGZpbmRlci52MS5Td2FwT3BlcmF0aW9uIn0KDVN3YXBPcGVyYXRpb24SDAoEcG9vbBgBIAEoCRIaCghkZW5vbV9pbhgCIAEoCVIIZGVub21faW4SHAoJZGVub21fb3V0GAMgASgJUglkZW5vbV9vdXQSFgoJaW50ZXJmYWNlGAQgASgJSACIAQFCDAoKX2ludGVyZmFjZSIwCghNaW5Bc3NldBIkCgZuYXRpdmUYASABKAsyFC5wYXRoZmluZGVyLnYxLkFzc2V0IiYKBUFzc2V0Eg4KBmFtb3VudBgBIAEoCRINCgVkZW5vbRgCIAEoCSKJAQoOUG9zdFN3YXBBY3Rpb24SQAoMaWJjX3RyYW5zZmVyGAEgASgLMhoucGF0aGZpbmRlci52MS5JQkNUcmFuc2ZlckgAUgxpYmNfdHJhbnNmZXISKwoIdHJhbnNmZXIYAiABKAsyFy5wYXRoZmluZGVyLnYxLlRyYW5zZmVySABCCAoGYWN0aW9uIkEKC0lCQ1RyYW5zZmVyEjIKCGliY19pbmZvGAEgASgLMhYucGF0aGZpbmRlci52MS5JQkNJbmZvUghpYmNfaW5mbyIqCghUcmFuc2ZlchIeCgp0b19hZGRyZXNzGAEgASgJUgp0b19hZGRyZXNzInsKB0lCQ0luZm8SDAoEbWVtbxgBIAEoCRIQCghyZWNlaXZlchgCIAEoCRIoCg9yZWNvdmVyX2FkZHJlc3MYAyABKAlSD3JlY292ZXJfYWRkcmVzcxImCg5zb3VyY2VfY2hhbm5lbBgEIAEoCVIOc291cmNlX2NoYW5uZWwiXQoIVXNlclN3YXASUQoTc3dhcF9leGFjdF9hc3NldF9pbhgBIAEoCzIfLnBhdGhmaW5kZXIudjEuU3dhcEV4YWN0QXNzZXRJblITc3dhcF9leGFjdF9hc3NldF9pbjLGBAoRUGF0aGZpbmRlclNlcnZpY2USUAoIRmluZFBhdGgSHi5wYXRoZmluZGVyLnYxLkZpbmRQYXRoUmVxdWVzdBofLnBhdGhmaW5kZXIudjEuRmluZFBhdGhSZXNwb25zZSIDkAIBElkKC0xvb2t1cERlbm9tEiEucGF0aGZpbmRlci52MS5Mb29rdXBEZW5vbVJlcXVlc3QaIi5wYXRoZmluZGVyLnYxLkxvb2t1cERlbm9tUmVzcG9uc2UiA5ACARJiCg5HZXRUb2tlbkRlbm9tcxIkLnBhdGhmaW5kZXIudjEuR2V0VG9rZW5EZW5vbXNSZXF1ZXN0GiUucGF0aGZpbmRlci52MS5HZXRUb2tlbkRlbm9tc1Jlc3BvbnNlIgOQAgESVgoMR2V0Q2hhaW5JbmZvEh8ucGF0aGZpbmRlci52MS5DaGFpbkluZm9SZXF1ZXN0GiAucGF0aGZpbmRlci52MS5DaGFpbkluZm9SZXNwb25zZSIDkAIBEmQKE0xpc3RTdXBwb3J0ZWRDaGFpbnMSFi5nb29nbGUucHJvdG9idWYuRW1wdHkaMC5wYXRoZmluZGVyLnYxLlBhdGhmaW5kZXJTdXBwb3J0ZWRDaGFpbnNSZXNwb25zZSIDkAIBEmIKDkdldENoYWluVG9rZW5zEiQucGF0aGZpbmRlci52MS5HZXRDaGFpblRva2Vuc1JlcXVlc3QaJS5wYXRoZmluZGVyLnYxLkdldENoYWluVG9rZW5zUmVzcG9uc2UiA5ACAUJBWj9naXRodWIuY29tL0NvZ3doZWVsLVZhbGlkYXRvci9zcGVjdHJhLWliYy1odWIvcGF0aGZpbmRlci9ycGMvdjFiBnByb3RvMw", [file_buf_validate_validate, file_google_protobuf_empty]);
 
 /**
  * FindPathRequest - Find a route between chains
@@ -114,7 +114,7 @@ export type FindPathResponse = Message<"pathfinder.v1.FindPathResponse"> & {
   success: boolean;
 
   /**
-   * @generated from field: string error_message = 2;
+   * @generated from field: string error_message = 2 [json_name = "error_message"];
    */
   errorMessage: string;
 
@@ -135,7 +135,7 @@ export type FindPathResponse = Message<"pathfinder.v1.FindPathResponse"> & {
     case: "indirect";
   } | {
     /**
-     * @generated from field: pathfinder.v1.BrokerSwapRoute broker_swap = 5;
+     * @generated from field: pathfinder.v1.BrokerSwapRoute broker_swap = 5 [json_name = "broker_swap"];
      */
     value: BrokerSwapRoute;
     case: "brokerSwap";
@@ -181,17 +181,17 @@ export type IndirectRoute = Message<"pathfinder.v1.IndirectRoute"> & {
   legs: IBCLeg[];
 
   /**
-   * @generated from field: bool supports_pfm = 3;
+   * @generated from field: bool supports_pfm = 3 [json_name = "supports_pfm"];
    */
   supportsPfm: boolean;
 
   /**
-   * @generated from field: string pfm_start_chain = 4;
+   * @generated from field: string pfm_start_chain = 4 [json_name = "pfm_start_chain"];
    */
   pfmStartChain: string;
 
   /**
-   * @generated from field: string pfm_memo = 5;
+   * @generated from field: string pfm_memo = 5 [json_name = "pfm_memo"];
    */
   pfmMemo: string;
 };
@@ -224,7 +224,7 @@ export type BrokerSwapRoute = Message<"pathfinder.v1.BrokerSwapRoute"> & {
   /**
    * IBC transfer to reach broker (absent if starting from broker)
    *
-   * @generated from field: repeated pathfinder.v1.IBCLeg inbound_legs = 2;
+   * @generated from field: repeated pathfinder.v1.IBCLeg inbound_legs = 2 [json_name = "inbound_legs"];
    */
   inboundLegs: IBCLeg[];
 
@@ -239,14 +239,14 @@ export type BrokerSwapRoute = Message<"pathfinder.v1.BrokerSwapRoute"> & {
    * IBC transfers after swap (empty if destination is broker)
    * Can be multiple for multi-hop forwarding via PFM
    *
-   * @generated from field: repeated pathfinder.v1.IBCLeg outbound_legs = 4;
+   * @generated from field: repeated pathfinder.v1.IBCLeg outbound_legs = 4 [json_name = "outbound_legs"];
    */
   outboundLegs: IBCLeg[];
 
   /**
    * Can use PFM for outbound legs
    *
-   * @generated from field: bool outbound_supports_pfm = 5;
+   * @generated from field: bool outbound_supports_pfm = 5 [json_name = "outbound_supports_pfm"];
    */
   outboundSupportsPfm: boolean;
 
@@ -281,35 +281,35 @@ export type BrokerExecutionData = Message<"pathfinder.v1.BrokerExecutionData"> &
   /**
    * The smart contract data to use with the swap and transfer
    *
-   * @generated from field: optional pathfinder.v1.WasmData smart_contract_data = 2;
+   * @generated from field: optional pathfinder.v1.WasmData smart_contract_data = 2 [json_name = "smart_contract_data"];
    */
   smartContractData?: WasmData;
 
   /**
    * Receiver address for MsgTransfer (the ibc-hooks contract)
    *
-   * @generated from field: optional string ibc_receiver = 3;
+   * @generated from field: optional string ibc_receiver = 3 [json_name = "ibc_receiver"];
    */
   ibcReceiver?: string;
 
   /**
    * Recovery address on broker chain (where funds go if swap/forward fails)
    *
-   * @generated from field: string recover_address = 4;
+   * @generated from field: string recover_address = 4 [json_name = "recover_address"];
    */
   recoverAddress: string;
 
   /**
    * Minimum output amount after slippage (1% default)
    *
-   * @generated from field: string min_output_amount = 5;
+   * @generated from field: string min_output_amount = 5 [json_name = "min_output_amount"];
    */
   minOutputAmount: string;
 
   /**
    * True if using wasm ibc-hooks (vs simple PFM)
    *
-   * @generated from field: bool uses_wasm = 6;
+   * @generated from field: bool uses_wasm = 6 [json_name = "uses_wasm"];
    */
   usesWasm: boolean;
 
@@ -333,12 +333,12 @@ export const BrokerExecutionDataSchema: GenMessage<BrokerExecutionData> = /*@__P
  */
 export type IBCLeg = Message<"pathfinder.v1.IBCLeg"> & {
   /**
-   * @generated from field: string from_chain = 1;
+   * @generated from field: string from_chain = 1 [json_name = "from_chain"];
    */
   fromChain: string;
 
   /**
-   * @generated from field: string to_chain = 2;
+   * @generated from field: string to_chain = 2 [json_name = "to_chain"];
    */
   toChain: string;
 
@@ -377,28 +377,28 @@ export type TokenMapping = Message<"pathfinder.v1.TokenMapping"> & {
   /**
    * The denom as it appears on the current chain (native or IBC)
    *
-   * @generated from field: string chain_denom = 1;
+   * @generated from field: string chain_denom = 1 [json_name = "chain_denom"];
    */
   chainDenom: string;
 
   /**
    * The base/native denom on the token's origin chain
    *
-   * @generated from field: string base_denom = 2;
+   * @generated from field: string base_denom = 2 [json_name = "base_denom"];
    */
   baseDenom: string;
 
   /**
    * The chain ID where this token is native
    *
-   * @generated from field: string origin_chain = 3;
+   * @generated from field: string origin_chain = 3 [json_name = "origin_chain"];
    */
   originChain: string;
 
   /**
    * True if this is the token's native chain
    *
-   * @generated from field: bool is_native = 4;
+   * @generated from field: bool is_native = 4 [json_name = "is_native"];
    */
   isNative: boolean;
 };
@@ -422,32 +422,32 @@ export type SwapQuote = Message<"pathfinder.v1.SwapQuote"> & {
   broker: string;
 
   /**
-   * @generated from field: pathfinder.v1.TokenMapping token_in = 2;
+   * @generated from field: pathfinder.v1.TokenMapping token_in = 2 [json_name = "token_in"];
    */
   tokenIn?: TokenMapping;
 
   /**
-   * @generated from field: pathfinder.v1.TokenMapping token_out = 3;
+   * @generated from field: pathfinder.v1.TokenMapping token_out = 3 [json_name = "token_out"];
    */
   tokenOut?: TokenMapping;
 
   /**
-   * @generated from field: string amount_in = 4;
+   * @generated from field: string amount_in = 4 [json_name = "amount_in"];
    */
   amountIn: string;
 
   /**
-   * @generated from field: string amount_out = 5;
+   * @generated from field: string amount_out = 5 [json_name = "amount_out"];
    */
   amountOut: string;
 
   /**
-   * @generated from field: string price_impact = 6;
+   * @generated from field: string price_impact = 6 [json_name = "price_impact"];
    */
   priceImpact: string;
 
   /**
-   * @generated from field: string effective_fee = 7;
+   * @generated from field: string effective_fee = 7 [json_name = "effective_fee"];
    */
   effectiveFee: string;
 
@@ -460,7 +460,7 @@ export type SwapQuote = Message<"pathfinder.v1.SwapQuote"> & {
     /**
      * Future brokers can be added here without breaking existing clients
      *
-     * @generated from field: pathfinder.v1.OsmosisRouteData osmosis_route_data = 8;
+     * @generated from field: pathfinder.v1.OsmosisRouteData osmosis_route_data = 8 [json_name = "osmosis_route_data"];
      */
     value: OsmosisRouteData;
     case: "osmosisRouteData";
@@ -486,12 +486,12 @@ export type OsmosisRouteData = Message<"pathfinder.v1.OsmosisRouteData"> & {
   routes: OsmosisRoute[];
 
   /**
-   * @generated from field: string liquidity_cap = 2;
+   * @generated from field: string liquidity_cap = 2 [json_name = "liquidity_cap"];
    */
   liquidityCap: string;
 
   /**
-   * @generated from field: bool liquidity_cap_overflow = 3;
+   * @generated from field: bool liquidity_cap_overflow = 3 [json_name = "liquidity_cap_overflow"];
    */
   liquidityCapOverflow: boolean;
 };
@@ -513,17 +513,17 @@ export type OsmosisRoute = Message<"pathfinder.v1.OsmosisRoute"> & {
   pools: OsmosisPool[];
 
   /**
-   * @generated from field: bool has_cw_pool = 2;
+   * @generated from field: bool has_cw_pool = 2 [json_name = "has_cw_pool"];
    */
   hasCwPool: boolean;
 
   /**
-   * @generated from field: string out_amount = 3;
+   * @generated from field: string out_amount = 3 [json_name = "out_amount"];
    */
   outAmount: string;
 
   /**
-   * @generated from field: string in_amount = 4;
+   * @generated from field: string in_amount = 4 [json_name = "in_amount"];
    */
   inAmount: string;
 };
@@ -550,22 +550,22 @@ export type OsmosisPool = Message<"pathfinder.v1.OsmosisPool"> & {
   type: number;
 
   /**
-   * @generated from field: string spread_factor = 3;
+   * @generated from field: string spread_factor = 3 [json_name = "spread_factor"];
    */
   spreadFactor: string;
 
   /**
-   * @generated from field: string token_out_denom = 4;
+   * @generated from field: string token_out_denom = 4 [json_name = "token_out_denom"];
    */
   tokenOutDenom: string;
 
   /**
-   * @generated from field: string taker_fee = 5;
+   * @generated from field: string taker_fee = 5 [json_name = "taker_fee"];
    */
   takerFee: string;
 
   /**
-   * @generated from field: string liquidity_cap = 6;
+   * @generated from field: string liquidity_cap = 6 [json_name = "liquidity_cap"];
    */
   liquidityCap: string;
 };
@@ -616,42 +616,42 @@ export type LookupDenomResponse = Message<"pathfinder.v1.LookupDenomResponse"> &
   /**
    * The denom as it appears on this chain
    *
-   * @generated from field: string chain_denom = 2;
+   * @generated from field: string chain_denom = 2 [json_name = "chain_denom"];
    */
   chainDenom: string;
 
   /**
    * The base/native denom
    *
-   * @generated from field: string base_denom = 3;
+   * @generated from field: string base_denom = 3 [json_name = "base_denom"];
    */
   baseDenom: string;
 
   /**
    * Where this token is native
    *
-   * @generated from field: string origin_chain = 4;
+   * @generated from field: string origin_chain = 4 [json_name = "origin_chain"];
    */
   originChain: string;
 
   /**
    * True if this is the token's native chain
    *
-   * @generated from field: bool is_native = 5;
+   * @generated from field: bool is_native = 5 [json_name = "is_native"];
    */
   isNative: boolean;
 
   /**
    * IBC path if this is an IBC token (e.g., "transfer/channel-75")
    *
-   * @generated from field: string ibc_path = 6;
+   * @generated from field: string ibc_path = 6 [json_name = "ibc_path"];
    */
   ibcPath: string;
 
   /**
    * Denoms on other chains where this token is available
    *
-   * @generated from field: repeated pathfinder.v1.ChainDenom available_on = 7;
+   * @generated from field: repeated pathfinder.v1.ChainDenom available_on = 7 [json_name = "available_on"];
    */
   availableOn: ChainDenom[];
 };
@@ -670,12 +670,12 @@ export const LookupDenomResponseSchema: GenMessage<LookupDenomResponse> = /*@__P
  */
 export type ChainDenom = Message<"pathfinder.v1.ChainDenom"> & {
   /**
-   * @generated from field: string chain_id = 1;
+   * @generated from field: string chain_id = 1 [json_name = "chain_id"];
    */
   chainId: string;
 
   /**
-   * @generated from field: string chain_name = 2;
+   * @generated from field: string chain_name = 2 [json_name = "chain_name"];
    */
   chainName: string;
 
@@ -685,7 +685,7 @@ export type ChainDenom = Message<"pathfinder.v1.ChainDenom"> & {
   denom: string;
 
   /**
-   * @generated from field: bool is_native = 4;
+   * @generated from field: bool is_native = 4 [json_name = "is_native"];
    */
   isNative: boolean;
 };
@@ -743,12 +743,12 @@ export type GetTokenDenomsResponse = Message<"pathfinder.v1.GetTokenDenomsRespon
   found: boolean;
 
   /**
-   * @generated from field: string base_denom = 2;
+   * @generated from field: string base_denom = 2 [json_name = "base_denom"];
    */
   baseDenom: string;
 
   /**
-   * @generated from field: string origin_chain = 3;
+   * @generated from field: string origin_chain = 3 [json_name = "origin_chain"];
    */
   originChain: string;
 
@@ -791,26 +791,26 @@ export const GetChainTokensRequestSchema: GenMessage<GetChainTokensRequest> = /*
  */
 export type GetChainTokensResponse = Message<"pathfinder.v1.GetChainTokensResponse"> & {
   /**
-   * @generated from field: string chain_id = 1;
+   * @generated from field: string chain_id = 1 [json_name = "chain_id"];
    */
   chainId: string;
 
   /**
-   * @generated from field: string chain_name = 2;
+   * @generated from field: string chain_name = 2 [json_name = "chain_name"];
    */
   chainName: string;
 
   /**
    * Native tokens on this chain
    *
-   * @generated from field: repeated pathfinder.v1.TokenDetails native_tokens = 3;
+   * @generated from field: repeated pathfinder.v1.TokenDetails native_tokens = 3 [json_name = "native_tokens"];
    */
   nativeTokens: TokenDetails[];
 
   /**
    * IBC tokens received on this chain
    *
-   * @generated from field: repeated pathfinder.v1.TokenDetails ibc_tokens = 4;
+   * @generated from field: repeated pathfinder.v1.TokenDetails ibc_tokens = 4 [json_name = "ibc_tokens"];
    */
   ibcTokens: TokenDetails[];
 };
@@ -845,14 +845,14 @@ export type TokenDetails = Message<"pathfinder.v1.TokenDetails"> & {
   /**
    * Base denom on origin chain
    *
-   * @generated from field: string base_denom = 3;
+   * @generated from field: string base_denom = 3 [json_name = "base_denom"];
    */
   baseDenom: string;
 
   /**
    * Chain where token is native
    *
-   * @generated from field: string origin_chain = 4;
+   * @generated from field: string origin_chain = 4 [json_name = "origin_chain"];
    */
   originChain: string;
 
@@ -866,7 +866,7 @@ export type TokenDetails = Message<"pathfinder.v1.TokenDetails"> & {
   /**
    * True if native to this chain
    *
-   * @generated from field: bool is_native = 6;
+   * @generated from field: bool is_native = 6 [json_name = "is_native"];
    */
   isNative: boolean;
 };
@@ -883,7 +883,7 @@ export const TokenDetailsSchema: GenMessage<TokenDetails> = /*@__PURE__*/
  */
 export type PathfinderSupportedChainsResponse = Message<"pathfinder.v1.PathfinderSupportedChainsResponse"> & {
   /**
-   * @generated from field: repeated string chain_ids = 1;
+   * @generated from field: repeated string chain_ids = 1 [json_name = "chain_ids"];
    */
   chainIds: string[];
 };
@@ -926,7 +926,7 @@ export const ChainInfoRequestSchema: GenMessage<ChainInfoRequest> = /*@__PURE__*
  */
 export type ChainInfoResponse = Message<"pathfinder.v1.ChainInfoResponse"> & {
   /**
-   * @generated from field: pathfinder.v1.ChainInfo chain_info = 1;
+   * @generated from field: pathfinder.v1.ChainInfo chain_info = 1 [json_name = "chain_info"];
    */
   chainInfo?: ChainInfo;
 };
@@ -943,22 +943,22 @@ export const ChainInfoResponseSchema: GenMessage<ChainInfoResponse> = /*@__PURE_
  */
 export type ChainInfo = Message<"pathfinder.v1.ChainInfo"> & {
   /**
-   * @generated from field: string chain_id = 1;
+   * @generated from field: string chain_id = 1 [json_name = "chain_id"];
    */
   chainId: string;
 
   /**
-   * @generated from field: string chain_name = 2;
+   * @generated from field: string chain_name = 2 [json_name = "chain_name"];
    */
   chainName: string;
 
   /**
-   * @generated from field: bool has_pfm = 3;
+   * @generated from field: bool has_pfm = 3 [json_name = "has_pfm"];
    */
   hasPfm: boolean;
 
   /**
-   * @generated from field: bool is_broker = 4;
+   * @generated from field: bool is_broker = 4 [json_name = "is_broker"];
    */
   isBroker: boolean;
 
@@ -980,22 +980,22 @@ export const ChainInfoSchema: GenMessage<ChainInfo> = /*@__PURE__*/
  */
 export type TokenInfo = Message<"pathfinder.v1.TokenInfo"> & {
   /**
-   * @generated from field: string chain_denom = 1;
+   * @generated from field: string chain_denom = 1 [json_name = "chain_denom"];
    */
   chainDenom: string;
 
   /**
-   * @generated from field: string ibc_denom = 2;
+   * @generated from field: string ibc_denom = 2 [json_name = "ibc_denom"];
    */
   ibcDenom: string;
 
   /**
-   * @generated from field: string base_denom = 3;
+   * @generated from field: string base_denom = 3 [json_name = "base_denom"];
    */
   baseDenom: string;
 
   /**
-   * @generated from field: string origin_chain = 4;
+   * @generated from field: string origin_chain = 4 [json_name = "origin_chain"];
    */
   originChain: string;
 
@@ -1022,32 +1022,32 @@ export const TokenInfoSchema: GenMessage<TokenInfo> = /*@__PURE__*/
  */
 export type BasicRoute = Message<"pathfinder.v1.BasicRoute"> & {
   /**
-   * @generated from field: string to_chain = 1;
+   * @generated from field: string to_chain = 1 [json_name = "to_chain"];
    */
   toChain: string;
 
   /**
-   * @generated from field: string to_chain_id = 2;
+   * @generated from field: string to_chain_id = 2 [json_name = "to_chain_id"];
    */
   toChainId: string;
 
   /**
-   * @generated from field: string connection_id = 3;
+   * @generated from field: string connection_id = 3 [json_name = "connection_id"];
    */
   connectionId: string;
 
   /**
-   * @generated from field: string channel_id = 4;
+   * @generated from field: string channel_id = 4 [json_name = "channel_id"];
    */
   channelId: string;
 
   /**
-   * @generated from field: string port_id = 5;
+   * @generated from field: string port_id = 5 [json_name = "port_id"];
    */
   portId: string;
 
   /**
-   * @generated from field: map<string, pathfinder.v1.TokenInfo> allowed_tokens = 6;
+   * @generated from field: map<string, pathfinder.v1.TokenInfo> allowed_tokens = 6 [json_name = "allowed_tokens"];
    */
   allowedTokens: { [key: string]: TokenInfo };
 };
@@ -1086,7 +1086,7 @@ export const WasmDataSchema: GenMessage<WasmData> = /*@__PURE__*/
  */
 export type WasmMsg = Message<"pathfinder.v1.WasmMsg"> & {
   /**
-   * @generated from field: pathfinder.v1.SwapAndAction swap_and_action = 1;
+   * @generated from field: pathfinder.v1.SwapAndAction swap_and_action = 1 [json_name = "swap_and_action"];
    */
   swapAndAction?: SwapAndAction;
 };
@@ -1105,22 +1105,22 @@ export type SwapAndAction = Message<"pathfinder.v1.SwapAndAction"> & {
   /**
    * SwapAndAction is the entry point contract message structure
    *
-   * @generated from field: pathfinder.v1.UserSwap user_swap = 1;
+   * @generated from field: pathfinder.v1.UserSwap user_swap = 1 [json_name = "user_swap"];
    */
   userSwap?: UserSwap;
 
   /**
-   * @generated from field: pathfinder.v1.MinAsset min_asset = 2;
+   * @generated from field: pathfinder.v1.MinAsset min_asset = 2 [json_name = "min_asset"];
    */
   minAsset?: MinAsset;
 
   /**
-   * @generated from field: int64 timeout_timestamp = 3;
+   * @generated from field: int64 timeout_timestamp = 3 [json_name = "timeout_timestamp"];
    */
   timeoutTimestamp: bigint;
 
   /**
-   * @generated from field: pathfinder.v1.PostSwapAction post_swap_action = 4;
+   * @generated from field: pathfinder.v1.PostSwapAction post_swap_action = 4 [json_name = "post_swap_action"];
    */
   postSwapAction?: PostSwapAction;
 
@@ -1142,7 +1142,7 @@ export const SwapAndActionSchema: GenMessage<SwapAndAction> = /*@__PURE__*/
  */
 export type SwapExactAssetIn = Message<"pathfinder.v1.SwapExactAssetIn"> & {
   /**
-   * @generated from field: string swap_venue_name = 1;
+   * @generated from field: string swap_venue_name = 1 [json_name = "swap_venue_name"];
    */
   swapVenueName: string;
 
@@ -1169,12 +1169,12 @@ export type SwapOperation = Message<"pathfinder.v1.SwapOperation"> & {
   pool: string;
 
   /**
-   * @generated from field: string denom_in = 2;
+   * @generated from field: string denom_in = 2 [json_name = "denom_in"];
    */
   denomIn: string;
 
   /**
-   * @generated from field: string denom_out = 3;
+   * @generated from field: string denom_out = 3 [json_name = "denom_out"];
    */
   denomOut: string;
 
@@ -1241,7 +1241,7 @@ export type PostSwapAction = Message<"pathfinder.v1.PostSwapAction"> & {
    */
   action: {
     /**
-     * @generated from field: pathfinder.v1.IBCTransfer ibc_transfer = 1;
+     * @generated from field: pathfinder.v1.IBCTransfer ibc_transfer = 1 [json_name = "ibc_transfer"];
      */
     value: IBCTransfer;
     case: "ibcTransfer";
@@ -1266,7 +1266,7 @@ export const PostSwapActionSchema: GenMessage<PostSwapAction> = /*@__PURE__*/
  */
 export type IBCTransfer = Message<"pathfinder.v1.IBCTransfer"> & {
   /**
-   * @generated from field: pathfinder.v1.IBCInfo ibc_info = 1;
+   * @generated from field: pathfinder.v1.IBCInfo ibc_info = 1 [json_name = "ibc_info"];
    */
   ibcInfo?: IBCInfo;
 };
@@ -1283,7 +1283,7 @@ export const IBCTransferSchema: GenMessage<IBCTransfer> = /*@__PURE__*/
  */
 export type Transfer = Message<"pathfinder.v1.Transfer"> & {
   /**
-   * @generated from field: string to_address = 1;
+   * @generated from field: string to_address = 1 [json_name = "to_address"];
    */
   toAddress: string;
 };
@@ -1310,12 +1310,12 @@ export type IBCInfo = Message<"pathfinder.v1.IBCInfo"> & {
   receiver: string;
 
   /**
-   * @generated from field: string recover_address = 3;
+   * @generated from field: string recover_address = 3 [json_name = "recover_address"];
    */
   recoverAddress: string;
 
   /**
-   * @generated from field: string source_channel = 4;
+   * @generated from field: string source_channel = 4 [json_name = "source_channel"];
    */
   sourceChannel: string;
 };
@@ -1332,7 +1332,7 @@ export const IBCInfoSchema: GenMessage<IBCInfo> = /*@__PURE__*/
  */
 export type UserSwap = Message<"pathfinder.v1.UserSwap"> & {
   /**
-   * @generated from field: pathfinder.v1.SwapExactAssetIn swap_exact_asset_in = 1;
+   * @generated from field: pathfinder.v1.SwapExactAssetIn swap_exact_asset_in = 1 [json_name = "swap_exact_asset_in"];
    */
   swapExactAssetIn?: SwapExactAssetIn;
 };

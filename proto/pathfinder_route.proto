@@ -100,25 +100,25 @@ message FindPathRequest {
 }
 
 message FindPathResponse {
-    bool success = 1;
-    string error_message = 2;
+    bool success = 1 [json_name = "success"];
+    string error_message = 2 [json_name = "error_message"];
     oneof route {
-        DirectRoute direct = 3;
-        IndirectRoute indirect = 4;
-        BrokerSwapRoute broker_swap = 5;
+        DirectRoute direct = 3 [json_name = "direct"];
+        IndirectRoute indirect = 4 [json_name = "indirect"];
+        BrokerSwapRoute broker_swap = 5 [json_name = "broker_swap"];
     }
 }
 
 message DirectRoute {
-    IBCLeg transfer = 1;
+    IBCLeg transfer = 1 [json_name = "transfer"];
 }
 
 message IndirectRoute {
-    repeated string path = 1;
-    repeated IBCLeg legs = 2;
-    bool supports_pfm = 3;
-    string pfm_start_chain = 4;
-    string pfm_memo = 5;
+    repeated string path = 1 [json_name = "path"];
+    repeated IBCLeg legs = 2 [json_name = "legs"];
+    bool supports_pfm = 3 [json_name = "supports_pfm"];
+    string pfm_start_chain = 4 [json_name = "pfm_start_chain"];
+    string pfm_memo = 5 [json_name = "pfm_memo"];
 }
 
 // BrokerSwapRoute represents a route involving a swap on a broker chain.
@@ -129,96 +129,96 @@ message IndirectRoute {
 // - Multi-hop outbound: inbound_leg set, len(outbound_legs)>1 (e.g., cosmos ATOM -> swap -> noble -> juno)
 message BrokerSwapRoute {
     // All chain IDs in order
-    repeated string path = 1;
+    repeated string path = 1 [json_name = "path"];
     // IBC transfer to reach broker (absent if starting from broker)
-    repeated IBCLeg inbound_legs = 2;
+    repeated IBCLeg inbound_legs = 2 [json_name = "inbound_legs"];
     // The swap operation on the broker chain
-    SwapQuote swap = 3;
+    SwapQuote swap = 3 [json_name = "swap"];
     // IBC transfers after swap (empty if destination is broker)
     // Can be multiple for multi-hop forwarding via PFM
-    repeated IBCLeg outbound_legs = 4;
+    repeated IBCLeg outbound_legs = 4 [json_name = "outbound_legs"];
     // Can use PFM for outbound legs
-    bool outbound_supports_pfm = 5;
+    bool outbound_supports_pfm = 5 [json_name = "outbound_supports_pfm"];
     // Execution data for building transactions
-    BrokerExecutionData execution = 6;
+    BrokerExecutionData execution = 6 [json_name = "execution"];
 }
 
 // BrokerExecutionData contains ready-to-use transaction data
 message BrokerExecutionData {
     // The IBC memo to use with MsgTransfer (contains wasm swap_and_action)
-    optional string memo = 1;
+    optional string memo = 1 [json_name = "memo"];
     // The smart contract data to use with the swap and transfer
-    optional WasmData smart_contract_data = 2;
+    optional WasmData smart_contract_data = 2 [json_name = "smart_contract_data"];
     // Receiver address for MsgTransfer (the ibc-hooks contract)
-    optional string ibc_receiver = 3;
+    optional string ibc_receiver = 3 [json_name = "ibc_receiver"];
     // Recovery address on broker chain (where funds go if swap/forward fails)
-    string recover_address = 4;
+    string recover_address = 4 [json_name = "recover_address"];
     // Minimum output amount after slippage (1% default)
-    string min_output_amount = 5;
+    string min_output_amount = 5 [json_name = "min_output_amount"];
     // True if using wasm ibc-hooks (vs simple PFM)
-    bool uses_wasm = 6;
+    bool uses_wasm = 6 [json_name = "uses_wasm"];
     // Human-readable description
-    string description = 7;
+    string description = 7 [json_name = "description"];
 }
 
 message IBCLeg {
-    string from_chain = 1;
-    string to_chain = 2;
-    string channel = 3;
-    string port = 4;
-    TokenMapping token = 5;
-    string amount = 6;
+    string from_chain = 1 [json_name = "from_chain"];
+    string to_chain = 2 [json_name = "to_chain"];
+    string channel = 3 [json_name = "channel"];
+    string port = 4 [json_name = "port"];
+    TokenMapping token = 5 [json_name = "token"];
+    string amount = 6 [json_name = "amount"];
 }
 
 message TokenMapping {
     // The denom as it appears on the current chain (native or IBC)
-    string chain_denom = 1;
+    string chain_denom = 1 [json_name = "chain_denom"];
     // The base/native denom on the token's origin chain
-    string base_denom = 2;
+    string base_denom = 2 [json_name = "base_denom"];
     // The chain ID where this token is native
-    string origin_chain = 3;
+    string origin_chain = 3 [json_name = "origin_chain"];
     // True if this is the token's native chain
-    bool is_native = 4;
+    bool is_native = 4 [json_name = "is_native"];
 }
 
 // SwapQuote with broker-specific route data
 message SwapQuote {
-    string broker = 1;
-    TokenMapping token_in = 2;
-    TokenMapping token_out = 3;
-    string amount_in = 4;
-    string amount_out = 5;
-    string price_impact = 6;
-    string effective_fee = 7;
+    string broker = 1 [json_name = "broker"];
+    TokenMapping token_in = 2 [json_name = "token_in"];
+    TokenMapping token_out = 3 [json_name = "token_out"];
+    string amount_in = 4 [json_name = "amount_in"];
+    string amount_out = 5 [json_name = "amount_out"];
+    string price_impact = 6 [json_name = "price_impact"];
+    string effective_fee = 7 [json_name = "effective_fee"];
     
     // Broker-specific route data using oneof for type safety
     oneof route_data {
-        OsmosisRouteData osmosis_route_data = 8;
+        OsmosisRouteData osmosis_route_data = 8 [json_name = "osmosis_route_data"];
         // Future brokers can be added here without breaking existing clients
     }
 }
 
 // Osmosis-specific route data (from SQS API)
 message OsmosisRouteData {
-    repeated OsmosisRoute routes = 1;
-    string liquidity_cap = 2;
-    bool liquidity_cap_overflow = 3;
+    repeated OsmosisRoute routes = 1 [json_name = "routes"];
+    string liquidity_cap = 2 [json_name = "liquidity_cap"];
+    bool liquidity_cap_overflow = 3 [json_name = "liquidity_cap_overflow"];
 }
 
 message OsmosisRoute {
-    repeated OsmosisPool pools = 1;
-    bool has_cw_pool = 2;
-    string out_amount = 3;
-    string in_amount = 4;
+    repeated OsmosisPool pools = 1 [json_name = "pools"];
+    bool has_cw_pool = 2 [json_name = "has_cw_pool"];
+    string out_amount = 3 [json_name = "out_amount"];
+    string in_amount = 4 [json_name = "in_amount"];
 }
 
 message OsmosisPool {
-    int32 id = 1;
-    int32 type = 2;
-    string spread_factor = 3;
-    string token_out_denom = 4;
-    string taker_fee = 5;
-    string liquidity_cap = 6;
+    int32 id = 1 [json_name = "id"];
+    int32 type = 2 [json_name = "type"];
+    string spread_factor = 3 [json_name = "spread_factor"];
+    string token_out_denom = 4 [json_name = "token_out_denom"];
+    string taker_fee = 5 [json_name = "taker_fee"];
+    string liquidity_cap = 6 [json_name = "liquidity_cap"];
 }
 
 // LookupDenomRequest - Resolve token information
@@ -235,27 +235,27 @@ message LookupDenomRequest {
 }
 
 message LookupDenomResponse {
-    bool found = 1;
+    bool found = 1 [json_name = "found"];
     // The denom as it appears on this chain
-    string chain_denom = 2;
+    string chain_denom = 2 [json_name = "chain_denom"];
     // The base/native denom
-    string base_denom = 3;
+    string base_denom = 3 [json_name = "base_denom"];
     // Where this token is native
-    string origin_chain = 4;
+    string origin_chain = 4 [json_name = "origin_chain"];
     // True if this is the token's native chain
-    bool is_native = 5;
+    bool is_native = 5 [json_name = "is_native"];
     // IBC path if this is an IBC token (e.g., "transfer/channel-75")
-    string ibc_path = 6;
+    string ibc_path = 6 [json_name = "ibc_path"];
     // Denoms on other chains where this token is available
-    repeated ChainDenom available_on = 7;
+    repeated ChainDenom available_on = 7 [json_name = "available_on"];
 }
 
 // ChainDenom represents a token's denom on a specific chain
 message ChainDenom {
-    string chain_id = 1;
-    string chain_name = 2;
-    string denom = 3;
-    bool is_native = 4;
+    string chain_id = 1 [json_name = "chain_id"];
+    string chain_name = 2 [json_name = "chain_name"];
+    string denom = 3 [json_name = "denom"];
+    bool is_native = 4 [json_name = "is_native"];
 }
 
 // GetTokenDenomsRequest - Get all denoms for a token across chains
@@ -270,11 +270,11 @@ message GetTokenDenomsRequest {
 }
 
 message GetTokenDenomsResponse {
-    bool found = 1;
-    string base_denom = 2;
-    string origin_chain = 3;
+    bool found = 1 [json_name = "found"];
+    string base_denom = 2 [json_name = "base_denom"];
+    string origin_chain = 3 [json_name = "origin_chain"];
     // All chains where this token is available and what denom it has
-    repeated ChainDenom denoms = 4;
+    repeated ChainDenom denoms = 4 [json_name = "denoms"];
 }
 
 // GetChainTokensRequest - Get all tokens on a chain
@@ -283,32 +283,32 @@ message GetChainTokensRequest {
 }
 
 message GetChainTokensResponse {
-    string chain_id = 1;
-    string chain_name = 2;
+    string chain_id = 1 [json_name = "chain_id"];
+    string chain_name = 2 [json_name = "chain_name"];
     // Native tokens on this chain
-    repeated TokenDetails native_tokens = 3;
+    repeated TokenDetails native_tokens = 3 [json_name = "native_tokens"];
     // IBC tokens received on this chain
-    repeated TokenDetails ibc_tokens = 4;
+    repeated TokenDetails ibc_tokens = 4 [json_name = "ibc_tokens"];
 }
 
 // TokenDetails - Full token information
 message TokenDetails {
     // Denom on this chain (native or IBC hash)
-    string denom = 1;
+    string denom = 1 [json_name = "denom"];
     // Human-readable symbol (e.g., "ATONE", "OSMO")
-    string symbol = 2;
+    string symbol = 2 [json_name = "symbol"];
     // Base denom on origin chain
-    string base_denom = 3;
+    string base_denom = 3 [json_name = "base_denom"];
     // Chain where token is native
-    string origin_chain = 4;
+    string origin_chain = 4 [json_name = "origin_chain"];
     // Number of decimals
-    int32 decimals = 5;
+    int32 decimals = 5 [json_name = "decimals"];
     // True if native to this chain
-    bool is_native = 6;
+    bool is_native = 6 [json_name = "is_native"];
 }
 
 message PathfinderSupportedChainsResponse {
-    repeated string chain_ids = 1 [(buf.validate.field).required = true];
+    repeated string chain_ids = 1 [(buf.validate.field).required = true, json_name = "chain_ids"];
 }
 
 message ChainInfoRequest {
@@ -319,98 +319,98 @@ message ChainInfoRequest {
 }
 
 message ChainInfoResponse {
-    ChainInfo chain_info = 1;
+    ChainInfo chain_info = 1 [json_name = "chain_info"];
 }
 
 message ChainInfo {
-    string chain_id = 1;
-    string chain_name = 2;
-    bool has_pfm = 3;
-    bool is_broker = 4;
-    repeated BasicRoute routes = 5;
+    string chain_id = 1 [json_name = "chain_id"];
+    string chain_name = 2 [json_name = "chain_name"];
+    bool has_pfm = 3 [json_name = "has_pfm"];
+    bool is_broker = 4 [json_name = "is_broker"];
+    repeated BasicRoute routes = 5 [json_name = "routes"];
 }
 
 message TokenInfo {
-    string chain_denom = 1;
-    string ibc_denom = 2;
-    string base_denom = 3;
-    string origin_chain = 4;
-    int32 decimals = 5;
-    string symbol = 6;
+    string chain_denom = 1 [json_name = "chain_denom"];
+    string ibc_denom = 2 [json_name = "ibc_denom"];
+    string base_denom = 3 [json_name = "base_denom"];
+    string origin_chain = 4 [json_name = "origin_chain"];
+    int32 decimals = 5 [json_name = "decimals"];
+    string symbol = 6 [json_name = "symbol"];
 }
 
 message BasicRoute {
-    string to_chain = 1;
-    string to_chain_id = 2;
-    string connection_id = 3;
-    string channel_id = 4;
-    string port_id = 5;
-    map<string, TokenInfo> allowed_tokens = 6;
+    string to_chain = 1 [json_name = "to_chain"];
+    string to_chain_id = 2 [json_name = "to_chain_id"];
+    string connection_id = 3 [json_name = "connection_id"];
+    string channel_id = 4 [json_name = "channel_id"];
+    string port_id = 5 [json_name = "port_id"];
+    map<string, TokenInfo> allowed_tokens = 6 [json_name = "allowed_tokens"];
 }
 
 message WasmData {
 
-    string contract = 1;
-    WasmMsg msg = 2;
+    string contract = 1 [json_name = "contract"];
+    WasmMsg msg = 2 [json_name = "msg"];
 }
 
 message WasmMsg {
-    SwapAndAction swap_and_action = 1;
+    SwapAndAction swap_and_action = 1 [json_name = "swap_and_action"];
 }
 
 message SwapAndAction {
     // SwapAndAction is the entry point contract message structure
-    UserSwap user_swap = 1;
-    MinAsset min_asset = 2;
-    int64 timeout_timestamp = 3;
-    PostSwapAction post_swap_action = 4;
-    repeated string affiliates = 5;
+    UserSwap user_swap = 1 [json_name = "user_swap"];
+    MinAsset min_asset = 2 [json_name = "min_asset"];
+    int64 timeout_timestamp = 3 [json_name = "timeout_timestamp"];
+    PostSwapAction post_swap_action = 4 [json_name = "post_swap_action"];
+    repeated string affiliates = 5 [json_name = "affiliates"];
 }
     
 message SwapExactAssetIn {
-    string swap_venue_name = 1;
-    repeated SwapOperation operations = 2;
+    string swap_venue_name = 1 [json_name = "swap_venue_name"];
+    repeated SwapOperation operations = 2 [json_name = "operations"];
 }
 
 message SwapOperation {
-    string pool = 1;
-    string denom_in = 2;
-    string denom_out = 3;
+    string pool = 1 [json_name = "pool"];
+    string denom_in = 2 [json_name = "denom_in"];
+    string denom_out = 3 [json_name = "denom_out"];
     // Interface is used by some DEXs (like Injective), optional
-    optional string interface = 4;
+    optional string interface = 4 [json_name = "interface"];
 }
 
 message MinAsset {
-    Asset native = 1;
+    Asset native = 1 [json_name = "native"];
 }
 
 message Asset {
-    string amount = 1;
-    string denom = 2;
+    string amount = 1 [json_name = "amount"];
+    string denom = 2 [json_name = "denom"];
 }
 
 message PostSwapAction {
     oneof action {
-        IBCTransfer ibc_transfer = 1;
-        Transfer transfer = 2;
+        IBCTransfer ibc_transfer = 1 [json_name = "ibc_transfer"];
+        Transfer transfer = 2 [json_name = "transfer"];
     }
 }
 
 message IBCTransfer {
-    IBCInfo ibc_info = 1;
+    IBCInfo ibc_info = 1 [json_name = "ibc_info"];
 }
 
 message Transfer {
-    string to_address = 1;
+    string to_address = 1 [json_name = "to_address"];
 }
 
 message IBCInfo {
-    string memo = 1;
-    string receiver = 2;
-    string recover_address = 3;
-    string source_channel = 4;
+    string memo = 1 [json_name = "memo"];
+    string receiver = 2 [json_name = "receiver"];
+    string recover_address = 3 [json_name = "recover_address"];
+    string source_channel = 4 [json_name = "source_channel"];
 }
 
 message UserSwap {
-    SwapExactAssetIn swap_exact_asset_in = 1;
+    SwapExactAssetIn swap_exact_asset_in = 1 [json_name = "swap_exact_asset_in"];
 }   
