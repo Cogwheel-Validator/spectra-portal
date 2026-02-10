@@ -23,7 +23,7 @@ export type RouteType = "direct" | "indirect" | "brokerSwap";
  */
 export interface TransferStep {
     id: string;
-    type: "ibc_transfer" | "swap" | "mult-hop" | "wasm-execution" | "multi-hop + swap";
+    type: "ibc_transfer" | "swap" | "multi-hop" | "wasm-execution" | "multi-hop + swap";
     fromChain: string;
     toChain: string;
     status: "pending" | "signing" | "broadcasting" | "confirming" | "completed" | "failed";
@@ -37,7 +37,7 @@ export interface TransferStep {
         memo?: string;
         smartContractData?: WasmData;
     };
-    // Only applicable for multi-hop, multi-hop + swap and wasm-execution if the transfer mode is "smart", 
+    // Only applicable for multi-hop, multi-hop + swap and wasm-execution if the transfer mode is "smart",
     // should store path data, or in this case chain ids. Usable for tracking. If the transfer mode is "manual",
     // this is not applicable.
     transferOrder?: string[];
@@ -78,6 +78,11 @@ export interface TransferState {
 
     // Chain path for visualization
     chainPath: string[];
+
+    // Multi-hop tracking: 0–100 while tracking (null when not in use)
+    multiHopProgress: number | null;
+    // Total chains in path for multi-hop (e.g. 4 for 25% per chain)
+    multiHopTotalChains: number | null;
 }
 
 // ============================================================================
@@ -113,6 +118,10 @@ type TransferAction =
               dbRecordId: number;
               chainPath: string[];
           };
+      }
+    | {
+          type: "SET_MULTIHOP_PROGRESS";
+          payload: { progress: number | null; totalChains?: number | null };
       };
 
 // ============================================================================
@@ -137,6 +146,8 @@ const initialState: TransferState = {
     dbRecordId: null,
     error: null,
     chainPath: [],
+    multiHopProgress: null,
+    multiHopTotalChains: null,
 };
 
 // ============================================================================
@@ -278,6 +289,16 @@ function transferReducer(state: TransferState, action: TransferAction): Transfer
                 error: null,
             };
 
+        case "SET_MULTIHOP_PROGRESS":
+            return {
+                ...state,
+                multiHopProgress: action.payload.progress,
+                multiHopTotalChains:
+                    action.payload.totalChains !== undefined
+                        ? action.payload.totalChains
+                        : state.multiHopTotalChains,
+            };
+
         default:
             return state;
     }
@@ -316,6 +337,7 @@ interface TransferContextType {
         dbRecordId: number,
         chainPath: string[],
     ) => void;
+    setMultiHopProgress: (progress: number | null, totalChains?: number | null) => void;
 
     // Computed properties
     canInitiateTransfer: boolean;
@@ -421,6 +443,16 @@ export function TransferProvider({ children }: { children: ReactNode }) {
         [],
     );
 
+    const setMultiHopProgress = useCallback(
+        (progress: number | null, totalChains?: number | null) => {
+            dispatch({
+                type: "SET_MULTIHOP_PROGRESS",
+                payload: { progress, totalChains },
+            });
+        },
+        [],
+    );
+
     // Computed properties
     const canInitiateTransfer =
         state.phase === "idle" &&
@@ -465,6 +497,7 @@ export function TransferProvider({ children }: { children: ReactNode }) {
                 failTransfer,
                 reset,
                 resumeTransfer,
+                setMultiHopProgress,
                 canInitiateTransfer,
                 isTransferActive,
                 currentStep,
@@ -529,8 +562,8 @@ export function generateStepsFromResponse(
             if (mode === "smart" && route.supportsPfm) {
                 // Single PFM transaction
                 steps.push({
-                    id: "mult-hop",
-                    type: "mult-hop",
+                    id: "multi-hop",
+                    type: "multi-hop",
                     fromChain: route.pfmStartChain,
                     // Because that is where the assets need to be sent in order to be forwarded
                     toChain: route.path[1],
@@ -570,8 +603,8 @@ export function generateStepsFromResponse(
             const execution = route.execution ?? undefined;
 
             if (
-                mode === "smart" && 
-                execution?.usesWasm && 
+                mode === "smart" &&
+                execution?.usesWasm &&
                 execution?.smartContractData !== undefined &&
                 route.inboundLegs.length === 0
             ) {
@@ -612,7 +645,7 @@ export function generateStepsFromResponse(
                 if (route.inboundLegs.length > 0) {
                     route.inboundLegs.forEach((leg, i) => {
                         steps.push({
-                            id: `inbound-${i+1}`,
+                            id: `inbound-${i + 1}`,
                             type: "ibc_transfer",
                             fromChain: leg.fromChain,
                             toChain: leg.toChain,

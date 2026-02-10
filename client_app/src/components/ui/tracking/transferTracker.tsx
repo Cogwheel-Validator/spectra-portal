@@ -42,17 +42,25 @@ export default function TransferTracker({ config, onBack }: TransferTrackerProps
         toChainId,
         amount,
         fromToken,
+        multiHopProgress,
+        multiHopTotalChains,
     } = state;
 
-    // Calculate current chain index based on step progress
+    // Calculate current chain index based on step progress (or multi-hop percentage when tracking)
     const currentChainIndex = useMemo(() => {
         if (phase === "completed") return chainPath.length - 1;
         if (steps.length === 0) return 0;
 
-        // Find which chain we're currently at based on step progress
+        // Multi-hop tracking: derive from percentage (e.g. 50% of 4 chains → index 2)
+        if (multiHopProgress != null && multiHopTotalChains != null && multiHopTotalChains > 0) {
+            const completed = Math.round((multiHopProgress / 100) * multiHopTotalChains);
+            return Math.min(completed, chainPath.length - 1);
+        }
+
+        // Step-based: which chain we're at from completed steps
         const completedSteps = steps.filter((s) => s.status === "completed").length;
         return Math.min(completedSteps, chainPath.length - 1);
-    }, [phase, steps, chainPath]);
+    }, [phase, steps, chainPath, multiHopProgress, multiHopTotalChains]);
 
     // Get explorer URL for a chain
     const getExplorerUrl = useCallback(
@@ -117,7 +125,7 @@ export default function TransferTracker({ config, onBack }: TransferTrackerProps
     const toChain = config.chains.find((c) => c.id === toChainId);
 
     // Handle adjusting slippage for retry
-    const [suggestedSlippage, setSuggestedSlippage] = useState<number | null>(null);
+    const [_suggestedSlippage, setSuggestedSlippage] = useState<number | null>(null);
 
     const handleAdjustSlippage = useCallback(
         (newSlippageBps: number) => {
@@ -160,6 +168,8 @@ export default function TransferTracker({ config, onBack }: TransferTrackerProps
                     currentChainIndex={currentChainIndex}
                     config={config}
                     status={visualStatus}
+                    progressPercent={multiHopProgress}
+                    progressTotalChains={multiHopTotalChains}
                 />
             </motion.div>
 
@@ -189,8 +199,9 @@ export default function TransferTracker({ config, onBack }: TransferTrackerProps
                     <div>
                         <span className="text-sm text-slate-400">Progress</span>
                         <p className="text-white font-medium">
-                            {steps.filter((s) => s.status === "completed").length} / {steps.length}{" "}
-                            steps
+                            {multiHopProgress != null && multiHopTotalChains != null
+                                ? `${multiHopProgress}% (${Math.round((multiHopProgress / 100) * multiHopTotalChains)}/${multiHopTotalChains} chains)`
+                                : `${steps.filter((s) => s.status === "completed").length} / ${steps.length} steps`}
                         </p>
                     </div>
                 </div>

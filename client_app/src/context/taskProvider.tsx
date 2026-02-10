@@ -1,6 +1,5 @@
 "use client";
 
-import { toUtf8 } from "@cosmjs/encoding";
 import type { EncodeObject } from "@cosmjs/proto-signing";
 import {
     createContext,
@@ -14,6 +13,7 @@ import {
 } from "react";
 import type { ClientChain, ClientConfig } from "@/components/modules/tomlTypes";
 import useIbcTracking from "@/hooks/useIbcTracking";
+import useTransactionConstructor from "@/hooks/useTransactionConstr";
 import clientLogger from "@/lib/clientLogger";
 import type {
     SwapAmountInRoute,
@@ -48,10 +48,12 @@ export const TaskTypes = {
     // IBC transfers
     IBC_TRANSFER: "ibc-basic-transfer",
     IBC_HOOKS_TRANSFER: "ibc-hooks-transfer",
-    IBC_PFM_TRANSFER: "ibc-pfm-transfer",
     // Osmosis swaps
     OSMO_SWAP: "osmosis-swap",
     OSMO_SPLIT_ROUTE_SWAP: "osmosis-split-route-swap",
+    WASM_EXECUTION: "wasm-execution",
+    MULTI_HOP: "multi-hop",
+    MULTI_HOP_SWAP: "multi-hop + swap",
     // Indexed DB related tasks
     INSERT_TRANSACTION: "insert-transaction",
     UPDATE_TRANSACTION: "update-transaction",
@@ -112,7 +114,13 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
     const { sendTransaction, getAddress } = useWallet();
     const transfer = useTransfer();
-    const { trackIbcTransfer } = useIbcTracking();
+    const { trackIbcTransfer, trackSmartTransferMultiHop } = useIbcTracking();
+    const {
+        createIbcTransferMessage,
+        createSwapMessage,
+        createSplitRouteSwapMessage,
+        createWasmExecutionMessage,
+    } = useTransactionConstructor();
 
     // Initialize database connection
     useEffect(() => {
@@ -138,115 +146,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     /**
-     * Creates an IBC transfer message
-     */
-    const createIbcTransferMessage = useCallback(
-        (
-            sender: string,
-            receiver: string,
-            sourceChannel: string,
-            sourcePort: string,
-            token: { amount: string; denom: string },
-            memo: string = "",
-            timeoutMinutes: number = 10,
-        ): EncodeObject => {
-            const timeoutTimestamp = `${(Date.now() + timeoutMinutes * 60 * 1000).toString()}000000`;
-
-            return {
-                typeUrl: "/ibc.applications.transfer.v1.MsgTransfer",
-                value: {
-                    sourcePort,
-                    sourceChannel,
-                    token,
-                    sender,
-                    receiver,
-                    timeoutHeight: {
-                        revisionHeight: "0",
-                        revisionNumber: "0",
-                    },
-                    timeoutTimestamp,
-                    memo,
-                },
-            };
-        },
-        [],
-    );
-
-    /**
-     * Creates an Osmosis swap message (single route)
-     */
-    const createSwapMessage = useCallback(
-        (
-            sender: string,
-            tokenIn: { amount: string; denom: string },
-            routes: SwapAmountInRoute[],
-            tokenOutMinAmount: string,
-        ): EncodeObject => {
-            const routeCount: number = routes.length;
-            clientLogger.info("Single route swap - pool count:", routeCount);
-            if (routeCount === 0) {
-                throw new Error("No routes provided");
-            }
-            return {
-                typeUrl: "/osmosis.poolmanager.v1beta1.MsgSwapExactAmountIn",
-                value: {
-                    sender,
-                    tokenIn,
-                    routes,
-                    tokenOutMinAmount,
-                },
-            };
-        },
-        [],
-    );
-
-    /**
-     * Creates an Osmosis split route swap message (multiple routes)
-     */
-    const createSplitRouteSwapMessage = useCallback(
-        (
-            sender: string,
-            tokenInDenom: string,
-            routes: SwapAmountInSplitRoute[],
-            tokenOutMinAmount: string,
-        ): EncodeObject => {
-            clientLogger.info("Split route swap - route count:", routes.length);
-            if (routes.length === 0) {
-                throw new Error("No routes provided");
-            }
-            return {
-                typeUrl: "/osmosis.poolmanager.v1beta1.MsgSplitRouteSwapExactAmountIn",
-                value: {
-                    sender,
-                    routes,
-                    tokenInDenom,
-                    tokenOutMinAmount,
-                },
-            };
-        },
-        [],
-    );
-
-    const createWasmExecutionMessage = useCallback(
-        (
-            sender: string,
-            contract: string,
-            msg: WasmMsg,
-        ): EncodeObject => {
-            const msgBytes = toUtf8(JSON.stringify(msg));
-            return {
-                typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-                value: {
-                    sender,
-                    contract,
-                    msg: msgBytes,
-                    funds: [],
-                },
-            };
-        },
-        [],
-    );
-    /**
      * Execute a single transfer step
      */
     const executeStep = useCallback(
@@ -270,11 +169,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
             try {
                 let message: EncodeObject;
-                let tx_memo: string 
+                let tx_memo: string;
 
                 switch (step.type) {
                     case "ibc_transfer":
-                    case "mult-hop": {
+                    case "multi-hop": {
                         const receiverAddress =
                             getAddress(step.toChain) || transfer.state.receiverAddress;
                         if (!receiverAddress) {
@@ -296,39 +195,84 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                             },
                             step.metadata?.memo || "",
                         );
-                        tx_memo = "Spectra IBC transfer"
+                        tx_memo = "Spectra IBC transfer";
+                        break;
+                    }
+
+                    case "multi-hop + swap": {
+                        // Multi-hop + swap: IBC transfer with a wasm/PFM memo
+                        // The memo contains instructions for the broker chain to execute swap + forward
+                        const brokerRouteMs = transfer.state.pathfinderResponse?.route
+                            .value as BrokerSwapRoute;
+                        const executionMs = brokerRouteMs?.execution;
+
+                        // The IBC receiver comes from the pathfinder execution data
+                        // For 1 inbound leg: the receiver is the contract on broker chain
+                        // For 2 inbound legs: the receiver is the user's address on intermediate chain (PFM forwards)
+                        const receiverMs =
+                            executionMs?.ibcReceiver ||
+                            getAddress(step.toChain) ||
+                            transfer.state.receiverAddress;
+
+                        if (!receiverMs) {
+                            return {
+                                success: false,
+                                error: `Receiver address not available for ${step.toChain}`,
+                                isRetryable: true,
+                            };
+                        }
+
+                        message = createIbcTransferMessage(
+                            senderAddress,
+                            receiverMs,
+                            step.metadata?.channel || "",
+                            step.metadata?.port || "transfer",
+                            {
+                                amount: step.metadata?.amount || "0",
+                                denom: step.metadata?.denom || "",
+                            },
+                            step.metadata?.memo || "",
+                        );
+                        tx_memo = "Spectra IBC multi-hop + swap";
                         break;
                     }
 
                     case "wasm-execution": {
-                        // For WASM execution, the receiver is the contract address
-                        const execution = (
-                            transfer.state.pathfinderResponse?.route.value as BrokerSwapRoute
-                        )?.execution;
-                        if (!execution) {
-                            return { success: false, error: "Execution data not found" };
-                        }
-
-                        // Get the first leg info for the IBC transfer
-                        const brokerRoute = transfer.state.pathfinderResponse?.route
+                        // WASM execution on the broker chain (no inbound IBC legs)
+                        // e.g., Swap + IBC transfer from Osmosis, or Swap + multi-hop from Osmosis
+                        const brokerRouteWasm = transfer.state.pathfinderResponse?.route
                             .value as BrokerSwapRoute;
-                        const firstLeg = brokerRoute?.inboundLegs[0];
+                        const executionWasm = brokerRouteWasm?.execution;
 
-                        if (!firstLeg) {
-                            // If no inbound leg, we're starting from the broker chain
-                            // This means we need to execute the swap directly
+                        if (
+                            !executionWasm?.smartContractData?.contract ||
+                            !executionWasm?.smartContractData?.msg
+                        ) {
                             return {
                                 success: false,
-                                error: "WASM execution from broker chain not yet implemented",
+                                error: "Smart contract data not found in execution",
                             };
                         }
 
+                        // Include funds: the token being sent to the contract for swapping
+                        const swapDataWasm = brokerRouteWasm?.swap;
+                        const funds =
+                            swapDataWasm?.tokenIn?.chainDenom && swapDataWasm?.amountIn
+                                ? [
+                                      {
+                                          denom: swapDataWasm.tokenIn.chainDenom,
+                                          amount: swapDataWasm.amountIn,
+                                      },
+                                  ]
+                                : [];
+
                         message = createWasmExecutionMessage(
                             senderAddress,
-                            execution.smartContractData?.contract as string,
-                            execution.smartContractData?.msg as WasmMsg,
+                            executionWasm.smartContractData.contract,
+                            executionWasm.smartContractData.msg as WasmMsg,
+                            funds,
                         );
-                        tx_memo = "Spectra WASM execution"
+                        tx_memo = "Spectra WASM execution";
                         break;
                     }
 
@@ -383,7 +327,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                                 swapData.amountOut, // Use expected output as minimum
                             );
                         }
-                        tx_memo = "Spectra Osmosis Swap"
+                        tx_memo = "Spectra Osmosis Swap";
                         break;
                     }
 
@@ -505,11 +449,19 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                         // Check if this is an IBC transfer that needs tracking
                         const isIbcStep =
                             step.type === "ibc_transfer" ||
-                            step.type === "mult-hop" ||
+                            step.type === "multi-hop" ||
                             step.type === "wasm-execution" ||
                             step.type === "multi-hop + swap";
 
-                        if (isIbcStep && i < steps.length - 1) {
+                        // if the step is one of the multihop steps and the mode is smart, then we need to track the transfer
+                        // accross different chains
+                        const isMultiHopStep =
+                            (step.type === "multi-hop + swap" ||
+                                step.type === "multi-hop" ||
+                                step.type === "wasm-execution") &&
+                            mode === "smart";
+
+                        if (isIbcStep && !isMultiHopStep) {
                             // Update to "confirming" status while we track
                             transfer.updateStep(i, {
                                 status: "confirming",
@@ -548,6 +500,58 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                                     // Mark as "completed" but log the warning
                                     clientLogger.warn(
                                         `IBC tracking inconclusive: ${trackingResult.error}`,
+                                    );
+                                }
+                            }
+                        }
+
+                        if (isMultiHopStep) {
+                            // Single-step multi-hop (wasm/PFM): track across all chains and persist progress to IndexedDB
+                            transfer.updateStep(i, {
+                                status: "confirming",
+                                txHash: result.txHash,
+                            });
+                            const path = step.transferOrder ?? chainPath;
+                            const totalChains = path.length;
+                            if (totalChains >= 2) {
+                                transfer.setMultiHopProgress(0, totalChains);
+                                await UpdateTransactionStatus(db, {
+                                    id: dbRecordId,
+                                    multiHopProgress: 0,
+                                    multiHopTotalChains: totalChains,
+                                });
+                                const trackingResult = await trackSmartTransferMultiHop(
+                                    step.fromChain,
+                                    result.txHash,
+                                    path,
+                                    config.chains as ClientChain[],
+                                    {
+                                        maxAttempts: 60,
+                                        pollInterval: 10000,
+                                        timeout: 10 * 60 * 1000,
+                                        onHopComplete: (completedChains, total) => {
+                                            const pct =
+                                                total > 0
+                                                    ? Math.round((completedChains / total) * 100)
+                                                    : 0;
+                                            UpdateTransactionStatus(db, {
+                                                id: dbRecordId,
+                                                multiHopProgress: pct,
+                                                multiHopTotalChains: total,
+                                            }).catch((err) =>
+                                                clientLogger.warn(
+                                                    "Update multiHopProgress failed",
+                                                    err,
+                                                ),
+                                            );
+                                            transfer.setMultiHopProgress(pct, total);
+                                        },
+                                    },
+                                );
+                                transfer.setMultiHopProgress(null);
+                                if (!trackingResult.success) {
+                                    clientLogger.warn(
+                                        `Multi-hop tracking inconclusive: ${trackingResult.error}`,
                                     );
                                 }
                             }
@@ -603,11 +607,17 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 setIsExecuting(false);
             }
         },
-        [db, transfer, executeStep, trackIbcTransfer],
+        [db, transfer, executeStep, trackIbcTransfer, trackSmartTransferMultiHop],
     );
 
     /**
-     * Retry a failed step
+     * Retry a failed step.
+     *
+     * When a step is retried we:
+     * - Move the overall transfer phase out of "failed" back to "executing"
+     * - Mark the IndexedDB transaction as "in-progress" again
+     * - If the retry ultimately succeeds and all steps are completed, mark the
+     *   transfer (and DB record) as successful instead of leaving it as failed.
      */
     const retryStep = useCallback(
         async (stepIndex: number, config: ClientConfig): Promise<TaskExecutionResult> => {
@@ -616,33 +626,76 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 return { success: false, error: "Step not found" };
             }
 
-            setIsExecuting(true);
-            transfer.updateStep(stepIndex, { status: "signing", error: undefined });
+            // Snapshot current steps for completion checks later
+            const existingSteps = transfer.state.steps;
+            const dbRecordId = transfer.state.dbRecordId;
+            const chainPath = transfer.state.chainPath;
 
-            const result = await executeStep(step, config);
+            try {
+                // Move transfer back into an executing state and clear top-level error
+                if (dbRecordId != null) {
+                    transfer.resumeTransfer(existingSteps, stepIndex, dbRecordId, chainPath);
+                }
 
-            if (result.success) {
-                transfer.updateStep(stepIndex, {
-                    status: "completed",
-                    txHash: result.txHash,
-                });
-
-                if (db && transfer.state.dbRecordId) {
+                // Mark the persisted transaction as in-progress again
+                if (db && dbRecordId != null) {
                     await UpdateTransactionStatus(db, {
-                        id: transfer.state.dbRecordId,
-                        currentStep: stepIndex + 1,
+                        id: dbRecordId,
+                        status: "in-progress",
                         error: null,
                     });
                 }
-            } else {
-                transfer.updateStep(stepIndex, {
-                    status: "failed",
-                    error: result.error,
-                });
-            }
 
-            setIsExecuting(false);
-            return result;
+                setIsExecuting(true);
+                transfer.updateStep(stepIndex, { status: "signing", error: undefined });
+
+                const result = await executeStep(step, config);
+
+                if (result.success) {
+                    transfer.updateStep(stepIndex, {
+                        status: "completed",
+                        txHash: result.txHash,
+                    });
+
+                    // Determine if, after this retry, all steps are completed
+                    const allStepsCompleted = existingSteps.every((s, idx) =>
+                        idx === stepIndex ? true : s.status === "completed",
+                    );
+
+                    if (db && dbRecordId != null) {
+                        await UpdateTransactionStatus(db, {
+                            id: dbRecordId,
+                            status: allStepsCompleted ? "success" : "in-progress",
+                            currentStep: stepIndex + 1,
+                            error: null,
+                        });
+                    }
+
+                    // If this was the final outstanding step, mark the transfer as completed
+                    if (allStepsCompleted) {
+                        transfer.completeTransfer();
+                    }
+                } else {
+                    transfer.updateStep(stepIndex, {
+                        status: "failed",
+                        error: result.error,
+                    });
+
+                    if (db && dbRecordId != null) {
+                        await UpdateTransactionStatus(db, {
+                            id: dbRecordId,
+                            status: "failed",
+                            error: result.error || "Unknown error",
+                        });
+                    }
+
+                    transfer.failTransfer(result.error || "Step execution failed");
+                }
+
+                return result;
+            } finally {
+                setIsExecuting(false);
+            }
         },
         [db, transfer, executeStep],
     );
