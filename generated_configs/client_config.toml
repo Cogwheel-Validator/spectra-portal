@@ -1,5 +1,5 @@
-version = 'v1-20260203'
-generated_at = '2026-02-03T20:43:01Z'
+version = 'v1-20260210'
+generated_at = '2026-02-10T18:58:29Z'
 
 [[chains]]
 name = 'Atom One'
@@ -154,8 +154,8 @@ cosmos_sdk_version = 'v0.53.4'
 
 [chains.explorer_details]
 base_url = 'https://mintscan.io'
-account_path = 'cosmoshub/address/{address}'
-transaction_path = 'cosmoshub/txs/{tx_hash}'
+account_path = 'cosmos/address/{address}'
+transaction_path = 'cosmos/txs/{tx_hash}'
 
 [[chains.rpc_endpoints]]
 url = 'https://cosmos-rpc.polkachu.com/'
@@ -167,10 +167,6 @@ provider = 'Ecostake'
 
 [[chains.rpc_endpoints]]
 url = 'https://rpc.cosmoshub-4.citizenweb3.com/'
-provider = 'CitizenWeb3'
-
-[[chains.rest_endpoints]]
-url = 'https://api.cosmoshub-4.citizenweb3.com/'
 provider = 'CitizenWeb3'
 
 [[chains.rest_endpoints]]
@@ -1460,6 +1456,10 @@ provider = 'Cogwheel ⚙️'
 [[chains.rpc_endpoints]]
 url = 'https://symphony-rpc.polkachu.com'
 provider = 'Polkachu'
+
+[[chains.rest_endpoints]]
+url = 'https://api.symphony.citizenweb3.com'
+provider = 'CitizenWeb3'
 
 [[chains.rest_endpoints]]
 url = 'https://symphony-api.cogwheel.zone'
