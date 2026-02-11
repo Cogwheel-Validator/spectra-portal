@@ -87,22 +87,22 @@ function createClientLogger(name: string, minLevel: LogLevel = "info"): ClientLo
     // This ensures logs cannot be used to access memory or sensitive data
     return {
         trace: (...args: unknown[]) => {
-            if (shouldLog("trace")) console.debug(prefix, safeStringify(...args));
+            if (shouldLog("trace")) console.debug("%s %s", prefix, safeStringify(...args));
         },
         debug: (...args: unknown[]) => {
-            if (shouldLog("debug")) console.debug(prefix, safeStringify(...args));
+            if (shouldLog("debug")) console.debug("%s %s", prefix, safeStringify(...args));
         },
         info: (...args: unknown[]) => {
-            if (shouldLog("info")) console.info(prefix, safeStringify(...args));
+            if (shouldLog("info")) console.info("%s %s", prefix, safeStringify(...args));
         },
         warn: (...args: unknown[]) => {
-            if (shouldLog("warn")) console.warn(prefix, safeStringify(...args));
+            if (shouldLog("warn")) console.warn("%s %s", prefix, safeStringify(...args));
         },
         error: (...args: unknown[]) => {
-            if (shouldLog("error")) console.error(prefix, safeStringify(...args));
+            if (shouldLog("error")) console.error("%s %s", prefix, safeStringify(...args));
         },
         fatal: (...args: unknown[]) => {
-            if (shouldLog("fatal")) console.error(prefix, "[FATAL]", safeStringify(...args));
+            if (shouldLog("fatal")) console.error("%s [FATAL] %s", prefix, safeStringify(...args));
         },
     };
 }

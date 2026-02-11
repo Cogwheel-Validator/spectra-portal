@@ -79,7 +79,7 @@ vulncheck-js:
 # This check requires the vulncheck cli to be installed
 vulncheck-all:
 	@echo "Vulnerability checking all files..."
-	vulncheck ./...
+	govulncheck ./...
 	cd client_app && \
 	bun audit
 	@echo "All files vulnerability checked successfully!"
