@@ -202,7 +202,7 @@ export default function ChainProgress({
                                       ? "Destination"
                                       : usePercentProgress && progressTotalChains != null
                                         ? `${index}/${progressTotalChains}`
-                                        : `Step ${index}`}
+                                        : `Intermediate ${index}`}
                             </p>
                         </div>
                     );

@@ -312,11 +312,10 @@ export function getRouteStepCount(response: FindPathResponse, mode: "manual" | "
             const route = response.route.value;
             if (mode === "smart" && route.execution?.usesWasm) {
                 // Smart contract WASM execution: 1 transaction for inbound+swap+outbound
-                return route.inboundLegs.length > 0
-                    ? route.inboundLegs.length
-                    : route.outboundLegs.length > 0
-                      ? route.outboundLegs.length
-                      : 1;
+                // TODO: this is a flawed logic, especially when there is a transaction
+                // that can benefit partial use of smart transfers. For now leave it like this
+                // until there is a proper way to address this from the pathfinder side.
+                return 1;
             }
             // Manual mode: count each leg
             let steps = 0;

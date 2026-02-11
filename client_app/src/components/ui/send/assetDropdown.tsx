@@ -2,8 +2,9 @@
 
 import { ChevronDown, Coins } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ClientToken } from "@/components/modules/tomlTypes";
+import { formatBaseUnitsForDisplay } from "@/lib/utils";
 
 interface AssetDropdownProps {
     tokens: ClientToken[];
@@ -13,6 +14,18 @@ interface AssetDropdownProps {
     disabled?: boolean;
     label?: string;
     showIcon?: boolean;
+    senderBalance?:
+        | {
+              balances: {
+                  denom: string;
+                  amount: string;
+              }[];
+              pagination: {
+                  total: string;
+                  next_key?: null | undefined;
+              };
+          }
+        | undefined;
 }
 
 export default function AssetDropdown({
@@ -23,6 +36,7 @@ export default function AssetDropdown({
     disabled = false,
     label,
     showIcon = true,
+    senderBalance,
 }: AssetDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -30,6 +44,16 @@ export default function AssetDropdown({
     const inputRef = useRef<HTMLInputElement>(null);
 
     const selectedToken = tokens.find((t) => t.symbol === selectedSymbol);
+
+    const balanceMap = useMemo(() => {
+        if (!senderBalance) return new Map();
+        return new Map(
+            senderBalance.balances.map((b: { denom: string; amount: string }) => [
+                b.denom,
+                BigInt(b.amount),
+            ]),
+        );
+    }, [senderBalance]);
 
     // Filter tokens based on search query
     const filteredTokens = tokens.filter(
@@ -126,9 +150,21 @@ export default function AssetDropdown({
                 </div>
                 <span className="text-xs text-slate-400 truncate">{token.name}</span>
             </div>
-            {token.origin_chain_name && !token.is_native && (
-                <span className="text-xs text-slate-500">from {token.origin_chain_name}</span>
-            )}
+            <div className="flex flex-col items-center">
+                {token.origin_chain_name && !token.is_native && (
+                    <span className="text-xs text-slate-500">from {token.origin_chain_name}</span>
+                )}
+                {balanceMap.get(token.denom) && (
+                    <span className="text-xs text-white">
+                        {formatBaseUnitsForDisplay(
+                            balanceMap.get(token.denom)?.toString() ?? "0",
+                            token.decimals ?? 6,
+                            2,
+                        )}{" "}
+                        {token.symbol}
+                    </span>
+                )}
+            </div>
             {isSelected && <span className="text-teal-400">✓</span>}
         </button>
     );

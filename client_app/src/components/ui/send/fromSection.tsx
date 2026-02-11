@@ -21,6 +21,16 @@ interface FromSectionProps {
     onSendChainChange: (chainId: string) => void;
     onSendTokenChange: (tokenSymbol: string) => void;
     onAmountChange: (value: string) => void;
+    senderBalance: {
+        balances: {
+            denom: string;
+            amount: string;
+        }[];
+        pagination: {
+            total: string;
+            next_key?: null | undefined;
+        };
+    } | undefined;
 }
 
 export default function FromSection({
@@ -40,6 +50,7 @@ export default function FromSection({
     onSendChainChange,
     onSendTokenChange,
     onAmountChange,
+    senderBalance,
 }: FromSectionProps) {
     return (
         <div className="flex-1 bg-slate-800/30 rounded-xl p-4 lg:p-5 border border-slate-700/50 space-y-3">
@@ -68,6 +79,7 @@ export default function FromSection({
                     placeholder="Select asset to send"
                     disabled={isPending || !sendChain}
                     label="Asset"
+                    senderBalance={senderBalance}
                 />
 
                 <div className="space-y-2">

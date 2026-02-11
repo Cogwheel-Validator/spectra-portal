@@ -462,6 +462,7 @@ export default function SendUI({
                     onSendChainChange={handleSendChainChange}
                     onSendTokenChange={handleSendTokenChange}
                     onAmountChange={wrappedHandleAmountChange}
+                    senderBalance={senderBalance}
                 />
 
                 {/* Arrow Separator */}

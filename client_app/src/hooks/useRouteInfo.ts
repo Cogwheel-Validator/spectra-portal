@@ -93,7 +93,6 @@ export function useRouteInfo(pathfinderResponse: FindPathResponse | null, mode: 
                 chainPath = pathfinderResponse.route.value.legs.map((leg) => leg.toChain);
                 break;
             case "brokerSwap":
-                chainPath.push(pathfinderResponse.route.value.swap?.broker ?? "");
                 chainPath.push(
                     ...pathfinderResponse.route.value.outboundLegs.map((leg) => leg.toChain),
                 );
