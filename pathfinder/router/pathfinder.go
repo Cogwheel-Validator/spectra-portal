@@ -719,11 +719,14 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 
 	// Check if we need multi-hop inbound (Forward + Swap)
 	if len(hopInfo.InboundRoutes) > 1 {
-		// Multi-hop inbound: build Forward + Swap memo
+		// Multi-hop inbound: build Forward + Swap memo.
+		// The memo is attached to the first IBC transfer (source → first intermediate).
+		// It must describe only the remaining hops (first intermediate → broker → ...).
 		inboundHops := s.buildInboundHops(hopInfo, req)
+		memoInboundHops := inboundHops[1:]
 
 		memo, err = memoBuilder.BuildForwardSwapMemo(ibcmemo.ForwardSwapParams{
-			InboundHops: inboundHops,
+			InboundHops: memoInboundHops,
 			SwapParams: ibcmemo.SwapAndForwardParams{
 				SwapMemoParams: ibcmemo.SwapMemoParams{
 					TokenInDenom:     tokenInDenomOnBroker,
@@ -839,15 +842,18 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 	hasMultiHopOutbound := len(outboundLegs) > 1
 
 	if hasMultiHopInbound {
-		// Multi-hop inbound: use ForwardSwap or ForwardSwapForward
+		// Multi-hop inbound: use ForwardSwap or ForwardSwapForward.
+		// The memo is attached to the first IBC transfer (source → first intermediate).
+		// It must describe only the remaining hops (first intermediate → broker → ...).
 		inboundHops := s.buildInboundHops(hopInfo, req)
+		memoInboundHops := inboundHops[1:]
 
 		if hasMultiHopOutbound {
 			// Forward + Swap + MultiHop Forward (case 5.4)
 			outboundHops := s.buildOutboundHops(outboundLegs, addresses.DestinationAddress, req)
 
 			memo, err = memoBuilder.BuildForwardSwapForwardMemo(ibcmemo.ForwardSwapForwardParams{
-				InboundHops: inboundHops,
+				InboundHops: memoInboundHops,
 				SwapParams: ibcmemo.SwapAndMultiHopParams{
 					SwapMemoParams: ibcmemo.SwapMemoParams{
 						TokenInDenom:     tokenInDenomOnBroker,
@@ -865,7 +871,7 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 		} else {
 			// Forward + Swap + Single Forward (case 5.2)
 			memo, err = memoBuilder.BuildForwardSwapMemo(ibcmemo.ForwardSwapParams{
-				InboundHops: inboundHops,
+				InboundHops: memoInboundHops,
 				SwapParams: ibcmemo.SwapAndForwardParams{
 					SwapMemoParams: ibcmemo.SwapMemoParams{
 						TokenInDenom:     tokenInDenomOnBroker,

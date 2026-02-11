@@ -36,7 +36,7 @@ type PFMForward struct {
 // PFMNext represents the "next" field in a PFM forward
 // It can contain either a wasm action or another forward (union type)
 type PFMNext struct {
-	Wasm    *WasmMemo   `json:"wasm,omitempty"`
+	Wasm    *WasmData   `json:"wasm,omitempty"`
 	Forward *PFMForward `json:"forward,omitempty"`
 }
 

@@ -129,7 +129,7 @@ func NewForwardMemoWithNext(channel, port, receiver string, retries int, timeout
 // NewPFMNextWithWasm creates a PFMNext that chains to a wasm action
 func NewPFMNextWithWasm(wasmMemo *WasmMemo) *PFMNext {
 	return &PFMNext{
-		Wasm: wasmMemo,
+		Wasm: wasmMemo.Wasm,
 	}
 }
 
