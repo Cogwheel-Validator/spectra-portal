@@ -195,12 +195,11 @@ func (b *MemoBuilder) BuildSwapAndMultiHopMemo(params ibcmemo.SwapAndMultiHopPar
 		}
 	}
 
-	// First hop receiver:
-	// - If single hop: final receiver
-	// - If multi-hop: use "pfm" for intermediate chain security
+	// First hop receiver: use the address for this hop's destination chain.
+	// Pathfinder sets OutboundHops[0].Receiver via the address converter when building hops.
 	firstHopReceiver := params.FinalReceiver
-	if len(params.OutboundHops) > 1 {
-		firstHopReceiver = ibcmemo.PFMIntermediateReceiver
+	if len(params.OutboundHops) > 0 && params.OutboundHops[0].Receiver != "" {
+		firstHopReceiver = params.OutboundHops[0].Receiver
 	}
 
 	memo := ibcmemo.NewWasmMemo(
@@ -305,13 +304,13 @@ func (b *MemoBuilder) BuildForwardSwapMemo(params ibcmemo.ForwardSwapParams) (st
 	// Build forwards from last hop (closest to broker) to first hop (closest to source)
 	for i := len(params.InboundHops) - 1; i >= 0; i-- {
 		hop := params.InboundHops[i]
-
-		// Determine receiver for this hop:
-		// - Last hop (i == len-1): receiver is the contract address
-		// - Other hops: use "pfm" for intermediate chain security
-		receiver := ibcmemo.PFMIntermediateReceiver
-		if i == len(params.InboundHops)-1 {
+		// Use receiver from pathfinder (address converter) when set; last hop = contract, else fallback to "pfm"
+		receiver := hop.Receiver
+		if receiver == "" && i == len(params.InboundHops)-1 {
 			receiver = b.contractAddress
+		}
+		if receiver == "" {
+			receiver = ibcmemo.PFMIntermediateReceiver
 		}
 
 		if i == 0 {
@@ -382,12 +381,11 @@ func (b *MemoBuilder) BuildForwardSwapForwardMemo(params ibcmemo.ForwardSwapForw
 		}
 	}
 
-	// First outbound hop receiver:
-	// - If single outbound hop: final receiver
-	// - If multi-hop outbound: use "pfm" for intermediate chain security
+	// First outbound hop receiver: use the address for this hop's destination chain.
+	// Pathfinder sets OutboundHops[0].Receiver via the address converter when building hops.
 	firstOutboundReceiver := params.SwapParams.FinalReceiver
-	if len(params.SwapParams.OutboundHops) > 1 {
-		firstOutboundReceiver = ibcmemo.PFMIntermediateReceiver
+	if len(params.SwapParams.OutboundHops) > 0 && params.SwapParams.OutboundHops[0].Receiver != "" {
+		firstOutboundReceiver = params.SwapParams.OutboundHops[0].Receiver
 	}
 
 	// Build the inner wasm memo with IBC transfer
@@ -414,13 +412,13 @@ func (b *MemoBuilder) BuildForwardSwapForwardMemo(params ibcmemo.ForwardSwapForw
 	// Build forwards from last hop (closest to broker) to first hop (closest to source)
 	for i := len(params.InboundHops) - 1; i >= 0; i-- {
 		hop := params.InboundHops[i]
-
-		// Determine receiver for this hop:
-		// - Last hop (i == len-1): receiver is the contract address
-		// - Other hops: use "pfm" for intermediate chain security
-		receiver := ibcmemo.PFMIntermediateReceiver
-		if i == len(params.InboundHops)-1 {
+		// Use receiver from pathfinder (address converter) when set; last hop = contract, else fallback to "pfm"
+		receiver := hop.Receiver
+		if receiver == "" && i == len(params.InboundHops)-1 {
 			receiver = b.contractAddress
+		}
+		if receiver == "" {
+			receiver = ibcmemo.PFMIntermediateReceiver
 		}
 
 		if i == 0 {

@@ -720,7 +720,7 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 	// Check if we need multi-hop inbound (Forward + Swap)
 	if len(hopInfo.InboundRoutes) > 1 {
 		// Multi-hop inbound: build Forward + Swap memo
-		inboundHops := s.buildInboundHops(hopInfo)
+		inboundHops := s.buildInboundHops(hopInfo, req)
 
 		memo, err = memoBuilder.BuildForwardSwapMemo(ibcmemo.ForwardSwapParams{
 			InboundHops: inboundHops,
@@ -840,7 +840,7 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 
 	if hasMultiHopInbound {
 		// Multi-hop inbound: use ForwardSwap or ForwardSwapForward
-		inboundHops := s.buildInboundHops(hopInfo)
+		inboundHops := s.buildInboundHops(hopInfo, req)
 
 		if hasMultiHopOutbound {
 			// Forward + Swap + MultiHop Forward (case 5.4)
@@ -944,15 +944,26 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 	}, nil
 }
 
-// buildInboundHops converts inbound routes to IBCHop slice for memo building
-func (s *Pathfinder) buildInboundHops(hopInfo *MultiHopInfo) []ibcmemo.IBCHop {
+// buildInboundHops converts inbound routes to IBCHop slice for memo building.
+// For intermediate hops, Receiver is set to the address on that hop's destination chain
+// (via the address converter). The last hop's receiver is left empty; the memo builder
+// uses the broker contract address for it.
+func (s *Pathfinder) buildInboundHops(hopInfo *MultiHopInfo, req models.RouteRequest) []ibcmemo.IBCHop {
 	hops := make([]ibcmemo.IBCHop, len(hopInfo.InboundRoutes))
 	for i, route := range hopInfo.InboundRoutes {
+		receiver := ""
+		if i < len(hopInfo.InboundRoutes)-1 {
+			// Intermediate hop: derive receiver address for the destination chain
+			addr, err := s.addressConverter.ConvertAddress(req.ReceiverAddress, route.ToChainId)
+			if err == nil {
+				receiver = addr
+			}
+		}
 		hops[i] = ibcmemo.IBCHop{
-			Channel: route.ChannelId,
-			Port:    route.PortId,
-			Timeout: ibcmemo.DefaultTimeoutTimestamp(),
-			// Receiver is set by the memo builder based on position (intermediate = "pfm", last = contract)
+			Channel:  route.ChannelId,
+			Port:     route.PortId,
+			Receiver: receiver,
+			Timeout:  ibcmemo.DefaultTimeoutTimestamp(),
 		}
 	}
 	return hops

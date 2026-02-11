@@ -152,9 +152,9 @@ func NewNestedForward(channel, port, receiver string, retries int, timeout int64
 	}
 }
 
-// DefaultTimeoutTimestamp returns a default timeout (10 minutes from now) in nanoseconds
+// DefaultTimeoutTimestamp returns a default timeout (15 minutes from now) in nanoseconds
 func DefaultTimeoutTimestamp() int64 {
-	return time.Now().Add(10 * time.Minute).UnixNano()
+	return time.Now().Add(15 * time.Minute).UnixNano()
 }
 
 // DefaultRetries returns the default number of retries for PFM

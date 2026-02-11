@@ -106,9 +106,9 @@ type IBCHop struct {
 	Channel string
 	// Port is the IBC port (typically "transfer")
 	Port string
-	// Receiver is the address on the destination of this hop.
-	// For intermediate hops in PFM chains, use PFMIntermediateReceiver ("pfm").
-	// Only the final hop should have the actual recipient address.
+	// Receiver is the address on the destination chain for this hop. Use the address
+	// converter to derive the correct bech32 address for intermediate chains; the
+	// final hop uses the user's destination address.
 	Receiver string
 	// Timeout in nanoseconds
 	Timeout int64
@@ -116,8 +116,9 @@ type IBCHop struct {
 
 // buildNestedForwardMemo builds a nested PFM forward structure for multi-hop forwarding.
 // The hops slice should contain all hops except the first one (which is handled separately).
-// Uses "pfm" as receiver for intermediate hops (security feature), only the final hop
-// uses the actual finalReceiver address.
+// Each hop's Receiver should be the address on that hop's destination chain (callers
+// typically set this via the address converter); finalReceiver is used as fallback for
+// the last hop if Receiver is empty.
 func BuildNestedForwardMemo(hops []IBCHop, finalReceiver string) *PFMForward {
 	if len(hops) == 0 {
 		return nil
@@ -128,12 +129,12 @@ func BuildNestedForwardMemo(hops []IBCHop, finalReceiver string) *PFMForward {
 
 	for i := len(hops) - 1; i >= 0; i-- {
 		hop := hops[i]
-
-		// Determine receiver for this hop:
-		// - Last hop (i == len-1): use final receiver address
-		// - Other hops: use "pfm" for intermediate chain security
-		receiver := PFMIntermediateReceiver
-		if i == len(hops)-1 {
+		// Use the receiver for this hop. Callers (e.g. pathfinder) set hop.Receiver
+		// using the address converter so each hop has the correct bech32 address
+		// for the destination chain; last hop has finalReceiver, intermediates
+		// have the derived address for that chain.
+		receiver := hop.Receiver
+		if receiver == "" && i == len(hops)-1 {
 			receiver = finalReceiver
 		}
 
