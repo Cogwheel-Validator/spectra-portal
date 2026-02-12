@@ -100,38 +100,35 @@ export default function HistoryItem({ transaction, config, onResume, onRetry }: 
                         </span>
                     </div>
 
-                    {/* Trajectory */}
-                    {transaction.trajectory && transaction.trajectory.length > 0 && (
-                        <>
-                            <ArrowRight className="w-4 h-4 text-slate-500 shrink-0" />
-                            <div className="flex items-center gap-1">
-                                {transaction.trajectory.map((chainId) => {
-                                    const chain = config.chains.find((c) => c.id === chainId);
-                                    return (
-                                        <div
-                                            className="flex items-center gap-1.5 shrink-0"
-                                            key={chainId}
-                                        >
-                                            <Image
-                                                key={chainId}
-                                                src={chain?.chain_logo || "/unknown.jpg"}
-                                                alt={chain?.name || chainId}
-                                                width={24}
-                                                height={24}
-                                                className="rounded-full opacity-60"
-                                                title={chain?.name || chainId}
-                                            />
-                                            <span className="text-sm text-white font-medium hidden sm:inline">
-                                                {chain?.name || chainId}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </>
-                    )}
-
                     <ArrowRight className="w-4 h-4 text-slate-500 shrink-0" />
+                    {/* Trajectory */}
+                    {transaction.trajectory &&
+                        transaction.trajectory.length > 0 &&
+                        transaction.trajectory.map((chainId) => {
+                            const chain = config.chains.find((c) => c.id === chainId);
+                            return (
+                                <>
+                                    <div
+                                        className="flex items-center gap-1.5 shrink-0"
+                                        key={chainId}
+                                    >
+                                        <Image
+                                            key={chainId}
+                                            src={chain?.chain_logo || "/unknown.jpg"}
+                                            alt={chain?.name || chainId}
+                                            width={24}
+                                            height={24}
+                                            className="rounded-full"
+                                            title={chain?.name || chainId}
+                                        />
+                                        <span className="text-sm text-white font-medium hidden sm:inline">
+                                            {chain?.name || chainId}
+                                        </span>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-slate-500 shrink-0" />
+                                </>
+                            );
+                        })}
 
                     {/* To Chain */}
                     <div className="flex items-center gap-1.5 shrink-0">

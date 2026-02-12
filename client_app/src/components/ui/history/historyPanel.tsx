@@ -14,7 +14,7 @@ interface HistoryPanelProps {
 
 export default function HistoryPanel({ config, onResume, onRetry }: HistoryPanelProps) {
     const [isExpanded, setIsExpanded] = useState(false);
-    const { transactions, isLoading, error, resumableCount, refresh } = useTransactionHistory(10);
+    const { transactions, isLoading, error, resumableCount, refresh } = useTransactionHistory(20);
 
     const handleToggle = useCallback(() => {
         setIsExpanded((prev) => !prev);
