@@ -562,16 +562,6 @@ func (s *Pathfinder) buildBrokerRoute(
 	var outboundLegs []*models.IBCLeg
 	supportsPFM := false
 
-	if hopInfo.SwapOnly && len(hopInfo.InboundRoutes) > 1 {
-		// Multi-hop inbound to broker (e.g. cosmoshub -> noble -> osmosis): PFM used on first leg
-		supportsPFM = true
-		for i := 1; i < len(hopInfo.InboundPath)-1; i++ {
-			if !s.routeIndex.pfmChains[hopInfo.InboundPath[i]] {
-				supportsPFM = false
-				break
-			}
-		}
-	}
 	if !hopInfo.SwapOnly && len(hopInfo.OutboundRoutes) > 0 {
 		// Build leg for each outbound route
 		currentAmount := swapResult.AmountOut

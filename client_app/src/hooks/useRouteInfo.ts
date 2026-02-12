@@ -54,8 +54,16 @@ export function useRouteInfo(pathfinderResponse: FindPathResponse | null, mode: 
                 expectedOutput = legs[legs.length - 1]?.amount ?? "0";
                 break;
             }
-            case "brokerSwap":
-                routeType = "Swap & Transfer";
+            case "brokerSwap": {
+                const countInbound: number = pathfinderResponse.route.value.inboundLegs.length
+                const countOutbound: number = pathfinderResponse.route.value.outboundLegs.length
+                if (countInbound > 0 && countOutbound > 0) {
+                    routeType = "Multi-hop Swap & Transfer";
+                } else if (countInbound > 0) {
+                    routeType = "Transfer & Swap";
+                } else if (countOutbound > 0) {
+                    routeType = "Swap & Transfer";
+                }
                 expectedOutput = pathfinderResponse.route.value.swap?.amountOut ?? "0";
                 priceImpact = Number.parseFloat(
                     pathfinderResponse.route.value.swap?.priceImpact ?? "0",
@@ -72,6 +80,7 @@ export function useRouteInfo(pathfinderResponse: FindPathResponse | null, mode: 
                     priceImpactColor = "#4ade80"; // green-400
                 }
                 break;
+            }
         }
 
         return {

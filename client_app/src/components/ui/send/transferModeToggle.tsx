@@ -30,7 +30,7 @@ export default function TransferModeToggle({
     const [showSlippageSettings, setShowSlippageSettings] = useState(false);
     const [customSlippage, setCustomSlippage] = useState("");
 
-    const showSmartOption = supportsPfm || supportsWasm;
+    const showSmartOption = !isDirectRoute;
 
     const handleCustomSlippageChange = (value: string) => {
         setCustomSlippage(value);
@@ -108,7 +108,7 @@ export default function TransferModeToggle({
                         <>
                             <span className="text-teal-400">Smart:</span> Execute in fewest
                             transactions using{" "}
-                            {supportsWasm ? "WASM contracts" : "Packet Forwarding"}
+                            {supportsWasm ? "WASM contracts" : supportsPfm ? "Packet Forwarding" : "Direct"}
                         </>
                     ) : isDirectRoute ? (
                         <>

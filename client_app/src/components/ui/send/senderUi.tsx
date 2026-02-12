@@ -16,7 +16,6 @@ import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { usePathfinderQuery } from "@/hooks/usePathfinderQuery";
 import { useRouteInfo } from "@/hooks/useRouteInfo";
 import { useTransferFormState } from "@/hooks/useTransferFormState";
-import clientLogger from "@/lib/clientLogger";
 import { humanToBaseUnits } from "@/lib/utils";
 
 interface SendUIProps {
@@ -341,8 +340,6 @@ export default function SendUI({
             chains.push(sendChainData);
             addedIds.add(sendChainData.id);
         }
-
-        clientLogger.info("intermediate chains", intermediateChainIds);
 
         for (const chainId of intermediateChainIds) {
             if (!addedIds.has(chainId)) {
