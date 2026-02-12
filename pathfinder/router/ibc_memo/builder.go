@@ -33,6 +33,11 @@ type MemoBuilder interface {
 	// This is the most complex case: multi-hop inbound + swap + multi-hop outbound.
 	BuildForwardSwapForwardMemo(params ForwardSwapForwardParams) (string, error)
 
+	// BuildHopAndSwapMemo creates a memo for a hop and swap (case 6.1 from doc.go)
+	// This is used when there is transfer from regular chain that needs to be
+	// routed through another chain and then swapped on the broker chain
+	BuildHopAndSwapMemo(params HopAndSwapParams) (string, error)
+
 	// GetContractAddress returns the ibc-hooks entry point contract address
 	GetContractAddress() string
 }
@@ -98,6 +103,17 @@ type ForwardSwapForwardParams struct {
 	InboundHops []IBCHop
 	// SwapParams contains the swap parameters
 	SwapParams SwapAndMultiHopParams
+}
+
+// HopAndSwapParams contains parameters for a hop and swap.
+// Used when: Source -> Intermediate(s) (forward) -> Broker (swap) -> Destination(broker chain)
+type HopAndSwapParams struct {
+	// InboundHops contains the forwarding hops to reach the broker.
+	// For single hop: [hop_to_broker]
+	// For multi-hop: [hop_to_int1, hop_to_broker]
+	InboundHops []IBCHop
+	// SwapParams contains the swap parameters (executed after forwarding to broker)
+	SwapParams SwapAndForwardParams
 }
 
 // IBCHop represents a single IBC transfer hop

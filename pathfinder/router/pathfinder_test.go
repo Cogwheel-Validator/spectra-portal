@@ -338,6 +338,10 @@ func (m *MockMemoBuilder) BuildForwardSwapForwardMemo(params ibcmemo.ForwardSwap
 	return `{"forward":{"next":{"wasm":{}}}}`, nil
 }
 
+func (m *MockMemoBuilder) BuildHopAndSwapMemo(params ibcmemo.HopAndSwapParams) (string, error) {
+	return `{"forward":{"next":{"wasm":{"contract":"mock","msg":{}}}}}`, nil
+}
+
 // MockBrokerClient implements the brokers.BrokerClient interface for testing
 type MockBrokerClient struct {
 	brokerType      string

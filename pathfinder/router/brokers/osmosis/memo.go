@@ -449,3 +449,86 @@ func (b *MemoBuilder) BuildForwardSwapForwardMemo(params ibcmemo.ForwardSwapForw
 	// Should not reach here if InboundHops is not empty
 	return "", fmt.Errorf("unexpected error building forward memo")
 }
+
+/*
+BuildHowAndSwap is a method when there is transfer from regular chain that needs to be
+routed through another chain and then swapped on the broker chain
+
+An example here would be to have USDC on Cosmos HUb and you need to swap on Osmosis for
+some otken, but to receive on Osmosis
+Example output:
+
+	"forward": {
+	    "channel": "channel-141",
+	    "port": "transfer",
+	    "receiver": "osmo10a3k4...",  // contract address
+	    "retries": 2,
+	    "timeout": ...,
+	    "next": {
+	      "wasm": {
+			"contract": "osmo10a3k4...",
+			"msg": {
+			"swap_and_action": {
+				"user_swap": { ... },
+				"min_asset": { ... },
+				"timeout_timestamp": ...,
+				"post_swap_action": {
+				"transfer": { "transfer": { "to_address": "osmo1..." } }
+				"affiliates": []
+			}
+	    }
+*/
+func (b *MemoBuilder) BuildHopAndSwapMemo(params ibcmemo.HopAndSwapParams) (string, error) {
+	if b.contractAddress == "" {
+		return "", fmt.Errorf("ibc-hooks contract address not configured")
+	}
+
+	count := len(params.InboundHops)
+	if count == 0 {
+		return "", fmt.Errorf("no inbound hops provided ")
+	} else if count <= 1 {
+		return "", fmt.Errorf("only one inbound hop provided, this is not supported")
+	} else if count > 2 {
+		return "", fmt.Errorf("more than two inbound hops provided, this is not supported")
+	}
+
+	routeData, ok := params.SwapParams.RouteData.(*RouteData)
+	if !ok {
+		return "", fmt.Errorf("route data is not Osmosis RouteData type")
+	}
+
+	operations := routeData.GetOperationsWithInput(params.SwapParams.TokenInDenom)
+	if len(operations) == 0 {
+		return "", fmt.Errorf("no swap operations available")
+	}
+
+	// Receiver on broker chain after swap (use SwapParams.ReceiverAddress)
+	receiverAddr := params.SwapParams.ReceiverAddress
+	if receiverAddr == "" {
+		receiverAddr = params.SwapParams.ForwardReceiver
+	}
+
+	hop1 := params.InboundHops[1] // Second leg: intermediate -> broker (in forward memo)
+
+	wasmMemo := ibcmemo.NewWasmMemo(
+		b.contractAddress,
+		ibcmemo.NewWasmMsg(
+			ibcmemo.NewSwapAndAction(
+				ibcmemo.NewUserSwap(SwapVenueName, operations),
+				ibcmemo.NewMinAsset(params.SwapParams.TokenOutDenom, params.SwapParams.MinOutputAmount),
+				params.SwapParams.TimeoutTimestamp,
+				ibcmemo.NewTransferAction(receiverAddr),
+			),
+		),
+	)
+	memoForward := ibcmemo.NewNestedForward(
+		hop1.Channel,
+		hop1.Port,
+		b.contractAddress,
+		ibcmemo.DefaultRetries(),
+		params.SwapParams.TimeoutTimestamp,
+		ibcmemo.NewPFMNextWithWasm(wasmMemo),
+	)
+
+	return memoForward.ToJSON()
+}
