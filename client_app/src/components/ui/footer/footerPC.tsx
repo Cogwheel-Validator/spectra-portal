@@ -43,7 +43,7 @@ export default function FooterPC({ className }: footerPCProps): JSX.Element {
                         <FaSquareXTwitter className="size-10 text-base-content" />
                     </Link>
                     <Link
-                        href="https://github.com/Cogwheel-Validator/spectra-ibc-hub"
+                        href="https://github.com/Cogwheel-Validator/spectra-portal"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="tooltip"

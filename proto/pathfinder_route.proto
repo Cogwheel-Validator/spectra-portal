@@ -5,7 +5,7 @@ package pathfinder.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc/v1";
+option go_package = "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/v1";
 
 // PathfinderService provides route discovery and validation for IBC transfers and swaps
 service PathfinderService {

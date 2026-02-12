@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
+	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 )
 
 // DenomResolver helps resolve token denoms across chains and tracks token origins.

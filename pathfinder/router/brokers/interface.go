@@ -4,7 +4,7 @@
 package brokers
 
 import (
-	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
 )
 
 // BrokerClient is an interface for querying different DEX protocols on broker chains.

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/input"
 )
 
 const (

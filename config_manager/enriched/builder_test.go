@@ -3,9 +3,9 @@ package enriched
 import (
 	"testing"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/registry"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/registry"
 )
 
 // createTestInputConfigs creates mock input configs for testing

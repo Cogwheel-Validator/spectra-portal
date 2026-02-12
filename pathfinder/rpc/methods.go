@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
-	v1 "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc/v1"
-	v1connect "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc/v1/v1connect"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	v1 "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/v1"
+	v1connect "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/v1/v1connect"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

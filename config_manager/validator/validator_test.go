@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/query"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/query"
 )
 
 func makeBlockData(ts time.Time, chainID string, hashes map[string]string, proposer string) *query.BlockData {

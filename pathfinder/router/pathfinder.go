@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
-	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
+	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
 	"github.com/rs/zerolog"
 )
 

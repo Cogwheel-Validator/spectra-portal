@@ -3,7 +3,7 @@ package config_test
 import (
 	"testing"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/input"
 )
 
 func TestLoadInputChainConfig(t *testing.T) {

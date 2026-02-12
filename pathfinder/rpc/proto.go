@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers/osmosis"
-	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
-	v1 "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc/v1"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers/osmosis"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
+	v1 "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/v1"
 	"github.com/btcsuite/btcutil/bech32"
 )
 

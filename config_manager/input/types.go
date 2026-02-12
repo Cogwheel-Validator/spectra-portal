@@ -4,7 +4,7 @@
 // by computing IBC denoms from the defined paths.
 package input
 
-import "github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
+import "github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
 
 // ChainInput is the human-readable chain configuration that developers write.
 // This is parsed from TOML files in the chain_configs/ directory.

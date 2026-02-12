@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/query"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/query"
 )
 
 func ValidateRestEndpoints(

@@ -16,7 +16,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/pipeline"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/pipeline"
 )
 
 func main() {

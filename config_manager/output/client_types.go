@@ -1,7 +1,7 @@
 package output
 
 import (
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
 )
 
 // ClientConfig contains all configuration needed by the frontend client application.

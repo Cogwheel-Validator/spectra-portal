@@ -6,9 +6,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/query"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/registry"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/query"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/registry"
 )
 
 // RouteBuilder builds IBC routes purely from configuration data.

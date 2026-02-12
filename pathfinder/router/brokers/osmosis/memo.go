@@ -3,7 +3,7 @@ package osmosis
 import (
 	"fmt"
 
-	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
 )
 
 // MemoBuilder builds IBC memo structures for Osmosis swap operations

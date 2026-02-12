@@ -8,11 +8,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/config"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers/osmosis"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/rpc"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/config"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers/osmosis"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc"
 	"github.com/rs/zerolog"
 )
 

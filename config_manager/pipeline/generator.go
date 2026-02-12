@@ -10,12 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/cp"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/enriched"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/input"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/output"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/registry"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/cp"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/enriched"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/input"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/output"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/registry"
 	"github.com/pelletier/go-toml/v2"
 )
 

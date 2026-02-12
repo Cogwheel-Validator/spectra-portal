@@ -3,7 +3,7 @@ package router
 import (
 	"container/list"
 
-	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
+	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 )
 
 // FindIndirectRoute finds multi-hop paths without swaps using BFS
@@ -104,4 +104,3 @@ func (ri *RouteIndex) findTokenByOrigin(chainId, originChain, baseDenom string) 
 	}
 	return nil
 }
-

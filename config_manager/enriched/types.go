@@ -4,7 +4,7 @@
 // human-readable configs and fetching all required blockchain data.
 package enriched
 
-import "github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/keplr"
+import "github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
 
 // ChainConfig is the fully enriched chain configuration after processing.
 // It contains all data needed to generate both backend and frontend configs.

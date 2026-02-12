@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/enriched"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/enriched"
 )
 
 // PathfinderConverter converts enriched configs to pathfinder-compatible format.

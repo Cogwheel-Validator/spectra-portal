@@ -1,7 +1,7 @@
 package router
 
 import (
-	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
+	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 )
 
 // FindMultiHopRoute finds routes that go through a broker with token swaps.
@@ -465,4 +465,3 @@ func (ri *RouteIndex) findMultiHopInboundRoute(sourceChain, brokerChainId, token
 
 	return nil
 }
-

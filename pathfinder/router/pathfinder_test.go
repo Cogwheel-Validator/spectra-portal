@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
-	router "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
-	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
+	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
+	router "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
 	"github.com/zeebo/assert"
 )
 

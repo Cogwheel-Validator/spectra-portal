@@ -1,6 +1,6 @@
 package models
 
-import ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
+import ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
 
 // RouteRequest - POST body
 type RouteRequest struct {

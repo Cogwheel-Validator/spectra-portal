@@ -1,4 +1,4 @@
-module github.com/Cogwheel-Validator/spectra-ibc-hub
+module github.com/Cogwheel-Validator/spectra-portal
 
 go 1.25.5
 

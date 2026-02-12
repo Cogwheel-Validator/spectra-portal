@@ -4,8 +4,8 @@ package osmosis
 import (
 	"strconv"
 
-	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
-	sqsquery "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/sqs_query"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
+	sqsquery "github.com/Cogwheel-Validator/spectra-portal/pathfinder/sqs_query"
 )
 
 const (

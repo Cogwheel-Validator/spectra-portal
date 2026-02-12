@@ -61,7 +61,7 @@ export default function FooterPhone({ className }: footerPhoneProps): JSX.Elemen
                     <FaSquareXTwitter className="size-8 text-base-content" />
                 </Link>
                 <Link
-                    href="https://github.com/Cogwheel-Validator/spectra-ibc-hub"
+                    href="https://github.com/Cogwheel-Validator/spectra-portal"
                     target="_blank"
                     rel="noopener noreferrer"
                 >

@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/config_manager/output"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router"
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/output"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
 	"github.com/pelletier/go-toml/v2"
 )
 

@@ -1,7 +1,7 @@
 package router
 
 import (
-	models "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/models"
+	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 )
 
 // FindDirectRoute finds a direct route between two chains for a specific token
@@ -17,4 +17,3 @@ func (ri *RouteIndex) FindDirectRoute(req models.RouteRequest) *BasicRoute {
 	}
 	return nil
 }
-

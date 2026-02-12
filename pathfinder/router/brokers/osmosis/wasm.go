@@ -3,8 +3,8 @@ package osmosis
 import (
 	"fmt"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
-	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
 )
 
 // Ensure SmartContractBuilder implements brokers.SmartContractBuilder

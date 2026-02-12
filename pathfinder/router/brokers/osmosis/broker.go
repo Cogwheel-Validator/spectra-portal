@@ -6,9 +6,9 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/brokers"
-	ibcmemo "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/router/ibc_memo"
-	sqsquery "github.com/Cogwheel-Validator/spectra-ibc-hub/pathfinder/sqs_query"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
+	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
+	sqsquery "github.com/Cogwheel-Validator/spectra-portal/pathfinder/sqs_query"
 )
 
 var log zerolog.Logger

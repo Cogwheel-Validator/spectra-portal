@@ -145,7 +145,7 @@ plugins:
     opt: target=ts
     out: ../path/to/your/project/src
 inputs:
-  - git_repo: https://github.com/Cogwheel-Validator/spectra-ibc-hub
+  - git_repo: https://github.com/Cogwheel-Validator/spectra-portal
     branch: main
     subdir: proto
 ```
