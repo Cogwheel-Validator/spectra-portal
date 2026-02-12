@@ -21,16 +21,18 @@ interface FromSectionProps {
     onSendChainChange: (chainId: string) => void;
     onSendTokenChange: (tokenSymbol: string) => void;
     onAmountChange: (value: string) => void;
-    senderBalance: {
-        balances: {
-            denom: string;
-            amount: string;
-        }[];
-        pagination: {
-            total: string;
-            next_key?: null | undefined;
-        };
-    } | undefined;
+    senderBalance:
+        | {
+              balances: {
+                  denom: string;
+                  amount: string;
+              }[];
+              pagination: {
+                  total: string;
+                  next_key?: null | undefined;
+              };
+          }
+        | undefined;
 }
 
 export default function FromSection({

@@ -108,7 +108,11 @@ export default function TransferModeToggle({
                         <>
                             <span className="text-teal-400">Smart:</span> Execute in fewest
                             transactions using{" "}
-                            {supportsWasm ? "WASM contracts" : supportsPfm ? "Packet Forwarding" : "Direct"}
+                            {supportsWasm
+                                ? "WASM contracts"
+                                : supportsPfm
+                                  ? "Packet Forwarding"
+                                  : "Direct"}
                         </>
                     ) : isDirectRoute ? (
                         <>

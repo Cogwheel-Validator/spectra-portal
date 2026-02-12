@@ -55,8 +55,8 @@ export function useRouteInfo(pathfinderResponse: FindPathResponse | null, mode: 
                 break;
             }
             case "brokerSwap": {
-                const countInbound: number = pathfinderResponse.route.value.inboundLegs.length
-                const countOutbound: number = pathfinderResponse.route.value.outboundLegs.length
+                const countInbound: number = pathfinderResponse.route.value.inboundLegs.length;
+                const countOutbound: number = pathfinderResponse.route.value.outboundLegs.length;
                 if (countInbound > 0 && countOutbound > 0) {
                     routeType = "Multi-hop Swap & Transfer";
                 } else if (countInbound > 0) {
