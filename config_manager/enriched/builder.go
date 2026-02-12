@@ -95,8 +95,9 @@ func (b *Builder) BuildRegistry(
 
 	generationTime := time.Now().UTC()
 	reg := &RegistryConfig{
-		// Use date as a version
-		Version:     "v1-" + strings.ReplaceAll(generationTime.Format(time.DateOnly), "-", ""),
+		// Use date as a version, hardcode the date, and every time there is a major change
+		// increment the version
+		Version:     "v1-" + "20260212",
 		GeneratedAt: generationTime.Format(time.RFC3339),
 		Chains:      make(map[string]*ChainConfig),
 	}

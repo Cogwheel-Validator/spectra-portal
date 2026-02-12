@@ -1,5 +1,5 @@
-version = 'v1-20260210'
-generated_at = '2026-02-10T18:58:29Z'
+version = 'v1-20260212'
+generated_at = '2026-02-12T16:04:18Z'
 
 [[chains]]
 name = 'Atom One'
@@ -170,6 +170,10 @@ url = 'https://rpc.cosmoshub-4.citizenweb3.com/'
 provider = 'CitizenWeb3'
 
 [[chains.rest_endpoints]]
+url = 'https://api.cosmoshub-4.citizenweb3.com/'
+provider = 'CitizenWeb3'
+
+[[chains.rest_endpoints]]
 url = 'https://cosmos-api.polkachu.com/'
 provider = 'Polkachu'
 
@@ -286,6 +290,7 @@ slip44 = 118
 chain_logo = '/icons/juno/logo.png'
 is_dex = false
 cosmos_sdk_version = 'v0.50.13'
+ibc_tokens = []
 
 [chains.explorer_details]
 base_url = 'https://explorer.cogwheel.zone'
@@ -300,9 +305,17 @@ provider = 'Cogwheel ⚙️'
 url = 'https://juno-rpc.polkachu.com'
 provider = 'Polkachu'
 
+[[chains.rpc_endpoints]]
+url = 'https://juno.rpc.m.stavr.tech'
+provider = '🔥STAVR🔥'
+
 [[chains.rest_endpoints]]
 url = 'https://juno-api.cogwheel.zone'
 provider = 'Polkachu'
+
+[[chains.rest_endpoints]]
+url = 'https://juno.api.m.stavr.tech'
+provider = '🔥STAVR🔥'
 
 [[chains.native_tokens]]
 denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
@@ -323,17 +336,6 @@ icon = '/icons/juno/juno.png'
 origin_chain = 'juno-1'
 coingecko_id = 'juno-network'
 is_native = true
-
-[[chains.ibc_tokens]]
-denom = 'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF'
-name = 'USDC'
-symbol = 'USDC'
-decimals = 6
-icon = '/icons/noble/usdc.png'
-origin_chain = 'noble-1'
-origin_chain_name = 'Noble'
-is_native = false
-base_denom = 'uusdc'
 
 [chains.keplr_chain_config]
 rpc = 'https://rpc-juno.keplr.app'
@@ -410,7 +412,7 @@ sendable_tokens = []
 id = 'noble-1'
 name = 'Noble'
 logo = '/icons/noble/logo.png'
-sendable_tokens = ['USDC']
+sendable_tokens = []
 
 [[chains.connected_chains]]
 id = 'osmosis-1'
@@ -630,7 +632,7 @@ sendable_tokens = ['USDC']
 id = 'juno-1'
 name = 'Juno Network'
 logo = '/icons/juno/logo.png'
-sendable_tokens = ['USDC']
+sendable_tokens = []
 
 [[chains.connected_chains]]
 id = 'osmosis-1'
@@ -1197,9 +1199,21 @@ transaction_path = 'stargaze/txs/{tx_hash}'
 url = 'https://stargaze-rpc.polkachu.com'
 provider = 'Polkachu'
 
+[[chains.rpc_endpoints]]
+url = 'https://stargaze-rpc.stakerhouse.com'
+provider = 'Stakerhouse'
+
+[[chains.rpc_endpoints]]
+url = 'https://stargaze.ibs.team:443/rpc'
+provider = 'IBS Team'
+
 [[chains.rest_endpoints]]
 url = 'https://stargaze-api.polkachu.com'
 provider = 'Polkachu'
+
+[[chains.rest_endpoints]]
+url = 'https://stargaze.ibs.team:443/api'
+provider = 'IBS Team'
 
 [[chains.native_tokens]]
 denom = 'ustars'
@@ -1684,15 +1698,6 @@ available_on = ['noble-1']
 
 [[all_tokens]]
 base_denom = 'ibc/4A1C18CA7F50544760CF306189B810CE4C1CB156C7FC870143D401FE7280E591'
-symbol = 'USDC'
-name = 'USDC'
-icon = '/icons/noble/usdc.png'
-origin_chain = 'noble-1'
-origin_chain_name = 'Noble'
-available_on = ['noble-1']
-
-[[all_tokens]]
-base_denom = 'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF'
 symbol = 'USDC'
 name = 'USDC'
 icon = '/icons/noble/usdc.png'

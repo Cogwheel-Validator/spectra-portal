@@ -1,5 +1,5 @@
-version = 'v1-20260210'
-generated_at = '2026-02-10T18:58:29Z'
+version = 'v1-20260212'
+generated_at = '2026-02-12T16:04:18Z'
 
 [[chains]]
 name = 'Atom One'
@@ -184,13 +184,6 @@ channel_id = 'channel-224'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF']
-chain_denom = 'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF'
-ibc_denom = 'uusdc'
-base_denom = 'uusdc'
-origin_chain = 'noble-1'
-symbol = 'USDC'
-decimals = 6
 
 [[chains.routes]]
 to_chain = 'Osmosis'
@@ -295,13 +288,6 @@ channel_id = 'channel-3'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.uusdc]
-chain_denom = 'uusdc'
-ibc_denom = 'ibc/4A482FA914A4B9B05801ED81C33713899F322B24F76A06F4B8FE872485EA22FF'
-base_denom = 'uusdc'
-origin_chain = 'noble-1'
-symbol = 'USDC'
-decimals = 6
 
 [[chains.routes]]
 to_chain = 'Osmosis'

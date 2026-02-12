@@ -50,7 +50,7 @@ symbol = "USDC"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdc.png"
 coingecko_id = "usd-coin"
-allowed_destinations = ["cosmoshub-4", "juno-1", "stargaze-1", "osmosis-1"]
+allowed_destinations = ["cosmoshub-4", "stargaze-1", "osmosis-1"]
 
 [[token]]
 denom = "uusdn"

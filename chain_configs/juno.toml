@@ -18,8 +18,8 @@ url = "https://juno-rpc.polkachu.com"
 provider = "Polkachu"
 
 [[chain.rpcs]]
-url = "https://rpc.lavenderfive.com:443/juno"
-provider = "LavenderFive"
+url = "https://juno.rpc.m.stavr.tech"
+provider = "🔥STAVR🔥"
 
 # REST endpoints
 [[chain.rest]]
@@ -31,8 +31,8 @@ url = "https://juno-api.cogwheel.zone"
 provider = "Polkachu"
 
 [[chain.rest]]
-url = "https://rest.lavenderfive.com:443/juno"
-provider = "LavenderFive"
+url = "https://juno.api.m.stavr.tech"
+provider = "🔥STAVR🔥"
 
 [[token]]
 denom = "ujuno"

@@ -18,10 +18,26 @@ keplr_json = "stargaze.json"
 url = "https://stargaze-rpc.polkachu.com"
 provider = "Polkachu"
 
+[[chain.rpcs]]
+url = "https://stargaze.ibs.team:443/rpc"
+provider = "IBS Team"
+
+[[chain.rpcs]]
+url = "https://stargaze-rpc.stakerhouse.com"
+provider = "Stakerhouse"
+
 # REST endpoints
 [[chain.rest]]
 url = "https://stargaze-api.polkachu.com"
 provider = "Polkachu"
+
+[[chain.rest]]
+url = "https://stargaze.ibs.team:443/api"
+provider = "IBS Team"
+
+[[chain.rest]]
+url = "https://stargaze-rest.stakerhouse.com"
+provider = "Stakerhouse"
 
 [[token]]
 denom = "ustars"
