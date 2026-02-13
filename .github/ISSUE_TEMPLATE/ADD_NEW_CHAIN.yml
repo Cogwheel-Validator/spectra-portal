@@ -116,7 +116,7 @@ body:
     id: confirmation
     attributes:
       label: Confirmation
-      description: I confirm that the information I have provided is correct. I also understand that Cogwheel is not responsible for any malfunction or issues with the relayers. I also understand that if the Spectra Explorer already supports the chain, it will be used instead of the one I have provided.
+      description: I confirm that the information I have provided is correct. I also understand that Cogwheel is not responsible for any malfunction or issues with the relayers.
       options:
         - label: I confirm that the information I have provided is correct and I understand the terms above.
           required: true
