@@ -77,6 +77,9 @@ body:
     attributes:
       label: Confirmation
       description: I confirm that the information I have provided is correct.
+      options:
+        - label: I confirm that the information I have provided is correct and I understand the terms above.
+          required: true
     validations:
       required: true
 
