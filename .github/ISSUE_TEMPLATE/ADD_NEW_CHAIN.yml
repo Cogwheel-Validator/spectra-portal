@@ -8,8 +8,8 @@ description: |
   4. An explorer that the data can be shown on ( it doesn't need to be anything fancy, even something like PingPub for will do),
   5. An asset that can actually be transfered to other chains ( very rare case, but it is possible )
 title: Add New Chain
-labels: new-chain
-assignees: 'nman98'
+labels: [new-chain]
+assignees: [nman98]
 
 body:
   - type: input
@@ -32,10 +32,10 @@ body:
     id: chain_type
     attributes:
       label: Chain Type
-      description: The type of the chain  ( only Cosmos chains are supported for now so write "cosmos" )
+      description: The type of the chain (only Cosmos chains are supported for now)
       options:
-        - label: Cosmos
-          value: cosmos
+        - Cosmos
+      default: 0
     validations:
       required: true
   - type: input
@@ -105,12 +105,13 @@ body:
       description: The details of the chain ( write any data about the project, what is this project about, what is the purpose of the chain, website link etc...)
     validations:
       required: false
-  - type: checkbox
+  - type: checkboxes
     id: confirmation
     attributes:
       label: Confirmation
       description: I confirm that the information I have provided is correct. I also understand that Cogwheel is not responsible for any malfunction or issues with the relayers. I also understand that if the Spectra Explorer already supports the chain, it will be used instead of the one I have provided.
-    validations:
-      required: true
+      options:
+        - label: I confirm that the information I have provided is correct and I understand the terms above.
+          required: true
 
   
