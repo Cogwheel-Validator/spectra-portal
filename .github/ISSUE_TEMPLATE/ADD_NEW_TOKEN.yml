@@ -1,0 +1,82 @@
+name: Add New Token
+description: "Request adding a new token to the Spectra Portal. Your token must be on a chain that is supported on the Spectra Portall."
+title: Add New Token
+labels: [new-token]
+assignees: [nman98]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you proceed
+
+        A token **cannot** be added to the Spectra Portal unless it has **all** of the following:
+        1. The chain that the token is on must be supported on the Spectra Portal,
+        2. The token must be transferable to other chains,
+        3. The token must have a human readable name and symbol,
+        4. The token must have a decimals value,
+        5. Token must have a logo
+  - type: input
+    id: token_name
+    attributes:
+      label: Token Name
+      description: The human readable name of the token
+      placeholder: "e.g. Osmosis"
+    validations:
+      required: true
+  - type: input
+    id: token_symbol
+    attributes:
+      label: Token Symbol
+      description: The symbol of the token
+      placeholder: "e.g. OSMO"
+    validations:
+      required: true
+  - type: input
+    id: token_decimals
+    attributes:
+      label: Token Decimals
+      description: The number of decimals the token has
+      placeholder: "e.g. 6"
+    validations:
+      required: true
+  - type: input
+    id: token_logo
+    attributes:
+      label: Token URL Logo
+      description: The URL of the token logo
+      placeholder: "e.g. https://raw.githubusercontent.com/atomone-hub/assets/main/logos/PNG/logo-white.png"
+    validations:
+      required: true
+  - type: input
+    id: origin_chain
+    attributes:
+      label: Origin Chain
+      description: The chain that the token is on
+      placeholder: "e.g. atomone-1"
+    validations:
+      required: true
+  - type: input
+    id: origin_denom
+    attributes:
+      label: Origin Denom
+      description: The denom of the token on the origin chain
+      placeholder: "e.g. uatom"
+    validations:
+      required: true
+  - type: input
+    id: allowed_destinations
+    attributes:
+      label: Allowed Destinations
+      description: The chains that the token can be transferred to ( technically can be empty, but this is not recommended )
+      placeholder: "e.g. osmosis-1, stargaze-1"
+    validations:
+      required: false
+  - type: checkbox
+    id: confirmation
+    attributes:
+      label: Confirmation
+      description: I confirm that the information I have provided is correct.
+    validations:
+      required: true
+
