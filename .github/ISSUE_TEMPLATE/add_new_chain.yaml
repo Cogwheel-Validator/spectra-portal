@@ -1,0 +1,116 @@
+name: Add New Chain
+description: |
+  Add a new chain to the Spectra Portal by filling out the form below. The chain cannot be added to the app if
+  the chain doesn't have the following:
+  1. Enabled IBC transfers,
+  2. Has running IBC relayers ( by validators or by the team behind the chain),
+  3. Has public available RPC and REST endpoints ( by validators or by the team behind the chain on platforms such as cosmos.directory for example ),
+  4. An explorer that the data can be shown on ( it doesn't need to be anything fancy, even something like PingPub for will do),
+  5. An asset that can actually be transfered to other chains ( very rare case, but it is possible )
+title: Add New Chain
+labels: new-chain
+assignees: 'nman98'
+
+body:
+  - type: input
+    id: chain_name
+    attributes:
+      label: Chain Name
+      description: The name of the chain
+      placeholder: "e.g. Osmosis"
+    validations:
+      required: true
+  - type: input
+    id: chain_id
+    attributes:
+      label: Chain ID
+      description: The ID of the chain
+      placeholder: "e.g. osmosis-1"
+    validations:
+      required: true
+  - type: dropdown
+    id: chain_type
+    attributes:
+      label: Chain Type
+      description: The type of the chain  ( only Cosmos chains are supported for now so write "cosmos" )
+      options:
+        - label: Cosmos
+          value: cosmos
+    validations:
+      required: true
+  - type: input
+    id: chain_registry
+    attributes:
+      label: Chain Registry
+      description: The name used in the chain registry directory name ( e.g. "osmosis", "cosmoshub" )
+      placeholder: "e.g. osmosis"
+    validations:
+      required: true
+  - type: input
+    id: chain_explorer_url
+    attributes:
+      label: Chain Explorer URL
+      description: The URL of the chain explorer ( e.g. "https://mintscan.io/osmosis", "https://thespectra.io/atomone" )
+      placeholder: "e.g. https://mintscan.io/osmosis"
+    validations:
+      required: true
+  - type: input
+    id: chain_slip44
+    attributes:
+      label: Chain Slip44
+      description: The SLIP-44 coin type
+      placeholder: "e.g. 118"
+    validations:
+      required: true
+  - type: input
+    id: chain_bech32_prefix
+    attributes:
+      label: Chain Bech32 Prefix
+      description: The Bech32 address prefix
+      placeholder: "e.g. osmo"
+    validations:
+      required: true
+  - type: textarea
+    id: chain_rpc_endpoints
+    attributes:
+      label: Chain RPC Endpoints
+      description: The RPC endpoints of the chain ( if you do not know that is okay just leave blank, this will be added later by Cogwheel Validator)
+    validations:
+      required: false
+  - type: textarea
+    id: chain_rest_endpoints
+    attributes:
+      label: Chain REST Endpoints
+      description: The REST endpoints of the chain ( if you do not know that is okay just leave blank, this will be added later by Cogwheel Validator)
+    validations:
+      required: false
+  - type: textarea
+    id: chain_native_tokens
+    attributes:
+      label: Chain Native Tokens
+      description: The native tokens of the chain ( fill with the chain denom such as "uatone", "uatom" and write the chain exponent such as 6 for 6 decimals)
+    validations:
+      required: true
+  - type: textarea
+    id: chain_ibc_tokens
+    attributes:
+      label: Chain IBC Tokens
+      description: The IBC tokens of the chain ( just write human readable token names such as "ATOM", "OSMO", this will be later filled with the IBC denom if the token is supported on the Spectra Portal )
+    validations:
+      required: false
+  - type: textarea
+    id: chain_details
+    attributes:
+      label: Chain Details
+      description: The details of the chain ( write any data about the project, what is this project about, what is the purpose of the chain, website link etc...)
+    validations:
+      required: false
+  - type: checkbox
+    id: confirmation
+    attributes:
+      label: Confirmation
+      description: I confirm that the information I have provided is correct. I also understand that Cogwheel is not responsible for any malfunction or issues with the relayers. I also understand that if the Spectra Explorer already supports the chain, it will be used instead of the one I have provided.
+    validations:
+      required: true
+
+  
