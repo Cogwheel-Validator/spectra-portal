@@ -1,17 +1,24 @@
 name: Add New Chain
-description: |
-  Add a new chain to the Spectra Portal by filling out the form below. The chain cannot be added to the app if
-  the chain doesn't have the following:
-  1. Enabled IBC transfers,
-  2. Has running IBC relayers ( by validators or by the team behind the chain),
-  3. Has public available RPC and REST endpoints ( by validators or by the team behind the chain on platforms such as cosmos.directory for example ),
-  4. An explorer that the data can be shown on ( it doesn't need to be anything fancy, even something like PingPub for will do),
-  5. An asset that can actually be transfered to other chains ( very rare case, but it is possible )
+description: "Request adding a new chain to the Spectra Portal. Your chain must meet the requirements shown in the form (IBC, relayers, RPC/REST, explorer)."
 title: Add New Chain
 labels: [new-chain]
 assignees: [nman98]
 
 body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you proceed
+
+        A chain **cannot** be added to the Spectra Portal unless it has **all** of the following:
+
+        1. **Enabled IBC transfers**
+        2. **Running IBC relayers** (by validators or by the team behind the chain)
+        3. **Public RPC and REST endpoints** (e.g. on [cosmos.directory](https://cosmos.directory) or similar)
+        4. **An explorer** where chain data can be shown (e.g. Mintscan, PingPub — nothing fancy required)
+        5. **An asset** that can actually be transferred to other chains (very rare that this is not the case)
+
+        If your chain meets these requirements, please fill out the form below.
   - type: input
     id: chain_name
     attributes:
