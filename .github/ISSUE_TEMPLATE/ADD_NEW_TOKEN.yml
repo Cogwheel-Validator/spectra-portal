@@ -72,7 +72,7 @@ body:
       placeholder: "e.g. osmosis-1, stargaze-1"
     validations:
       required: false
-  - type: checkbox
+  - type: checkboxes
     id: confirmation
     attributes:
       label: Confirmation
