@@ -89,6 +89,13 @@ export default function FooterPhone({ className }: footerPhoneProps): JSX.Elemen
                 >
                     <p className="text-sm text-center underline">Privacy Policy</p>
                 </Link>
+                <Link
+                    href="https://github.com/Cogwheel-Validator/spectra-portal/blob/main/LICENSE"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <p className="text-sm text-center underline">License</p>
+                </Link>
             </div>
         </footer>
     );

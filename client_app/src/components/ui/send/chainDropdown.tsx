@@ -109,6 +109,7 @@ export default function ChainDropdown({
                                 width={32}
                                 height={32}
                                 className={`rounded-full border-2 ${borderColor} shadow-lg ${shadowColor}`}
+                                loading="eager"
                             />
                             <span className="font-medium text-white">{selectedChain.name}</span>
                         </>
@@ -166,6 +167,7 @@ export default function ChainDropdown({
                                         width={28}
                                         height={28}
                                         className="rounded-full"
+                                        loading="eager"
                                     />
                                     <div className="flex flex-col">
                                         <span className="font-medium text-white">{chain.name}</span>

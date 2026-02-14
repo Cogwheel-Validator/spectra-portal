@@ -117,6 +117,7 @@ export default function AssetDropdown({
                     width={28}
                     height={28}
                     className="rounded-full"
+                    loading="eager"
                 />
             );
         }

@@ -65,7 +65,7 @@ export default function FooterPC({ className }: footerPCProps): JSX.Element {
                     {/*Spectra's Pathfinder RPC Logo*/}
                     <h4 className="text-base-content">Powered By:</h4>
                     <Link
-                        href="https://docs.cogwheel.zone/spectra-ibc"
+                        href="https://docs.cogwheel.zone/spectra-portal"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:opacity-80 transition-opacity duration-300"
@@ -99,6 +99,13 @@ export default function FooterPC({ className }: footerPCProps): JSX.Element {
                     rel="noopener noreferrer"
                 >
                     <p className="text-sm text-center underline">Privacy Policy</p>
+                </Link>
+                <Link
+                    href="https://github.com/Cogwheel-Validator/spectra-portal/blob/main/LICENSE"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <p className="text-sm text-center underline">License</p>
                 </Link>
             </div>
         </footer>
