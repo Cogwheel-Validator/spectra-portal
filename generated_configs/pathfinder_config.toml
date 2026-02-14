@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-02-12T16:04:18Z'
+generated_at = '2026-02-14T09:56:35Z'
 
 [[chains]]
 name = 'Atom One'
@@ -56,13 +56,6 @@ channel_id = 'channel-3'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.uatone]
-chain_denom = 'uatone'
-ibc_denom = 'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D'
-base_denom = 'uatone'
-origin_chain = 'atomone-1'
-symbol = 'ATONE'
-decimals = 6
 
 [[chains]]
 name = 'Cosmos Hub'
@@ -569,13 +562,6 @@ channel_id = 'channel-448'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D']
-chain_denom = 'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D'
-ibc_denom = 'uatone'
-base_denom = 'uatone'
-origin_chain = 'atomone-1'
-symbol = 'ATONE'
-decimals = 6
 
 [[chains.routes]]
 to_chain = 'Cosmos Hub'

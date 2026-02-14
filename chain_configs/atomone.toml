@@ -48,7 +48,7 @@ name = "Atone"
 symbol = "ATONE"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png"
-allowed_destinations = ["osmosis-1", "stargaze-1"]
+allowed_destinations = ["osmosis-1"]
 
 [[token]]
 denom = "uphoton"

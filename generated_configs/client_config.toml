@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-02-12T16:04:18Z'
+generated_at = '2026-02-14T09:56:35Z'
 
 [[chains]]
 name = 'Atom One'
@@ -141,7 +141,7 @@ sendable_tokens = ['ATONE', 'PHOTON']
 id = 'stargaze-1'
 name = 'Stargaze'
 logo = '/icons/stargaze/logo.png'
-sendable_tokens = ['ATONE']
+sendable_tokens = []
 
 [[chains]]
 name = 'Cosmos Hub'
@@ -1226,17 +1226,6 @@ coingecko_id = 'stargaze'
 is_native = true
 
 [[chains.ibc_tokens]]
-denom = 'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D'
-name = 'Atone'
-symbol = 'ATONE'
-decimals = 6
-icon = '/icons/atomone/atone.png'
-origin_chain = 'atomone-1'
-origin_chain_name = 'Atom One'
-is_native = false
-base_denom = 'uatone'
-
-[[chains.ibc_tokens]]
 denom = 'ibc/448C1061CE97D86CC5E86374CD914870FB8EBA16C58661B5F1D3F46729A2422D'
 name = 'Juno'
 symbol = 'JUNO'
@@ -1418,7 +1407,7 @@ coin_gecko_id = 'stargaze'
 id = 'atomone-1'
 name = 'Atom One'
 logo = '/icons/atomone/logo.png'
-sendable_tokens = ['ATONE']
+sendable_tokens = []
 
 [[chains.connected_chains]]
 id = 'cosmoshub-4'
@@ -1623,15 +1612,6 @@ icon = '/icons/noble/usdn.png'
 origin_chain = 'noble-1'
 origin_chain_name = 'Noble'
 available_on = ['noble-1']
-
-[[all_tokens]]
-base_denom = 'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D'
-symbol = 'ATONE'
-name = 'Atone'
-icon = '/icons/atomone/atone.png'
-origin_chain = 'atomone-1'
-origin_chain_name = 'Atom One'
-available_on = ['atomone-1']
 
 [[all_tokens]]
 base_denom = 'ibc/23104D411A6EB6031FA92FB75F227422B84989969E91DCAD56A535DD7FF0A373'
