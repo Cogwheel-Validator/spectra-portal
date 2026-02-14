@@ -168,9 +168,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     // Persist wallet connection state per chain
     const saveWalletState = (walletData: WalletConnectionState & { chainConfig: ClientChain }) => {
         if (typeof window !== "undefined") {
-            const key = `spectra_ibc_wallet_${walletData.chainId}`;
+            const key = `spectra_portal_wallet_${walletData.chainId}`;
             localStorage.setItem(key, JSON.stringify(walletData));
-            localStorage.setItem("spectra_ibc_wallet_type", walletData.walletType);
+            localStorage.setItem("spectra_portal_wallet_type", walletData.walletType);
         }
     };
 
@@ -180,13 +180,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         const savedStates: (WalletConnectionState & {
             chainConfig: ClientChain;
         })[] = [];
-        const savedWalletType = localStorage.getItem("spectra_ibc_wallet_type");
+        const savedWalletType = localStorage.getItem("spectra_portal_wallet_type");
 
         if (!savedWalletType) return [];
 
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key?.startsWith("spectra_ibc_wallet_") && key !== "spectra_ibc_wallet_type") {
+            if (key?.startsWith("spectra_portal_wallet_") && key !== "spectra_portal_wallet_type") {
                 const saved = localStorage.getItem(key);
                 if (saved) {
                     try {
@@ -204,12 +204,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const clearWalletState = useCallback((chainId?: string) => {
         if (typeof window !== "undefined") {
             if (chainId) {
-                localStorage.removeItem(`spectra_ibc_wallet_${chainId}`);
+                localStorage.removeItem(`spectra_portal_wallet_${chainId}`);
             } else {
                 const keys = [];
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (key?.startsWith("spectra_ibc_wallet_")) {
+                    if (key?.startsWith("spectra_portal_wallet_")) {
                         keys.push(key);
                     }
                 }
@@ -331,7 +331,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         walletTypeParam: WalletType = WalletType.KEPLR,
     ) => {
         try {
-            const existingWalletType = localStorage.getItem("spectra_ibc_wallet_type");
+            const existingWalletType = localStorage.getItem("spectra_portal_wallet_type");
             if (existingWalletType && existingWalletType !== walletTypeParam) {
                 throw new Error(
                     `Already connected with ${existingWalletType}. Please disconnect first before connecting with ${walletTypeParam}.`,

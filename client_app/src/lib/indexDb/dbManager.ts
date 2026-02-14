@@ -7,8 +7,8 @@ import logger from "@/lib/clientLogger";
 
 // Database version and name
 // in case you need to update something in the database, you can increment the version
-const DB_VERSION: number = 1.2;
-const DB_NAME: string = "spectra_ibc";
+const DB_VERSION: number = 2;
+const DB_NAME: string = "spectra_portal";
 const TRANSACTION_STORE = "transactions";
 const MAX_TRANSACTIONS = 50;
 

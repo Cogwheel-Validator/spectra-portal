@@ -36,7 +36,7 @@ describe("IndexedDB Manager", () => {
     describe("ConnectToDb", () => {
         it("should successfully open a database connection", async () => {
             expect(db).toBeDefined();
-            expect(db.name).toBe("spectra_ibc");
+            expect(db.name).toBe("spectra_portal");
             expect(db.version).toBe(1);
         });
 
