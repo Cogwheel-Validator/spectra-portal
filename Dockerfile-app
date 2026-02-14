@@ -1,0 +1,36 @@
+FROM oven/bun:1.3.9-alpine AS base
+
+FROM base AS deps
+
+WORKDIR /app
+COPY ./client_app/package.json ./client_app/bun.lock ./
+RUN bun install --frozen-lockfile
+
+FROM deps AS builder
+
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY ./client_app/ .
+COPY ./generated_configs/client_config.toml ./client_config.toml
+
+ENV NODE_ENV=production
+ENV DOCKER_BUILD=true
+
+RUN bun run build
+
+FROM base AS runner
+
+RUN addgroup --system --gid 1001 nextjs && adduser --system --uid 1001 nextjs
+
+WORKDIR /app
+
+COPY --from=builder --chown=nextjs:nextjs /app/client_config.toml ./client_config.toml
+COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone/ ./
+COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nextjs /app/public ./public
+
+EXPOSE 3000
+
+USER nextjs
+
+CMD ["bun", "server.js"]
