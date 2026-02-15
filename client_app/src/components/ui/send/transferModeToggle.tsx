@@ -68,14 +68,16 @@ export default function TransferModeToggle({
                         disabled={disabled || !showSmartOption}
                         className={`
                             flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md
-                            transition-all duration-200 font-medium text-sm
+                            transition-all duration-200 font-medium text-sm tooltip
                             ${
                                 mode === "smart" && showSmartOption
-                                    ? "bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/25"
+                                    ? "bg-linear-to-r from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/25"
                                     : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                             }
                             ${disabled || !showSmartOption ? "opacity-50 cursor-not-allowed" : ""}
                         `}
+                        data-tip={`Smart transfer gives user the power to execute multiple transaction at once
+                            by leveraging Skip Go Smart Contracts or Packet Forwarding Middleware.`}
                     >
                         <Zap className="w-4 h-4" />
                         <span>Smart</span>
@@ -88,14 +90,16 @@ export default function TransferModeToggle({
                         disabled={disabled}
                         className={`
                             flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md
-                            transition-all duration-200 font-medium text-sm
+                            transition-all duration-200 font-medium text-sm tooltip
                             ${
                                 mode === "manual" || (!showSmartOption && !disabled)
-                                    ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25"
+                                    ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25"
                                     : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                             }
                             ${disabled ? "opacity-50 cursor-not-allowed" : ""}
                         `}
+                        data-tip={`Manual transfer gives the user the most control over every transaction. 
+                            However it also requires to have enough tokens to pay for the gas fees.`}
                     >
                         <Hand className="w-4 h-4" />
                         <span>Manual</span>

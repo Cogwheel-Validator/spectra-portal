@@ -32,7 +32,8 @@ export default function MenuPC({ menuItems }: { menuItems: MenuItem[] }): JSX.El
                             href={item.href}
                             target={item.newTab ? "_blank" : undefined}
                             rel={item.newTab ? "noopener noreferrer" : undefined}
-                        >
+                            prefetch={item.prefetch ?? true}
+                            >
                             {item.label}
                         </Link>
                     </button>

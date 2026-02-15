@@ -30,6 +30,7 @@ function generateJSXMenuSelection(items: MenuItem[]): JSX.Element[] {
             target={item.newTab ? "_blank" : undefined}
             rel={item.newTab ? "noopener noreferrer" : undefined}
             className="btn btn-primary btn-soft btn-sm border-accent border rounded-xl w-full items-center"
+            prefetch={item.prefetch ?? true}
         >
             {item.icon && <span>{item.icon as React.ReactNode}</span>}
             {item.label}

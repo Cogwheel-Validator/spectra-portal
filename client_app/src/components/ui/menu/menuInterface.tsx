@@ -13,6 +13,7 @@ export default function MenuInterface(): JSX.Element {
             label: "Docs",
             href: "https://docs.cogwheel.zone/spectra-portal",
             newTab: true,
+            prefetch: false,
             icon: <SiGoogledocs className="size-6" />,
         },
     ];
