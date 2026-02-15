@@ -29,17 +29,24 @@ func init() {
 
 func main() {
 	// Parse command line flags
-	configRpc := flag.String("config-rpc", "./rpc-config.toml", "config file for the rpc server")
+	configRpcPath := flag.String("config-rpc", "", "config file for the rpc server")
 	configChains := flag.String("config-chains", "generated_configs/pathfinder_config.toml", "config file for the chains")
 	flag.Parse()
 
+	cfg := ""
+	if *configRpcPath == "" {
+		configRpcPath = nil
+		cfg = "env"
+	} else {
+		cfg = *configRpcPath
+	}
 	log.Info().
-		Str("rpc_config", *configRpc).
+		Str("rpc_config", cfg).
 		Str("chains_config", *configChains).
 		Msg("Starting Spectra's Pathfinder")
 
 	// Load RPC server configuration
-	rpcConfig, err := config.LoadRPCPathfinderConfig(configRpc)
+	rpcConfig, err := config.LoadRPCPathfinderConfig(configRpcPath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load RPC config")
 	}

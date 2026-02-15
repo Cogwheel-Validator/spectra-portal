@@ -1,0 +1,110 @@
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write 
+  packages: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.25'
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          # Check if this is a pre-release (contains alpha, beta, rc, etc.)
+          if [[ $VERSION =~ (alpha|beta|rc) ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "docker_tag=dev" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "docker_tag=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build pathfinder rpc binary
+        env:
+          VERSION_INPUT: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p build
+
+          echo "Building pathfinder rpc binary with VERSION=$VERSION"
+
+          # Linux AMD64 for the pathfinder rpc binary
+          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o build/pathfinder-rpc-${{ steps.version.outputs.version }}-linux-amd64 pathfinder/cmd/main.go
+      
+      - name: Build client app tar
+        run: |
+          mkdir -p build
+          tar -czvf build/client-app-${{ steps.version.outputs.version }}.tar.gz client_app
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/*
+          prerelease: ${{ steps.version.outputs.prerelease }}
+          generate_release_notes: true
+          body: |
+            ## Release ${{ steps.version.outputs.version }}
+            
+            ### Spectra Portal Pathfinder RPC
+            Download the binary for your platform and make it executable:
+            ```bash
+            chmod +x pathfinder-rpc-${{ steps.version.outputs.version }}-linux-amd64
+            ```
+
+            ### Client App
+            Download the tar.gz file and extract it:
+            ```bash
+            tar -xzvf client-app.tar.gz
+            ```
+
+            From here you can decompress it and run it. There is also an option to run from docker images.
+
+            For more information check the docs.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push pathfinder rpc Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/cogwheel-validator/spectra-portal-pathfinder-rpc:${{ steps.version.outputs.version }}
+            ghcr.io/cogwheel-validator/spectra-portal-pathfinder-rpc:${{ steps.version.outputs.docker_tag }}
+          cache-from: type=gha
+
+      - name: Build and push client app Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/cogwheel-validator/spectra-portal-client-app:${{ steps.version.outputs.version }}
+            ghcr.io/cogwheel-validator/spectra-portal-client-app:${{ steps.version.outputs.docker_tag }}
+          cache-from: type=gha

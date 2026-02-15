@@ -1,0 +1,53 @@
+name: spectra-portal
+
+services:
+  client-app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile-app
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NEXT_PUBLIC_PATHFINDER_RPC_URL: http://pathfinder:8080
+    depends_on:
+      pathfinder-healthcheck:
+        condition: service_healthy
+    networks:
+      - portal-network
+    restart: always
+
+  pathfinder-healthcheck:
+    image: curlimages/curl:latest
+    networks:
+      - portal-network
+    depends_on:
+      - pathfinder
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://pathfinder:8080/server/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    entrypoint: ["/bin/sh", "-c", "sleep infinity"]
+
+  pathfinder:
+    build:
+      context: .
+      dockerfile: ./Dockerfile-pathfinder
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      PATHFINDER_HOST: 0.0.0.0
+      PATHFINDER_PORT: 8080
+      PATHFINDER_ALLOWED_ORIGINS: "*"
+      PATHFINDER_SQS_URLS: "https://sqs.osmosis.zone"
+    volumes:
+      - ./generated_configs:/app/generated_configs:ro,Z
+    networks:
+      - portal-network
+    restart: always
+    command: ["--config-chains=/app/generated_configs/pathfinder_config.toml"]
+
+networks:
+  portal-network:
+    driver: bridge
