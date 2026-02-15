@@ -1,0 +1,17 @@
+FROM golang:1.25 AS builder
+WORKDIR /app
+COPY ./go.mod /app
+COPY ./go.sum /app
+COPY ./pathfinder /app/pathfinder
+COPY ./config_manager /app/config_manager
+RUN go mod tidy
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o pathfinder-rpc ./pathfinder/cmd/main.go
+
+FROM gcr.io/distroless/base-debian13:latest
+WORKDIR /app
+COPY --from=builder /app/pathfinder-rpc /app/pathfinder-rpc
+
+USER nonroot
+
+ENTRYPOINT ["./pathfinder-rpc"]
+CMD ["--config-chains=/app/generated_configs/pathfinder_config.toml"]
