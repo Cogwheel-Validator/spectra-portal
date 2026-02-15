@@ -374,6 +374,210 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     );
 
     /**
+     * Execute steps with IBC tracking and progress updates
+     * This is the core execution logic shared by both executeTransfer and retryStep
+     */
+    const executeStepsWithTracking = useCallback(
+        async (
+            steps: TransferStep[],
+            startIndex: number,
+            config: ClientConfig,
+            mode: TransferMode,
+            chainPath: string[],
+            dbRecordId: number | null,
+        ): Promise<TaskExecutionResult> => {
+            if (!db) {
+                return { success: false, error: "Database not ready" };
+            }
+
+            for (let i = startIndex; i < steps.length; i++) {
+                const step = steps[i];
+
+                // Skip already completed steps
+                if (step.status === "completed") {
+                    continue;
+                }
+
+                transfer.updateStep(i, { status: "signing" });
+
+                const result = await executeStep(step, config);
+
+                if (result.success && result.txHash) {
+                    // Check if this is an IBC transfer that needs tracking
+                    const isIbcStep =
+                        step.type === "ibc_transfer" ||
+                        step.type === "multi-hop" ||
+                        step.type === "wasm-execution" ||
+                        step.type === "multi-hop + swap";
+
+                    const isMultiHopStep =
+                        (step.type === "multi-hop + swap" ||
+                            step.type === "multi-hop" ||
+                            step.type === "wasm-execution") &&
+                        mode === "smart";
+
+                    if (isIbcStep && !isMultiHopStep) {
+                        // Update to "confirming" status while we track
+                        transfer.updateStep(i, {
+                            status: "confirming",
+                            txHash: result.txHash,
+                        });
+
+                        // Get destination chain config for tracking
+                        const destChain = config.chains.find((c) => c.id === step.toChain) as
+                            | ClientChain
+                            | undefined;
+
+                        if (destChain) {
+                            // Track the IBC transfer on destination chain
+                            const trackingResult = await trackIbcTransfer(
+                                step.fromChain,
+                                result.txHash,
+                                destChain,
+                                {
+                                    maxAttempts: 60,
+                                    pollInterval: 10000,
+                                    timeout: 10 * 60 * 1000,
+                                    onProgress: (attempt, max) => {
+                                        clientLogger.info(
+                                            `Tracking IBC transfer: attempt ${attempt}/${max}`,
+                                        );
+                                    },
+                                },
+                            );
+
+                            clientLogger.info("trackingResult", trackingResult);
+
+                            if (!trackingResult.success) {
+                                const error = trackingResult.error || "IBC tracking inconclusive";
+                                transfer.failTransfer(error);
+
+                                if (dbRecordId != null) {
+                                    await UpdateTransactionStatus(db, {
+                                        id: dbRecordId,
+                                        status: "failed",
+                                        error,
+                                    });
+                                }
+
+                                return { success: false, error };
+                            }
+                        }
+                    }
+
+                    if (isMultiHopStep) {
+                        // Single-step multi-hop (wasm/PFM): track across all chains
+                        transfer.updateStep(i, {
+                            status: "confirming",
+                            txHash: result.txHash,
+                        });
+                        const path = step.transferOrder ?? chainPath;
+                        const totalChains = path.length;
+                        if (totalChains >= 2) {
+                            transfer.setMultiHopProgress(0, totalChains);
+                            if (dbRecordId != null) {
+                                await UpdateTransactionStatus(db, {
+                                    id: dbRecordId,
+                                    multiHopProgress: 0,
+                                    multiHopTotalChains: totalChains,
+                                });
+                            }
+                            const trackingResult = await trackSmartTransferMultiHop(
+                                step.fromChain,
+                                result.txHash,
+                                path,
+                                config.chains as ClientChain[],
+                                {
+                                    maxAttempts: 60,
+                                    pollInterval: 10000,
+                                    timeout: 10 * 60 * 1000,
+                                    onHopComplete: (completedChains, total) => {
+                                        const pct =
+                                            total > 0
+                                                ? Math.round((completedChains / total) * 100)
+                                                : 0;
+                                        if (dbRecordId != null) {
+                                            UpdateTransactionStatus(db, {
+                                                id: dbRecordId,
+                                                multiHopProgress: pct,
+                                                multiHopTotalChains: total,
+                                            }).catch((err) =>
+                                                clientLogger.warn(
+                                                    "Update multiHopProgress failed",
+                                                    err,
+                                                ),
+                                            );
+                                        }
+                                        transfer.setMultiHopProgress(pct, total);
+                                    },
+                                },
+                            );
+                            transfer.setMultiHopProgress(null);
+                            if (!trackingResult.success) {
+                                const error = trackingResult.error || "IBC tracking inconclusive";
+                                transfer.failTransfer(error);
+
+                                if (dbRecordId != null) {
+                                    await UpdateTransactionStatus(db, {
+                                        id: dbRecordId,
+                                        status: "failed",
+                                        error,
+                                    });
+                                }
+
+                                return { success: false, error };
+                            }
+                        }
+                    }
+
+                    // Mark step as completed
+                    transfer.updateStep(i, {
+                        status: "completed",
+                        txHash: result.txHash,
+                    });
+
+                    // Update database
+                    if (dbRecordId != null) {
+                        await UpdateTransactionStatus(db, {
+                            id: dbRecordId,
+                            currentStep: i + 1,
+                        });
+                    }
+
+                    // If not the last step, advance
+                    if (i < steps.length - 1) {
+                        transfer.advanceStep();
+                    }
+                } else {
+                    transfer.updateStep(i, {
+                        status: "failed",
+                        error: result.error,
+                    });
+
+                    if (dbRecordId != null) {
+                        await UpdateTransactionStatus(db, {
+                            id: dbRecordId,
+                            status: "failed",
+                            error: result.error || "Unknown error",
+                        });
+                    }
+
+                    transfer.failTransfer(result.error || "Step execution failed");
+
+                    return {
+                        success: false,
+                        error: result.error,
+                        isRetryable: result.isRetryable,
+                    };
+                }
+            }
+
+            return { success: true };
+        },
+        [db, transfer, executeStep, trackIbcTransfer, trackSmartTransferMultiHop],
+    );
+
+    /**
      * Execute the complete transfer flow
      */
     const executeTransfer = useCallback(
@@ -438,167 +642,27 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 // Start execution with generated steps
                 transfer.startExecuting(steps, dbRecordId, chainPath);
 
-                // Execute each step sequentially
-                for (let i = 0; i < steps.length; i++) {
-                    const step = steps[i];
-                    transfer.updateStep(i, { status: "signing" });
+                // Execute all steps with tracking
+                const result = await executeStepsWithTracking(
+                    steps,
+                    0,
+                    config,
+                    mode,
+                    chainPath,
+                    dbRecordId,
+                );
 
-                    const result = await executeStep(step, config);
+                if (result.success) {
+                    // All steps completed
+                    await UpdateTransactionStatus(db, {
+                        id: dbRecordId,
+                        status: "success",
+                        currentStep: steps.length,
+                    });
 
-                    if (result.success && result.txHash) {
-                        // Check if this is an IBC transfer that needs tracking
-                        const isIbcStep =
-                            step.type === "ibc_transfer" ||
-                            step.type === "multi-hop" ||
-                            step.type === "wasm-execution" ||
-                            step.type === "multi-hop + swap";
-
-                        // if the step is one of the multihop steps and the mode is smart, then we need to track the transfer
-                        // accross different chains
-                        const isMultiHopStep =
-                            (step.type === "multi-hop + swap" ||
-                                step.type === "multi-hop" ||
-                                step.type === "wasm-execution") &&
-                            mode === "smart";
-
-                        if (isIbcStep && !isMultiHopStep) {
-                            // Update to "confirming" status while we track
-                            transfer.updateStep(i, {
-                                status: "confirming",
-                                txHash: result.txHash,
-                            });
-
-                            // Get destination chain config for tracking
-                            const destChain = config.chains.find((c) => c.id === step.toChain) as
-                                | ClientChain
-                                | undefined;
-
-                            if (destChain) {
-                                // Track the IBC transfer on destination chain
-                                const trackingResult = await trackIbcTransfer(
-                                    step.fromChain,
-                                    result.txHash,
-                                    destChain,
-                                    {
-                                        maxAttempts: 60, // 60 attempts
-                                        pollInterval: 10000, // 10 seconds between polls
-                                        timeout: 10 * 60 * 1000, // 10 minute total timeout
-                                        onProgress: (attempt, max) => {
-                                            // Optional: could update UI with progress
-                                            clientLogger.info(
-                                                `Tracking IBC transfer: attempt ${attempt}/${max}`,
-                                            );
-                                        },
-                                    },
-                                );
-
-                                clientLogger.info("trackingResult", trackingResult);
-
-                                if (!trackingResult.success) {
-                                    // Tracking failed - this doesn't necessarily mean the transfer failed
-                                    // It could just mean we couldn't confirm it in time
-                                    // Mark as "completed" but log the warning
-                                    clientLogger.warn(
-                                        `IBC tracking inconclusive: ${trackingResult.error}`,
-                                    );
-                                }
-                            }
-                        }
-
-                        if (isMultiHopStep) {
-                            // Single-step multi-hop (wasm/PFM): track across all chains and persist progress to IndexedDB
-                            transfer.updateStep(i, {
-                                status: "confirming",
-                                txHash: result.txHash,
-                            });
-                            const path = step.transferOrder ?? chainPath;
-                            const totalChains = path.length;
-                            if (totalChains >= 2) {
-                                transfer.setMultiHopProgress(0, totalChains);
-                                await UpdateTransactionStatus(db, {
-                                    id: dbRecordId,
-                                    multiHopProgress: 0,
-                                    multiHopTotalChains: totalChains,
-                                });
-                                const trackingResult = await trackSmartTransferMultiHop(
-                                    step.fromChain,
-                                    result.txHash,
-                                    path,
-                                    config.chains as ClientChain[],
-                                    {
-                                        maxAttempts: 60,
-                                        pollInterval: 10000,
-                                        timeout: 10 * 60 * 1000,
-                                        onHopComplete: (completedChains, total) => {
-                                            const pct =
-                                                total > 0
-                                                    ? Math.round((completedChains / total) * 100)
-                                                    : 0;
-                                            UpdateTransactionStatus(db, {
-                                                id: dbRecordId,
-                                                multiHopProgress: pct,
-                                                multiHopTotalChains: total,
-                                            }).catch((err) =>
-                                                clientLogger.warn(
-                                                    "Update multiHopProgress failed",
-                                                    err,
-                                                ),
-                                            );
-                                            transfer.setMultiHopProgress(pct, total);
-                                        },
-                                    },
-                                );
-                                transfer.setMultiHopProgress(null);
-                                if (!trackingResult.success) {
-                                    clientLogger.warn(
-                                        `Multi-hop tracking inconclusive: ${trackingResult.error}`,
-                                    );
-                                }
-                            }
-                        }
-
-                        // Mark step as completed
-                        transfer.updateStep(i, {
-                            status: "completed",
-                            txHash: result.txHash,
-                        });
-
-                        // Update database
-                        await UpdateTransactionStatus(db, {
-                            id: dbRecordId,
-                            currentStep: i + 1,
-                        });
-
-                        // If not the last step, advance
-                        if (i < steps.length - 1) {
-                            transfer.advanceStep();
-                        }
-                    } else {
-                        transfer.updateStep(i, {
-                            status: "failed",
-                            error: result.error,
-                        });
-
-                        await UpdateTransactionStatus(db, {
-                            id: dbRecordId,
-                            status: "failed",
-                            error: result.error || "Unknown error",
-                        });
-
-                        transfer.failTransfer(result.error || "Step execution failed");
-                        setIsExecuting(false);
-                        return;
-                    }
+                    transfer.completeTransfer();
                 }
-
-                // All steps completed
-                await UpdateTransactionStatus(db, {
-                    id: dbRecordId,
-                    status: "success",
-                    currentStep: steps.length,
-                });
-
-                transfer.completeTransfer();
+                // If not successful, error handling is already done in executeStepsWithTracking
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Unknown error";
                 transfer.failTransfer(errorMessage);
@@ -607,7 +671,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 setIsExecuting(false);
             }
         },
-        [db, transfer, executeStep, trackIbcTransfer, trackSmartTransferMultiHop],
+        [db, transfer, executeStepsWithTracking],
     );
 
     /**
@@ -618,9 +682,14 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
      * - Mark the IndexedDB transaction as "in-progress" again
      * - If the retry ultimately succeeds and all steps are completed, mark the
      *   transfer (and DB record) as successful instead of leaving it as failed.
+     * - Continue executing remaining steps if any exist
      */
     const retryStep = useCallback(
         async (stepIndex: number, config: ClientConfig): Promise<TaskExecutionResult> => {
+            if (!db) {
+                return { success: false, error: "Database not ready" };
+            }
+
             const step = transfer.state.steps[stepIndex];
             if (!step) {
                 return { success: false, error: "Step not found" };
@@ -630,6 +699,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             const existingSteps = transfer.state.steps;
             const dbRecordId = transfer.state.dbRecordId;
             const chainPath = transfer.state.chainPath;
+            const mode = transfer.state.mode;
 
             try {
                 // Move transfer back into an executing state and clear top-level error
@@ -638,7 +708,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 // Mark the persisted transaction as in-progress again
-                if (db && dbRecordId != null) {
+                if (dbRecordId != null) {
                     await UpdateTransactionStatus(db, {
                         id: dbRecordId,
                         status: "in-progress",
@@ -647,57 +717,49 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 setIsExecuting(true);
-                transfer.updateStep(stepIndex, { status: "signing", error: undefined });
 
-                const result = await executeStep(step, config);
+                // Execute the retried step and all remaining steps using shared logic
+                const result = await executeStepsWithTracking(
+                    existingSteps,
+                    stepIndex,
+                    config,
+                    mode,
+                    chainPath,
+                    dbRecordId,
+                );
 
                 if (result.success) {
-                    transfer.updateStep(stepIndex, {
-                        status: "completed",
-                        txHash: result.txHash,
-                    });
-
-                    // Determine if, after this retry, all steps are completed
-                    const allStepsCompleted = existingSteps.every((s, idx) =>
-                        idx === stepIndex ? true : s.status === "completed",
-                    );
-
-                    if (db && dbRecordId != null) {
+                    // All steps completed successfully
+                    if (dbRecordId != null) {
                         await UpdateTransactionStatus(db, {
                             id: dbRecordId,
-                            status: allStepsCompleted ? "success" : "in-progress",
-                            currentStep: stepIndex + 1,
-                            error: null,
+                            status: "success",
+                            currentStep: existingSteps.length,
                         });
                     }
 
-                    // If this was the final outstanding step, mark the transfer as completed
-                    if (allStepsCompleted) {
-                        transfer.completeTransfer();
-                    }
-                } else {
-                    transfer.updateStep(stepIndex, {
-                        status: "failed",
-                        error: result.error,
-                    });
-
-                    if (db && dbRecordId != null) {
-                        await UpdateTransactionStatus(db, {
-                            id: dbRecordId,
-                            status: "failed",
-                            error: result.error || "Unknown error",
-                        });
-                    }
-
-                    transfer.failTransfer(result.error || "Step execution failed");
+                    transfer.completeTransfer();
                 }
 
                 return result;
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Unknown error";
+                transfer.failTransfer(errorMessage);
+
+                if (dbRecordId != null) {
+                    await UpdateTransactionStatus(db, {
+                        id: dbRecordId,
+                        status: "failed",
+                        error: errorMessage,
+                    });
+                }
+
+                return { success: false, error: errorMessage };
             } finally {
                 setIsExecuting(false);
             }
         },
-        [db, transfer, executeStep],
+        [db, transfer, executeStepsWithTracking],
     );
 
     const contextValue = useMemo(
