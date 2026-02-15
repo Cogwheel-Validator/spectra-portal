@@ -12,9 +12,9 @@ export default function MenuPhone({ menuItems }: { menuItems: MenuItem[] }): JSX
             <Image
                 src="/logo.png"
                 alt="Spectra Logo"
-                width={521}
-                height={126}
-                className="w-20"
+                width={1550}
+                height={400}
+                className="w-28"
                 loading="eager"
             />
             <MenuSelectionClient elements={menuElements} />

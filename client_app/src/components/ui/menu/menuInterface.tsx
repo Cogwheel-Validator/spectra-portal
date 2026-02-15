@@ -9,7 +9,6 @@ import type { MenuItem } from "./types";
 export default function MenuInterface(): JSX.Element {
     const menuItems: MenuItem[] = [
         { label: "Transfer", href: "/transfer", icon: <BiTransfer className="size-6" /> },
-        { label: "About Portal App", href: "/about", icon: <FaInfo className="size-6" /> },
         {
             label: "Docs",
             href: "https://docs.cogwheel.zone/spectra-portal",

@@ -16,9 +16,43 @@ const robotoFont = Roboto({
     subsets: ["latin"],
 });
 
+const url = new URL("https://portal.thespectra.io")
+const title = "Spectra Portal - Transfer Asset Across Blockchains"
+const description = "Spectra Portal is a web application that provides an interface for users to send and receive assets across different chains using the Inter Blockchain Communication Protocol."
+
 export const metadata: Metadata = {
-    title: "Spectra Portal",
-    description: "Spectra Portal",
+    title: title,
+    description: description,
+    keywords: [
+        "IBC",
+        "Inter Blockchain Communication",
+        "Spectra",
+        "Spectra Portal",
+        "Spectra Explorer",
+        "Cogwheel Validator",
+        "Spectra Pathfinder",
+    ],
+    authors: [{ name: "Cogwheel Validator", url: "https://cogwheel.zone" }],
+    metadataBase: url,
+    openGraph: {
+        url: url,
+        title: title,
+        description: description,
+        images: [{ url: "/spectraPortalSEO.png"}]
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: title,
+        images: [{ url: "/spectraPortalSEO.png"}]
+    },
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+        },
+    },
 };
 
 export default function RootLayout({

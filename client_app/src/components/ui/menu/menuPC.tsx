@@ -9,9 +9,9 @@ export default function MenuPC({ menuItems }: { menuItems: MenuItem[] }): JSX.El
             <Image
                 src="/logo.png"
                 alt="Spectra Logo"
-                width={521}
-                height={126}
-                className="w-40"
+                width={1550}
+                height={400}
+                className="w-44"
                 loading="eager"
             />
             <div className="flex flex-row rounded-box backdrop-blur-sm">

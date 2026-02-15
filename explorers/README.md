@@ -1,6 +1,6 @@
-# Allowed Explorers on the Spectra IBC app
+# Allowed Explorers on the Spectra Portal app
 
-This file contains the list of allowed explorers on the Spectra IBC app.
+This file contains the list of allowed explorers on the Spectra Portal app.
 
 ## List of Explorers
 

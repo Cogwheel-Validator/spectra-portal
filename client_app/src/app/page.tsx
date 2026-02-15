@@ -19,15 +19,15 @@ export default function Home() {
                     />
                     <h1 className="text-5xl text-center">The Spectra Portal</h1>
                     <p className="max-w-80 md:max-w-lg font-semibold leading-relaxed text-center">
-                        Send your assets accross different chains using Inter Blockchain
+                        Send your assets across different chains using Inter Blockchain
                         Communication Protocol. You can send, and even swap your assets to receive
-                        the desired token ,all powered by the{" "}
+                        the desired token, all powered by the{" "}
                         <u className="font-extrabold">Spectra's Pathfinder</u>, bridging assets has
                         never been easier.
                     </p>
 
                     <FlyInButton type="button" className="btn btn-primary btn-lg lg:btn-xl">
-                        <Link href="/ibc">IBC</Link>
+                        <Link href="/transfer">Transfer Assets</Link>
                     </FlyInButton>
                 </div>
             </div>

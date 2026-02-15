@@ -158,8 +158,8 @@ fully open sourced and publicly available app that provides this kind of functio
 
 To run the Spectra Portal, you need to have the following prerequisites:
 
-- Golang 1.25.5
-- Bun 1.39.0
+- Golang v1.25.5+
+- Bun v1.3.9+
 - Docker
 
 For development purposes, you might need additional tools and dependencies. However these are not required to
