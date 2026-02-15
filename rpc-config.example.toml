@@ -41,12 +41,9 @@ max_concurrent_requests = 200
 # Osmosis SQS Configuration
 # =============================================================================
 
-# Primary SQS endpoint (Osmosis Sidecar Query Server)
-sqs_main_url = "https://sqs.osmosis.zone"
-
-# Backup SQS endpoints for failover (optional)
-# The client will automatically switch to backups if the primary is down
-backup_sqs_urls = [
+# SQS endpoints (Osmosis Sidecar Query Server)
+sqs_urls = [
+    "https://sqs.osmosis.zone",
     #"https://sqs-osmosis.example.com",
 ]
 # =============================================================================
@@ -54,7 +51,7 @@ backup_sqs_urls = [
 # =============================================================================
 
 # Service identification
-service_name = "spectra-ibc-hub"
+service_name = "spectra-portal"
 service_version = "1.0.0"
 environment = "development"  # PROD, DEV, TEST, LOCAL
 

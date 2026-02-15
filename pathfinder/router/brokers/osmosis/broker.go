@@ -26,18 +26,18 @@ type SqsBroker struct {
 }
 
 // NewSqsBroker creates a new Osmosis SQS broker client with a single endpoint
-func NewSqsBroker(sqsApiUrl, contractAddress string) *SqsBroker {
+func NewSqsBroker(sqsApiUrls []string, contractAddress string) *SqsBroker {
 	return &SqsBroker{
-		client:               sqsquery.NewSqsQueryClient(sqsApiUrl),
+		client:               sqsquery.NewSqsQueryClient(sqsApiUrls),
 		memoBuilder:          NewMemoBuilder(contractAddress),
 		smartContractBuilder: NewSmartContractBuilder(contractAddress),
 	}
 }
 
 // NewSqsBrokerWithFailover creates a new Osmosis SQS broker client with failover support
-func NewSqsBrokerWithFailover(primaryURL string, backupURLs []string, contractAddress string) *SqsBroker {
+func NewSqsBrokerWithFailover(sqsApiUrls []string, contractAddress string) *SqsBroker {
 	return &SqsBroker{
-		client:               sqsquery.NewSqsQueryClientWithFailover(primaryURL, backupURLs, sqsquery.DefaultFailoverConfig()),
+		client:               sqsquery.NewSqsQueryClientWithFailover(sqsApiUrls, sqsquery.DefaultFailoverConfig()),
 		memoBuilder:          NewMemoBuilder(contractAddress),
 		smartContractBuilder: NewSmartContractBuilder(contractAddress),
 	}

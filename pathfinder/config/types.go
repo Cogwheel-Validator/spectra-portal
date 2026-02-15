@@ -34,6 +34,5 @@ type RPCPathfinderConfig struct {
 	DevelopmentMode bool `toml:"development_mode"`
 
 	// Osmosis SQS config
-	SqsMainUrl    string   `toml:"sqs_main_url"`
-	BackupSqsUrls []string `toml:"backup_sqs_urls"`
+	SqsURLs []string `toml:"sqs_urls"`
 }

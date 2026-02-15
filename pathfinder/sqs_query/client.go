@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"sync"
 	"time"
 
@@ -27,9 +29,8 @@ func init() {
 // when the primary is unavailable.
 type SqsQueryClient struct {
 	httpClient     *http.Client
-	primaryURL     string
-	backupURLs     []string
-	currentURL     string
+	urls           []string
+	healthyURLs    []string
 	mu             sync.RWMutex
 	healthChecker  *healthChecker
 	failoverConfig FailoverConfig
@@ -57,7 +58,7 @@ func DefaultFailoverConfig() FailoverConfig {
 	}
 }
 
-// healthChecker periodically checks if the primary endpoint is healthy
+// healthChecker periodically checks if the endpoints are healthy
 type healthChecker struct {
 	client    *SqsQueryClient
 	stopCh    chan struct{}
@@ -67,46 +68,39 @@ type healthChecker struct {
 }
 
 // NewSqsQueryClient creates a new SqsQueryClient with a single endpoint (backward compatible)
-func NewSqsQueryClient(apiUrl string) *SqsQueryClient {
-	return NewSqsQueryClientWithFailover(apiUrl, nil, DefaultFailoverConfig())
+func NewSqsQueryClient(urls []string) *SqsQueryClient {
+	return NewSqsQueryClientWithFailover(urls, DefaultFailoverConfig())
 }
 
 // NewSqsQueryClientWithFailover creates a new SqsQueryClient with failover support
-func NewSqsQueryClientWithFailover(primaryURL string, backupURLs []string, config FailoverConfig) *SqsQueryClient {
+func NewSqsQueryClientWithFailover(urls []string, config FailoverConfig) *SqsQueryClient {
 	// Validate the primary URL
-	if _, err := url.Parse(primaryURL); err != nil {
-		log.Fatal().Err(err).Str("url", primaryURL).Msg("Failed to parse primary API URL")
-		return nil
+	for _, u := range urls {
+		if _, err := url.Parse(u); err != nil {
+			log.Fatal().Err(err).Str("url", u).Msg("Failed to parse API URL")
+			return nil
+		}
 	}
 
-	// Validate backup URLs
-	validBackups := make([]string, 0, len(backupURLs))
-	for _, u := range backupURLs {
-		if _, err := url.Parse(u); err != nil {
-			log.Warn().Err(err).Str("url", u).Msg("Invalid backup URL, skipping")
-			continue
-		}
-		validBackups = append(validBackups, u)
-	}
+	healthyURLs := make([]string, len(urls))
+	copy(healthyURLs, urls)
 
 	client := &SqsQueryClient{
 		httpClient: &http.Client{
 			Timeout: config.Timeout,
 		},
-		primaryURL:     primaryURL,
-		backupURLs:     validBackups,
-		currentURL:     primaryURL,
+		urls:           urls,
+		healthyURLs:    healthyURLs,
 		failoverConfig: config,
 	}
 
 	// Start health checker if we have backup URLs
-	if len(validBackups) > 0 {
+	if len(urls) > 1 {
 		client.startHealthChecker()
 	}
 
 	log.Info().
-		Str("primary", primaryURL).
-		Int("backups", len(validBackups)).
+		Strs("urls", urls).
 		Msg("SQS client initialized")
 	return client
 }
@@ -160,22 +154,22 @@ func (h *healthChecker) stop() {
 
 // checkAndRestore checks if the primary endpoint is healthy and restores it if so
 func (h *healthChecker) checkAndRestore() {
-	h.client.mu.RLock()
-	currentURL := h.client.currentURL
-	primaryURL := h.client.primaryURL
-	h.client.mu.RUnlock()
+	urls := h.client.urls
 
-	// If we're already on primary, nothing to do
-	if currentURL == primaryURL {
-		return
-	}
-
-	// Check if primary is healthy
-	if h.client.isEndpointHealthy(primaryURL) {
-		h.client.mu.Lock()
-		h.client.currentURL = primaryURL
-		h.client.mu.Unlock()
-		log.Info().Str("url", primaryURL).Msg("Restored primary endpoint")
+	for _, url := range urls {
+		if h.client.isEndpointHealthy(url) {
+			if !slices.Contains(h.client.healthyURLs, url) {
+				h.client.healthyURLs = append(h.client.healthyURLs, url)
+			}
+			log.Info().Str("url", url).Msg("Endpoint is healthy")
+			return
+		} else {
+			h.client.healthyURLs = slices.DeleteFunc(h.client.healthyURLs, func(u string) bool {
+				log.Warn().Str("url", u).Msg("Endpoint is unhealthy")
+				return u == url
+			})
+			return
+		}
 	}
 }
 
@@ -196,47 +190,11 @@ func (c *SqsQueryClient) isEndpointHealthy(endpoint string) bool {
 }
 
 // getCurrentURL returns the current active endpoint
-func (c *SqsQueryClient) getCurrentURL() string {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.currentURL
-}
-
-// failover switches to the next available backup endpoint
-func (c *SqsQueryClient) failover() bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Find current URL in the list and try the next one
-	allURLs := append([]string{c.primaryURL}, c.backupURLs...)
-	currentIdx := -1
-	for i, u := range allURLs {
-		if u == c.currentURL {
-			currentIdx = i
-			break
-		}
+func (c *SqsQueryClient) getRandomHealthyURL() string {
+	if len(c.healthyURLs) == 0 {
+		return ""
 	}
-
-	// Try each backup in order
-	for i := 1; i <= len(allURLs); i++ {
-		nextIdx := (currentIdx + i) % len(allURLs)
-		nextURL := allURLs[nextIdx]
-
-		// Don't switch to the same URL
-		if nextURL == c.currentURL {
-			continue
-		}
-
-		// Quick health check
-		if c.isEndpointHealthy(nextURL) {
-			c.currentURL = nextURL
-			log.Info().Str("url", nextURL).Msg("Failover to endpoint")
-			return true
-		}
-	}
-
-	log.Warn().Str("url", c.currentURL).Msg("All endpoints unhealthy, staying on current")
-	return false
+	return c.healthyURLs[rand.Intn(len(c.healthyURLs))]
 }
 
 // Close stops the health checker and cleans up resources
@@ -258,7 +216,7 @@ func (c *SqsQueryClient) doRequestWithFailover(path string) ([]byte, error) {
 			retryDelay *= 2
 		}
 
-		fullURL := c.getCurrentURL() + path
+		fullURL := c.getRandomHealthyURL() + path
 		resp, err := c.httpClient.Get(fullURL)
 		if err != nil {
 			lastErr = err
@@ -282,9 +240,9 @@ func (c *SqsQueryClient) doRequestWithFailover(path string) ([]byte, error) {
 	}
 
 	// Current endpoint failed, try failover
-	if len(c.backupURLs) > 0 && c.failover() {
+	if len(c.healthyURLs) > 0 && c.getRandomHealthyURL() != "" {
 		// Retry once on the new endpoint
-		fullURL := c.getCurrentURL() + path
+		fullURL := c.getRandomHealthyURL() + path
 		resp, err := c.httpClient.Get(fullURL)
 		if err != nil {
 			return nil, fmt.Errorf("failover request failed: %w (original: %w)", err, lastErr)

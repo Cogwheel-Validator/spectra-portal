@@ -63,7 +63,7 @@ func main() {
 	brokerClients := make(map[string]brokers.BrokerClient)
 
 	// Initialize Osmosis SQS broker if configured
-	if rpcConfig.SqsMainUrl != "" {
+	if len(rpcConfig.SqsURLs) > 0 {
 		// Get Osmosis chain contract address
 		var osmosisContractAddress string
 		for _, chain := range chains {
@@ -74,20 +74,20 @@ func main() {
 		}
 
 		var osmosisBroker *osmosis.SqsBroker
-		if len(rpcConfig.BackupSqsUrls) > 0 {
+		if len(rpcConfig.SqsURLs) > 1 {
 			osmosisBroker = osmosis.NewSqsBrokerWithFailover(
-				rpcConfig.SqsMainUrl,
-				rpcConfig.BackupSqsUrls,
+				rpcConfig.SqsURLs,
 				osmosisContractAddress,
 			)
 			log.Info().
-				Str("primary", rpcConfig.SqsMainUrl).
-				Int("backups", len(rpcConfig.BackupSqsUrls)).
+				Strs("urls", rpcConfig.SqsURLs).
+				Int("count", len(rpcConfig.SqsURLs)).
 				Msg("Osmosis SQS broker initialized with failover")
 		} else {
-			osmosisBroker = osmosis.NewSqsBroker(rpcConfig.SqsMainUrl, osmosisContractAddress)
+			osmosisBroker = osmosis.NewSqsBroker(rpcConfig.SqsURLs, osmosisContractAddress)
 			log.Info().
-				Str("url", rpcConfig.SqsMainUrl).
+				Strs("urls", rpcConfig.SqsURLs).
+				Int("count", len(rpcConfig.SqsURLs)).
 				Msg("Osmosis SQS broker initialized")
 		}
 		// Register with broker ID from config (osmosis-sqs) to match chain config broker_id
