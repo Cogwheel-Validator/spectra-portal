@@ -39,7 +39,7 @@ func main() {
 		Msg("Starting Spectra's Pathfinder")
 
 	// Load RPC server configuration
-	rpcConfig, err := config.NewDefaultRPCPathfinderConfigLoader().LoadRPCPathfinderConfig(*configRpc)
+	rpcConfig, err := config.LoadRPCPathfinderConfig(configRpc)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load RPC config")
 	}
