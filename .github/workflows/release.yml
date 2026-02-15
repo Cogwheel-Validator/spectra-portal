@@ -93,6 +93,7 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64
+          file: ./Dockerfile-pathfinder
           tags: |
             ghcr.io/cogwheel-validator/spectra-portal-pathfinder-rpc:${{ steps.version.outputs.version }}
             ghcr.io/cogwheel-validator/spectra-portal-pathfinder-rpc:${{ steps.version.outputs.docker_tag }}
@@ -104,6 +105,7 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64
+          file: ./Dockerfile-app
           tags: |
             ghcr.io/cogwheel-validator/spectra-portal-client-app:${{ steps.version.outputs.version }}
             ghcr.io/cogwheel-validator/spectra-portal-client-app:${{ steps.version.outputs.docker_tag }}
