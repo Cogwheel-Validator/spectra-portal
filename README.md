@@ -16,7 +16,11 @@ provides an interface that grants users a way to bridge tokens across different 
   - [The Pathfinder RPC](#the-pathfinder-rpc)
   - [The Client App](#the-client-app)
 - [Prerequisites](#prerequisites)
+- [Quickstart for Development](#quickstart-for-development)
 - [Deployment and Hosting](#deployment-and-hosting)
+  - [Serverless and Long Running Service Deployment](#serverless-and-long-running-service-deployment)
+  - [VPS or Bare Metal Deployment](#vps-or-bare-metal-deployment)
+  - [Reverse Proxy of the Pathfinder RPC](#reverse-proxy-of-the-pathfinder-rpc)
 
 ## License
 
@@ -177,7 +181,296 @@ run the Spectra Portal.
 - Snyk CLI
 - Semgrep CLI
 - Biome
+- Make
+
+This also assumes that you are running all of this on some Linux based system. Any commands will assume
+you have Debian based OS.
+
+## Quickstart for Development
+
+To get you started with development, you can use the following commands:
+
+```bash
+cp rpc-config.toml.example rpc-config.toml
+docker compose up -d
+```
+
+This will pull the latest images from the repository and start the services.
+This is great if you just want to jump in and take the first glance of the project on your system.
+
+If you want to build the images yourself, you can use the docker-compose-dev.yml file to build the images and
+start the services.
+
+```bash
+docker compose -f docker-compose-dev.yml build
+docker compose -f docker-compose-dev.yml up -d
+```
+
+This will build the images localy and start the services.
+
+If you do not want to use any sort of config.toml file and want to set up with environment variables, you can edit the following yaml file:
+
+```yaml
+services:
+  pathfinder:
+    environment:
+      PATHFINDER_HOST: 0.0.0.0
+      PATHFINDER_PORT: 8080
+      PATHFINDER_ALLOWED_ORIGINS: "*"
+      PATHFINDER_SQS_URLS: "https://sqs.osmosis.zone"
+```
+
+This it the base. Every component in from the rpc config file can be replaced with environment variables.
+To set every env just use PATHFINDER_ as a prefix and the name of the component as the key in all upper case
+letters.
 
 ## Deployment and Hosting
 
-TODO: Once the repo is publicly available and Github can make docker images publicly available, the deployment and hosting options will be explained.
+**Note** this is more of a suggestion on what you can do and how you can run it. You are after all master
+of your own infrastructure and you know best what you need.
+
+To deploy and run this in production you can host it on a VPS behind a reverse proxy. Or use a combination of
+some serverless option like Vercel and long running service like AWS App Runner.
+
+The part that stays the same is running the Config Manager. Regardless of your option whenever a chain or a
+token is added to the chain_configs directory you need to regenerate the config files. For more info check the
+[Config Manager README](config_manager/README.md) but the quickstart is:
+
+```bash
+make generate-config
+```
+
+This can be automated through some CI/CD pipeline.
+
+### Serverless and Long Running Service Deployment
+
+For **serverless-style** deployment (e.g. frontend on Vercel, Pathfinder on AWS) you can use some AWS,
+Vercel any other platform that can host a Next.js application and a long running service. You can use AWS
+Lambda for the Pathfinder RPC but I do not recommend it because the client app can make a lot of requests
+to the Pathfinder RPC and Lambda could cost you a lot. This are just some suggestions you could always use
+something like EC2 or any other VPS provider.
+
+For the RPC you can use something like [App Runner](https://docs.aws.amazon.com/apprunner/).
+It runs a single container and it should be easier than managing the whole server. Build the docker image
+and push it to the Amazon ECR. Although you should probably modify the dockerfile to include the pathfinder
+chain configs and use environment variables for the config.
+
+For the client app something like Vercel is an easy solution. You can also use something like AWS app runner
+or some other AWS service that can host a Next.js application.
+If you go for the nextjs option you do not need environments with DOCKER_BUILD=true. You should also set
+another environment variable NEXT_PUBLIC_PATHFINDER_RPC_URL set to the URL of the Pathfinder RPC.
+
+### VPS or Bare Metal Deployment
+
+If you have a server that you want to run this on you can rely on the docker compose file to run the services,
+use orchestrator like Docker Swarm, Kubernetes or Nomad, or keep it simple and run it using SystemD.
+
+For docker setup just use the docker compose file and run it with docker compose up -d with some small
+adjustments. You can add something like Watchtower if you have your own docker registry and pull the images
+on some changes.
+
+For using something like SystemD make sure to create a dedicated user with no login privileges and no sudo.
+
+```bash
+# Create a dedicated service user
+sudo adduser --system --no-create-home --shell /bin/false portal
+
+# Clone and setup
+sudo mkdir -p /etc/portal
+# (assuming you've cloned the repo)
+sudo cp -r ./spectra-portal /etc/portal/
+
+# Build
+cd /etc/portal
+make build-pathfinder
+cd client_app && bun install && bun run build && cd ..
+
+# Set ownership
+sudo chown -R portal:portal /etc/portal/
+sudo chmod -R 755 /etc/portal/
+```
+
+Create a systemd service for the pathfinder and the client app.
+
+```bash
+sudo tee /etc/systemd/system/portal_app.service > /dev/null <<EOF
+[Unit]
+Description=Portal Client App"
+After=network-online.target
+
+[Service]
+User=portal
+ExecStart=$(which bun) run start
+WorkingDirectory=/etc/portal
+Restart=on-failure 
+RestartSec=5
+LimitNOFILE=8192
+Environment="NEXT_PUBLIC_PATHFINDER_RPC_URL=https://pathfinder.thespectra.io"
+
+NoNewPrivileges=true
+ProtectSystem=strict
+RestrictSUIDSGID=true
+LockPersonality=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictNamespaces=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo tee /etc/systemd/system/portal_pathfinder.service > /dev/null <<EOF
+[Unit]
+Description=Portal Pathfinder RPC"
+After=network-online.target
+
+[Service]
+User=portal
+ExecStart=/etc/portal/build/pathfinder-rpc -config-rpc rpc-config.toml
+WorkingDirectory=/etc/portal
+Restart=on-failure 
+RestartSec=5
+LimitNOFILE=8192
+
+NoNewPrivileges=true
+ProtectSystem=strict
+RestrictSUIDSGID=true
+LockPersonality=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictNamespaces=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+
+sudo systemctl daemon-reload
+sudo systemctl enable portal-pathfinder.service
+sudo systemctl enable portal-client-app.service
+```
+
+This should give you some medium security you can add additional security options here. Adjust the
+NEXT_PUBLIC_PATHFINDER_RPC_URL in the client service file to your own Pathfinder RPC URL.
+
+When you are done you can run the services with `sudo systemctl start portal-pathfinder.service` and `sudo systemctl start portal-client-app.service`.
+
+### Reverse Proxy of the Pathfinder RPC
+
+Pathfinder RPC supports 3 protocols out of the box: gRPC, gRPC-Web, and HTTP-Connect. However some of
+services won't probably be able to serve all 3. At all times the gRPC-Web and HTTP-Connect should be available.
+
+All of the requests on the RPC are unary so everything should work most of the time.
+
+If you want to support all 3 you can use Nginx like this:
+
+```conf
+upstream portal_connect {
+    server localhost:8080;
+    keepalive 64;
+}
+
+upstream portal_frontend {
+    server localhost:3000;
+    keepalive 64;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name pathfinder.example.com;
+    include /etc/nginx/ssl.conf;
+
+
+    location / {
+        proxy_pass http://portal_connect;
+        
+        proxy_http_version 1.1;
+        
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_set_header Connection "";
+        proxy_set_header Upgrade $http_upgrade;
+
+        
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_connect_timeout 60s;
+        
+        proxy_buffering off;
+        proxy_request_buffering off;
+        
+    }
+    
+    location /server/* {
+        deny all;
+        return 403;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+
+    server_name pathfinder-grpc.example.com;
+
+    include /etc/nginx/ssl.conf;
+
+    charset     utf-8;
+    client_max_body_size 15M;
+
+    proxy_buffering off;
+    proxy_request_buffering off;
+
+    location  / {
+        grpc_pass  grpc://portal_connect;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name portal.example.com;
+    include /etc/nginx/ssl.conf;
+    charset utf-8;
+    client_max_body_size 50M;
+    
+    location / {
+        
+        proxy_pass http://portal_frontend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        proxy_buffer_size 8k;
+        proxy_buffers 16 8k;
+        proxy_busy_buffers_size 16k;
+    }
+}
+```
+
+**Note:** Replace `ssl.conf` with your own SSL certificate configuration.
+
+This should give you a basic reverse proxy setup. Any kind of additional security falls upon you. A side note
+if you do plan to expand the ConnectRPC to have some sort of streaming Nginx might not be the best for a
+reverse proxy. You can check official
+[docs](https://connectrpc.com/docs/faq/#how-do-i-proxy-the-connect-protocol-through-nginx) for more
+information.

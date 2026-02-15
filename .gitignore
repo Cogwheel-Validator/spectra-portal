@@ -38,3 +38,5 @@ next-env.d.ts
 # registires
 /ibc-registry
 /keplr-registry
+
+rpc-config.toml
