@@ -1,0 +1,28 @@
+name: spectra-portal
+
+services:
+  client-app:
+    image: ghcr.io/cogwheel-validator/spectra-portal-client-app:latest
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NEXT_PUBLIC_PATHFINDER_RPC_URL: http://pathfinder:8080
+    networks:
+      - portal-network
+    restart: always
+
+  pathfinder:
+    image: ghcr.io/cogwheel-validator/spectra-portal-pathfinder-rpc:latest
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./generated_configs:/app/generated_configs:ro,Z
+      - ./rpc-config.toml:/app/rpc-config.toml:ro,Z
+    networks:
+      - portal-network
+    restart: always
+    command: ["--config-rpc=/app/rpc-config.toml", "--config-chains=/app/generated_configs/pathfinder_config.toml"]
+
+networks:
+  portal-network:
+    driver: bridge
