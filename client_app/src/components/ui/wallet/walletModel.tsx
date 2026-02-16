@@ -427,8 +427,13 @@ export default function WalletModal({
                                                               : `Connect to ${selectedChains.size} chain${selectedChains.size !== 1 ? "s" : ""}`}
                                                     </p>
                                                 </div>
-                                                {isConnectedWithThisWallet && (
+                                                {isConnectedWithThisWallet && allRequiredConnected && (
                                                     <div className="text-success inline-flex items-center">
+                                                        <Check className="mr-2 lg:mr-4" />
+                                                    </div>
+                                                )}
+                                                {isConnectedWithThisWallet && !allRequiredConnected && (
+                                                    <div className="text-warning inline-flex items-center">
                                                         <Check className="mr-2 lg:mr-4" />
                                                     </div>
                                                 )}
