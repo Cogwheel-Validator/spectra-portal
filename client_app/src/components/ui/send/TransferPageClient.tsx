@@ -17,6 +17,7 @@ interface TransferPageClientProps {
     initialSendToken?: string;
     initialReceiveToken?: string;
     initialAmount?: string;
+    pathfinderUrl: string;
 }
 
 /**
@@ -29,6 +30,7 @@ function TransferPageInner({
     initialSendToken = "",
     initialReceiveToken = "",
     initialAmount = "",
+    pathfinderUrl,
 }: TransferPageClientProps) {
     const transfer = useTransfer();
     const { state, reset } = transfer;
@@ -89,6 +91,7 @@ function TransferPageInner({
                     sendToken={initialSendToken}
                     receiveToken={initialReceiveToken}
                     amount={initialAmount}
+                    pathfinderUrl={pathfinderUrl}
                 />
             </div>
         </div>

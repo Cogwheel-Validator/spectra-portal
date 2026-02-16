@@ -16,6 +16,8 @@ export default async function TransferPage(props: TransferPageProps) {
     const searchParams = await props.searchParams;
     const config = await LoadConfig("toml");
 
+    const pathfinderUrl = process.env.NEXT_PUBLIC_PATHFINDER_RPC_URL || "http://localhost:8080";
+
     if (!config) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-900">
@@ -43,6 +45,7 @@ export default async function TransferPage(props: TransferPageProps) {
                     initialSendToken={searchParams.send_asset}
                     initialReceiveToken={searchParams.receive_asset}
                     initialAmount={searchParams.amount}
+                    pathfinderUrl={pathfinderUrl}
                 />
             </div>
         </div>

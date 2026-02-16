@@ -25,6 +25,7 @@ interface SendUIProps {
     sendToken?: string;
     receiveToken?: string;
     amount?: string;
+    pathfinderUrl: string;
 }
 
 export default function SendUI({
@@ -34,6 +35,7 @@ export default function SendUI({
     sendToken: initialSendToken = "",
     receiveToken: initialReceiveToken = "",
     amount: initialAmount = "",
+    pathfinderUrl,
 }: SendUIProps) {
     const { isConnectedToChain, getAddress } = useWallet();
     const transfer = useTransfer();
@@ -260,12 +262,14 @@ export default function SendUI({
         smartPathfinderParams,
         isReadyToQuery && mode === "smart",
         queryOptions,
+        pathfinderUrl,
     );
 
     const manualQuery = usePathfinderQuery(
         manualPathfinderParams,
         isReadyToQuery && mode === "manual",
         queryOptions,
+        pathfinderUrl,
     );
 
     // Select the appropriate query based on current mode

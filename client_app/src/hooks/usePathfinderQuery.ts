@@ -55,9 +55,8 @@ export interface PathfinderQueryState {
 /**
  * Creates a pathfinder client instance
  */
-function createPathfinderClient(): Client<typeof PathfinderService> {
-    const baseUrl = process.env.NEXT_PUBLIC_PATHFINDER_RPC_URL || "http://localhost:8080";
-    const transport = createConnectTransport({ baseUrl });
+function createPathfinderClient(pathfinderUrl: string): Client<typeof PathfinderService> {
+    const transport = createConnectTransport({ baseUrl: pathfinderUrl });
     return createClient(PathfinderService, transport);
 }
 
@@ -75,12 +74,14 @@ const DEFAULT_OPTIONS: Required<PathfinderQueryOptions> = {
  * @param params - The query parameters
  * @param enabled - Whether the query should be enabled
  * @param options - Configuration options (debounce, auto-refresh, stale threshold)
+ * @param pathfinderUrl - The URL of the pathfinder service
  * @returns The query state with data, loading, error, staleness info, and refetch functions
  */
 export function usePathfinderQuery(
     params: PathfinderQueryParams | null,
     enabled: boolean = true,
     options: PathfinderQueryOptions | number = DEFAULT_OPTIONS,
+    pathfinderUrl: string,
 ): PathfinderQueryState {
     // Handle backwards compatibility: if number is passed, treat as debounceMs
     const opts: Required<PathfinderQueryOptions> =
@@ -102,7 +103,7 @@ export function usePathfinderQuery(
     const requestIdRef = useRef(0);
 
     // Memoize the client to avoid recreating on each render
-    const client = useMemo(() => createPathfinderClient(), []);
+    const client = useMemo(() => createPathfinderClient(pathfinderUrl), [pathfinderUrl]);
 
     // Calculate staleness
     const quoteAgeMs = lastFetchedAt ? now - lastFetchedAt : null;
