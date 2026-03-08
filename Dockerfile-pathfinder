@@ -4,7 +4,7 @@ COPY ./go.mod /app
 COPY ./go.sum /app
 COPY ./pathfinder /app/pathfinder
 COPY ./config_manager /app/config_manager
-RUN go mod tidy
+RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o pathfinder-rpc ./pathfinder/cmd/main.go
 
 FROM gcr.io/distroless/base-debian13:latest
