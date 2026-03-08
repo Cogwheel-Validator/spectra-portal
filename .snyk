@@ -1,0 +1,48 @@
+# Snyk (https://snyk.io) policy file
+# https://docs.snyk.io/manage-risk/policies/the-.snyk-file
+#
+version: v1.25.0
+
+ignore:
+  # Path Traversal – config_manager/cp/image.go line 56
+  # False positive: this is a local CLI tool. The operator running it owns
+  # the process and filesystem; no remote attacker can supply file paths.
+  # Entry names come from os.ReadDir, which always returns base names only.
+  667b5718-aec6-4e34-ab58-7e77995575c9:
+    - '*':
+        reason: >
+          CLI tool. Operator controls all inputs. os.ReadDir entries are
+          always base names and cannot escape the base directory.
+        expires: 2100-01-01T00:00:00.000Z
+
+  # Path Traversal – config_manager/cp/image.go line 66
+  08b33945-cf62-491b-a871-7646a3727f79:
+    - '*':
+        reason: >
+          CLI tool. Operator controls all inputs. os.ReadDir entries are
+          always base names and cannot escape the base directory.
+        expires: 2100-01-01T00:00:00.000Z
+
+  # Path Traversal – config_manager/registry/get.go line 89
+  47ec7410-559a-4d2f-8374-14fe33301633:
+    - '*':
+        reason: >
+          CLI tool. Operator controls all inputs. os.ReadDir entries are
+          always base names and cannot escape the base directory.
+        expires: 2100-01-01T00:00:00.000Z
+
+  # Path Traversal – config_manager/input/loader.go line 26
+  19679f06-4542-4eb1-8c3c-becdc5b6cf32:
+    - '*':
+        reason: >
+          CLI tool. Operator controls all inputs. filePath is provided by
+          the invoking user who already has full filesystem access.
+        expires: 2100-01-01T00:00:00.000Z
+
+  # Path Traversal – config_manager/input/loader.go line 56
+  d7095adb-6fe4-419e-bdb8-175d9573a221:
+    - '*':
+        reason: >
+          CLI tool. Operator controls all inputs. os.ReadDir entries are
+          always base names and cannot escape the base directory.
+        expires: 2100-01-01T00:00:00.000Z

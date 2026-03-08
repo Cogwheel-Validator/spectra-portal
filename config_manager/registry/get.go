@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -85,7 +86,7 @@ func ProcessIbcRegistry(dst string, keywords []string) ([]ChainIbcData, error) {
 			chainNames := strings.Split(name, "-")
 			if slices.Contains(keywords, chainNames[0]) && slices.Contains(keywords, chainNames[1]) {
 				// open the file and read the contents with untrimmed name
-				filePath := fmt.Sprintf("%s/%s", dst, file.Name())
+				filePath := filepath.Join(dst, file.Name())
 				jsonFile, err := os.Open(filePath)
 				if err != nil {
 					return nil, fmt.Errorf("failed to open file: %w", err)

@@ -64,7 +64,7 @@ async function checkCorsPreflightHealthy(url: string): Promise<boolean> {
         clearTimeout(timeoutId);
 
         const corsHeader = response.headers.get("Access-Control-Allow-Origin");
-        return !!(corsHeader && (corsHeader.includes("*") || corsHeader.includes(appUrl)));
+        return !!(corsHeader && (corsHeader === "*" || corsHeader === appUrl));
     } catch {
         clearTimeout(timeoutId);
         return false;

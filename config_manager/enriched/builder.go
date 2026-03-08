@@ -273,7 +273,7 @@ func (b *Builder) findExplorerDetails(explorerURL string) (ExplorerDetails, erro
 func findPfmSupport(additionalNodeInfo query.NodeInfoResponse) bool {
 	// The dependency is marked with github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8 for example
 	// So anything matching this url path should be a PFM support
-	match := regexp.MustCompile(`github\.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v\d+`)
+	match := regexp.MustCompile(`^github\.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v\d+$`)
 	for _, buildDep := range additionalNodeInfo.ApplicationVersion.BuildDeps {
 		if match.MatchString(buildDep.Path) {
 			return true
