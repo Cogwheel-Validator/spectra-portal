@@ -70,6 +70,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 1,
                 trajectory: ["cosmoshub-4", "osmosis-1"],
                 error: null,
+                swapInvolved: true,
             };
 
             const id = await AddTransactionToDb(db, transaction);
@@ -93,6 +94,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 1,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             const id1 = await AddTransactionToDb(db, transaction);
@@ -121,6 +123,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 1,
                 trajectory: ["cosmoshub-4", "osmosis-1", "atomone-1"],
                 error: null,
+                swapInvolved: true,
             };
 
             const id = await AddTransactionToDb(db, transaction);
@@ -149,6 +152,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 3,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             const id = await AddTransactionToDb(db, transaction);
@@ -183,6 +187,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 1,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             const tx2: Omit<TransactionRecord, "id"> = {
@@ -215,6 +220,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 1,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             const newer: Omit<TransactionRecord, "id"> = {
@@ -254,6 +260,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 1,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             const id = await AddTransactionToDb(db, transaction);
@@ -286,6 +293,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 1,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             const id = await AddTransactionToDb(db, transaction);
@@ -316,6 +324,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 1,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             const id = await AddTransactionToDb(db, transaction);
@@ -358,6 +367,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 1,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             const id = await AddTransactionToDb(db, transaction);
@@ -378,6 +388,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 1,
                 trajectory: ["juno-1", "osmosis-1"],
                 error: null,
+                swapInvolved: true,
             };
 
             await UpdateTransactionInDb(db, updatedTransaction);
@@ -429,6 +440,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 3,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             const id = await AddTransactionToDb(db, transaction);
@@ -456,6 +468,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 3,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             const tx2: Omit<TransactionRecord, "id"> = {
@@ -499,6 +512,7 @@ describe("IndexedDB Manager", () => {
                 currentStep: 3,
                 trajectory: null,
                 error: null,
+                swapInvolved: true,
             };
 
             await AddTransactionToDb(db, tx);
@@ -533,6 +547,7 @@ describe("IndexedDB Manager", () => {
                     currentStep: 3,
                     trajectory: null,
                     error: null,
+                    swapInvolved: true,
                 };
                 promises.push(AddTransactionToDb(db, tx));
             }

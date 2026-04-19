@@ -31,5 +31,9 @@
 	"editor.codeActions.triggerOnFocusChange": true,
 	"[go]": {
 		"editor.defaultFormatter": "golang.go"
-	}
+	},
+	"typescript.inlayHints.propertyDeclarationTypes.enabled": true,
+	"js/ts.implicitProjectConfig.checkJs": true,
+	"js/ts.implicitProjectConfig.module": "ES2022",
+	"typescript.tsdk": "./client_app/node_modules/typescript/lib"
 }

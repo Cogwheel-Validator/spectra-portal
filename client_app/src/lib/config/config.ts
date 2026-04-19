@@ -74,7 +74,7 @@ class FullClientConfig {
     }
 
     public getChainByName(chainName: string): ClientChain | undefined {
-        return this.chains.values().find((chain) => chain.name === chainName);
+        return Array.from(this.chains.values()).find((chain) => chain.name === chainName);
     }
 
     public getTokensForChain(chainId: string): ClientToken[] {
