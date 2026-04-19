@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-02-14T09:56:35Z'
+generated_at = '2026-04-19T16:43:52Z'
 
 [[chains]]
 name = 'Atom One'
@@ -167,10 +167,6 @@ provider = 'Ecostake'
 
 [[chains.rpc_endpoints]]
 url = 'https://rpc.cosmoshub-4.citizenweb3.com/'
-provider = 'CitizenWeb3'
-
-[[chains.rest_endpoints]]
-url = 'https://api.cosmoshub-4.citizenweb3.com/'
 provider = 'CitizenWeb3'
 
 [[chains.rest_endpoints]]
@@ -442,10 +438,6 @@ account_path = 'noble/address/{address}'
 transaction_path = 'noble/txs/{tx_hash}'
 
 [[chains.rpc_endpoints]]
-url = 'https://noble-rpc.owallet.io'
-provider = 'Owallet'
-
-[[chains.rpc_endpoints]]
 url = 'https://noble-rpc.polkachu.com'
 provider = 'Polkachu'
 
@@ -456,10 +448,6 @@ provider = 'LavenderFive'
 [[chains.rest_endpoints]]
 url = 'https://noble-api.polkachu.com'
 provider = 'Polkachu'
-
-[[chains.rest_endpoints]]
-url = 'https://noble-rest.owallet.io'
-provider = 'Owallet'
 
 [[chains.rest_endpoints]]
 url = 'https://rest.lavenderfive.com:443/noble'
@@ -673,16 +661,8 @@ url = 'https://rpc-osmosis.ecostake.com/'
 provider = 'Ecostake'
 
 [[chains.rpc_endpoints]]
-url = 'https://rpc.osmosis.citizenweb3.com'
-provider = 'CitizenWeb3'
-
-[[chains.rpc_endpoints]]
 url = 'https://rpc.osmosis.zone'
 provider = 'Osmosis'
-
-[[chains.rest_endpoints]]
-url = 'https://api.osmosis.citizenweb3.com'
-provider = 'CitizenWeb3'
 
 [[chains.rest_endpoints]]
 url = 'https://lcd.osmosis.zone'
@@ -1188,7 +1168,7 @@ bech32_prefix = 'stars'
 slip44 = 118
 chain_logo = '/icons/stargaze/logo.png'
 is_dex = false
-cosmos_sdk_version = 'v0.50.14'
+cosmos_sdk_version = 'v0.50.15'
 
 [chains.explorer_details]
 base_url = 'https://mintscan.io'
@@ -1449,20 +1429,12 @@ account_path = 'symphony/account/{address}'
 transaction_path = 'symphony/transactions/{tx_hash}'
 
 [[chains.rpc_endpoints]]
-url = 'https://rpc.symphony.citizenweb3.com'
-provider = 'CitizenWeb3'
-
-[[chains.rpc_endpoints]]
 url = 'https://symphony-rpc.cogwheel.zone'
 provider = 'Cogwheel ⚙️'
 
 [[chains.rpc_endpoints]]
 url = 'https://symphony-rpc.polkachu.com'
 provider = 'Polkachu'
-
-[[chains.rest_endpoints]]
-url = 'https://api.symphony.citizenweb3.com'
-provider = 'CitizenWeb3'
 
 [[chains.rest_endpoints]]
 url = 'https://symphony-api.cogwheel.zone'
