@@ -204,10 +204,12 @@ func (c *SqsQueryClient) Close() {
 	}
 }
 
-// doRequestWithFailover performs an HTTP GET request with retry and failover logic
+// doRequestWithFailover performs an HTTP GET request with retry and failover logic.
+// Each attempt is timed so we can observe SQS latency and detect slow endpoints.
 func (c *SqsQueryClient) doRequestWithFailover(path string) ([]byte, error) {
 	var lastErr error
 	retryDelay := c.failoverConfig.RetryDelay
+	overallStart := time.Now()
 
 	// Try on current endpoint with retries
 	for attempt := 0; attempt <= c.failoverConfig.MaxRetries; attempt++ {
@@ -216,53 +218,110 @@ func (c *SqsQueryClient) doRequestWithFailover(path string) ([]byte, error) {
 			retryDelay *= 2
 		}
 
-		fullURL := c.getRandomHealthyURL() + path
-		resp, err := c.httpClient.Get(fullURL)
+		endpoint := c.getRandomHealthyURL()
+		fullURL := endpoint + path
+		body, status, dur, err := c.doSingleRequest(fullURL)
 		if err != nil {
 			lastErr = err
+			log.Warn().
+				Err(err).
+				Str("endpoint", endpoint).
+				Str("path", path).
+				Int("attempt", attempt+1).
+				Int("maxAttempts", c.failoverConfig.MaxRetries+1).
+				Dur("duration", dur).
+				Msg("SQS request failed")
 			continue
 		}
 
-		body, err := io.ReadAll(resp.Body)
-		_ = resp.Body.Close()
-
-		if err != nil {
-			lastErr = err
+		if status != http.StatusOK {
+			lastErr = fmt.Errorf("HTTP %d: %s", status, string(body))
+			log.Warn().
+				Str("endpoint", endpoint).
+				Str("path", path).
+				Int("status", status).
+				Int("attempt", attempt+1).
+				Int("maxAttempts", c.failoverConfig.MaxRetries+1).
+				Dur("duration", dur).
+				Msg("SQS request non-200")
 			continue
 		}
 
-		if resp.StatusCode != http.StatusOK {
-			lastErr = fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
-			continue
-		}
-
+		log.Info().
+			Str("endpoint", endpoint).
+			Str("path", path).
+			Int("status", status).
+			Int("attempt", attempt+1).
+			Int("bytes", len(body)).
+			Dur("duration", dur).
+			Dur("totalDuration", time.Since(overallStart)).
+			Msg("SQS request ok")
 		return body, nil
 	}
 
 	// Current endpoint failed, try failover
 	if len(c.healthyURLs) > 0 && c.getRandomHealthyURL() != "" {
-		// Retry once on the new endpoint
-		fullURL := c.getRandomHealthyURL() + path
-		resp, err := c.httpClient.Get(fullURL)
+		endpoint := c.getRandomHealthyURL()
+		fullURL := endpoint + path
+		body, status, dur, err := c.doSingleRequest(fullURL)
 		if err != nil {
+			log.Error().
+				Err(err).
+				Str("endpoint", endpoint).
+				Str("path", path).
+				Dur("duration", dur).
+				Dur("totalDuration", time.Since(overallStart)).
+				Msg("SQS failover request failed")
 			return nil, fmt.Errorf("failover request failed: %w (original: %w)", err, lastErr)
 		}
 
-		body, err := io.ReadAll(resp.Body)
-		_ = resp.Body.Close()
-
-		if err != nil {
-			return nil, fmt.Errorf("failover read failed: %w", err)
+		if status != http.StatusOK {
+			log.Error().
+				Str("endpoint", endpoint).
+				Str("path", path).
+				Int("status", status).
+				Dur("duration", dur).
+				Dur("totalDuration", time.Since(overallStart)).
+				Msg("SQS failover request non-200")
+			return nil, fmt.Errorf("failover HTTP %d: %s", status, string(body))
 		}
 
-		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("failover HTTP %d: %s", resp.StatusCode, string(body))
-		}
-
+		log.Info().
+			Str("endpoint", endpoint).
+			Str("path", path).
+			Int("status", status).
+			Bool("failover", true).
+			Int("bytes", len(body)).
+			Dur("duration", dur).
+			Dur("totalDuration", time.Since(overallStart)).
+			Msg("SQS failover request ok")
 		return body, nil
 	}
 
+	log.Error().
+		Err(lastErr).
+		Str("path", path).
+		Int("attempts", c.failoverConfig.MaxRetries+1).
+		Dur("totalDuration", time.Since(overallStart)).
+		Msg("SQS request exhausted retries")
 	return nil, fmt.Errorf("request failed after %d retries: %w", c.failoverConfig.MaxRetries+1, lastErr)
+}
+
+// doSingleRequest performs a single HTTP GET, returning body, status, elapsed time and error.
+// Timing is measured around the GET + body read so it reflects total time-to-bytes.
+func (c *SqsQueryClient) doSingleRequest(fullURL string) ([]byte, int, time.Duration, error) {
+	start := time.Now()
+	resp, err := c.httpClient.Get(fullURL)
+	if err != nil {
+		return nil, 0, time.Since(start), err
+	}
+	body, readErr := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	dur := time.Since(start)
+	if readErr != nil {
+		return nil, resp.StatusCode, dur, readErr
+	}
+	return body, resp.StatusCode, dur, nil
 }
 
 /*
@@ -299,7 +358,10 @@ func (c *SqsQueryClient) GetRoute(
 		return RouteTokenResponse{}, errors.New("tokenInDenom and tokenOutDenom cannot be used together")
 	}
 
+	start := time.Now()
+
 	var path string
+	var logTokenIn, logTokenOut, logAmount string
 	if tokenIn != nil && tokenOutDenom != nil {
 		tokenInParam := url.QueryEscape(tokenIn.Amount + tokenIn.Denom)
 		tokenOutDenomParam := url.QueryEscape(*tokenOutDenom)
@@ -307,6 +369,9 @@ func (c *SqsQueryClient) GetRoute(
 			"/router/quote?tokenIn=%s&tokenOutDenom=%s&singleRoute=%t&humanDenoms=false&applyExponents=false&appendBaseFee=true",
 			tokenInParam, tokenOutDenomParam, singleRoute,
 		)
+		logTokenIn = tokenIn.Denom
+		logTokenOut = *tokenOutDenom
+		logAmount = tokenIn.Amount
 	} else if tokenOut != nil && tokenInDenom != nil {
 		tokenOutParam := url.QueryEscape(tokenOut.Amount + tokenOut.Denom)
 		tokenInDenomParam := url.QueryEscape(*tokenInDenom)
@@ -314,29 +379,67 @@ func (c *SqsQueryClient) GetRoute(
 			"/router/quote?tokenOut=%s&tokenInDenom=%s&singleRoute=%t&humanDenoms=false&applyExponents=false&appendBaseFee=true",
 			tokenOutParam, tokenInDenomParam, singleRoute,
 		)
+		logTokenIn = *tokenInDenom
+		logTokenOut = tokenOut.Denom
+		logAmount = tokenOut.Amount
 	} else {
 		return RouteTokenResponse{}, errors.New("invalid parameters")
 	}
 
 	body, err := c.doRequestWithFailover(path)
 	if err != nil {
+		log.Error().
+			Err(err).
+			Str("tokenIn", logTokenIn).
+			Str("tokenOut", logTokenOut).
+			Str("amount", logAmount).
+			Bool("singleRoute", singleRoute).
+			Dur("duration", time.Since(start)).
+			Msg("GetRoute failed")
 		return RouteTokenResponse{}, err
 	}
 	var routeTokenResponse RouteTokenResponse
 	if err := json.Unmarshal(body, &routeTokenResponse); err != nil {
+		log.Error().
+			Err(err).
+			Str("tokenIn", logTokenIn).
+			Str("tokenOut", logTokenOut).
+			Dur("duration", time.Since(start)).
+			Msg("GetRoute parse failed")
 		return RouteTokenResponse{}, fmt.Errorf("failed to parse route response: %w", err)
 	}
+	log.Info().
+		Str("tokenIn", logTokenIn).
+		Str("tokenOut", logTokenOut).
+		Str("amount", logAmount).
+		Bool("singleRoute", singleRoute).
+		Int("routes", len(routeTokenResponse.Route)).
+		Str("amountOut", routeTokenResponse.AmountOut).
+		Dur("duration", time.Since(start)).
+		Msg("GetRoute ok")
 	return routeTokenResponse, nil
 }
 
 // GetTokenPrice fetches the price of a token in USD terms
 func (c *SqsQueryClient) GetTokenPrice(tokenDenom string) (decimal.Decimal, error) {
+	start := time.Now()
 	path := fmt.Sprintf("/token-price?tokenDenom=%s", url.QueryEscape(tokenDenom))
 
 	body, err := c.doRequestWithFailover(path)
 	if err != nil {
+		log.Error().
+			Err(err).
+			Str("tokenDenom", tokenDenom).
+			Dur("duration", time.Since(start)).
+			Msg("GetTokenPrice failed")
 		return decimal.Decimal{}, err
 	}
+	defer func() {
+		log.Debug().
+			Str("tokenDenom", tokenDenom).
+			Dur("duration", time.Since(start)).
+			Msg("GetTokenPrice complete")
+	}()
 
 	/*The json is in very strange format from which I can't create a type
 	it usually contains:
@@ -376,6 +479,7 @@ func (c *SqsQueryClient) GetTokenPrice(tokenDenom string) (decimal.Decimal, erro
 
 // GetAllPossibleRoutes returns all possible routes between two tokens
 func (c *SqsQueryClient) GetAllPossibleRoutes(tokenInDenom, tokenOutDenom string) (AllPossibleRoutesResponse, error) {
+	start := time.Now()
 	path := fmt.Sprintf(
 		"/router/routes?tokenInDenom=%s&tokenOutDenom=%s",
 		url.QueryEscape(tokenInDenom), url.QueryEscape(tokenOutDenom),
@@ -383,12 +487,30 @@ func (c *SqsQueryClient) GetAllPossibleRoutes(tokenInDenom, tokenOutDenom string
 
 	body, err := c.doRequestWithFailover(path)
 	if err != nil {
+		log.Error().
+			Err(err).
+			Str("tokenIn", tokenInDenom).
+			Str("tokenOut", tokenOutDenom).
+			Dur("duration", time.Since(start)).
+			Msg("GetAllPossibleRoutes failed")
 		return AllPossibleRoutesResponse{}, err
 	}
 
 	var allPossibleRoutesResponse AllPossibleRoutesResponse
 	if err := json.Unmarshal(body, &allPossibleRoutesResponse); err != nil {
+		log.Error().
+			Err(err).
+			Str("tokenIn", tokenInDenom).
+			Str("tokenOut", tokenOutDenom).
+			Dur("duration", time.Since(start)).
+			Msg("GetAllPossibleRoutes parse failed")
 		return AllPossibleRoutesResponse{}, fmt.Errorf("failed to parse routes response: %w", err)
 	}
+	log.Info().
+		Str("tokenIn", tokenInDenom).
+		Str("tokenOut", tokenOutDenom).
+		Int("routes", len(allPossibleRoutesResponse.Routes)).
+		Dur("duration", time.Since(start)).
+		Msg("GetAllPossibleRoutes ok")
 	return allPossibleRoutesResponse, nil
 }

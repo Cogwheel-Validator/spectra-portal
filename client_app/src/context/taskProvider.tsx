@@ -30,7 +30,7 @@ import {
     type TransactionRecord,
     UpdateTransactionStatus,
 } from "@/lib/indexDb/dbManager";
-import { humanToBaseUnits } from "@/lib/utils";
+import { applySlippageBps, humanToBaseUnits } from "@/lib/utils";
 import {
     extractChainPath,
     generateStepsFromResponse,
@@ -289,6 +289,14 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
                         const osmosisRoutes = osmosisRouteData.value.routes;
 
+                        // Compute token_out_min_amount from the user's slippage tolerance.
+                        // The pathfinder only fills BrokerExecutionData.minOutputAmount in
+                        // smart-route mode (memo/wasm execution); manual direct swaps come
+                        // through here so the client must apply slippage itself - otherwise
+                        // min == expected and any pool drift fails the tx on chain.
+                        const slippageBps = transfer.state.slippageBps;
+                        const tokenOutMinAmount = applySlippageBps(swapData.amountOut, slippageBps);
+
                         // Check if this is a split route (multiple routes) or single route
                         if (osmosisRoutes.length > 1) {
                             // Split route swap
@@ -306,7 +314,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                                 senderAddress,
                                 swapData.tokenIn?.chainDenom || "",
                                 splitRoutes,
-                                swapData.amountOut, // Use expected output as minimum
+                                tokenOutMinAmount,
                             );
                         } else {
                             // Single route swap
@@ -324,7 +332,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                                     denom: swapData.tokenIn?.chainDenom || "",
                                 },
                                 routes,
-                                swapData.amountOut, // Use expected output as minimum
+                                tokenOutMinAmount,
                             );
                         }
                         tx_memo = "Spectra Osmosis Swap";
@@ -366,6 +374,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             sendTransaction,
             transfer.state.pathfinderResponse,
             transfer.state.receiverAddress,
+            transfer.state.slippageBps,
             createIbcTransferMessage,
             createSwapMessage,
             createSplitRouteSwapMessage,

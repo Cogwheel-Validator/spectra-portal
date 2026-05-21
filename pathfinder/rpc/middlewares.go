@@ -136,26 +136,38 @@ func newCORSHandler(allowedOrigins []string, next http.Handler) http.Handler {
 	}).Handler(next)
 }
 
-// loggingInterceptor logs gRPC/Connect requests
+// loggingInterceptor logs gRPC/Connect requests with timing.
+// It emits two log lines per call:
+//   - "rpc received" at the moment the request arrives, with request details
+//   - "rpc complete" (or "rpc error") once the handler returns, with elapsed duration
 func loggingInterceptor() connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			start := time.Now()
+
+			Logger.Info().
+				Str("procedure", req.Spec().Procedure).
+				Str("protocol", req.Peer().Protocol).
+				Str("peer", req.Peer().Addr).
+				Msgf("rpc received: %+v", req.Any())
 
 			resp, err := next(ctx, req)
 
 			duration := time.Since(start)
 
 			event := Logger.Info()
+			msg := "rpc complete"
 			if err != nil {
 				event = Logger.Error().Err(err)
+				msg = "rpc error"
 			}
 
 			event.
 				Str("procedure", req.Spec().Procedure).
 				Str("protocol", req.Peer().Protocol).
+				Str("peer", req.Peer().Addr).
 				Dur("duration", duration).
-				Msg("rpc")
+				Msg(msg)
 
 			return resp, err
 		}

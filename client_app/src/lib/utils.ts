@@ -78,6 +78,38 @@ export function formatBaseUnitsForDisplay(
 }
 
 // ============================================================================
+// Slippage Utilities
+// ============================================================================
+
+/**
+ * Applies a slippage tolerance to an expected output amount and returns the
+ * resulting minimum output (floored). Performed with BigInt so it works for
+ * any chain-denom amount without precision loss.
+ *
+ * Formula: minOut = floor(expectedOut * (10000 - slippageBps) / 10000)
+ *
+ * @param expectedAmount - Expected output amount as a base-units string
+ * @param slippageBps - Slippage tolerance in basis points (100 = 1%, 500 = 5%)
+ * @returns Minimum acceptable output as a base-units string. If parsing fails
+ *          or slippageBps is out of range, returns the input unchanged.
+ */
+export function applySlippageBps(expectedAmount: string, slippageBps: number): string {
+    if (!expectedAmount || expectedAmount === "0") return "0";
+    if (!Number.isFinite(slippageBps) || slippageBps < 0 || slippageBps >= 10000) {
+        return expectedAmount;
+    }
+    try {
+        const expected = BigInt(expectedAmount);
+        // Cast slippage to BigInt safely via Math.floor; UI usually passes integers anyway.
+        const bps = BigInt(Math.floor(slippageBps));
+        const minOut = (expected * (10000n - bps)) / 10000n;
+        return minOut.toString();
+    } catch {
+        return expectedAmount;
+    }
+}
+
+// ============================================================================
 // URL Utilities
 // ============================================================================
 
