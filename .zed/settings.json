@@ -1,0 +1,41 @@
+{
+  "lsp": {
+    "biome": {
+      "binary": {
+        "path": "./client_app/node_modules/@biomejs/biome/bin/biome",
+        "arguments": ["lsp-proxy"],
+      },
+      "settings": {
+        "config_path": "./client_app/biome.json",
+      },
+    },
+  },
+  "languages": {
+    "JavaScript": {
+      "use_on_type_format": false,
+      "formatter": { "language_server": { "name": "biome" } },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true,
+      },
+    },
+
+    "TypeScript": {
+      "use_on_type_format": false,
+      "formatter": { "language_server": { "name": "biome" } },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true,
+      },
+    },
+
+    "TSX": {
+      "use_on_type_format": false,
+      "formatter": { "language_server": { "name": "biome" } },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true,
+      },
+    },
+  },
+}

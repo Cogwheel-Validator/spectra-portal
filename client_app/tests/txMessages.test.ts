@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test"
+import { expect, test } from "vitest"
 import { 
     getSwapInMessage, 
     getSwapInMessageDetails, 
@@ -37,7 +37,7 @@ const messages: TransactionMessage[] = TransactionMessageSchema.array().parse([{
 }])
 
 const txResponse: TransactionResponse = TransactionResponseSchema.parse({
-    tx_responses: [{
+    tx_response: {
         height: "123",
         txhash: "txhash",
         codespace: "codespace",
@@ -49,17 +49,12 @@ const txResponse: TransactionResponse = TransactionResponseSchema.parse({
         timestamp: "2021-01-01T00:00:00Z",
         events: [],
         tx: {
-            type_url: "/cosmos.tx.v1beta1.Tx",
+            "@type": "/cosmos.tx.v1beta1.Tx",
             body: {
                 messages: messages
             }
         }
-    }],
-    pagination: {
-        next_key: "next_key",
-        total: "1"
-    },
-    total: "1"
+    }
 })
 
 

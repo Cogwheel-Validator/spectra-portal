@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import * as TOML from "smol-toml";
 import type {
@@ -36,19 +37,21 @@ export async function LoadConfig(format?: string): Promise<FullClientConfig> {
         ];
 
         for (const configPath of possiblePaths) {
-            const file = Bun.file(configPath);
-            if (await file.exists()) {
-                const text = await file.text();
-                let parsedConfig: ClientConfig;
-
-                if (fmt === "toml") {
-                    parsedConfig = TOML.parse(text) as ClientConfig;
-                } else {
-                    parsedConfig = JSON.parse(text) as ClientConfig;
-                }
-
-                return new FullClientConfig(parsedConfig);
+            let text: string;
+            try {
+                text = await readFile(configPath, "utf-8");
+            } catch {
+                continue;
             }
+            let parsedConfig: ClientConfig;
+
+            if (fmt === "toml") {
+                parsedConfig = TOML.parse(text) as ClientConfig;
+            } else {
+                parsedConfig = JSON.parse(text) as ClientConfig;
+            }
+
+            return new FullClientConfig(parsedConfig);
         }
     }
 

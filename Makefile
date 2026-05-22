@@ -55,7 +55,7 @@ lint-all:
 	@echo "Linting all files..."
 	golangci-lint run ./... && \
 	cd client_app && \
-	bun run lint
+	pnpm run lint
 	@echo "All files linted successfully!"
 
 # This check requires the golangci-lint cli to be installed
@@ -67,13 +67,13 @@ lint-go:
 lint-js:
 	@echo "Linting js files..."
 	cd client_app && \
-	bun run lint
+	pnpm run lint
 	@echo "Js files linted successfully!"
 
 vulncheck-js:
 	@echo "Vulnerability checking js files..."
 	cd client_app && \
-	bun audit
+	pnpm audit
 	@echo "Js files vulnerability checked successfully!"
 
 # This check requires the vulncheck cli to be installed
@@ -81,7 +81,7 @@ vulncheck-all:
 	@echo "Vulnerability checking all files..."
 	govulncheck ./...
 	cd client_app && \
-	bun audit
+	pnpm audit
 	@echo "All files vulnerability checked successfully!"
 
 # This check requires the semgrep cli to be installed

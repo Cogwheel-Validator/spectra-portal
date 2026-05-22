@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { Mutex } from "@/lib/mutex/mutex";
 
 test("Should acquire lock immediately when not locked", async () => {

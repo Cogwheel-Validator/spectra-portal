@@ -150,7 +150,7 @@ features.
 
 ### The Client App
 
-The web app is a Next.js application ran with Bun. According by this
+The web app is a Next.js application ran with Node. According by this
 [statistics](https://www.statista.com/statistics/1124699/worldwide-developer-survey-most-used-frameworks-web/)
 usage of react is above 40% and Next.js is at 20.8%. So it is a very popular framework. Anyone with the
 knowledge of React and Typescript should be able to use the app and make changes to it.
@@ -163,7 +163,7 @@ fully open sourced and publicly available app that provides this kind of functio
 To run the Spectra Portal, you need to have the following prerequisites:
 
 - Golang v1.25.5+
-- Bun v1.3.9+
+- Node.js with pnpm
 - Docker
 
 For development purposes, you might need additional tools and dependencies. However these are not required to
@@ -283,7 +283,7 @@ sudo cp -r ./spectra-portal /etc/portal/
 # Build
 cd /etc/portal
 make build-pathfinder
-cd client_app && bun install && bun run build && cd ..
+cd client_app && pnpm install && pnpm run build && cd ..
 
 # Set ownership
 sudo chown -R portal:portal /etc/portal/
@@ -300,7 +300,7 @@ After=network-online.target
 
 [Service]
 User=portal
-ExecStart=$(which bun) run start
+ExecStart=$(which pnpm) run start
 WorkingDirectory=/etc/portal
 Restart=on-failure 
 RestartSec=5

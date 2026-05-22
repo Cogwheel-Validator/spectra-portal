@@ -1,77 +1,84 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
-    "vcs": {
-        "enabled": true,
-        "clientKind": "git",
-        "useIgnoreFile": true
+  "$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!node_modules",
+      "!.next",
+      "!dist",
+      "!build",
+      "!src/lib/generated"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "lineWidth": 100,
+    "indentWidth": 4,
+    "lineEnding": "lf",
+    "bracketSpacing": true,
+    "includes": ["src/**/*"],
+    "formatWithErrors": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "useExhaustiveDependencies": "warn",
+        "noUnusedVariables": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn"
+      },
+      "a11y": {
+        "noSvgWithoutTitle": "off"
+      }
     },
-    "files": {
-        "ignoreUnknown": true,
-        "includes": ["**", "!node_modules", "!.next", "!dist", "!build", "!src/lib/generated"]
-    },
-    "formatter": {
-        "enabled": true,
-        "indentStyle": "space",
-        "lineWidth": 100,
-        "indentWidth": 4,
-        "lineEnding": "lf",
-        "bracketSpacing": true,
-        "includes": ["src/**/*"],
-        "formatWithErrors": true
-    },
-    "linter": {
-        "enabled": true,
-        "rules": {
-            "recommended": true,
-            "correctness": {
-                "useExhaustiveDependencies": "warn",
-                "noUnusedVariables": "warn"
-            },
-            "suspicious": {
-                "noExplicitAny": "warn"
-            },
-            "a11y": {
-                "noSvgWithoutTitle": "off"
-            }
-        },
-        "domains": {
-            "next": "recommended",
-            "react": "recommended"
-        }
-    },
-    "javascript": {
-        "formatter": {
-            "quoteStyle": "double",
-            "jsxQuoteStyle": "double",
-            "trailingCommas": "all",
-            "semicolons": "always",
-            "arrowParentheses": "always",
-            "bracketSpacing": true
-        }
-    },
-    "overrides": [
-        {
-            "includes": ["**/*.tsx", "**/*.jsx", "**/*.ts"],
-            "linter": {
-                "rules": {
-                    "correctness": {
-                        "useExhaustiveDependencies": "warn"
-                    }
-                }
-            }
-        }
-    ],
-    "css": {
-        "parser": {
-            "tailwindDirectives": true
-        }
-    },
-    "assist": {
-        "enabled": true,
-        "actions": {
-            "source": {
-                "organizeImports": "on"
-            }
-        }
+    "domains": {
+      "next": "recommended",
+      "react": "recommended"
     }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "jsxQuoteStyle": "double",
+      "trailingCommas": "all",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSpacing": true
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.tsx", "**/*.jsx", "**/*.ts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useExhaustiveDependencies": "warn"
+          }
+        }
+      }
+    }
+  ],
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
 }

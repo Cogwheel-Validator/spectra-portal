@@ -2,7 +2,7 @@
  * Tests for IndexedDB Manager
  * Uses fake-indexeddb to simulate browser IndexedDB
  */
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import "fake-indexeddb/auto";
 import {
     AddTransactionToDb,
@@ -37,7 +37,7 @@ describe("IndexedDB Manager", () => {
         it("should successfully open a database connection", async () => {
             expect(db).toBeDefined();
             expect(db.name).toBe("spectra_portal");
-            expect(db.version).toBe(1);
+            expect(db.version).toBe(2);
         });
 
         it("should create transactions object store", async () => {

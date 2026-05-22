@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import type { ClientChain, KeplrChainConfig } from "@/components/modules/tomlTypes";
 import { makeUrlForTransactionByEvents } from "@/lib/apiQueries/fetchApiData";
 

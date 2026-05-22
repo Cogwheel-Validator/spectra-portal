@@ -1,0 +1,12 @@
+allowBuilds:
+  "@bufbuild/buf": true
+  "esbuild": true
+  "sharp": true
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - next
+  - react
+  - react-dom
+  - "@types/node"
+  - "@types/react"
+  - "@types/react-dom"
