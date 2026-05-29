@@ -1,14 +1,15 @@
-.PHONY: 
-	generate-proto 
-	generate-config 
-	generate-config-c 
-	validate-config 
-	build-pathfinder 
-	vulncheck-all 
-	lint-all 
-	lint-go 
-	lint-js 
-	vulncheck-js 
+.PHONY:
+	generate-proto
+	generate-config
+	generate-config-c
+	validate-config
+	build-pathfinder
+	build-client
+	vulncheck-all
+	lint-all
+	lint-go
+	lint-js
+	vulncheck-js
 	vulncheck-go
 
 # Generate the protobuf files for the RPC server and client app
@@ -25,7 +26,7 @@ generate-config:
 	@echo "Generating config file for the client app and pathfinder backend..."
 	go run config_manager/cmd/generate/main.go \
 		-input ./chain_configs \
-		-copy-icons ./client_app/public/ 
+		-copy-icons ./client_app/public/
 
 # Generate the config file for the client app and pathfinder using the already stored ibc and keplr registry
 generate-config-l:
@@ -49,6 +50,11 @@ build-pathfinder:
 	@echo "Building pathfinder rpc binary..."
 	go build -ldflags="-s -w" -o build/pathfinder-rpc ./pathfinder/cmd/main.go
 	@echo "Pathfinder rpc binary built successfully!"
+
+build-client:
+	@echo "Building the client app..."
+	cd client_app && pnpm install --frozen-lockfile && pnpm run build
+	@echo "Client app built successfully!"
 
 # This check requires the golangci-lint cli to be installed
 lint-all:

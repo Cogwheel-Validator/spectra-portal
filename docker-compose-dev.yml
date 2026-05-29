@@ -8,7 +8,7 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     environment:
-      NEXT_PUBLIC_PATHFINDER_RPC_URL: http://pathfinder:8080
+      NEXT_PUBLIC_PATHFINDER_RPC_URL: http://0.0.0.0:8080
     depends_on:
       pathfinder-healthcheck:
         condition: service_healthy

@@ -33,4 +33,4 @@ EXPOSE 3000
 
 USER nonroot
 
-CMD ["node", "server.js"]
+CMD ["server.js"]
