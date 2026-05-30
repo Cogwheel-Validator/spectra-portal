@@ -94,47 +94,32 @@ func NewServer(
 	// Create chi router
 	mux := chi.NewMux()
 
-	// Add zerolog middleware (replaces chi's default logger)
+	// Global middleware — applies to every route including streaming
 	mux.Use(zerologMiddleware)
-
-	// Add recovery middleware with zerolog
 	mux.Use(zerologRecoverer)
-
-	// Standard middleware
 	mux.Use(middleware.RequestID)
 	mux.Use(middleware.RealIP)
-	mux.Use(middleware.Compress(5))
-	mux.Use(middleware.Timeout(60 * time.Second))
 	mux.Use(realIPMiddleware)
 
-	// Add OpenTelemetry HTTP instrumentation if tracing is enabled
 	if config.OTelConfig != nil && config.OTelConfig.EnableTracing {
 		mux.Use(otelHTTPMiddleware)
 	}
 
-	// Rate limiting
 	if config.RatePerMinute != nil && *config.RatePerMinute > 0 {
 		mux.Use(httprate.LimitByIP(*config.RatePerMinute, 1*time.Minute))
 	}
-	if config.MaxConcurrentRequests != nil && *config.MaxConcurrentRequests > 0 {
-		mux.Use(middleware.Throttle(*config.MaxConcurrentRequests))
-	}
 
-	// Prometheus metrics endpoint - enabled by separate flag or OTel config
+	// Health/ready/metrics respond instantly — no timeout group needed
 	metricsEnabled := config.EnableMetrics || (config.OTelConfig != nil && config.OTelConfig.UsePrometheus)
 	if metricsEnabled {
 		mux.Handle("/server/metrics", promhttp.Handler())
 		Logger.Info().Msg("Metrics endpoint enabled: /server/metrics")
 	}
-
-	// Health check endpoint
 	mux.HandleFunc("/server/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status":"healthy","service":"pathfinder-rpc"}`))
 	})
-
-	// Readiness probe
 	mux.HandleFunc("/server/ready", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -158,16 +143,12 @@ func NewServer(
 		connect.WithRecover(recoverHandler),
 		connect.WithInterceptors(
 			loggingInterceptor(),
-			noCacheInterceptor(), // Prevent caching of volatile swap/route data
+			noCacheInterceptor(),
 		),
 	}
-
-	// Add validation interceptor if validator was initialized
 	if validator != nil {
 		connectOpts = append(connectOpts, connect.WithInterceptors(validationInterceptor(validator)))
 	}
-
-	// Add OpenTelemetry tracing interceptor if enabled
 	if config.OTelConfig != nil && config.OTelConfig.EnableTracing {
 		otelInterceptor, err := otelconnect.NewInterceptor()
 		if err != nil {
@@ -177,40 +158,41 @@ func NewServer(
 		}
 	}
 
-	// Register the PathfinderService handler
 	path, handler := v1connect.NewPathfinderServiceHandler(pathfinderServer, connectOpts...)
-	mux.Handle(path+"*", handler)
+	streamPath, streamHandler := v1connect.NewPathfinderStreamingSerivceHandler(pathfinderServer, connectOpts...)
 
-	// Add reflection endpoints (both v1 and v1alpha for compatibility)
-	if config.EnableReflection {
-		reflector := grpcreflect.NewStaticReflector(
-			v1connect.PathfinderServiceName,
-		)
+	mux.Group(func(r chi.Router) {
+		r.Use(middleware.Timeout(60 * time.Second))
+		if config.MaxConcurrentRequests != nil && *config.MaxConcurrentRequests > 0 {
+			r.Use(middleware.Throttle(*config.MaxConcurrentRequests))
+		}
+		r.Handle(path+"*", handler)
 
-		// Register v1 reflection (newer clients)
-		v1Path, v1Handler := grpcreflect.NewHandlerV1(reflector, connectOpts...)
-		mux.Handle(v1Path+"*", v1Handler)
+		if config.EnableReflection {
+			reflector := grpcreflect.NewStaticReflector(
+				v1connect.PathfinderServiceName,
+				v1connect.PathfinderStreamingSerivceName,
+			)
+			v1Path, v1Handler := grpcreflect.NewHandlerV1(reflector, connectOpts...)
+			r.Handle(v1Path+"*", v1Handler)
+			v1AlphaPath, v1AlphaHandler := grpcreflect.NewHandlerV1Alpha(reflector, connectOpts...)
+			r.Handle(v1AlphaPath+"*", v1AlphaHandler)
+			Logger.Info().Msg("gRPC reflection enabled")
+		}
+	})
 
-		// Register v1alpha reflection (grpcurl and older clients)
-		v1AlphaPath, v1AlphaHandler := grpcreflect.NewHandlerV1Alpha(reflector, connectOpts...)
-		mux.Handle(v1AlphaPath+"*", v1AlphaHandler)
-
-		Logger.Info().
-			Str("v1_path", v1Path).
-			Str("v1alpha_path", v1AlphaPath).
-			Msg("gRPC reflection enabled")
-	}
+	// Streaming handler — no timeout, no throttle, no compression
+	mux.Handle(streamPath+"*", streamHandler)
 
 	// Setup CORS for gRPC-Web support
 	corsHandler := newCORSHandler(config.AllowedOrigins, mux)
 
-	// Create HTTP server with h2c support (HTTP/2 without TLS)
 	httpServer := &http.Server{
 		Addr:              config.Address,
 		Handler:           h2c.NewHandler(corsHandler, &http2.Server{}),
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      30 * time.Second,
+		ReadTimeout:       0,
+		WriteTimeout:      0,
 		IdleTimeout:       120 * time.Second,
 	}
 
@@ -243,6 +225,7 @@ func (s *Server) logServerInfo(protocol string) {
 
 	Logger.Info().Msg("Available endpoints:")
 	Logger.Info().Msg("\tRPC: /pathfinder.v1.PathfinderService/*")
+	Logger.Info().Msg("\tStreaming: /pathfinder.v1.PathfinderStreamingService/*")
 	Logger.Info().Msg("\tHealth: /server/health")
 	Logger.Info().Msg("\tReady: /server/ready")
 

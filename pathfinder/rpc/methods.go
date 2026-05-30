@@ -2,7 +2,10 @@ package rpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
@@ -20,6 +23,7 @@ type PathfinderServer struct {
 
 // Verify that PathfinderServer implements the interface
 var _ v1connect.PathfinderServiceHandler = (*PathfinderServer)(nil)
+var _ v1connect.PathfinderStreamingSerivceHandler = (*PathfinderServer)(nil)
 
 // NewPathfinderServer creates a new PathfinderServer
 func NewPathfinderServer(pathfinder *router.Pathfinder, denomResolver *router.DenomResolver) *PathfinderServer {
@@ -27,6 +31,52 @@ func NewPathfinderServer(pathfinder *router.Pathfinder, denomResolver *router.De
 		pathfinder:    pathfinder,
 		denomResolver: denomResolver,
 	}
+}
+
+// findPathInternal resolves denoms and runs the pathfinder for a given request.
+// Shared by FindPath (unary) and FindPathStream (bidi streaming).
+func (s *PathfinderServer) findPathInternal(req *v1.FindPathRequest) (*v1.FindPathResponse, error) {
+	if err := s.validateFindPathRequest(req); err != nil {
+		return nil, err
+	}
+
+	resolvedFromDenom, err := s.denomResolver.ResolveToChainDenom(req.ChainFrom, req.TokenFromDenom)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("could not resolve source token '%s' on chain '%s': %w",
+				req.TokenFromDenom, req.ChainFrom, err))
+	}
+
+	var resolvedToDenom string
+	if req.TokenToDenom == "" {
+		resolvedToDenom, err = s.denomResolver.InferTokenToDenom(req.ChainFrom, resolvedFromDenom, req.ChainTo)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("could not infer destination token: %w", err))
+		}
+	} else {
+		resolvedToDenom, err = s.denomResolver.ResolveToChainDenom(req.ChainTo, req.TokenToDenom)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("could not resolve destination token '%s' on chain '%s': %w",
+					req.TokenToDenom, req.ChainTo, err))
+		}
+	}
+
+	internalReq := models.RouteRequest{
+		ChainFrom:       req.ChainFrom,
+		TokenFromDenom:  resolvedFromDenom,
+		AmountIn:        req.AmountIn,
+		ChainTo:         req.ChainTo,
+		TokenToDenom:    resolvedToDenom,
+		SenderAddress:   req.SenderAddress,
+		ReceiverAddress: req.ReceiverAddress,
+		SmartRoute:      &req.SmartRoute,
+		SlippageBps:     &req.SlippageBps,
+	}
+
+	internalResp := s.pathfinder.FindPath(internalReq)
+	return convertToProtoResponse(&internalResp), nil
 }
 
 // FindPath implements the ConnectRPC handler for finding paths.
@@ -42,68 +92,12 @@ func (s *PathfinderServer) FindPath(
 	ctx context.Context,
 	req *connect.Request[v1.FindPathRequest],
 ) (*connect.Response[v1.FindPathResponse], error) {
+	Logger.Info().Msgf("Request data for find path; %+v", req.Msg)
 
-	Logger.Info().Msgf(
-		"Request data for find path; %+v",
-		req.Msg,
-	)
-
-	// Step 0: Validate input parameters (returns 400 for validation errors)
-	if err := s.validateFindPathRequest(req.Msg); err != nil {
+	protoResp, err := s.findPathInternal(req.Msg)
+	if err != nil {
 		return nil, err
 	}
-
-	// Step 1: Resolve token_from_denom (could be human-readable)
-	resolvedFromDenom, err := s.denomResolver.ResolveToChainDenom(req.Msg.ChainFrom, req.Msg.TokenFromDenom)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("could not resolve source token '%s' on chain '%s': %w",
-				req.Msg.TokenFromDenom, req.Msg.ChainFrom, err))
-	}
-
-	// Step 2: Resolve token_to_denom (could be empty or human-readable)
-	var resolvedToDenom string
-	if req.Msg.TokenToDenom == "" {
-		// Empty → infer same token on destination chain
-		resolvedToDenom, err = s.denomResolver.InferTokenToDenom(
-			req.Msg.ChainFrom,
-			resolvedFromDenom,
-			req.Msg.ChainTo,
-		)
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("could not infer destination token: %w", err))
-		}
-	} else {
-		// Resolve human-readable denom if needed
-		resolvedToDenom, err = s.denomResolver.ResolveToChainDenom(req.Msg.ChainTo, req.Msg.TokenToDenom)
-		if err != nil {
-			return nil, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("could not resolve destination token '%s' on chain '%s': %w",
-					req.Msg.TokenToDenom, req.Msg.ChainTo, err))
-		}
-	}
-
-	// Step 3: Build internal request with resolved denoms
-	internalReq := models.RouteRequest{
-		ChainFrom:       req.Msg.ChainFrom,
-		TokenFromDenom:  resolvedFromDenom,
-		AmountIn:        req.Msg.AmountIn,
-		ChainTo:         req.Msg.ChainTo,
-		TokenToDenom:    resolvedToDenom,
-		SenderAddress:   req.Msg.SenderAddress,
-		ReceiverAddress: req.Msg.ReceiverAddress,
-		SmartRoute:      &req.Msg.SmartRoute,
-		SlippageBps:     &req.Msg.SlippageBps,
-	}
-
-	// Step 4: Call pathfinder with resolved denoms
-	internalResp := s.pathfinder.FindPath(internalReq)
-
-	// Step 5: Convert to proto response
-	// Note: "No route found" returns 200 with success=false (valid query, valid answer)
-	protoResp := convertToProtoResponse(&internalResp)
-
 	return connect.NewResponse(protoResp), nil
 }
 
@@ -337,4 +331,111 @@ func (s *PathfinderServer) ListSupportedChains(
 	return connect.NewResponse(&v1.PathfinderSupportedChainsResponse{
 		ChainIds: chains,
 	}), nil
+}
+
+// FindPathStream implements a bidirectional streaming handler for path finding.
+//
+// Behavior:
+//   - Client sends a FindPathRequest → server immediately computes and streams back the result.
+//   - If the client goes silent for 15 seconds, the server re-runs the last request and pushes
+//     fresh data automatically so the client never needs to poll.
+//   - The 15-second countdown resets each time the client sends a new request.
+//   - Stream ends when the client closes their side (EOF) or the context is cancelled.
+//   - If no first request arrives within 60 seconds, the stream is closed to prevent
+//     goroutine accumulation from clients that open a stream but never send.
+//   - Streams are hard-capped at 1 hour regardless of client behaviour; the client
+//     can reconnect and send a new request to continue.
+func (s *PathfinderServer) FindPathStream(
+	ctx context.Context,
+	stream *connect.BidiStream[v1.FindPathRequest, v1.FindPathResponse],
+) error {
+	const (
+		idleRefreshInterval = 15 * time.Second
+		firstMsgTimeout     = 60 * time.Second
+		maxStreamLifetime   = 1 * time.Hour
+	)
+
+	type receiveResult struct {
+		req *v1.FindPathRequest
+		err error
+	}
+
+	recvCh := make(chan receiveResult, 1)
+
+	// Read incoming messages in a separate goroutine so we can select on it.
+	go func() {
+		for {
+			req, err := stream.Receive()
+			recvCh <- receiveResult{req, err}
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	// firstMsgTimer fires if the client never sends an initial request.
+	// Stopped and replaced by the refresh ticker once the first message arrives.
+	firstMsgTimer := time.NewTimer(firstMsgTimeout)
+	defer firstMsgTimer.Stop()
+
+	// lifetimeTimer is a hard cap on how long any stream can run, regardless of client behaviour.
+	lifetimeTimer := time.NewTimer(maxStreamLifetime)
+	defer lifetimeTimer.Stop()
+
+	var (
+		lastReq *v1.FindPathRequest
+		ticker  *time.Ticker
+		tickerC <-chan time.Time // nil until first message received; nil channel blocks in select
+	)
+
+	sendResponse := func(req *v1.FindPathRequest) error {
+		resp, err := s.findPathInternal(req)
+		if err != nil {
+			return err
+		}
+		return stream.Send(resp)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		case <-firstMsgTimer.C:
+			return connect.NewError(connect.CodeDeadlineExceeded,
+				fmt.Errorf("stream closed: no request received within %s", firstMsgTimeout))
+
+		case <-lifetimeTimer.C:
+			return connect.NewError(connect.CodeResourceExhausted,
+				fmt.Errorf("stream closed: maximum lifetime of %s reached, reconnect to continue", maxStreamLifetime))
+
+		case result := <-recvCh:
+			if result.err != nil {
+				if errors.Is(result.err, io.EOF) {
+					return nil
+				}
+				return result.err
+			}
+			Logger.Info().Msgf("Stream request received; %+v", result.req)
+			if lastReq == nil {
+				// First message — stop the first-message timer and start the refresh ticker.
+				firstMsgTimer.Stop()
+				ticker = time.NewTicker(idleRefreshInterval)
+				defer ticker.Stop()
+				tickerC = ticker.C
+			} else {
+				ticker.Reset(idleRefreshInterval)
+			}
+			lastReq = result.req
+			if err := sendResponse(lastReq); err != nil {
+				return err
+			}
+
+		case <-tickerC:
+			Logger.Info().Msg("Auto-refreshing stream path response after idle timeout")
+			if err := sendResponse(lastReq); err != nil {
+				return err
+			}
+		}
+	}
 }

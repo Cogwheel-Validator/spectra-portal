@@ -24,6 +24,9 @@ const _ = connect.IsAtLeastVersion1_13_0
 const (
 	// PathfinderServiceName is the fully-qualified name of the PathfinderService service.
 	PathfinderServiceName = "pathfinder.v1.PathfinderService"
+	// PathfinderStreamingSerivceName is the fully-qualified name of the PathfinderStreamingSerivce
+	// service.
+	PathfinderStreamingSerivceName = "pathfinder.v1.PathfinderStreamingSerivce"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -52,6 +55,9 @@ const (
 	// PathfinderServiceGetChainTokensProcedure is the fully-qualified name of the PathfinderService's
 	// GetChainTokens RPC.
 	PathfinderServiceGetChainTokensProcedure = "/pathfinder.v1.PathfinderService/GetChainTokens"
+	// PathfinderStreamingSerivceFindPathStreamProcedure is the fully-qualified name of the
+	// PathfinderStreamingSerivce's FindPathStream RPC.
+	PathfinderStreamingSerivceFindPathStreamProcedure = "/pathfinder.v1.PathfinderStreamingSerivce/FindPathStream"
 )
 
 // PathfinderServiceClient is a client for the pathfinder.v1.PathfinderService service.
@@ -284,4 +290,76 @@ func (UnimplementedPathfinderServiceHandler) ListSupportedChains(context.Context
 
 func (UnimplementedPathfinderServiceHandler) GetChainTokens(context.Context, *connect.Request[v1.GetChainTokensRequest]) (*connect.Response[v1.GetChainTokensResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pathfinder.v1.PathfinderService.GetChainTokens is not implemented"))
+}
+
+// PathfinderStreamingSerivceClient is a client for the pathfinder.v1.PathfinderStreamingSerivce
+// service.
+type PathfinderStreamingSerivceClient interface {
+	FindPathStream(context.Context) *connect.BidiStreamForClient[v1.FindPathRequest, v1.FindPathResponse]
+}
+
+// NewPathfinderStreamingSerivceClient constructs a client for the
+// pathfinder.v1.PathfinderStreamingSerivce service. By default, it uses the Connect protocol with
+// the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. To use
+// the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or connect.WithGRPCWeb() options.
+//
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
+// http://api.acme.com or https://acme.com/grpc).
+func NewPathfinderStreamingSerivceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PathfinderStreamingSerivceClient {
+	baseURL = strings.TrimRight(baseURL, "/")
+	pathfinderStreamingSerivceMethods := v1.File_pathfinder_route_proto.Services().ByName("PathfinderStreamingSerivce").Methods()
+	return &pathfinderStreamingSerivceClient{
+		findPathStream: connect.NewClient[v1.FindPathRequest, v1.FindPathResponse](
+			httpClient,
+			baseURL+PathfinderStreamingSerivceFindPathStreamProcedure,
+			connect.WithSchema(pathfinderStreamingSerivceMethods.ByName("FindPathStream")),
+			connect.WithClientOptions(opts...),
+		),
+	}
+}
+
+// pathfinderStreamingSerivceClient implements PathfinderStreamingSerivceClient.
+type pathfinderStreamingSerivceClient struct {
+	findPathStream *connect.Client[v1.FindPathRequest, v1.FindPathResponse]
+}
+
+// FindPathStream calls pathfinder.v1.PathfinderStreamingSerivce.FindPathStream.
+func (c *pathfinderStreamingSerivceClient) FindPathStream(ctx context.Context) *connect.BidiStreamForClient[v1.FindPathRequest, v1.FindPathResponse] {
+	return c.findPathStream.CallBidiStream(ctx)
+}
+
+// PathfinderStreamingSerivceHandler is an implementation of the
+// pathfinder.v1.PathfinderStreamingSerivce service.
+type PathfinderStreamingSerivceHandler interface {
+	FindPathStream(context.Context, *connect.BidiStream[v1.FindPathRequest, v1.FindPathResponse]) error
+}
+
+// NewPathfinderStreamingSerivceHandler builds an HTTP handler from the service implementation. It
+// returns the path on which to mount the handler and the handler itself.
+//
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
+func NewPathfinderStreamingSerivceHandler(svc PathfinderStreamingSerivceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	pathfinderStreamingSerivceMethods := v1.File_pathfinder_route_proto.Services().ByName("PathfinderStreamingSerivce").Methods()
+	pathfinderStreamingSerivceFindPathStreamHandler := connect.NewBidiStreamHandler(
+		PathfinderStreamingSerivceFindPathStreamProcedure,
+		svc.FindPathStream,
+		connect.WithSchema(pathfinderStreamingSerivceMethods.ByName("FindPathStream")),
+		connect.WithHandlerOptions(opts...),
+	)
+	return "/pathfinder.v1.PathfinderStreamingSerivce/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case PathfinderStreamingSerivceFindPathStreamProcedure:
+			pathfinderStreamingSerivceFindPathStreamHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
+
+// UnimplementedPathfinderStreamingSerivceHandler returns CodeUnimplemented from all methods.
+type UnimplementedPathfinderStreamingSerivceHandler struct{}
+
+func (UnimplementedPathfinderStreamingSerivceHandler) FindPathStream(context.Context, *connect.BidiStream[v1.FindPathRequest, v1.FindPathResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("pathfinder.v1.PathfinderStreamingSerivce.FindPathStream is not implemented"))
 }

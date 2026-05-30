@@ -93,3 +93,21 @@ export const PathfinderService = {
   }
 } as const;
 
+/**
+ * @generated from service pathfinder.v1.PathfinderStreamingSerivce
+ */
+export const PathfinderStreamingSerivce = {
+  typeName: "pathfinder.v1.PathfinderStreamingSerivce",
+  methods: {
+    /**
+     * @generated from rpc pathfinder.v1.PathfinderStreamingSerivce.FindPathStream
+     */
+    findPathStream: {
+      name: "FindPathStream",
+      I: FindPathRequest,
+      O: FindPathResponse,
+      kind: MethodKind.BiDiStreaming,
+    },
+  }
+} as const;
+
