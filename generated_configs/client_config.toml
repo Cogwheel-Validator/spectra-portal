@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-05-26T14:04:24Z'
+generated_at = '2026-06-13T16:41:05Z'
 
 [[chains]]
 name = 'Atom One'
@@ -165,14 +165,6 @@ provider = 'Polkachu'
 url = 'https://rpc-cosmoshub.ecostake.com'
 provider = 'Ecostake'
 
-[[chains.rpc_endpoints]]
-url = 'https://rpc.cosmoshub-4.citizenweb3.com/'
-provider = 'CitizenWeb3'
-
-[[chains.rest_endpoints]]
-url = 'https://api.cosmoshub-4.citizenweb3.com/'
-provider = 'CitizenWeb3'
-
 [[chains.rest_endpoints]]
 url = 'https://cosmos-api.polkachu.com/'
 provider = 'Polkachu'
@@ -251,6 +243,13 @@ coin_denom = 'CINN'
 coin_minimal_denom = 'factory/cosmos1czdq25vuxw64gcj3lwvl3z93l76d92y7nys9u2/cinn'
 coin_decimals = 6
 coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/cosmoshub/factory/cosmos1czdq25vuxw64gcj3lwvl3z93l76d92y7nys9u2/cinn.png'
+coin_gecko_id = ''
+
+[[chains.keplr_chain_config.currencies]]
+coin_denom = 'ART'
+coin_minimal_denom = 'factory/cosmos1w9ee57gnduzm4l9h6xwn9tee9pyh8wlr4r9r35/art'
+coin_decimals = 6
+coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/cosmoshub/factory/cosmos1w9ee57gnduzm4l9h6xwn9tee9pyh8wlr4r9r35/art.png'
 coin_gecko_id = ''
 
 [[chains.keplr_chain_config.fee_currencies]]
@@ -679,16 +678,20 @@ url = 'https://rpc-osmosis.ecostake.com/'
 provider = 'Ecostake'
 
 [[chains.rpc_endpoints]]
+url = 'https://rpc.osmosis.citizenweb3.com'
+provider = 'CitizenWeb3'
+
+[[chains.rpc_endpoints]]
 url = 'https://rpc.osmosis.zone'
 provider = 'Osmosis'
 
 [[chains.rest_endpoints]]
-url = 'https://lcd.osmosis.zone'
-provider = 'Osmosis'
+url = 'https://api.osmosis.citizenweb3.com'
+provider = 'CitizenWeb3'
 
 [[chains.rest_endpoints]]
-url = 'https://osmosis-api.cogwheel.zone'
-provider = 'Cogwheel ⚙️'
+url = 'https://lcd.osmosis.zone'
+provider = 'Osmosis'
 
 [[chains.rest_endpoints]]
 url = 'https://osmosis-api.polkachu.com'
@@ -1289,8 +1292,8 @@ is_native = false
 base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
 
 [chains.keplr_chain_config]
-rpc = 'https://rpc-stargaze.keplr.app'
-rest = 'https://lcd-stargaze.keplr.app'
+rpc = 'https://stargaze-rpc.polkachu.com'
+rest = 'https://stargaze-api.polkachu.com'
 chain_id = 'stargaze-1'
 chain_name = 'Stargaze'
 chain_symbol_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/chain.png'

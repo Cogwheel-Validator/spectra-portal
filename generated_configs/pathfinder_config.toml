@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-05-26T14:04:24Z'
+generated_at = '2026-06-13T16:41:05Z'
 
 [[chains]]
 name = 'Atom One'
@@ -7,6 +7,7 @@ id = 'atomone-1'
 has_pfm = false
 broker = false
 bech32_prefix = 'atone'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'uatone'
@@ -70,6 +71,7 @@ id = 'cosmoshub-4'
 has_pfm = true
 broker = false
 bech32_prefix = 'cosmos'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'uatom'
@@ -150,6 +152,7 @@ id = 'juno-1'
 has_pfm = true
 broker = false
 bech32_prefix = 'juno'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
@@ -231,6 +234,7 @@ id = 'noble-1'
 has_pfm = true
 broker = false
 bech32_prefix = 'noble'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'ausdy'
@@ -353,6 +357,7 @@ broker = true
 broker_id = 'osmosis-sqs'
 ibc_hooks_contract = 'osmo10a3k4hvk37cc4hnxctw4p95fhscd2z6h2rmx0aukc6rm8u9qqx9smfsh7u'
 bech32_prefix = 'osmo'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
@@ -552,6 +557,7 @@ id = 'stargaze-1'
 has_pfm = true
 broker = false
 bech32_prefix = 'stars'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'ustars'
@@ -663,6 +669,7 @@ id = 'symphony-1'
 has_pfm = true
 broker = false
 bech32_prefix = 'symphony'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'note'
