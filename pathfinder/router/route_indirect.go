@@ -104,3 +104,117 @@ func (ri *RouteIndex) findTokenByOrigin(chainId, originChain, baseDenom string) 
 	}
 	return nil
 }
+
+// buildDirectResponse creates a RouteResponse for a direct IBC transfer
+func (s *Pathfinder) buildDirectResponse(req models.RouteRequest, route *BasicRoute) models.RouteResponse {
+	// Create token mapping for the source token
+	tokenMapping, err := s.denomResolver.CreateTokenMapping(req.ChainFrom, req.TokenFromDenom)
+	if err != nil {
+		// Fallback to basic mapping if not found
+		tokenMapping = &models.TokenMapping{
+			ChainDenom:  req.TokenFromDenom,
+			BaseDenom:   req.TokenFromDenom,
+			OriginChain: req.ChainFrom,
+			IsNative:    true,
+		}
+	}
+
+	direct := &models.DirectRoute{
+		Transfer: &models.IBCLeg{
+			FromChain: req.ChainFrom,
+			ToChain:   req.ChainTo,
+			Channel:   route.ChannelId,
+			Port:      route.PortId,
+			Token:     tokenMapping,
+			Amount:    req.AmountIn,
+		},
+	}
+
+	return models.RouteResponse{
+		Success:   true,
+		RouteType: "direct",
+		Direct:    direct,
+	}
+}
+
+// buildIndirectResponse creates a RouteResponse for a multi-hop route without swaps
+func (s *Pathfinder) buildIndirectResponse(req models.RouteRequest, routeInfo *IndirectRouteInfo) models.RouteResponse {
+	// Build IBC legs for each hop
+	legs := []*models.IBCLeg{}
+	currentDenom := req.TokenFromDenom
+	amount := req.AmountIn
+
+	for i, route := range routeInfo.Routes {
+		fromChain := routeInfo.Path[i]
+		toChain := routeInfo.Path[i+1]
+
+		// Get token info on the current chain
+		var tokenInfo *TokenInfo
+		if i == 0 {
+			tokenInfo = routeInfo.Token
+		} else {
+			tokenInfo = s.routeIndex.findTokenByOrigin(fromChain, routeInfo.Token.OriginChain, routeInfo.Token.BaseDenom)
+		}
+
+		if tokenInfo == nil {
+
+			// Validate that routeInfo.Token is not nil before using it
+			if routeInfo.Token == nil {
+				pathfinderLog.Error().Msg("Token information missing in route")
+				return models.RouteResponse{
+					Success:      false,
+					RouteType:    "impossible",
+					ErrorMessage: "Token information missing in route",
+				}
+			}
+
+			// Fallback
+			tokenInfo = &TokenInfo{
+				ChainDenom:  currentDenom,
+				BaseDenom:   routeInfo.Token.BaseDenom,
+				OriginChain: routeInfo.Token.OriginChain,
+			}
+		}
+
+		tokenMapping := &models.TokenMapping{
+			ChainDenom:  tokenInfo.ChainDenom,
+			BaseDenom:   tokenInfo.BaseDenom,
+			OriginChain: tokenInfo.OriginChain,
+			IsNative:    s.denomResolver.IsTokenNativeToChain(tokenInfo, fromChain),
+		}
+
+		leg := &models.IBCLeg{
+			FromChain: fromChain,
+			ToChain:   toChain,
+			Channel:   route.ChannelId,
+			Port:      route.PortId,
+			Token:     tokenMapping,
+			Amount:    amount,
+		}
+
+		legs = append(legs, leg)
+		currentDenom = tokenInfo.IbcDenom
+	}
+
+	// Check PFM support - all intermediate chains must support PFM
+	supportsPFM := s.checkPFMSupport(routeInfo.Path)
+	pfmMemo := ""
+
+	if supportsPFM && len(routeInfo.Path) > 2 {
+		pfmMemo = s.generatePFMMemo(legs, req.ReceiverAddress)
+	}
+
+	indirect := &models.IndirectRoute{
+		Path:          routeInfo.Path,
+		Legs:          legs,
+		SupportsPFM:   supportsPFM,
+		PFMStartChain: req.ChainFrom,
+		PFMMemo:       pfmMemo,
+	}
+
+	return models.RouteResponse{
+		Success:   true,
+		RouteType: "indirect",
+		Indirect:  indirect,
+	}
+}
