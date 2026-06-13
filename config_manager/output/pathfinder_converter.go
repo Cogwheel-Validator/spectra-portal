@@ -50,6 +50,7 @@ func (c *PathfinderConverter) convertChain(chain *enriched.ChainConfig) Pathfind
 		BrokerID:         chain.BrokerID,
 		IBCHooksContract: chain.IBCHooksContract,
 		Bech32Prefix:     chain.Bech32Prefix,
+		Slip44:           chain.Slip44,
 		NativeTokens:     make([]PathfinderTokenInfo, 0, len(chain.NativeTokens)),
 		Routes:           make([]PathfinderRoute, 0, len(chain.Routes)),
 	}

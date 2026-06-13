@@ -60,6 +60,7 @@ func (l *ChainConfigLoader) ConvertToRouterTypes(config *output.PathfinderConfig
 			BrokerId:         pathfinderChain.BrokerID,
 			IBCHooksContract: pathfinderChain.IBCHooksContract,
 			Bech32Prefix:     pathfinderChain.Bech32Prefix,
+			Slip44:           pathfinderChain.Slip44,
 			NativeTokens:     make([]router.TokenInfo, len(pathfinderChain.NativeTokens)),
 			Routes:           make([]router.BasicRoute, len(pathfinderChain.Routes)),
 		}

@@ -36,6 +36,10 @@ type PathfinderChain struct {
 	IBCHooksContract string
 	// Bech32Prefix for address conversion (e.g., "osmo", "cosmos")
 	Bech32Prefix string
+	// Slip44 is the SLIP-44 coin type used for key derivation on this chain
+	// (e.g., 118 for Cosmos, 60 for Injective). Address conversion between two
+	// chains is only valid when both chains share the same SLIP-44 coin type.
+	Slip44       int
 	NativeTokens []TokenInfo
 	Routes       []BasicRoute
 }
