@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-05-26T14:04:24Z'
+generated_at = '2026-06-16T15:12:54Z'
 
 [[chains]]
 name = 'Atom One'
@@ -9,7 +9,6 @@ slip44 = 118
 chain_logo = '/icons/atomone/logo.png'
 is_dex = false
 cosmos_sdk_version = 'v0.47.17'
-ibc_tokens = []
 
 [chains.explorer_details]
 base_url = 'https://thespectra.io'
@@ -65,6 +64,28 @@ decimals = 6
 icon = '/icons/atomone/photon.png'
 origin_chain = 'atomone-1'
 is_native = true
+
+[[chains.ibc_tokens]]
+denom = 'ibc/3084F459D56B8B7EEDA4FAE492E26E414BDDE27C55D3367EEF3BF0BBB2238C24'
+name = 'Alloyed BTC (Osmosis)'
+symbol = 'allBTC'
+decimals = 8
+icon = '/icons/osmosis/allbtc.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+is_native = false
+base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
+
+[[chains.ibc_tokens]]
+denom = 'ibc/87AA9F542C783F86AA98B3433CAF540F84CC1C379D411BD400C8B1A1844F3C08'
+name = 'Alloyed ETH (Osmosis)'
+symbol = 'allETH'
+decimals = 18
+icon = '/icons/osmosis/alleth.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+is_native = false
+base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
 
 [chains.keplr_chain_config]
 rpc = 'https://rpc-atomone.keplr.app'
@@ -135,13 +156,7 @@ coin_gecko_id = 'atomone'
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['ATONE', 'PHOTON']
-
-[[chains.connected_chains]]
-id = 'stargaze-1'
-name = 'Stargaze'
-logo = '/icons/stargaze/logo.png'
-sendable_tokens = ['ATONE']
+sendable_tokens = ['allETH', 'allBTC', 'ATONE', 'PHOTON']
 
 [[chains]]
 name = 'Cosmos Hub'
@@ -189,6 +204,28 @@ decimals = 6
 icon = '/icons/cosmoshub/atom.png'
 origin_chain = 'cosmoshub-4'
 is_native = true
+
+[[chains.ibc_tokens]]
+denom = 'ibc/247A6392BCB1756C7118EC04D6AFC7F9DEA56E95D13296088BB9304D0C39C24F'
+name = 'Alloyed BTC (Osmosis)'
+symbol = 'allBTC'
+decimals = 8
+icon = '/icons/osmosis/allbtc.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+is_native = false
+base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
+
+[[chains.ibc_tokens]]
+denom = 'ibc/5770F05B6EDB3DC66FA11B4F2D2791F7E61C40BD54DA563EA8325FBBD84110F5'
+name = 'Alloyed ETH (Osmosis)'
+symbol = 'allETH'
+decimals = 18
+icon = '/icons/osmosis/alleth.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+is_native = false
+base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
 
 [[chains.ibc_tokens]]
 denom = 'ibc/99B00614DDBE6189AA03B77066FF8EB3F93680BD790C43CF56096B7F23542015'
@@ -253,6 +290,13 @@ coin_decimals = 6
 coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/cosmoshub/factory/cosmos1czdq25vuxw64gcj3lwvl3z93l76d92y7nys9u2/cinn.png'
 coin_gecko_id = ''
 
+[[chains.keplr_chain_config.currencies]]
+coin_denom = 'ART'
+coin_minimal_denom = 'factory/cosmos1w9ee57gnduzm4l9h6xwn9tee9pyh8wlr4r9r35/art'
+coin_decimals = 6
+coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/cosmoshub/factory/cosmos1w9ee57gnduzm4l9h6xwn9tee9pyh8wlr4r9r35/art.png'
+coin_gecko_id = ''
+
 [[chains.keplr_chain_config.fee_currencies]]
 coin_denom = 'ATOM'
 coin_minimal_denom = 'uatom'
@@ -288,13 +332,7 @@ sendable_tokens = ['USDC']
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['WBTC', 'ATOM']
-
-[[chains.connected_chains]]
-id = 'stargaze-1'
-name = 'Stargaze'
-logo = '/icons/stargaze/logo.png'
-sendable_tokens = ['ATOM']
+sendable_tokens = ['allETH', 'WBTC', 'allBTC', 'ATOM']
 
 [[chains]]
 name = 'Juno Network'
@@ -304,7 +342,6 @@ slip44 = 118
 chain_logo = '/icons/juno/logo.png'
 is_dex = false
 cosmos_sdk_version = 'v0.50.13'
-ibc_tokens = []
 
 [chains.explorer_details]
 base_url = 'https://explorer.cogwheel.zone'
@@ -318,10 +355,6 @@ provider = 'Cogwheel ⚙️'
 [[chains.rpc_endpoints]]
 url = 'https://juno-rpc.polkachu.com'
 provider = 'Polkachu'
-
-[[chains.rpc_endpoints]]
-url = 'https://juno.rpc.m.stavr.tech'
-provider = '🔥STAVR🔥'
 
 [[chains.rest_endpoints]]
 url = 'https://juno-api.cogwheel.zone'
@@ -350,6 +383,28 @@ icon = '/icons/juno/juno.png'
 origin_chain = 'juno-1'
 coingecko_id = 'juno-network'
 is_native = true
+
+[[chains.ibc_tokens]]
+denom = 'ibc/7879B1CBBD2E07347002334792368E65C11A7D1629297D04B6A2155F557E02D4'
+name = 'Alloyed ETH (Osmosis)'
+symbol = 'allETH'
+decimals = 18
+icon = '/icons/osmosis/alleth.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+is_native = false
+base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
+
+[[chains.ibc_tokens]]
+denom = 'ibc/E45CFCB959F4F6D1065B7033EE49A88E606E6AD82E75725219B3D68B0FA89987'
+name = 'Alloyed BTC (Osmosis)'
+symbol = 'allBTC'
+decimals = 8
+icon = '/icons/osmosis/allbtc.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+is_native = false
+base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
 
 [chains.keplr_chain_config]
 rpc = 'https://rpc-juno.keplr.app'
@@ -432,13 +487,7 @@ sendable_tokens = []
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['NETA', 'JUNO']
-
-[[chains.connected_chains]]
-id = 'stargaze-1'
-name = 'Stargaze'
-logo = '/icons/stargaze/logo.png'
-sendable_tokens = ['JUNO']
+sendable_tokens = ['NETA', 'allETH', 'allBTC', 'JUNO']
 
 [[chains]]
 name = 'Noble'
@@ -448,7 +497,6 @@ slip44 = 118
 chain_logo = '/icons/noble/logo.png'
 is_dex = false
 cosmos_sdk_version = 'v0.50.14'
-ibc_tokens = []
 
 [chains.explorer_details]
 base_url = 'https://mintscan.io'
@@ -510,6 +558,28 @@ icon = '/icons/noble/usdn.png'
 origin_chain = 'noble-1'
 coingecko_id = 'neutrino-dollar'
 is_native = true
+
+[[chains.ibc_tokens]]
+denom = 'ibc/2E13104D0924DDB574E98CF01E1FD2D8913779BCB5B514B6468C6EC6037A15DC'
+name = 'Alloyed BTC (Osmosis)'
+symbol = 'allBTC'
+decimals = 8
+icon = '/icons/osmosis/allbtc.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+is_native = false
+base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
+
+[[chains.ibc_tokens]]
+denom = 'ibc/D7B7D0835B5CAACA52109939CEB064D81EBC098B4E2C3FD71106FEFFC06CC308'
+name = 'Alloyed ETH (Osmosis)'
+symbol = 'allETH'
+decimals = 18
+icon = '/icons/osmosis/alleth.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+is_native = false
+base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
 
 [chains.keplr_chain_config]
 rpc = 'https://rpc-noble.keplr.app'
@@ -644,13 +714,7 @@ sendable_tokens = []
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['USDY', 'EURe', 'USDC', 'USDN']
-
-[[chains.connected_chains]]
-id = 'stargaze-1'
-name = 'Stargaze'
-logo = '/icons/stargaze/logo.png'
-sendable_tokens = ['USDC']
+sendable_tokens = ['USDY', 'allETH', 'allBTC', 'EURe', 'USDC', 'USDN']
 
 [[chains]]
 name = 'Osmosis'
@@ -679,16 +743,20 @@ url = 'https://rpc-osmosis.ecostake.com/'
 provider = 'Ecostake'
 
 [[chains.rpc_endpoints]]
+url = 'https://rpc.osmosis.citizenweb3.com'
+provider = 'CitizenWeb3'
+
+[[chains.rpc_endpoints]]
 url = 'https://rpc.osmosis.zone'
 provider = 'Osmosis'
 
 [[chains.rest_endpoints]]
-url = 'https://lcd.osmosis.zone'
-provider = 'Osmosis'
+url = 'https://api.osmosis.citizenweb3.com'
+provider = 'CitizenWeb3'
 
 [[chains.rest_endpoints]]
-url = 'https://osmosis-api.cogwheel.zone'
-provider = 'Cogwheel ⚙️'
+url = 'https://lcd.osmosis.zone'
+provider = 'Osmosis'
 
 [[chains.rest_endpoints]]
 url = 'https://osmosis-api.polkachu.com'
@@ -825,17 +893,6 @@ origin_chain = 'noble-1'
 origin_chain_name = 'Noble'
 is_native = false
 base_denom = 'ueure'
-
-[[chains.ibc_tokens]]
-denom = 'ibc/987C17B11ABC2B20019178ACE62929FE9840202CE79498E29FE8E5CB02B7C0A4'
-name = 'Stargaze'
-symbol = 'STARS'
-decimals = 6
-icon = '/icons/stargaze/stars.png'
-origin_chain = 'stargaze-1'
-origin_chain_name = 'Stargaze'
-is_native = false
-base_denom = 'ustars'
 
 [[chains.ibc_tokens]]
 denom = 'ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB'
@@ -1154,106 +1211,62 @@ coin_gecko_id = 'osmosis'
 id = 'atomone-1'
 name = 'Atom One'
 logo = '/icons/atomone/logo.png'
-sendable_tokens = ['ATONE', 'PHOTON']
+sendable_tokens = ['allETH', 'allBTC', 'ATONE', 'PHOTON']
 
 [[chains.connected_chains]]
 id = 'cosmoshub-4'
 name = 'Cosmos Hub'
 logo = '/icons/cosmoshub/logo.png'
-sendable_tokens = ['WBTC', 'ATOM']
+sendable_tokens = ['allETH', 'WBTC', 'allBTC', 'ATOM']
 
 [[chains.connected_chains]]
 id = 'juno-1'
 name = 'Juno Network'
 logo = '/icons/juno/logo.png'
-sendable_tokens = ['NETA', 'JUNO']
+sendable_tokens = ['NETA', 'allETH', 'allBTC', 'JUNO']
 
 [[chains.connected_chains]]
 id = 'noble-1'
 name = 'Noble'
 logo = '/icons/noble/logo.png'
-sendable_tokens = ['USDY', 'EURe', 'USDC', 'USDN']
-
-[[chains.connected_chains]]
-id = 'stargaze-1'
-name = 'Stargaze'
-logo = '/icons/stargaze/logo.png'
-sendable_tokens = ['allETH', 'allBTC', 'STARS']
+sendable_tokens = ['USDY', 'allETH', 'allBTC', 'EURe', 'USDC', 'USDN']
 
 [[chains.connected_chains]]
 id = 'symphony-1'
 name = 'Symphony Network'
 logo = '/icons/symphony/logo.png'
-sendable_tokens = ['MLD']
+sendable_tokens = ['allETH', 'allBTC', 'MLD']
 
 [[chains]]
-name = 'Stargaze'
-id = 'stargaze-1'
-bech32_prefix = 'stars'
+name = 'Symphony Network'
+id = 'symphony-1'
+bech32_prefix = 'symphony'
 slip44 = 118
-chain_logo = '/icons/stargaze/logo.png'
+chain_logo = '/icons/symphony/logo.png'
 is_dex = false
-cosmos_sdk_version = 'v0.50.15'
+cosmos_sdk_version = 'v0.50.6-v26-osmo-2-symphony-3'
 
 [chains.explorer_details]
-base_url = 'https://mintscan.io'
-account_path = 'stargaze/address/{address}'
-transaction_path = 'stargaze/txs/{tx_hash}'
+base_url = 'https://thespectra.io'
+account_path = 'symphony/account/{address}'
+transaction_path = 'symphony/transactions/{tx_hash}'
 
 [[chains.rpc_endpoints]]
-url = 'https://stargaze-rpc.polkachu.com'
-provider = 'Polkachu'
-
-[[chains.rpc_endpoints]]
-url = 'https://stargaze-rpc.stakerhouse.com'
-provider = 'Stakerhouse'
+url = 'https://symphony-rpc.cogwheel.zone'
+provider = 'Cogwheel ⚙️'
 
 [[chains.rest_endpoints]]
-url = 'https://stargaze-api.polkachu.com'
-provider = 'Polkachu'
+url = 'https://symphony-api.cogwheel.zone'
+provider = 'Cogwheel ⚙️'
 
 [[chains.native_tokens]]
-denom = 'ustars'
-name = 'Stargaze'
-symbol = 'STARS'
+denom = 'note'
+name = 'Melody'
+symbol = 'MLD'
 decimals = 6
-icon = '/icons/stargaze/stars.png'
-origin_chain = 'stargaze-1'
-coingecko_id = 'stargaze'
+icon = '/icons/symphony/mld.png'
+origin_chain = 'symphony-1'
 is_native = true
-
-[[chains.ibc_tokens]]
-denom = 'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D'
-name = 'Atone'
-symbol = 'ATONE'
-decimals = 6
-icon = '/icons/atomone/atone.png'
-origin_chain = 'atomone-1'
-origin_chain_name = 'Atom One'
-is_native = false
-base_denom = 'uatone'
-
-[[chains.ibc_tokens]]
-denom = 'ibc/448C1061CE97D86CC5E86374CD914870FB8EBA16C58661B5F1D3F46729A2422D'
-name = 'Juno'
-symbol = 'JUNO'
-decimals = 6
-icon = '/icons/juno/juno.png'
-origin_chain = 'juno-1'
-origin_chain_name = 'Juno Network'
-is_native = false
-base_denom = 'ujuno'
-
-[[chains.ibc_tokens]]
-denom = 'ibc/4A1C18CA7F50544760CF306189B810CE4C1CB156C7FC870143D401FE7280E591'
-name = 'USDC'
-symbol = 'USDC'
-decimals = 6
-icon = '/icons/noble/usdc.png'
-origin_chain = 'noble-1'
-origin_chain_name = 'Noble'
-is_native = false
-base_denom = 'uusdc'
 
 [[chains.ibc_tokens]]
 denom = 'ibc/7879B1CBBD2E07347002334792368E65C11A7D1629297D04B6A2155F557E02D4'
@@ -1267,17 +1280,6 @@ is_native = false
 base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
 
 [[chains.ibc_tokens]]
-denom = 'ibc/9DF365E2C0EF4EA02FA771F638BB9C0C830EFCD354629BDC017F79B348B4E989'
-name = 'Atom'
-symbol = 'ATOM'
-decimals = 6
-icon = '/icons/cosmoshub/atom.png'
-origin_chain = 'cosmoshub-4'
-origin_chain_name = 'Cosmos Hub'
-is_native = false
-base_denom = 'uatom'
-
-[[chains.ibc_tokens]]
 denom = 'ibc/E45CFCB959F4F6D1065B7033EE49A88E606E6AD82E75725219B3D68B0FA89987'
 name = 'Alloyed BTC (Osmosis)'
 symbol = 'allBTC'
@@ -1287,199 +1289,6 @@ origin_chain = 'osmosis-1'
 origin_chain_name = 'Osmosis'
 is_native = false
 base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-
-[chains.keplr_chain_config]
-rpc = 'https://rpc-stargaze.keplr.app'
-rest = 'https://lcd-stargaze.keplr.app'
-chain_id = 'stargaze-1'
-chain_name = 'Stargaze'
-chain_symbol_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/chain.png'
-wallet_url_for_staking = 'https://wallet.keplr.app/chains/stargaze?modal=staking&chain=stargaze-1&step_id=2'
-features = []
-
-[chains.keplr_chain_config.bip44]
-coin_type = 118
-
-[chains.keplr_chain_config.bech32_config]
-bech32_prefix_acc_addr = 'stars'
-bech32_prefix_acc_pub = 'starspub'
-bech32_prefix_val_addr = 'starsvaloper'
-bech32_prefix_val_pub = 'starsvaloperpub'
-bech32_prefix_cons_addr = 'starsvalcons'
-bech32_prefix_cons_pub = 'starsvalconspub'
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'STARS'
-coin_minimal_denom = 'ustars'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/ustars.png'
-coin_gecko_id = 'stargaze'
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'STRDST'
-coin_minimal_denom = 'factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/dust.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'GAZE'
-coin_minimal_denom = 'factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/mGAZE'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/gaze.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'OHH'
-coin_minimal_denom = 'factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/uOHH'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/ohh.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'BRNCH'
-coin_minimal_denom = 'factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/uBRNCH'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/brnch.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'SNEAKY'
-coin_minimal_denom = 'factory/stars1xx5976njvxpl9n4v8huvff6cudhx7yuu8e7rt4/usneaky'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/factory/stars1xx5976njvxpl9n4v8huvff6cudhx7yuu8e7rt4/sneaky.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'PLEB'
-coin_minimal_denom = 'factory/stars1k7qsxdxh8calmt4txk75e6hdntefslegwddqnlwjjqgjkmcfqy0qa97sn8/pleb'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/factory/stars1k7qsxdxh8calmt4txk75e6hdntefslegwddqnlwjjqgjkmcfqy0qa97sn8/pleb.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'KINGSHIT'
-coin_minimal_denom = 'factory/stars133a6mnkp9d3pkt48y699hy0tvq5xngpz7cwak0qr4suq0cj9zpfslvt0em/kingshit'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/factory/stars133a6mnkp9d3pkt48y699hy0tvq5xngpz7cwak0qr4suq0cj9zpfslvt0em/kingshit.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'BOTZ'
-coin_minimal_denom = 'factory/stars132jrwxjps93usq3ejy7cq6qqc7j3gtx3mu8jhaj5nnk3p0ste2ssqsndvj/botz'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/factory/stars132jrwxjps93usq3ejy7cq6qqc7j3gtx3mu8jhaj5nnk3p0ste2ssqsndvj/botz.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'COCKS'
-coin_minimal_denom = 'factory/stars14mfk0sd6rlajkvgpgrvfk9lfhjwmkrzvednekvcn32jzy3drjy5sfem9p7/cocks'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/factory/stars14mfk0sd6rlajkvgpgrvfk9lfhjwmkrzvednekvcn32jzy3drjy5sfem9p7/cocks.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'WOLFSHIT'
-coin_minimal_denom = 'factory/stars167y92c2fe690l0lrqyk9tahpqvu97au0cmpayh3j9455r2f6f06s78emw4/wolfshit'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/factory/stars167y92c2fe690l0lrqyk9tahpqvu97au0cmpayh3j9455r2f6f06s78emw4/wolfshit.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'HOOD'
-coin_minimal_denom = 'factory/stars1rru5m2wh3fylpheqh8h5g968jwhe7rctkfm7u0gwk7ka4vx3q5tqukjl4z/hood'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/factory/stars1rru5m2wh3fylpheqh8h5g968jwhe7rctkfm7u0gwk7ka4vx3q5tqukjl4z/hood.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.fee_currencies]]
-coin_denom = 'STARS'
-coin_minimal_denom = 'ustars'
-coin_decimals = 6
-coin_gecko_id = 'stargaze'
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/ustars.png'
-
-[chains.keplr_chain_config.fee_currencies.gas_price_step]
-low = 1.0
-average = 1.1
-high = 1.2
-
-[chains.keplr_chain_config.stake_currency]
-coin_denom = 'STARS'
-coin_minimal_denom = 'ustars'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/stargaze/ustars.png'
-coin_gecko_id = 'stargaze'
-
-[[chains.connected_chains]]
-id = 'atomone-1'
-name = 'Atom One'
-logo = '/icons/atomone/logo.png'
-sendable_tokens = ['ATONE']
-
-[[chains.connected_chains]]
-id = 'cosmoshub-4'
-name = 'Cosmos Hub'
-logo = '/icons/cosmoshub/logo.png'
-sendable_tokens = ['ATOM']
-
-[[chains.connected_chains]]
-id = 'juno-1'
-name = 'Juno Network'
-logo = '/icons/juno/logo.png'
-sendable_tokens = ['JUNO']
-
-[[chains.connected_chains]]
-id = 'noble-1'
-name = 'Noble'
-logo = '/icons/noble/logo.png'
-sendable_tokens = ['USDC']
-
-[[chains.connected_chains]]
-id = 'osmosis-1'
-name = 'Osmosis'
-logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['allETH', 'allBTC', 'STARS']
-
-[[chains]]
-name = 'Symphony Network'
-id = 'symphony-1'
-bech32_prefix = 'symphony'
-slip44 = 118
-chain_logo = '/icons/symphony/logo.png'
-is_dex = false
-cosmos_sdk_version = 'v0.50.6-v26-osmo-2-symphony-3'
-ibc_tokens = []
-
-[chains.explorer_details]
-base_url = 'https://thespectra.io'
-account_path = 'symphony/account/{address}'
-transaction_path = 'symphony/transactions/{tx_hash}'
-
-[[chains.rpc_endpoints]]
-url = 'https://symphony-rpc.cogwheel.zone'
-provider = 'Cogwheel ⚙️'
-
-[[chains.rpc_endpoints]]
-url = 'https://symphony-rpc.polkachu.com'
-provider = 'Polkachu'
-
-[[chains.rest_endpoints]]
-url = 'https://symphony-api.cogwheel.zone'
-provider = 'Cogwheel ⚙️'
-
-[[chains.rest_endpoints]]
-url = 'https://symphony-api.polkachu.com'
-provider = 'Polkachu'
-
-[[chains.native_tokens]]
-denom = 'note'
-name = 'Melody'
-symbol = 'MLD'
-decimals = 6
-icon = '/icons/symphony/mld.png'
-origin_chain = 'symphony-1'
-is_native = true
 
 [chains.keplr_chain_config]
 rpc = 'https://symphony-rpc.cogwheel.zone/'
@@ -1552,7 +1361,7 @@ coin_gecko_id = ''
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['MLD']
+sendable_tokens = ['allETH', 'allBTC', 'MLD']
 
 [[all_tokens]]
 base_denom = 'ausdy'
@@ -1614,15 +1423,6 @@ origin_chain_name = 'Noble'
 available_on = ['noble-1']
 
 [[all_tokens]]
-base_denom = 'ibc/1CB8A5D27AD8BEBAFF6C810E637157E07703662AA084E68330E388F77E27244D'
-symbol = 'ATONE'
-name = 'Atone'
-icon = '/icons/atomone/atone.png'
-origin_chain = 'atomone-1'
-origin_chain_name = 'Atom One'
-available_on = ['atomone-1']
-
-[[all_tokens]]
 base_denom = 'ibc/23104D411A6EB6031FA92FB75F227422B84989969E91DCAD56A535DD7FF0A373'
 symbol = 'USDY'
 name = 'USDY'
@@ -1632,6 +1432,15 @@ origin_chain_name = 'Noble'
 available_on = ['noble-1']
 
 [[all_tokens]]
+base_denom = 'ibc/247A6392BCB1756C7118EC04D6AFC7F9DEA56E95D13296088BB9304D0C39C24F'
+symbol = 'allBTC'
+name = 'Alloyed BTC (Osmosis)'
+icon = '/icons/osmosis/allbtc.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+available_on = ['osmosis-1']
+
+[[all_tokens]]
 base_denom = 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2'
 symbol = 'ATOM'
 name = 'Atom'
@@ -1639,6 +1448,24 @@ icon = '/icons/cosmoshub/atom.png'
 origin_chain = 'cosmoshub-4'
 origin_chain_name = 'Cosmos Hub'
 available_on = ['cosmoshub-4']
+
+[[all_tokens]]
+base_denom = 'ibc/2E13104D0924DDB574E98CF01E1FD2D8913779BCB5B514B6468C6EC6037A15DC'
+symbol = 'allBTC'
+name = 'Alloyed BTC (Osmosis)'
+icon = '/icons/osmosis/allbtc.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+available_on = ['osmosis-1']
+
+[[all_tokens]]
+base_denom = 'ibc/3084F459D56B8B7EEDA4FAE492E26E414BDDE27C55D3367EEF3BF0BBB2238C24'
+symbol = 'allBTC'
+name = 'Alloyed BTC (Osmosis)'
+icon = '/icons/osmosis/allbtc.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+available_on = ['osmosis-1']
 
 [[all_tokens]]
 base_denom = 'ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24'
@@ -1654,15 +1481,6 @@ base_denom = 'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582
 symbol = 'NETA'
 name = 'Neta'
 icon = '/icons/juno/neta.png'
-origin_chain = 'juno-1'
-origin_chain_name = 'Juno Network'
-available_on = ['juno-1']
-
-[[all_tokens]]
-base_denom = 'ibc/448C1061CE97D86CC5E86374CD914870FB8EBA16C58661B5F1D3F46729A2422D'
-symbol = 'JUNO'
-name = 'Juno'
-icon = '/icons/juno/juno.png'
 origin_chain = 'juno-1'
 origin_chain_name = 'Juno Network'
 available_on = ['juno-1']
@@ -1686,16 +1504,25 @@ origin_chain_name = 'Noble'
 available_on = ['noble-1']
 
 [[all_tokens]]
-base_denom = 'ibc/4A1C18CA7F50544760CF306189B810CE4C1CB156C7FC870143D401FE7280E591'
-symbol = 'USDC'
-name = 'USDC'
-icon = '/icons/noble/usdc.png'
-origin_chain = 'noble-1'
-origin_chain_name = 'Noble'
-available_on = ['noble-1']
+base_denom = 'ibc/5770F05B6EDB3DC66FA11B4F2D2791F7E61C40BD54DA563EA8325FBBD84110F5'
+symbol = 'allETH'
+name = 'Alloyed ETH (Osmosis)'
+icon = '/icons/osmosis/alleth.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+available_on = ['osmosis-1']
 
 [[all_tokens]]
 base_denom = 'ibc/7879B1CBBD2E07347002334792368E65C11A7D1629297D04B6A2155F557E02D4'
+symbol = 'allETH'
+name = 'Alloyed ETH (Osmosis)'
+icon = '/icons/osmosis/alleth.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+available_on = ['osmosis-1']
+
+[[all_tokens]]
+base_denom = 'ibc/87AA9F542C783F86AA98B3433CAF540F84CC1C379D411BD400C8B1A1844F3C08'
 symbol = 'allETH'
 name = 'Alloyed ETH (Osmosis)'
 icon = '/icons/osmosis/alleth.png'
@@ -1713,15 +1540,6 @@ origin_chain_name = 'Noble'
 available_on = ['noble-1']
 
 [[all_tokens]]
-base_denom = 'ibc/987C17B11ABC2B20019178ACE62929FE9840202CE79498E29FE8E5CB02B7C0A4'
-symbol = 'STARS'
-name = 'Stargaze'
-icon = '/icons/stargaze/stars.png'
-origin_chain = 'stargaze-1'
-origin_chain_name = 'Stargaze'
-available_on = ['stargaze-1']
-
-[[all_tokens]]
 base_denom = 'ibc/99B00614DDBE6189AA03B77066FF8EB3F93680BD790C43CF56096B7F23542015'
 symbol = 'WBTC'
 name = 'Wrapped BTC (Osmosis)'
@@ -1729,15 +1547,6 @@ icon = '/icons/osmosis/wbtc.png'
 origin_chain = 'osmosis-1'
 origin_chain_name = 'Osmosis'
 available_on = ['osmosis-1']
-
-[[all_tokens]]
-base_denom = 'ibc/9DF365E2C0EF4EA02FA771F638BB9C0C830EFCD354629BDC017F79B348B4E989'
-symbol = 'ATOM'
-name = 'Atom'
-icon = '/icons/cosmoshub/atom.png'
-origin_chain = 'cosmoshub-4'
-origin_chain_name = 'Cosmos Hub'
-available_on = ['cosmoshub-4']
 
 [[all_tokens]]
 base_denom = 'ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB'
@@ -1756,6 +1565,15 @@ icon = '/icons/atomone/photon.png'
 origin_chain = 'atomone-1'
 origin_chain_name = 'Atom One'
 available_on = ['atomone-1']
+
+[[all_tokens]]
+base_denom = 'ibc/D7B7D0835B5CAACA52109939CEB064D81EBC098B4E2C3FD71106FEFFC06CC308'
+symbol = 'allETH'
+name = 'Alloyed ETH (Osmosis)'
+icon = '/icons/osmosis/alleth.png'
+origin_chain = 'osmosis-1'
+origin_chain_name = 'Osmosis'
+available_on = ['osmosis-1']
 
 [[all_tokens]]
 base_denom = 'ibc/E45CFCB959F4F6D1065B7033EE49A88E606E6AD82E75725219B3D68B0FA89987'
@@ -1840,16 +1658,6 @@ icon = '/icons/atomone/photon.png'
 origin_chain = 'atomone-1'
 origin_chain_name = ''
 available_on = ['atomone-1']
-
-[[all_tokens]]
-base_denom = 'ustars'
-symbol = 'STARS'
-name = 'Stargaze'
-icon = '/icons/stargaze/stars.png'
-origin_chain = 'stargaze-1'
-origin_chain_name = ''
-available_on = ['stargaze-1']
-coingecko_id = 'stargaze'
 
 [[all_tokens]]
 base_denom = 'uusdc'
