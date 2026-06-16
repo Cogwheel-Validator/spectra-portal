@@ -5,6 +5,8 @@ allowBuilds:
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - next
+  - "@next/swc-*"
+  - "@next/env"
   - react
   - react-dom
   - "@types/node"
