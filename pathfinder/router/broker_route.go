@@ -314,7 +314,7 @@ func (s *Pathfinder) buildBrokerOutboundLegs(
 		var legToken *models.TokenMapping
 		if i == 0 {
 			legToken = currentToken
-		} else if i < len(hopInfo.IntermediateTokens) {
+		} else if i-1 < len(hopInfo.IntermediateTokens) {
 			// Use intermediate token info
 			intToken := hopInfo.IntermediateTokens[i-1]
 			legToken = &models.TokenMapping{

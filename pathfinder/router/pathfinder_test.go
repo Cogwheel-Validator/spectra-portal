@@ -13,11 +13,12 @@ import (
 
 var chains = []router.PathfinderChain{
 	{
-		Name:     "Osmosis",
-		Id:       "osmosis-1",
-		Broker:   true,
-		BrokerId: "osmosis-sqs",
-		HasPFM:   true,
+		Name:         "Osmosis",
+		Id:           "osmosis-1",
+		Broker:       true,
+		BrokerId:     "osmosis-sqs",
+		HasPFM:       true,
+		Bech32Prefix: "osmo",
 		Routes: []router.BasicRoute{
 			{
 				ToChain:      "cosmoshub",
@@ -107,11 +108,12 @@ var chains = []router.PathfinderChain{
 		},
 	},
 	{
-		Name:     "Cosmos Hub",
-		Id:       "cosmoshub-4",
-		Broker:   false,
-		BrokerId: "",
-		HasPFM:   true,
+		Name:         "Cosmos Hub",
+		Id:           "cosmoshub-4",
+		Broker:       false,
+		BrokerId:     "",
+		HasPFM:       true,
+		Bech32Prefix: "cosmos",
 		Routes: []router.BasicRoute{
 			{
 				ToChain:      "osmosis",
@@ -164,11 +166,12 @@ var chains = []router.PathfinderChain{
 		},
 	},
 	{
-		Name:     "Juno",
-		Id:       "juno-1",
-		Broker:   false,
-		BrokerId: "",
-		HasPFM:   true,
+		Name:         "Juno",
+		Id:           "juno-1",
+		Broker:       false,
+		BrokerId:     "",
+		HasPFM:       true,
+		Bech32Prefix: "juno",
 		Routes: []router.BasicRoute{
 			{
 				ToChain:      "cosmoshub",
@@ -221,11 +224,12 @@ var chains = []router.PathfinderChain{
 		},
 	},
 	{
-		Name:     "Atom One",
-		Id:       "atomone-1",
-		Broker:   false,
-		BrokerId: "",
-		HasPFM:   false,
+		Name:         "Atom One",
+		Id:           "atomone-1",
+		Broker:       false,
+		BrokerId:     "",
+		HasPFM:       false,
+		Bech32Prefix: "atone",
 		Routes: []router.BasicRoute{
 			{
 				ToChain:      "osmosis",
@@ -253,11 +257,12 @@ var chains = []router.PathfinderChain{
 		},
 	},
 	{
-		Name:     "Noble",
-		Id:       "noble-1",
-		Broker:   false,
-		BrokerId: "",
-		HasPFM:   true,
+		Name:         "Noble",
+		Id:           "noble-1",
+		Broker:       false,
+		BrokerId:     "",
+		HasPFM:       true,
+		Bech32Prefix: "noble",
 		Routes: []router.BasicRoute{
 			{
 				ToChain:      "juno",
