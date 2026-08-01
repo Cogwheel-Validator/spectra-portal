@@ -1,4 +1,6 @@
 .PHONY:
+	setup
+	setup-hooks
 	generate-proto
 	generate-config
 	generate-config-c
@@ -9,8 +11,25 @@
 	lint-all
 	lint-go
 	lint-js
+	lint-commits
 	vulncheck-js
 	vulncheck-go
+
+# Sets up everything needed for local development
+setup: setup-hooks
+	@echo "Development environment set up successfully!"
+	# Add later more setup steps
+
+# Installs the git hooks (commit-msg linting, etc.) via lefthook
+# This check requires the following clis to be installed:
+#   - lefthook:   https://github.com/evilmartians/lefthook (go install github.com/evilmartians/lefthook/v2@latest)
+#   - cocogitto:  https://github.com/cocogitto/cocogitto (cargo install --locked cocogitto)
+#   - koji:       https://github.com/cococonscious/koji (cargo install --locked koji)
+#   - typos:      https://github.com/crate-ci/typos (cargo install --locked typos-cli)
+setup-hooks:
+	@echo "Installing git hooks..."
+	lefthook install
+	@echo "Git hooks installed successfully!"
 
 # Generate the protobuf files for the RPC server and client app
 generate-proto:
@@ -75,6 +94,19 @@ lint-js:
 	cd client_app && \
 	pnpm run lint
 	@echo "Js files linted successfully!"
+
+# Lints commit messages on the current branch against Conventional Commits
+# This check requires the cocogitto and typos clis to be installed (see setup-hooks)
+lint-commits:
+	@echo "Linting commit messages..."
+	cog check
+	@for sha in $$(git rev-list HEAD); do \
+		git show -s --format=%B "$$sha" > /tmp/spectra-commit-msg.txt; \
+		scripts/require-scope.sh /tmp/spectra-commit-msg.txt || exit 1; \
+	done
+	git log --format=%B > /tmp/spectra-commit-msgs.txt
+	typos /tmp/spectra-commit-msgs.txt
+	@echo "Commit messages linted successfully!"
 
 vulncheck-js:
 	@echo "Vulnerability checking js files..."
