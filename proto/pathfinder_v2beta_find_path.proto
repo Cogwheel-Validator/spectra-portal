@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package pathfinder.v2beta;
+
+import "buf/validate/validate.proto";
+import "pathfinder_v2beta_common.proto";
+
+option go_package = "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/v2beta";
+
+// FindPathService finds and validates routes between two chains for IBC
+// transfers and swaps. The unary and streaming methods are kept in the same
+// service since they answer the same question, just over different
+// transports.
+service FindPathService {
+    // FindPath finds and validates a route between two chains
+    // Supports human-readable denoms (e.g., "uatone") or IBC denoms
+    rpc FindPath(FindPathRequest) returns (FindPathResponse) {
+        option idempotency_level = NO_SIDE_EFFECTS;
+    }
+
+    // FindPathStreaming is the bidirectional-streaming counterpart of FindPath
+    rpc FindPathStreaming(stream FindPathRequest) returns (stream FindPathResponse) {
+        option idempotency_level = IDEMPOTENCY_UNKNOWN; // Streaming response, so do not allow caching.
+    }
+}
+
+// ChainAddress binds an address to the chain it is valid on.
+//
+// Addresses are supplied per-chain instead of as a single sender/receiver
+// pair because chains can use different SLIP-44 coin types: an address
+// blindly re-derived/converted from one chain's address for use on another
+// chain can be malformed or simply wrong. Callers must resolve and supply
+// the correct address for every chain the route may touch (at minimum the
+// source and destination chains, and any intermediate broker/PFM chains).
+message ChainAddress {
+    // Chain ID this address is valid on (e.g., "osmosis-1", "atomone-1")
+    string chain_id = 1 [(buf.validate.field).required = true];
+
+    // The address on that chain
+    string address = 2 [
+        (buf.validate.field).required = true,
+        (buf.validate.field).string.min_len = 38,
+        (buf.validate.field).string.max_len = 68];
+}
+
+// FindPathRequest - Find a route between chains
+//
+// For token_from_denom and token_to_denom, you can use:
+// - Human-readable denom (e.g., "uatone", "uosmo", "ustars")
+// - Full IBC denom (e.g., "ibc/ABC123...")
+//
+// The pathfinder will automatically resolve human-readable denoms.
+// If token_to_denom is empty, the pathfinder assumes you want the same token
+// on the destination chain (useful for bridging without swapping).
+message FindPathRequest {
+    // Source chain ID (e.g., "osmosis-1", "atomone-1")
+    string chain_from = 1 [(buf.validate.field).required = true];
+
+    // Token denom on source chain - can be human-readable (e.g., "uatone")
+    // or IBC denom (e.g., "ibc/...")
+    string token_from_denom = 2 [
+        (buf.validate.field).required = true,
+        (buf.validate.field).string.min_len = 1,
+        (buf.validate.field).string.max_len = 128];
+
+    // Amount to transfer/swap (in base units)
+    string amount_in = 3 [(buf.validate.field).required = true];
+
+    // Destination chain ID
+    string chain_to = 4 [(buf.validate.field).required = true];
+
+    // Token denom you want to receive on destination chain
+    // Can be human-readable (e.g., "uosmo") or IBC denom
+    // If empty, assumes same token as token_from (bridging without swap)
+    string token_to_denom = 5 [(buf.validate.field).string.max_len = 128];
+
+    // Addresses for every chain the route may touch, keyed by chain ID.
+    // Must include at least the source (chain_from) and destination
+    // (chain_to) addresses; supply addresses for any known intermediate
+    // broker/PFM chains too, since a converted address is not guaranteed
+    // to be valid across chains with different SLIP-44 coin types.
+    repeated ChainAddress addresses = 6 [
+        (buf.validate.field).required = true,
+        (buf.validate.field).repeated.min_items = 2];
+
+    // If true, return a smart route, if false, return a normal route
+    bool smart_route = 7;
+
+    // Slippage in basis points (e.g., 100 = 1%, 1000 = 10%)
+    // Must be less than 10000
+    uint32 slippage_bps = 8 [
+        (buf.validate.field).required = false,
+        (buf.validate.field).uint32.gte = 0,
+        (buf.validate.field).uint32.lte = 10000
+    ];
+}
+
+message FindPathResponse {
+    bool success = 1 [json_name = "success"];
+    string error_message = 2 [json_name = "error_message"];
+    oneof route {
+        DirectRoute direct = 3 [json_name = "direct"];
+        IndirectRoute indirect = 4 [json_name = "indirect"];
+        BrokerSwapRoute broker_swap = 5 [json_name = "broker_swap"];
+    }
+}

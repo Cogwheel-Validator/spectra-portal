@@ -44,12 +44,6 @@ service PathfinderService {
     }
 }
 
-service PathfinderStreamingSerivce {
-    rpc FindPathStream(stream FindPathRequest) returns (stream FindPathResponse) {
-        option idempotency_level = IDEMPOTENCY_UNKNOWN; // It is a straming response, so do not allow caching.
-    }
-}
-
 // FindPathRequest - Find a route between chains
 //
 // For token_from_denom and token_to_denom, you can use:

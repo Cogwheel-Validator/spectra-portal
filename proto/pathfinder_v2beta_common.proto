@@ -1,0 +1,188 @@
+syntax = "proto3";
+
+package pathfinder.v2beta;
+
+option go_package = "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/v2beta";
+
+// Common route/execution messages shared by the v2beta pathfinder services.
+// These are version-scoped (not v1) but are not owned by any single service,
+// so a request-shape change in one service does not force a duplicate of
+// these definitions elsewhere.
+
+message TokenMapping {
+    // The denom as it appears on the current chain (native or IBC)
+    string chain_denom = 1 [json_name = "chain_denom"];
+    // The base/native denom on the token's origin chain
+    string base_denom = 2 [json_name = "base_denom"];
+    // The chain ID where this token is native
+    string origin_chain = 3 [json_name = "origin_chain"];
+    // True if this is the token's native chain
+    bool is_native = 4 [json_name = "is_native"];
+}
+
+message IBCLeg {
+    string from_chain = 1 [json_name = "from_chain"];
+    string to_chain = 2 [json_name = "to_chain"];
+    string channel = 3 [json_name = "channel"];
+    string port = 4 [json_name = "port"];
+    TokenMapping token = 5 [json_name = "token"];
+    string amount = 6 [json_name = "amount"];
+}
+
+message DirectRoute {
+    IBCLeg transfer = 1 [json_name = "transfer"];
+}
+
+message IndirectRoute {
+    repeated string path = 1 [json_name = "path"];
+    repeated IBCLeg legs = 2 [json_name = "legs"];
+    bool supports_pfm = 3 [json_name = "supports_pfm"];
+    string pfm_start_chain = 4 [json_name = "pfm_start_chain"];
+    string pfm_memo = 5 [json_name = "pfm_memo"];
+}
+
+// BrokerSwapRoute represents a route involving a swap on a broker chain.
+// Supports various scenarios:
+// - Same-chain swap: inbound_leg absent, outbound_legs=[] (e.g., osmosis ATOM -> osmosis OSMO)
+// - Swap from broker: inbound_leg absent (e.g., osmosis USDC -> juno JUNO)
+// - Standard 3-chain: inbound_leg set, len(outbound_legs)=1
+// - Multi-hop outbound: inbound_leg set, len(outbound_legs)>1 (e.g., cosmos ATOM -> swap -> noble -> juno)
+message BrokerSwapRoute {
+    // All chain IDs in order
+    repeated string path = 1 [json_name = "path"];
+    // IBC transfer to reach broker (absent if starting from broker)
+    repeated IBCLeg inbound_legs = 2 [json_name = "inbound_legs"];
+    // The swap operation on the broker chain
+    SwapQuote swap = 3 [json_name = "swap"];
+    // IBC transfers after swap (empty if destination is broker)
+    // Can be multiple for multi-hop forwarding via PFM
+    repeated IBCLeg outbound_legs = 4 [json_name = "outbound_legs"];
+    // Can use PFM for outbound legs
+    bool outbound_supports_pfm = 5 [json_name = "outbound_supports_pfm"];
+    // Execution data for building transactions
+    BrokerExecutionData execution = 6 [json_name = "execution"];
+}
+
+// BrokerExecutionData contains ready-to-use transaction data
+message BrokerExecutionData {
+    // The IBC memo to use with MsgTransfer (contains wasm swap_and_action)
+    optional string memo = 1 [json_name = "memo"];
+    // The smart contract data to use with the swap and transfer
+    optional WasmData smart_contract_data = 2 [json_name = "smart_contract_data"];
+    // Receiver address for MsgTransfer (the ibc-hooks contract)
+    optional string ibc_receiver = 3 [json_name = "ibc_receiver"];
+    // Recovery address on broker chain (where funds go if swap/forward fails)
+    string recover_address = 4 [json_name = "recover_address"];
+    // Minimum output amount after slippage (1% default)
+    string min_output_amount = 5 [json_name = "min_output_amount"];
+    // True if using wasm ibc-hooks (vs simple PFM)
+    bool uses_wasm = 6 [json_name = "uses_wasm"];
+    // Human-readable description
+    string description = 7 [json_name = "description"];
+}
+
+// SwapQuote with broker-specific route data
+message SwapQuote {
+    string broker = 1 [json_name = "broker"];
+    TokenMapping token_in = 2 [json_name = "token_in"];
+    TokenMapping token_out = 3 [json_name = "token_out"];
+    string amount_in = 4 [json_name = "amount_in"];
+    string amount_out = 5 [json_name = "amount_out"];
+    string price_impact = 6 [json_name = "price_impact"];
+    string effective_fee = 7 [json_name = "effective_fee"];
+
+    // Broker-specific route data using oneof for type safety
+    oneof route_data {
+        OsmosisRouteData osmosis_route_data = 8 [json_name = "osmosis_route_data"];
+        // Future brokers can be added here without breaking existing clients
+    }
+}
+
+// Osmosis-specific route data (from SQS API)
+message OsmosisRouteData {
+    repeated OsmosisRoute routes = 1 [json_name = "routes"];
+    string liquidity_cap = 2 [json_name = "liquidity_cap"];
+    bool liquidity_cap_overflow = 3 [json_name = "liquidity_cap_overflow"];
+}
+
+message OsmosisRoute {
+    repeated OsmosisPool pools = 1 [json_name = "pools"];
+    bool has_cw_pool = 2 [json_name = "has_cw_pool"];
+    string out_amount = 3 [json_name = "out_amount"];
+    string in_amount = 4 [json_name = "in_amount"];
+}
+
+message OsmosisPool {
+    int32 id = 1 [json_name = "id"];
+    int32 type = 2 [json_name = "type"];
+    string spread_factor = 3 [json_name = "spread_factor"];
+    string token_out_denom = 4 [json_name = "token_out_denom"];
+    string taker_fee = 5 [json_name = "taker_fee"];
+    string liquidity_cap = 6 [json_name = "liquidity_cap"];
+}
+
+message WasmData {
+    string contract = 1 [json_name = "contract"];
+    WasmMsg msg = 2 [json_name = "msg"];
+}
+
+message WasmMsg {
+    SwapAndAction swap_and_action = 1 [json_name = "swap_and_action"];
+}
+
+message SwapAndAction {
+    // SwapAndAction is the entry point contract message structure
+    UserSwap user_swap = 1 [json_name = "user_swap"];
+    MinAsset min_asset = 2 [json_name = "min_asset"];
+    int64 timeout_timestamp = 3 [json_name = "timeout_timestamp"];
+    PostSwapAction post_swap_action = 4 [json_name = "post_swap_action"];
+    repeated string affiliates = 5 [json_name = "affiliates"];
+}
+
+message SwapExactAssetIn {
+    string swap_venue_name = 1 [json_name = "swap_venue_name"];
+    repeated SwapOperation operations = 2 [json_name = "operations"];
+}
+
+message SwapOperation {
+    string pool = 1 [json_name = "pool"];
+    string denom_in = 2 [json_name = "denom_in"];
+    string denom_out = 3 [json_name = "denom_out"];
+    // Interface is used by some DEXs (like Injective), optional
+    optional string interface = 4 [json_name = "interface"];
+}
+
+message MinAsset {
+    Asset native = 1 [json_name = "native"];
+}
+
+message Asset {
+    string amount = 1 [json_name = "amount"];
+    string denom = 2 [json_name = "denom"];
+}
+
+message PostSwapAction {
+    oneof action {
+        IBCTransfer ibc_transfer = 1 [json_name = "ibc_transfer"];
+        Transfer transfer = 2 [json_name = "transfer"];
+    }
+}
+
+message IBCTransfer {
+    IBCInfo ibc_info = 1 [json_name = "ibc_info"];
+}
+
+message Transfer {
+    string to_address = 1 [json_name = "to_address"];
+}
+
+message IBCInfo {
+    string memo = 1 [json_name = "memo"];
+    string receiver = 2 [json_name = "receiver"];
+    string recover_address = 3 [json_name = "recover_address"];
+    string source_channel = 4 [json_name = "source_channel"];
+}
+
+message UserSwap {
+    SwapExactAssetIn swap_exact_asset_in = 1 [json_name = "swap_exact_asset_in"];
+}
