@@ -1,0 +1,61 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    # security
+    - gosec
+    - errorlint
+    - forcetypeassert
+    - nilerr
+
+    # network related checks
+    - bodyclose
+    - noctx
+    - contextcheck
+
+    # concurrency
+    - copyloopvar
+    - durationcheck
+    - exhaustive
+
+    # general code checks
+    - unconvert
+    - unparam
+    - gocritic
+    - revive
+
+  settings:
+    gosec:
+      excludes: []
+    revive:
+      rules:
+        - name: exported
+          disabled: false
+        - name: error-strings
+          disabled: false
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+          - forcetypeassert
+      - path: (^|/)generated_configs/|(^|/)proto/|\.pb\.go$|\.connect\.go$
+        linters:
+          - all
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
