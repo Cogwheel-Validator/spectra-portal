@@ -4,7 +4,7 @@ on:
       - 'v*'
 
 permissions:
-  contents: write 
+  contents: write
   packages: write
 
 jobs:
@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:
           go-version: '1.25'
 
@@ -24,7 +24,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
+
           # Check if this is a pre-release (contains alpha, beta, rc, etc.)
           if [[ $VERSION =~ (alpha|beta|rc) ]]; then
             echo "prerelease=true" >> $GITHUB_OUTPUT
@@ -44,21 +44,21 @@ jobs:
 
           # Linux AMD64 for the pathfinder rpc binary
           GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o build/pathfinder-rpc-${{ steps.version.outputs.version }}-linux-amd64 pathfinder/cmd/main.go
-      
+
       - name: Build client app tar
         run: |
           mkdir -p build
           tar -czvf build/client-app-${{ steps.version.outputs.version }}.tar.gz client_app
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@fe965f7af51af5f2602596916f38a38df2e33de0
         with:
           files: build/*
           prerelease: ${{ steps.version.outputs.prerelease }}
           generate_release_notes: true
           body: |
             ## Release ${{ steps.version.outputs.version }}
-            
+
             ### Spectra Portal Pathfinder RPC
             Download the binary for your platform and make it executable:
             ```bash
@@ -78,17 +78,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push pathfinder rpc Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
         with:
           context: .
           push: true
@@ -100,7 +100,7 @@ jobs:
           cache-from: type=gha
 
       - name: Build and push client app Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
         with:
           context: .
           push: true
