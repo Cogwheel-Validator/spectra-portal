@@ -1,6 +1,7 @@
 package query
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,24 @@ import (
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/input"
 )
 
+// getWithContext issues a GET request bounded by timeout, avoiding the
+// context-less http.Client.Get so a stalled or malicious endpoint can't hang
+// past the configured deadline.
+func getWithContext(client *http.Client, url string, timeout time.Duration) (*http.Response, error) {
+	ctx := context.Background()
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return client.Do(req)
+}
+
+// GetRestStatus queries the REST node_info endpoint and returns the node status.
 func GetRestStatus(
 	endpoint input.APIEndpoint,
 	retryAttempts int,
@@ -21,12 +40,12 @@ func GetRestStatus(
 		Timeout: timeout,
 	}
 	fullURL := fmt.Sprintf("%s/cosmos/base/tendermint/v1beta1/node_info", endpoint.URL)
-	resp, err := client.Get(fullURL)
+	resp, err := getWithContext(&client, fullURL, timeout)
 	if err != nil {
-		//retry
+		// retry
 		attempt := 0
 		for attempt < retryAttempts {
-			resp, err = client.Get(fullURL)
+			resp, err = getWithContext(&client, fullURL, timeout)
 			if err == nil {
 				break
 			}
@@ -37,6 +56,11 @@ func GetRestStatus(
 			return NodeStatus{}, err
 		}
 	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Failed to close response body: %v", err)
+		}
+	}()
 
 	// check status code
 	if resp.StatusCode != http.StatusOK {
@@ -187,24 +211,23 @@ func ValidateRestEndpoints(
 	return healthyEndpoints
 }
 
-/*
-Get the additional node info from the REST endpoint
-
-Parameters:
-
-- healthyRestEndpoint - the healthy REST endpoint to get the additional node info from
-
-Returns:
-- the additional node info
-- error if the request fails
-
-Only used within the client config generation for now
-*/
+// GetAdditionalNodeInfo gets the additional node info from the REST endpoint
+//
+// Parameters:
+//
+// - healthyRestEndpoint - the healthy REST endpoint to get the additional node info from
+//
+// Returns:
+// - the additional node info
+// - error if the request fails
+//
+// Only used within the client config generation for now
 func GetAdditionalNodeInfo(healthyRestEndpoint string) (NodeInfoResponse, error) {
+	timeout := 10 * time.Second
 	client := http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: timeout,
 	}
-	resp, err := client.Get(healthyRestEndpoint + "/cosmos/base/tendermint/v1beta1/node_info")
+	resp, err := getWithContext(&client, healthyRestEndpoint+"/cosmos/base/tendermint/v1beta1/node_info", timeout)
 	if err != nil {
 		return NodeInfoResponse{}, err
 	}
@@ -225,18 +248,16 @@ func GetAdditionalNodeInfo(healthyRestEndpoint string) (NodeInfoResponse, error)
 	return response, nil
 }
 
-/*
-Get the block data from the REST API for a given block
-
-Parameters:
-- endpoint - the endpoint to get the block data from
-- block - the integer of the blocks to get the data from
-
-Returns:
-- the block data
-- map of the block data with the block number as the key
-- error if the request fails
-*/
+// GetCosmosBlockHeights gets the block data from the REST API for a given block
+//
+// Parameters:
+// - endpoint - the endpoint to get the block data from
+// - block - the integer of the blocks to get the data from
+//
+// Returns:
+// - the block data
+// - map of the block data with the block number as the key
+// - error if the request fails
 func GetCosmosBlockHeights(
 	endpoint input.APIEndpoint,
 	retryAttempts int,
@@ -260,11 +281,11 @@ func GetCosmosBlockHeights(
 		block,
 	)
 
-	resp, err := client.Get(fullURL)
+	resp, err := getWithContext(&client, fullURL, timeout)
 	if err != nil {
 		attempt := 0
 		for attempt < retryAttempts {
-			resp, err = client.Get(fullURL)
+			resp, err = getWithContext(&client, fullURL, timeout)
 			if err == nil {
 				break
 			}
@@ -275,6 +296,11 @@ func GetCosmosBlockHeights(
 			return BlockData{}, err
 		}
 	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Failed to close response body: %v", err)
+		}
+	}()
 
 	// check status code
 	if resp.StatusCode != http.StatusOK {
@@ -294,7 +320,7 @@ func GetCosmosBlockHeights(
 	return blockDataValue, nil
 }
 
-// Get latest block height from the REST API
+// GetCosmosLatestBlockHeight gets the latest block height from the REST API
 //
 // Parameters:
 // - endpoint - the endpoint to get the latest block height from
@@ -314,7 +340,7 @@ func GetCosmosLatestBlockHeight(
 		Timeout: timeout,
 	}
 	fullURL := fmt.Sprintf("%s/cosmos/base/tendermint/v1beta1/blocks/latest", endpoint.URL)
-	resp, err := client.Get(fullURL)
+	resp, err := getWithContext(&client, fullURL, timeout)
 	if err != nil {
 		return 0, err
 	}

@@ -66,7 +66,7 @@ type ChainMeta struct {
 	// Usage:
 	//
 	// Mostly will be used for the adding custom chains to the wallets
-	KeplrChainConfig *keplr.KeplrChainConfig `toml:"keplr_chain_config,omitempty"`
+	KeplrChainConfig *keplr.ChainConfig `toml:"keplr_chain_config,omitempty"`
 }
 
 // APIEndpoint represents an RPC or REST API endpoint.
@@ -154,10 +154,12 @@ func (t *TokenMeta) IsRoutableIBC() bool {
 	return t.OriginChain != ""
 }
 
+// ExplorerMeta holds the list of explorers allowed for chains.
 type ExplorerMeta struct {
 	AllowedExplorers []AllowedExplorer `toml:"allowed_explorers"`
 }
 
+// AllowedExplorer describes an explorer that chains may link to.
 type AllowedExplorer struct {
 	Name                 string `toml:"name"`
 	BaseURL              string `toml:"base_url"`
@@ -173,6 +175,7 @@ type AllowedExplorer struct {
 	GithubProfile        string `toml:"github_profile"`
 }
 
+// IbcParams holds the send/receive enabled flags from the IBC transfer module params.
 type IbcParams struct {
 	Params struct {
 		SendEnabled    bool `json:"send_enabled"`

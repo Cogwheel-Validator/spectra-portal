@@ -1,6 +1,7 @@
 package input
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +12,23 @@ import (
 	"strings"
 	"time"
 )
+
+// doWithContext issues a request with the given method bounded by the client's
+// timeout, avoiding the context-less http.Client.Get/Head so a stalled or
+// spoofed endpoint can't hang past the configured deadline.
+func doWithContext(client *http.Client, method, url string) (*http.Response, error) {
+	ctx := context.Background()
+	if client.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, client.Timeout)
+		defer cancel()
+	}
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return client.Do(req)
+}
 
 // ValidationError contains details about a validation failure.
 type ValidationError struct {
@@ -324,7 +342,7 @@ func validateStructs(values reflect.Value, result *ValidationResult) {
 func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult) {
 	// Check explorer URL is reachable
 	if config.Chain.ExplorerURL != "" {
-		resp, err := v.httpClient.Head(config.Chain.ExplorerURL)
+		resp, err := doWithContext(v.httpClient, http.MethodHead, config.Chain.ExplorerURL)
 		if err != nil {
 			result.Warnings = append(result.Warnings,
 				fmt.Sprintf("explorer URL %s is not reachable: %v", config.Chain.ExplorerURL, err))
@@ -338,7 +356,7 @@ func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult
 	// Check at least one RPC is reachable
 	rpcReachable := false
 	for _, rpc := range config.Chain.RPCs {
-		resp, err := v.httpClient.Get(rpc.URL + "/status")
+		resp, err := doWithContext(v.httpClient, http.MethodGet, rpc.URL+"/status")
 		if err == nil {
 			if err := resp.Body.Close(); err != nil {
 				log.Printf("failed to close response body: %v", err)
@@ -354,7 +372,7 @@ func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult
 	// Check at least one REST is reachable
 	restReachable := false
 	for _, rest := range config.Chain.Rest {
-		resp, err := v.httpClient.Get(rest.URL + "/cosmos/base/tendermint/v1beta1/node_info")
+		resp, err := doWithContext(v.httpClient, http.MethodGet, rest.URL+"/cosmos/base/tendermint/v1beta1/node_info")
 		if err == nil {
 			if err := resp.Body.Close(); err != nil {
 				log.Printf("failed to close response body: %v", err)
@@ -368,7 +386,7 @@ func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult
 	}
 	// Check if the network has IBC transfers enabled
 	for _, rest := range config.Chain.Rest {
-		resp, err := v.httpClient.Get(rest.URL + "/ibc/apps/transfer/v1/params")
+		resp, err := doWithContext(v.httpClient, http.MethodGet, rest.URL+"/ibc/apps/transfer/v1/params")
 		if err != nil {
 			// Just log it for now
 			log.Printf("failed to get IBC params for %s: %v", rest.URL, err)
@@ -378,8 +396,14 @@ func (v *Validator) validateNetwork(config *ChainInput, result *ValidationResult
 		if resp.StatusCode != http.StatusOK {
 			if err := json.NewDecoder(resp.Body).Decode(&ibcParams); err != nil {
 				log.Printf("failed to unmarshal IBC params: %v", err)
+				if err := resp.Body.Close(); err != nil {
+					log.Printf("failed to close response body: %v", err)
+				}
 				continue
 			}
+		}
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("failed to close response body: %v", err)
 		}
 		if !ibcParams.Params.SendEnabled {
 			result.Warnings = append(result.Warnings, "IBC transfers are not enabled on the network")

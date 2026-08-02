@@ -22,6 +22,7 @@ import (
 // OutputFormat specifies the output format for generated configs.
 type OutputFormat string
 
+// Supported output formats for generated configs.
 const (
 	FormatTOML OutputFormat = "toml"
 	FormatJSON OutputFormat = "json"
@@ -249,7 +250,7 @@ func (g *Generator) fetchIBCRegistry(inputConfigs map[string]*input.ChainInput) 
 			return nil, fmt.Errorf("failed to clear registry cache: %w", err)
 		}
 
-		if err := registry.RegistryGitDownload(cachePath); err != nil {
+		if err := registry.GitDownload(cachePath); err != nil {
 			return nil, fmt.Errorf("failed to download IBC registry: %w", err)
 		}
 	}
@@ -270,10 +271,10 @@ Params:
 - inputConfigs: the input configs
 
 Returns:
-- []keplr.KeplrChainConfig: the keplr chain configs
+- []keplr.ChainConfig: the keplr chain configs
 - error: if the keplr registry cannot be fetched
 */
-func (g *Generator) fetchKeplrRegistry(inputConfigs map[string]*input.ChainInput) ([]keplr.KeplrChainConfig, error) {
+func (g *Generator) fetchKeplrRegistry(inputConfigs map[string]*input.ChainInput) ([]keplr.ChainConfig, error) {
 	jsonFileNames, chainsWithoutKeplrJSONFileName := g.inputLoader.GetKeplrJSONFileNames(inputConfigs)
 	log.Printf("Looking for Keplr data matching: %v", jsonFileNames)
 	if len(chainsWithoutKeplrJSONFileName) > 0 {
@@ -346,7 +347,7 @@ func (g *Generator) copyChainImages(inputConfigs map[string]*input.ChainInput, e
 	}
 
 	// Ensure public directory exists (or create it)
-	if err := os.MkdirAll(publicDir, 0755); err != nil {
+	if err := os.MkdirAll(publicDir, 0750); err != nil {
 		return fmt.Errorf("failed to create public directory: %w", err)
 	}
 
@@ -375,7 +376,7 @@ func (g *Generator) copyChainImages(inputConfigs map[string]*input.ChainInput, e
 
 func (g *Generator) writePathfinderConfig(config *output.PathfinderConfig) error {
 	dir := filepath.Dir(g.config.PathfinderOutputPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -390,6 +391,10 @@ func (g *Generator) writePathfinderConfig(config *output.PathfinderConfig) error
 	switch format {
 	case FormatJSON:
 		data, err = json.MarshalIndent(config, "", "  ")
+	case FormatTOML:
+		data, err = toml.Marshal(config)
+	case FormatAuto:
+		data, err = toml.Marshal(config)
 	default:
 		data, err = toml.Marshal(config)
 	}
@@ -398,12 +403,12 @@ func (g *Generator) writePathfinderConfig(config *output.PathfinderConfig) error
 		return fmt.Errorf("failed to marshal pathfinder config: %w", err)
 	}
 
-	return os.WriteFile(g.config.PathfinderOutputPath, data, 0644)
+	return os.WriteFile(g.config.PathfinderOutputPath, data, 0600)
 }
 
 func (g *Generator) writeClientConfig(config *output.ClientConfig) error {
 	dir := filepath.Dir(g.config.ClientOutputPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -418,6 +423,10 @@ func (g *Generator) writeClientConfig(config *output.ClientConfig) error {
 	switch format {
 	case FormatTOML:
 		data, err = toml.Marshal(config)
+	case FormatJSON:
+		data, err = json.MarshalIndent(config, "", "  ")
+	case FormatAuto:
+		data, err = json.MarshalIndent(config, "", "  ")
 	default:
 		// Default to JSON for client config (better for frontend)
 		data, err = json.MarshalIndent(config, "", "  ")
@@ -427,7 +436,7 @@ func (g *Generator) writeClientConfig(config *output.ClientConfig) error {
 		return fmt.Errorf("failed to marshal client config: %w", err)
 	}
 
-	return os.WriteFile(g.config.ClientOutputPath, data, 0644)
+	return os.WriteFile(g.config.ClientOutputPath, data, 0600)
 }
 
 // formatFromExtension determines output format from file extension.

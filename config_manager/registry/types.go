@@ -1,6 +1,6 @@
 package registry
 
-// Main json struct object from the chain registry
+// ChainIbcData is the main json struct object from the chain registry
 type ChainIbcData struct {
 	Schema   string           `json:"$schema"`
 	Chain1   IbcChainData     `json:"chain_1"`
@@ -8,14 +8,14 @@ type ChainIbcData struct {
 	Channels []IbcChannelData `json:"channels"`
 }
 
-// IBC chain data
+// IbcChainData holds IBC chain data
 type IbcChainData struct {
 	ChainName    string `json:"chain_name"`
 	ClientID     string `json:"client_id"`
 	ConnectionID string `json:"connection_id"`
 }
 
-// IBC channel data
+// IbcChannelData holds IBC channel data
 type IbcChannelData struct {
 	Chain1   ChannelChainData `json:"chain_1"`
 	Chain2   ChannelChainData `json:"chain_2"`
@@ -24,24 +24,22 @@ type IbcChannelData struct {
 	Tags     ChannelTags      `json:"tags"`
 }
 
-// Channel chain data
+// ChannelChainData holds channel chain data
 type ChannelChainData struct {
 	ChannelID string `json:"channel_id"`
 	PortID    string `json:"port_id"`
 }
 
-// Channel tags
+// ChannelTags holds channel tags
 type ChannelTags struct {
 	Preferred bool   `json:"preferred"`
 	Status    string `json:"status"`
 }
 
-/*
-The internal Spectra Portal registry
-
-It should hold the information about the chains and channels that are supported by the Spectra Portal.
-This should be a part of the final config at least for now.
-*/
+// IbcRegistry is the internal Spectra Portal registry.
+//
+// It should hold the information about the chains and channels that are supported by the Spectra Portal.
+// This should be a part of the final config at least for now.
 type IbcRegistry struct {
 	Chains []IbcChain `toml:"chains"`
 }

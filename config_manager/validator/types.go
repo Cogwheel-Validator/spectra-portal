@@ -7,7 +7,7 @@ import (
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/query"
 )
 
-// Interface that both RestApiValidity and RpcValidity must implement
+// EndpointValidity is the interface that both RestApiValidity and RpcValidity must implement
 type EndpointValidity interface {
 	GetEndpoint() input.APIEndpoint
 	GetPoints() int
@@ -18,7 +18,7 @@ type EndpointValidity interface {
 	GetURL() string
 }
 
-// A struct that allows us to track the progress if the url provided regardless if it is RPC or REST is legit
+// RestApiValidity allows us to track the progress if the url provided regardless if it is RPC or REST is legit
 type RestApiValidity struct {
 	// Same for RPC and REST
 	Endpoint input.APIEndpoint
@@ -44,31 +44,37 @@ type RestApiValidity struct {
 	blockData map[int]*query.BlockData
 }
 
-// Implement EndpointValidity interface for RestApiValidity
+// GetEndpoint implements the EndpointValidity interface for RestApiValidity
 func (r RestApiValidity) GetEndpoint() input.APIEndpoint {
 	return r.Endpoint
 }
 
+// GetPoints returns the current validity points for the endpoint.
 func (r RestApiValidity) GetPoints() int {
 	return r.points
 }
 
+// SetPoints sets the validity points for the endpoint.
 func (r *RestApiValidity) SetPoints(p int) {
 	r.points = p
 }
 
+// IsValid returns whether the endpoint is currently considered valid.
 func (r RestApiValidity) IsValid() bool {
 	return r.valid
 }
 
+// SetValid sets whether the endpoint is considered valid.
 func (r *RestApiValidity) SetValid(v bool) {
 	r.valid = v
 }
 
+// GetBlockData returns the collected block data for the endpoint.
 func (r RestApiValidity) GetBlockData() map[int]*query.BlockData {
 	return r.blockData
 }
 
+// GetURL returns the endpoint's URL.
 func (r RestApiValidity) GetURL() string {
 	return r.Endpoint.URL
 }
@@ -89,7 +95,7 @@ type blockDataTracker struct {
 	proposerAddress    map[string]int
 }
 
-// Consensue made by getting the most common value from the map
+// majorityConsensus is the consensus made by getting the most common value from the map
 type majorityConsensus struct {
 	blockHash          string
 	height             int
@@ -106,6 +112,7 @@ type majorityConsensus struct {
 	proposerAddress    string
 }
 
+// RpcValidity allows us to track the progress of validating an RPC endpoint.
 type RpcValidity struct {
 	Endpoint    input.APIEndpoint
 	points      int
@@ -118,35 +125,42 @@ type RpcValidity struct {
 	blockData map[int]*query.BlockData
 }
 
-// Implement EndpointValidity interface for RpcValidity
+// GetEndpoint implements the EndpointValidity interface for RpcValidity
 func (r RpcValidity) GetEndpoint() input.APIEndpoint {
 	return r.Endpoint
 }
 
+// GetPoints returns the current validity points for the endpoint.
 func (r RpcValidity) GetPoints() int {
 	return r.points
 }
 
+// SetPoints sets the validity points for the endpoint.
 func (r *RpcValidity) SetPoints(p int) {
 	r.points = p
 }
 
+// IsValid returns whether the endpoint is currently considered valid.
 func (r RpcValidity) IsValid() bool {
 	return r.valid
 }
 
+// SetValid sets whether the endpoint is considered valid.
 func (r *RpcValidity) SetValid(v bool) {
 	r.valid = v
 }
 
+// GetBlockData returns the collected block data for the endpoint.
 func (r RpcValidity) GetBlockData() map[int]*query.BlockData {
 	return r.blockData
 }
 
+// GetURL returns the endpoint's URL.
 func (r RpcValidity) GetURL() string {
 	return r.Endpoint.URL
 }
 
+// RpcValidationBasicData aggregates the abci_info and status data collected for an RPC endpoint.
 type RpcValidationBasicData struct {
 	AbciInfo query.AbciInfoResponseResultResponse
 	Status   query.StatusResault

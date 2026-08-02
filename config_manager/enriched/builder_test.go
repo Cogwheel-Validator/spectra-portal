@@ -92,9 +92,9 @@ func createTestInputConfigsWithMultiHop() map[string]*input.ChainInput {
 	return configs
 }
 
-func createTestKeplrConfigs() []keplr.KeplrChainConfig {
-	keplrConfigs := make([]keplr.KeplrChainConfig, 0)
-	atomoneKeplrConfig := &keplr.KeplrChainConfig{
+func createTestKeplrConfigs() []keplr.ChainConfig {
+	keplrConfigs := make([]keplr.ChainConfig, 0)
+	atomoneKeplrConfig := &keplr.ChainConfig{
 		ChainID:             "atomone-1",
 		ChainName:           "Atom One",
 		ChainSymbolImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/atomone/atone.png",
@@ -145,7 +145,7 @@ func createTestKeplrConfigs() []keplr.KeplrChainConfig {
 		},
 		Features: []string{},
 	}
-	osmosisKeplrConfig := &keplr.KeplrChainConfig{
+	osmosisKeplrConfig := &keplr.ChainConfig{
 		ChainID:             "osmosis-1",
 		ChainName:           "Osmosis",
 		ChainSymbolImageURL: "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/osmosis/osmo.png",

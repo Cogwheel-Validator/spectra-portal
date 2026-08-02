@@ -324,6 +324,7 @@ func (rb *RouteBuilder) isTokenAllowedToChain(token *input.TokenMeta, toChainID 
 	return slices.Contains(token.AllowedDestinations, toChainID)
 }
 
+// GetTokenFromChain returns the token metadata for the given denom on the given chain, or nil if not found.
 func (rb *RouteBuilder) GetTokenFromChain(chainID, denom string) *input.TokenMeta {
 	if tokens, ok := rb.tokenLookup[chainID]; ok {
 		return tokens[denom]

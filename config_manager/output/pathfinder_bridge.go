@@ -12,7 +12,7 @@ import (
 // LoadPathfinderConfig loads a pathfinder configuration from a file.
 // Supports both TOML and JSON formats based on file extension.
 func LoadPathfinderConfig(filePath string) (*PathfinderConfig, error) {
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(filePath) //nolint:gosec // G304: filePath is an operator-supplied startup config path, not external input
 	if err != nil {
 		return nil, fmt.Errorf("failed to read pathfinder config: %w", err)
 	}
@@ -32,9 +32,8 @@ func LoadPathfinderConfig(filePath string) (*PathfinderConfig, error) {
 	return &config, nil
 }
 
-// ToRouterTypes converts the output pathfinder types to the types expected by
-// the pathfinder/router package. This bridges the config_manager output to
-// the runtime router structures.
+// RouterChain is the router-compatible representation of a pathfinder chain.
+// It bridges the config_manager output to the runtime router structures.
 //
 // Usage:
 //
@@ -52,6 +51,7 @@ type RouterChain struct {
 	Routes   []RouterRoute
 }
 
+// RouterRoute is the router-compatible representation of a pathfinder route.
 type RouterRoute struct {
 	ToChain       string
 	ToChainID     string
@@ -61,6 +61,7 @@ type RouterRoute struct {
 	AllowedTokens map[string]RouterTokenInfo
 }
 
+// RouterTokenInfo is the router-compatible representation of an allowed token.
 type RouterTokenInfo struct {
 	ChainDenom  string
 	IBCDenom    string

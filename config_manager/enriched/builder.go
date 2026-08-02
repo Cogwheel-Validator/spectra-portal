@@ -87,7 +87,7 @@ func NewBuilder(allowedExplorers []input.AllowedExplorer, opts ...BuilderOption)
 func (b *Builder) BuildRegistry(
 	inputConfigs map[string]*input.ChainInput,
 	ibcData []registry.ChainIbcData,
-	keplrConfigs []keplr.KeplrChainConfig,
+	keplrConfigs []keplr.ChainConfig,
 ) (*RegistryConfig, error) {
 	if len(inputConfigs) == 0 {
 		return nil, fmt.Errorf("no input configurations provided")
@@ -105,7 +105,7 @@ func (b *Builder) BuildRegistry(
 	// Create the route builder with all configs and IBC data
 	routeBuilder := NewRouteBuilder(inputConfigs, ibcData)
 
-	keplrData := make(map[string]keplr.KeplrChainConfig)
+	keplrData := make(map[string]keplr.ChainConfig)
 	for _, keplrConfig := range keplrConfigs {
 		keplrData[keplrConfig.ChainID] = keplrConfig
 	}
@@ -131,13 +131,13 @@ func (b *Builder) BuildRegistry(
 func (b *Builder) buildChainConfig(
 	inputCfg *input.ChainInput,
 	routeBuilder *RouteBuilder,
-	keplrConfig keplr.KeplrChainConfig,
+	keplrConfig keplr.ChainConfig,
 ) (*ChainConfig, error) {
 	chain := inputCfg.Chain
 
 	explorerDetails, err := b.findExplorerDetails(chain.ExplorerURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find explorer details for chain %s: %v", chain.ID, err)
+		return nil, fmt.Errorf("failed to find explorer details for chain %s: %w", chain.ID, err)
 	}
 
 	config := &ChainConfig{
@@ -168,10 +168,10 @@ func (b *Builder) buildChainConfig(
 	config.IBCTokens = routeBuilder.BuildIBCTokensForChain(chain.ID)
 
 	// Get the additional node info from the REST endpoint
-	randomRestEndpoint := config.HealthyRests[rand.Intn(len(config.HealthyRests))]
+	randomRestEndpoint := config.HealthyRests[rand.Intn(len(config.HealthyRests))] //nolint:gosec // G404: non-cryptographic load-balancing choice
 	additionalNodeInfo, err := query.GetAdditionalNodeInfo(randomRestEndpoint.URL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get additional node info for chain %s: %v", chain.ID, err)
+		return nil, fmt.Errorf("failed to get additional node info for chain %s: %w", chain.ID, err)
 	}
 	config.CosmosSdkVersion = additionalNodeInfo.ApplicationVersion.CosmosSdkVersion
 	config.HasPFM = findPfmSupport(additionalNodeInfo)

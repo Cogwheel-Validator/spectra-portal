@@ -23,7 +23,7 @@ func (l *Loader) LoadChainConfig(filePath string) (*ChainInput, error) {
 		return nil, fmt.Errorf("config file must be a .toml file: %s", filePath)
 	}
 
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(filePath) //nolint:gosec // G304: filePath is an operator-supplied CLI/config path, not external input
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file %s: %w", filePath, err)
 	}
@@ -98,16 +98,14 @@ func (l *Loader) GetRegistryKeywords(configs map[string]*ChainInput) []string {
 	return keywords
 }
 
-/*
-Extracts keplr json file name from loaded configs.
-
-Params:
-- configs: the loaded configs
-
-Returns:
-- []string: the keplr json file names
-- []string: the chains that do not have a keplr json file name, or have an overwrite keplr chain config
-*/
+// GetKeplrJSONFileNames extracts keplr json file name from loaded configs.
+//
+// Params:
+// - configs: the loaded configs
+//
+// Returns:
+// - []string: the keplr json file names
+// - []string: the chains that do not have a keplr json file name, or have an overwrite keplr chain config
 func (l *Loader) GetKeplrJSONFileNames(configs map[string]*ChainInput) ([]string, []string) {
 	jsonFileNames := make([]string, 0, len(configs))
 	chainsWithoutKeplrJSONFileName := make([]string, 0, len(configs))
@@ -138,7 +136,7 @@ func (l *Loader) LoadListOfAllowedExplorers(filePath string) ([]AllowedExplorer,
 		return nil, fmt.Errorf("config file must be a .toml file: %s", filePath)
 	}
 
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(filePath) //nolint:gosec // G304: filePath is an operator-supplied CLI/config path, not external input
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file %s: %w", filePath, err)
 	}

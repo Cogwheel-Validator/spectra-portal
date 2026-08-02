@@ -46,7 +46,7 @@ type ChainConfig struct {
 	Routes []RouteConfig `json:"routes"`
 
 	// Keplr chain config used for client only
-	KeplrChainConfig keplr.KeplrChainConfig `json:"keplr_chain_config,omitempty"`
+	KeplrChainConfig keplr.ChainConfig `json:"keplr_chain_config,omitempty"`
 }
 
 // Endpoint represents a verified RPC or REST endpoint.
@@ -179,7 +179,7 @@ type RegistryConfig struct {
 	Chains map[string]*ChainConfig `json:"chains"`
 }
 
-// Explorer details for the client app such as url link to account and transaction
+// ExplorerDetails holds details for the client app such as url link to account and transaction
 type ExplorerDetails struct {
 	Url             string `json:"url"`
 	AccountPath     string `json:"account_path"`

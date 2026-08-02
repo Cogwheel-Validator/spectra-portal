@@ -197,7 +197,7 @@ func (q *DenomQuerier) doGetWithRetry(url string) ([]byte, error) {
 			time.Sleep(q.retryDelay)
 		}
 
-		resp, err := q.client.Get(url)
+		resp, err := getWithContext(q.client, url, q.client.Timeout)
 		if err != nil {
 			lastErr = err
 			continue
@@ -228,7 +228,7 @@ func (q *DenomQuerier) doGetWithRetry(url string) ([]byte, error) {
 // IsHealthy checks if the REST endpoint is healthy.
 func (q *DenomQuerier) IsHealthy() bool {
 	url := fmt.Sprintf("%s/cosmos/base/tendermint/v1beta1/node_info", q.baseURL)
-	resp, err := q.client.Get(url)
+	resp, err := getWithContext(q.client, url, q.client.Timeout)
 	if err != nil {
 		return false
 	}
