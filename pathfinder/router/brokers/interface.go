@@ -64,7 +64,7 @@ type RouteData interface {
 	GetSwapVenueName() string
 }
 
-// SlippageCalculator calculates minimum output with slippage tolerance.
+// CalculateMinOutput calculates minimum output with slippage tolerance.
 // slippageBps is basis points (e.g., 100 = 1%)
 func CalculateMinOutput(expectedOutput string, slippageBps uint32) (string, error) {
 	return calculateMinOutputInternal(expectedOutput, slippageBps)

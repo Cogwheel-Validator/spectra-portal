@@ -142,8 +142,8 @@ func (c *AddressConverter) SetPrefix(chainID, prefix string, slip44 int) {
 	c.prefixSlip44[prefix] = slip44
 }
 
-// DeriveAddressesForRoute derives all necessary addresses for a route
-// Given a sender address, it returns addresses for each chain in the route path
+// RouteAddresses holds the addresses derived for each chain in a route path,
+// given a sender address on the source chain.
 type RouteAddresses struct {
 	// SourceAddress on the source chain (same as input)
 	SourceAddress string

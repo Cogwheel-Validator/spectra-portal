@@ -10,10 +10,13 @@ import (
 // Ensure SmartContractBuilder implements brokers.SmartContractBuilder
 var _ brokers.SmartContractBuilder = (*SmartContractBuilder)(nil)
 
+// SmartContractBuilder builds swap-and-transfer data structures for signing against
+// the Osmosis smart contract entry point.
 type SmartContractBuilder struct {
 	contractAddress string
 }
 
+// NewSmartContractBuilder creates a new SmartContractBuilder for the given contract address.
 func NewSmartContractBuilder(contractAddress string) *SmartContractBuilder {
 	return &SmartContractBuilder{
 		contractAddress: contractAddress,

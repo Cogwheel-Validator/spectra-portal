@@ -167,6 +167,7 @@ func (s *PathfinderServer) LookupDenom(
 		req.Msg,
 	)
 	if err != nil {
+		//nolint:nilerr // unresolved denom is a valid "not found" response, not an error
 		return connect.NewResponse(&v1.LookupDenomResponse{
 			Found: false,
 		}), nil
@@ -263,7 +264,7 @@ func (s *PathfinderServer) GetChainTokens(
 			Symbol:      t.Symbol,
 			BaseDenom:   t.BaseDenom,
 			OriginChain: t.OriginChain,
-			Decimals:    int32(t.Decimals),
+			Decimals:    int32(t.Decimals), //nolint:gosec // G115: Decimals is chain metadata, always within int32 range
 			IsNative:    t.IsNative,
 		}
 	}
@@ -275,7 +276,7 @@ func (s *PathfinderServer) GetChainTokens(
 			Symbol:      t.Symbol,
 			BaseDenom:   t.BaseDenom,
 			OriginChain: t.OriginChain,
-			Decimals:    int32(t.Decimals),
+			Decimals:    int32(t.Decimals), //nolint:gosec // G115: Decimals is chain metadata, always within int32 range
 			IsNative:    t.IsNative,
 		}
 	}
@@ -317,12 +318,10 @@ func (s *PathfinderServer) GetChainInfo(
 	}), nil
 }
 
-/*
-GetPathfinderSupportedChains returns the list of all supported chains
-
-Returns:
-- []string: the list of all chain ids
-*/
+// ListSupportedChains returns the list of all supported chains
+//
+// Returns:
+// - []string: the list of all chain ids
 func (s *PathfinderServer) ListSupportedChains(
 	ctx context.Context,
 	req *connect.Request[emptypb.Empty],

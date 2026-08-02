@@ -239,7 +239,7 @@ func convertToProtoSwapQuote(swap *models.SwapQuote) *v1.SwapQuote {
 
 	// Convert broker-specific RouteData based on broker type
 	// This is the key part - converting interface{} to typed oneof
-	switch swap.Broker {
+	switch swap.Broker { //nolint:gocritic
 	case "osmosis-sqs":
 		if osmosisData, ok := swap.RouteData.(*osmosis.RouteData); ok {
 			protoSwap.RouteData = &v1.SwapQuote_OsmosisRouteData{
@@ -275,8 +275,8 @@ func convertOsmosisRouteData(data *osmosis.RouteData) *v1.OsmosisRouteData {
 		pools := make([]*v1.OsmosisPool, len(route.Pools))
 		for j, pool := range route.Pools {
 			pools[j] = &v1.OsmosisPool{
-				Id:            int32(pool.ID),
-				Type:          int32(pool.Type),
+				Id:            pool.ID,
+				Type:          pool.Type,
 				SpreadFactor:  pool.SpreadFactor,
 				TokenOutDenom: pool.TokenOutDenom,
 				TakerFee:      pool.TakerFee,
@@ -333,7 +333,7 @@ func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo, sortBySymbol
 				IbcDenom:    tokenInfo.IbcDenom,
 				BaseDenom:   tokenInfo.BaseDenom,
 				OriginChain: tokenInfo.OriginChain,
-				Decimals:    int32(tokenInfo.Decimals),
+				Decimals:    int32(tokenInfo.Decimals), //nolint:gosec // G115: Decimals is chain metadata, always within int32 range
 				Symbol:      tokenInfo.Symbol,
 			}
 		}
@@ -344,7 +344,7 @@ func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo, sortBySymbol
 				IbcDenom:    tokenInfo.IbcDenom,
 				BaseDenom:   tokenInfo.BaseDenom,
 				OriginChain: tokenInfo.OriginChain,
-				Decimals:    int32(tokenInfo.Decimals),
+				Decimals:    int32(tokenInfo.Decimals), //nolint:gosec // G115: Decimals is chain metadata, always within int32 range
 				Symbol:      tokenInfo.Symbol,
 			}
 		}

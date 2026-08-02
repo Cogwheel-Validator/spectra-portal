@@ -3,6 +3,7 @@ package router
 // ChainMapId maps chain names to their integer IDs
 type ChainMapId map[string]int
 
+// NewChainMapId builds a ChainMapId assigning each chain name a sequential integer ID.
 func NewChainMapId(chains []string) ChainMapId {
 	chainMapId := make(ChainMapId)
 	for i, chain := range chains {
@@ -11,10 +12,12 @@ func NewChainMapId(chains []string) ChainMapId {
 	return chainMapId
 }
 
+// GetId returns the integer ID assigned to the given chain name.
 func (cmi *ChainMapId) GetId(chain string) int {
 	return (*cmi)[chain]
 }
 
+// GetChain returns the chain name assigned to the given integer ID.
 func (cmi *ChainMapId) GetChain(id int) string {
 	for chain, mapId := range *cmi {
 		if mapId == id {

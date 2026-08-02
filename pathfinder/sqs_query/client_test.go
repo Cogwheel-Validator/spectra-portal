@@ -23,12 +23,12 @@ func fastFailoverConfig() FailoverConfig {
 }
 
 // sampleQuoteResponse is a realistic (trimmed) SQS /router/quote response.
-func sampleQuoteResponse(tokenInDenom, amountIn, tokenOutDenom string) RouteTokenResponse {
+func sampleQuoteResponse(amountIn, tokenOutDenom string) RouteTokenResponse {
 	return RouteTokenResponse{
 		AmountIn: struct {
 			Denom  string `json:"denom"`
 			Amount string `json:"amount"`
-		}{Denom: tokenInDenom, Amount: amountIn},
+		}{Denom: "ibc/ATOM", Amount: amountIn},
 		AmountOut: "2500000",
 		Route: []Route{
 			{
@@ -52,7 +52,7 @@ func TestGetRoute_ExactIn(t *testing.T) {
 		gotQuery.Store(r.URL.Query())
 
 		tokenOut := r.URL.Query().Get("tokenOutDenom")
-		resp := sampleQuoteResponse("ibc/ATOM", "1000000", tokenOut)
+		resp := sampleQuoteResponse("1000000", tokenOut)
 		w.Header().Set("Content-Type", "application/json")
 		assert.NoError(t, json.NewEncoder(w).Encode(resp))
 	}))
@@ -89,7 +89,7 @@ func TestGetRoute_ExactOut(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotQuery.Store(r.URL.Query())
-		resp := sampleQuoteResponse("ibc/ATOM", "1010000", "uosmo")
+		resp := sampleQuoteResponse("1010000", "uosmo")
 		w.Header().Set("Content-Type", "application/json")
 		assert.NoError(t, json.NewEncoder(w).Encode(resp))
 	}))
@@ -148,7 +148,7 @@ func TestGetRoute_RetriesUntilSuccess(t *testing.T) {
 			http.Error(w, "temporarily unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		resp := sampleQuoteResponse("ibc/ATOM", "1000000", "uosmo")
+		resp := sampleQuoteResponse("1000000", "uosmo")
 		assert.NoError(t, json.NewEncoder(w).Encode(resp))
 	}))
 	defer server.Close()
@@ -287,7 +287,7 @@ func TestGetRoute_FailoverToSecondEndpoint(t *testing.T) {
 	var backupHits atomic.Int32
 	backup := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		backupHits.Add(1)
-		resp := sampleQuoteResponse("ibc/ATOM", "1000000", "uosmo")
+		resp := sampleQuoteResponse("1000000", "uosmo")
 		assert.NoError(t, json.NewEncoder(w).Encode(resp))
 	}))
 	defer backup.Close()

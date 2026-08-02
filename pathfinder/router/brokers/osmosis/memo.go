@@ -450,34 +450,32 @@ func (b *MemoBuilder) BuildForwardSwapForwardMemo(params ibcmemo.ForwardSwapForw
 	return "", fmt.Errorf("unexpected error building forward memo")
 }
 
-/*
-BuildHowAndSwap is a method when there is transfer from regular chain that needs to be
-routed through another chain and then swapped on the broker chain
-
-An example here would be to have USDC on Cosmos HUb and you need to swap on Osmosis for
-some otken, but to receive on Osmosis
-Example output:
-
-	"forward": {
-	    "channel": "channel-141",
-	    "port": "transfer",
-	    "receiver": "osmo10a3k4...",  // contract address
-	    "retries": 2,
-	    "timeout": ...,
-	    "next": {
-	      "wasm": {
-			"contract": "osmo10a3k4...",
-			"msg": {
-			"swap_and_action": {
-				"user_swap": { ... },
-				"min_asset": { ... },
-				"timeout_timestamp": ...,
-				"post_swap_action": {
-				"transfer": { "transfer": { "to_address": "osmo1..." } }
-				"affiliates": []
-			}
-	    }
-*/
+// BuildHopAndSwapMemo builds a memo for when there is a transfer from a regular chain that
+// needs to be routed through another chain and then swapped on the broker chain.
+//
+// An example here would be to have USDC on Cosmos Hub and you need to swap on Osmosis for
+// some token, but to receive on Osmosis
+// Example output:
+//
+//	"forward": {
+//	    "channel": "channel-141",
+//	    "port": "transfer",
+//	    "receiver": "osmo10a3k4...",  // contract address
+//	    "retries": 2,
+//	    "timeout": ...,
+//	    "next": {
+//	      "wasm": {
+//			"contract": "osmo10a3k4...",
+//			"msg": {
+//			"swap_and_action": {
+//				"user_swap": { ... },
+//				"min_asset": { ... },
+//				"timeout_timestamp": ...,
+//				"post_swap_action": {
+//				"transfer": { "transfer": { "to_address": "osmo1..." } }
+//				"affiliates": []
+//			}
+//	    }
 func (b *MemoBuilder) BuildHopAndSwapMemo(params ibcmemo.HopAndSwapParams) (string, error) {
 	if b.contractAddress == "" {
 		return "", fmt.Errorf("ibc-hooks contract address not configured")

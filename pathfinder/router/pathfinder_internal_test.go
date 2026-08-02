@@ -30,10 +30,10 @@ func (c *countingBroker) QuerySwap(tokenInDenom, tokenInAmount, tokenOutDenom st
 	}, nil
 }
 
-func (c *countingBroker) GetBrokerType() string                              { return "counting-broker" }
-func (c *countingBroker) GetMemoBuilder() ibcmemo.MemoBuilder                { return nil }
+func (c *countingBroker) GetBrokerType() string                                 { return "counting-broker" }
+func (c *countingBroker) GetMemoBuilder() ibcmemo.MemoBuilder                   { return nil }
 func (c *countingBroker) GetSmartContractBuilder() brokers.SmartContractBuilder { return nil }
-func (c *countingBroker) Close()                                             {}
+func (c *countingBroker) Close()                                                {}
 
 func TestQueryBrokerWithRetry_EventualSuccess(t *testing.T) {
 	s := &Pathfinder{maxRetries: 3, retryDelay: time.Millisecond}

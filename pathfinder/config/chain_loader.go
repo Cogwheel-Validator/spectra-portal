@@ -23,7 +23,7 @@ func NewChainConfigLoader() *ChainConfigLoader {
 
 // LoadFromFile loads a pathfinder config from a file and returns router-compatible types.
 func (l *ChainConfigLoader) LoadFromFile(filePath string) ([]router.PathfinderChain, error) {
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(filePath) //nolint:gosec // G304: filePath is an operator-supplied startup config path, not external input
 	if err != nil {
 		return nil, fmt.Errorf("failed to read chain config file: %w", err)
 	}

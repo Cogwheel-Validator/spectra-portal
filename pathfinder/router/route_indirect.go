@@ -35,7 +35,10 @@ func (ri *RouteIndex) FindIndirectRoute(req models.RouteRequest) *IndirectRouteI
 
 	for queue.Len() > 0 {
 		element := queue.Front()
-		current := element.Value.(*pathNode)
+		current, ok := element.Value.(*pathNode)
+		if !ok {
+			return nil
+		}
 		queue.Remove(element)
 
 		// Check if we reached destination

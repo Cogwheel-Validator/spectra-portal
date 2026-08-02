@@ -5,6 +5,7 @@ import "encoding/json"
 // PostSwapActionEnum defines the type of action after a swap
 type PostSwapActionEnum string
 
+// Supported post-swap actions.
 const (
 	PostSwapActionEnumTransfer    PostSwapActionEnum = "transfer"
 	PostSwapActionEnumIBCTransfer PostSwapActionEnum = "ibc_transfer"

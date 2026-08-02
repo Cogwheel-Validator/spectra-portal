@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
+// Logger is the package-level logger used by the RPC server. Use SetLogger to replace it.
 var Logger zerolog.Logger
 
 func init() {

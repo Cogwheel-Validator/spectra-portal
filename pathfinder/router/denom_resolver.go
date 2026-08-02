@@ -306,6 +306,7 @@ func (dr *DenomResolver) CreateTokenMapping(chainID, denom string) (*models.Toke
 	denomInfo, err := dr.ResolveDenom(chainID, denom)
 	if err != nil {
 		// If not found in index, assume it's a native token
+		//nolint:nilerr // intentional fallback, not an error condition
 		return &models.TokenMapping{
 			ChainDenom:  denom,
 			BaseDenom:   denom,

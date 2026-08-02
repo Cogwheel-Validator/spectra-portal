@@ -113,13 +113,14 @@ func main() {
 
 	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	// Create the RPC server
 	server, err := rpc.NewServer(ctx, serverConfig, pathfinder, denomResolver)
 	if err != nil {
+		cancel()
 		log.Fatal().Err(err).Msg("Failed to create RPC server")
 	}
+	defer cancel()
 
 	// Setup signal handling for graceful shutdown
 	sigCh := make(chan os.Signal, 1)

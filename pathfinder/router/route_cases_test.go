@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/btcsuite/btcutil/bech32"
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 	router "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
+	"github.com/btcsuite/btcutil/bech32"
 	"github.com/zeebo/assert"
 )
 

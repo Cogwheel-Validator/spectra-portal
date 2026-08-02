@@ -19,4 +19,3 @@ func (ri *RouteIndex) findRouteFromChain(fromChain, toChain string) *BasicRoute 
 	}
 	return nil
 }
-

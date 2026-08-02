@@ -20,7 +20,7 @@ func init() {
 
 // SqsBroker implements brokers.BrokerClient for Osmosis using the SQS API
 type SqsBroker struct {
-	client               *sqsquery.SqsQueryClient
+	client               *sqsquery.Client
 	memoBuilder          *MemoBuilder
 	smartContractBuilder *SmartContractBuilder
 }

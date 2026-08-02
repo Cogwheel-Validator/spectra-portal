@@ -1,5 +1,6 @@
 package config
 
+// RPCPathfinderConfig holds the RPC server, CORS, and rate limiting configuration.
 type RPCPathfinderConfig struct {
 	// rpc configs
 	Port int    `toml:"port" mapstructure:"port"`
