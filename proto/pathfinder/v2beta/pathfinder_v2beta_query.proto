@@ -5,7 +5,7 @@ package pathfinder.v2beta;
 import "buf/validate/validate.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/v2beta";
+option go_package = "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v2beta";
 
 // PathfinderQueryService provides chain/denom lookups that are independent
 // of route-finding. Kept separate from FindPathService so that a breaking
@@ -24,12 +24,12 @@ service PathfinderQueryService {
     }
 
     // GetChainInfo returns information about a specific chain
-    rpc GetChainInfo(ChainInfoRequest) returns (ChainInfoResponse) {
+    rpc GetChainInfo(GetChainInfoRequest) returns (GetChainInfoResponse) {
         option idempotency_level = NO_SIDE_EFFECTS;
     }
 
     // ListSupportedChains returns a list of supported chains
-    rpc ListSupportedChains(google.protobuf.Empty) returns (PathfinderSupportedChainsResponse) {
+    rpc ListSupportedChains(google.protobuf.Empty) returns (ListSupportedChainsResponse) {
         option idempotency_level = NO_SIDE_EFFECTS;
     }
 
@@ -126,18 +126,18 @@ message TokenDetails {
     bool is_native = 6 [json_name = "is_native"];
 }
 
-message PathfinderSupportedChainsResponse {
+message ListSupportedChainsResponse {
     repeated string chain_ids = 1 [(buf.validate.field).required = true, json_name = "chain_ids"];
 }
 
-message ChainInfoRequest {
+message GetChainInfoRequest {
     // The chain id of the chain to get information for
     string chain_id = 1 [(buf.validate.field).required = true];
     // Whether to show the symbols of the tokens on the chain, default is false
     bool show_symbols = 2;
 }
 
-message ChainInfoResponse {
+message GetChainInfoResponse {
     ChainInfo chain_info = 1 [json_name = "chain_info"];
 }
 

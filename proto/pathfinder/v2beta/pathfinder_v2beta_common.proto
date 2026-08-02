@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pathfinder.v2beta;
 
-option go_package = "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/v2beta";
+option go_package = "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v2beta";
 
 // Common route/execution messages shared by the v2beta pathfinder services.
 // These are version-scoped (not v1) but are not owned by any single service,
