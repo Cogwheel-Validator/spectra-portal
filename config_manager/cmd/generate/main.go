@@ -28,7 +28,7 @@ func main() {
 	clientFormat := flag.String("client-format", "auto", "Client output format: auto, toml, json")
 	localIbcRegistry := flag.String("local-registry-cache", "", "Path to cache IBC registry data (optional)")
 	localKeplrRegistry := flag.String("local-keplr-cache", "", "Path to cache Keplr registry data (optional)")
-	skipNetwork := flag.Bool("skip-network", false, "Skip network validation of endpoints")
+	// skipNetwork := flag.Bool("skip-network", false, "Skip network validation of endpoints")
 	useLocalReg := flag.Bool("use-local-data", false, "Use cached registry data instead of downloading fresh")
 	validate := flag.Bool("validate-only", false, "Only validate configs, don't generate")
 	// If the path is set for this option the program will assume this is enabled and will try to copy the icons.
@@ -51,7 +51,7 @@ func main() {
 		ClientOutputFormat:     parseFormat(*clientFormat),
 		LocalIbcRegistryPath:   *localIbcRegistry,
 		LocalKeplrRegistryPath: *localKeplrRegistry,
-		SkipNetworkValidation:  *skipNetwork,
+		SkipNetworkValidation:  false,
 		UseLocalIbcReg:         *useLocalReg,
 		UseLocalKeplrReg:       *useLocalReg,
 		CopyIconsPath:          *copyIconsPath,

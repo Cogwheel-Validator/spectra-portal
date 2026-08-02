@@ -1,12 +1,35 @@
 package enriched
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/input"
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
+	"github.com/Cogwheel-Validator/spectra-portal/config_manager/query"
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/registry"
 )
+
+// newTestBuilder creates a Builder wired with a fake node info fetcher so tests never make
+// real HTTP calls.
+func newTestBuilder() *Builder {
+	b := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
+	b.fetchNodeInfo = mockNodeInfoFetcher
+	return b
+}
+
+// mockNodeInfoFetcher fakes the REST node_info response.
+func mockNodeInfoFetcher(url string) (query.NodeInfoResponse, error) {
+	var resp query.NodeInfoResponse
+	resp.ApplicationVersion.CosmosSdkVersion = "v0.50.0"
+	// mock it for osmosis
+	if strings.Contains(url, "osmosis") {
+		resp.ApplicationVersion.BuildDeps = []query.BuildDeps{
+			{Path: "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v8", Version: "v8.0.0"},
+		}
+	}
+	return resp, nil
+}
 
 // createTestInputConfigs creates mock input configs for testing
 func createTestInputConfigs() map[string]*input.ChainInput {
@@ -290,7 +313,7 @@ func createTestAllowedExplorers() []input.AllowedExplorer {
 }
 
 func TestBuildRegistry(t *testing.T) {
-	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
+	builder := newTestBuilder()
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -333,7 +356,7 @@ func TestBuildRegistry(t *testing.T) {
 }
 
 func TestBuildRoutes(t *testing.T) {
-	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
+	builder := newTestBuilder()
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -378,7 +401,7 @@ func TestBuildRoutes(t *testing.T) {
 }
 
 func TestRouteAllowedTokens(t *testing.T) {
-	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
+	builder := newTestBuilder()
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -434,7 +457,7 @@ func TestRouteAllowedTokens(t *testing.T) {
 }
 
 func TestIBCTokensComputed(t *testing.T) {
-	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
+	builder := newTestBuilder()
 	inputConfigs := createTestInputConfigs()
 	ibcData := createTestIBCData()
 
@@ -468,7 +491,7 @@ func TestIBCTokensComputed(t *testing.T) {
 }
 
 func TestRoutableIBCToken(t *testing.T) {
-	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
+	builder := newTestBuilder()
 	inputConfigs := createTestInputConfigsWithMultiHop()
 	ibcData := createTestIBCDataWithStargaze()
 
@@ -578,7 +601,7 @@ func TestStatusCheck(t *testing.T) {
 				},
 			}
 
-			builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
+			builder := newTestBuilder()
 			inputConfigs := createTestInputConfigs()
 			reg, err := builder.BuildRegistry(inputConfigs, ibcData, createTestKeplrConfigs())
 
@@ -597,7 +620,7 @@ func TestStatusCheck(t *testing.T) {
 }
 
 func TestEmptyInputConfigs(t *testing.T) {
-	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
+	builder := newTestBuilder()
 	_, err := builder.BuildRegistry(map[string]*input.ChainInput{}, nil, nil)
 	if err == nil {
 		t.Error("BuildRegistry() should error with empty input configs")
@@ -611,7 +634,7 @@ func TestTokenAllowedDestinations(t *testing.T) {
 	// Restrict PHOTON to only Osmosis (which is the only connection anyway)
 	configs["atomone-1"].Tokens[1].AllowedDestinations = []string{"osmosis-1"}
 
-	builder := NewBuilder(createTestAllowedExplorers(), WithSkipNetworkCheck(true))
+	builder := newTestBuilder()
 	ibcData := createTestIBCData()
 
 	reg, err := builder.BuildRegistry(configs, ibcData, createTestKeplrConfigs())

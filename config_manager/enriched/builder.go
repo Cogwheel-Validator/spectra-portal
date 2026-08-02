@@ -31,6 +31,11 @@ type Builder struct {
 	timeout          time.Duration
 	skipNetCheck     bool
 	allowedExplorers []input.AllowedExplorer
+	// fetchNodeInfo fetches the additional node info (CosmosSdkVersion, PFM support via build deps)
+	// used to enrich a chain config. It is always called, even when skipNetCheck is set, because PFM
+	// support cannot be determined offline. Overridable so tests can supply canned responses instead
+	// of making real HTTP calls.
+	fetchNodeInfo func(url string) (query.NodeInfoResponse, error)
 }
 
 // BuilderOption configures the builder.
@@ -57,7 +62,10 @@ func WithTimeout(timeout time.Duration) BuilderOption {
 	}
 }
 
-// WithSkipNetworkCheck disables network reachability checks.
+// WithSkipNetworkCheck disables the REST/RPC endpoint reachability checks, assuming all
+// configured endpoints are healthy. It does not skip the additional node info fetch used
+// for PFM support detection, since that data cannot be derived offline.
+// DEPRECATED: will only be used within the testing until a better solution is found.
 func WithSkipNetworkCheck(skip bool) BuilderOption {
 	return func(b *Builder) {
 		b.skipNetCheck = skip
@@ -72,6 +80,7 @@ func NewBuilder(allowedExplorers []input.AllowedExplorer, opts ...BuilderOption)
 		timeout:          defaultTimeout,
 		skipNetCheck:     false,
 		allowedExplorers: allowedExplorers,
+		fetchNodeInfo:    query.GetAdditionalNodeInfo,
 	}
 	for _, opt := range opts {
 		opt(b)
@@ -169,7 +178,7 @@ func (b *Builder) buildChainConfig(
 
 	// Get the additional node info from the REST endpoint
 	randomRestEndpoint := config.HealthyRests[rand.Intn(len(config.HealthyRests))] //nolint:gosec // G404: non-cryptographic load-balancing choice
-	additionalNodeInfo, err := query.GetAdditionalNodeInfo(randomRestEndpoint.URL)
+	additionalNodeInfo, err := b.fetchNodeInfo(randomRestEndpoint.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get additional node info for chain %s: %w", chain.ID, err)
 	}
