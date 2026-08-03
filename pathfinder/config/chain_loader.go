@@ -8,7 +8,6 @@ import (
 
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/output"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
-	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -101,26 +100,4 @@ func (l *ChainConfigLoader) ConvertToRouterTypes(config *output.PathfinderConfig
 	}
 
 	return chains, nil
-}
-
-// InitializePathfinder creates a fully initialized Pathfinder from a config file.
-// brokerClients should contain configured broker clients (e.g., Osmosis SQS client).
-func (l *ChainConfigLoader) InitializePathfinder(
-	configPath string,
-	brokerClients map[string]brokers.BrokerClient,
-) (*router.Pathfinder, error) {
-	chains, err := l.LoadFromFile(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load chain config: %w", err)
-	}
-
-	// Build the route index
-	routeIndex := router.NewRouteIndex()
-	if err := routeIndex.BuildIndex(chains); err != nil {
-		return nil, fmt.Errorf("failed to build route index: %w", err)
-	}
-
-	// Create and return the pathfinder
-	pathfinder := router.NewPathfinder(chains, routeIndex, brokerClients)
-	return pathfinder, nil
 }
