@@ -16,18 +16,27 @@ import (
 // getWithContext issues a GET request bounded by timeout, avoiding the
 // context-less http.Client.Get so a stalled or malicious endpoint can't hang
 // past the configured deadline.
-func getWithContext(client *http.Client, url string, timeout time.Duration) (*http.Response, error) {
+//
+// The returned cancel func must be deferred by the caller only after the
+// response body has been fully read - the context governs the whole round
+// trip, including the body read, not just the call to client.Do.
+func getWithContext(client *http.Client, url string, timeout time.Duration) (*http.Response, context.CancelFunc, error) {
 	ctx := context.Background()
+	cancel := context.CancelFunc(func() {})
 	if timeout > 0 {
-		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		cancel()
+		return nil, cancel, err
 	}
-	return client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		cancel()
+		return nil, cancel, err
+	}
+	return resp, cancel, nil
 }
 
 // GetRestStatus queries the REST node_info endpoint and returns the node status.
@@ -40,12 +49,12 @@ func GetRestStatus(
 		Timeout: timeout,
 	}
 	fullURL := fmt.Sprintf("%s/cosmos/base/tendermint/v1beta1/node_info", endpoint.URL)
-	resp, err := getWithContext(&client, fullURL, timeout)
+	resp, cancel, err := getWithContext(&client, fullURL, timeout)
 	if err != nil {
 		// retry
 		attempt := 0
 		for attempt < retryAttempts {
-			resp, err = getWithContext(&client, fullURL, timeout)
+			resp, cancel, err = getWithContext(&client, fullURL, timeout)
 			if err == nil {
 				break
 			}
@@ -56,6 +65,7 @@ func GetRestStatus(
 			return NodeStatus{}, err
 		}
 	}
+	defer cancel()
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.Printf("Failed to close response body: %v", err)
@@ -227,10 +237,11 @@ func GetAdditionalNodeInfo(healthyRestEndpoint string) (NodeInfoResponse, error)
 	client := http.Client{
 		Timeout: timeout,
 	}
-	resp, err := getWithContext(&client, healthyRestEndpoint+"/cosmos/base/tendermint/v1beta1/node_info", timeout)
+	resp, cancel, err := getWithContext(&client, healthyRestEndpoint+"/cosmos/base/tendermint/v1beta1/node_info", timeout)
 	if err != nil {
 		return NodeInfoResponse{}, err
 	}
+	defer cancel()
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.Fatalf("Failed to close response body: %v", err)
@@ -281,11 +292,11 @@ func GetCosmosBlockHeights(
 		block,
 	)
 
-	resp, err := getWithContext(&client, fullURL, timeout)
+	resp, cancel, err := getWithContext(&client, fullURL, timeout)
 	if err != nil {
 		attempt := 0
 		for attempt < retryAttempts {
-			resp, err = getWithContext(&client, fullURL, timeout)
+			resp, cancel, err = getWithContext(&client, fullURL, timeout)
 			if err == nil {
 				break
 			}
@@ -296,6 +307,7 @@ func GetCosmosBlockHeights(
 			return BlockData{}, err
 		}
 	}
+	defer cancel()
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.Printf("Failed to close response body: %v", err)
@@ -340,10 +352,11 @@ func GetCosmosLatestBlockHeight(
 		Timeout: timeout,
 	}
 	fullURL := fmt.Sprintf("%s/cosmos/base/tendermint/v1beta1/blocks/latest", endpoint.URL)
-	resp, err := getWithContext(&client, fullURL, timeout)
+	resp, cancel, err := getWithContext(&client, fullURL, timeout)
 	if err != nil {
 		return 0, err
 	}
+	defer cancel()
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.Fatalf("Failed to close response body: %v", err)

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/cp"
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/enriched"
@@ -66,6 +67,9 @@ type GeneratorConfig struct {
 
 	// Path to the allowed explorers file
 	AllowedExplorersPath string
+
+	// Timeout for API requests
+	ApiTimeout int
 }
 
 // Generator is the main config generation pipeline.
@@ -82,12 +86,14 @@ type Generator struct {
 func NewGenerator(config GeneratorConfig) *Generator {
 	var clientConvOpts []output.ClientConverterOption
 	// Leave empty for now, it might be needed later on...
+	timeout := time.Duration(config.ApiTimeout) * time.Second
 
 	// Builder handles all network validation (version consensus, height sync, tx indexer)
 	var builderOpts []enriched.BuilderOption
 	if config.SkipNetworkValidation {
 		builderOpts = append(builderOpts, enriched.WithSkipNetworkCheck(true))
 	}
+	builderOpts = append(builderOpts, enriched.WithTimeout(timeout))
 
 	if config.CopyIconsPath != "" {
 		clientConvOpts = append(clientConvOpts, output.WithIconCopy(true))

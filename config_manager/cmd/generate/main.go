@@ -34,6 +34,7 @@ func main() {
 	// If the path is set for this option the program will assume this is enabled and will try to copy the icons.
 	copyIconsPath := flag.String("copy-icons", "", "Copy icons to the public/icons directory")
 	allowedExplorersPath := flag.String("allowed-explorers", "./explorers/allowed_explorers.toml", "Path to the allowed explorers file")
+	apiTimeout := flag.Int("api-timeout", 10, "Impose limit on REST API and RPC timeout in seconds")
 
 	flag.Parse()
 
@@ -56,6 +57,7 @@ func main() {
 		UseLocalKeplrReg:       *useLocalReg,
 		CopyIconsPath:          *copyIconsPath,
 		AllowedExplorersPath:   *allowedExplorersPath,
+		ApiTimeout:             *apiTimeout,
 	}
 
 	if *validate {

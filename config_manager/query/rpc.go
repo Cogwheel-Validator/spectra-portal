@@ -42,19 +42,24 @@ func NewRpcClient(baseURLs []string, retryAttempts int, retryDelay time.Duration
 // postWithContext issues a POST request bounded by the client's timeout, avoiding
 // the context-less http.Client.Post so a stalled or malicious RPC endpoint can't
 // hang past the configured deadline.
-func postWithContext(client *http.Client, url, contentType string, body []byte) (*http.Response, error) {
+func postWithContext(client *http.Client, url, contentType string, body []byte) (*http.Response, context.CancelFunc, error) {
 	ctx := context.Background()
+	cancel := context.CancelFunc(func() {})
 	if client.Timeout > 0 {
-		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, client.Timeout)
-		defer cancel()
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		cancel()
+		return nil, cancel, err
 	}
 	req.Header.Set("Content-Type", contentType)
-	return client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		cancel()
+		return nil, cancel, err
+	}
+	return resp, cancel, nil
 }
 
 func (c *RpcClient) performRequest(url, method string, params map[string]any, result any) error {
@@ -69,11 +74,11 @@ func (c *RpcClient) performRequest(url, method string, params map[string]any, re
 	}
 
 	// perform the request
-	resp, err := postWithContext(c.Client, url, "application/json", requestBody)
+	resp, cancel, err := postWithContext(c.Client, url, "application/json", requestBody)
 	if err != nil {
 		retryAttempt := 0
 		for retryAttempt < c.RetryAttempts {
-			resp, err = postWithContext(c.Client, url, "application/json", requestBody)
+			resp, cancel, err = postWithContext(c.Client, url, "application/json", requestBody)
 			if err == nil {
 				break
 			}
@@ -84,6 +89,7 @@ func (c *RpcClient) performRequest(url, method string, params map[string]any, re
 			return fmt.Errorf("failed to perform request %s method %s: %w", url, method, err)
 		}
 	}
+	defer cancel()
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.Printf("failed to close response body: %v", err)
