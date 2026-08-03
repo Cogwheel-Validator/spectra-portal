@@ -2,6 +2,7 @@ package router
 
 import (
 	"container/list"
+	"errors"
 
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 )
@@ -134,9 +135,21 @@ func (s *Pathfinder) buildDirectResponse(req models.RouteRequest, route *BasicRo
 	}
 
 	return models.RouteResponse{
-		Success:   true,
-		RouteType: "direct",
-		Direct:    direct,
+		Success:        true,
+		RouteType:      "direct",
+		Direct:         direct,
+		RequiredChains: chainsFromNeeds(directAddressNeeds(req)),
+	}
+}
+
+// directAddressNeeds lists the addresses a direct or indirect route needs:
+// the sender on the source chain and the receiver on the destination chain.
+// PFM intermediate chains escrow in module accounts, so no user address is
+// needed there.
+func directAddressNeeds(req models.RouteRequest) []AddressNeed {
+	return []AddressNeed{
+		{ChainID: req.ChainFrom, Role: RoleSender, Required: true},
+		{ChainID: req.ChainTo, Role: RoleReceiver, Required: true},
 	}
 }
 
@@ -202,9 +215,26 @@ func (s *Pathfinder) buildIndirectResponse(req models.RouteRequest, routeInfo *I
 	// Check PFM support - all intermediate chains must support PFM
 	supportsPFM := s.checkPFMSupport(routeInfo.Path)
 	pfmMemo := ""
+	needs := directAddressNeeds(req)
 
 	if supportsPFM && len(routeInfo.Path) > 2 {
-		pfmMemo = s.generatePFMMemo(legs, req.ReceiverAddress)
+		resolved, err := s.resolveRouteAddresses(req, needs)
+		if err != nil {
+			var missingErr *MissingAddressesError
+			if errors.As(err, &missingErr) {
+				return models.RouteResponse{
+					Success:              false,
+					RouteType:            "impossible",
+					ErrorMessage:         missingErr.Error(),
+					MissingAddressChains: missingErr.ChainIDs,
+				}
+			}
+			pathfinderLog.Warn().Err(err).Msg("Failed to resolve route addresses, skipping PFM memo")
+		} else if !resolved.Placeholders {
+			// Mock discovery requests carry no memo; the placeholder receiver
+			// must never end up in a signable payload.
+			pfmMemo = s.generatePFMMemo(legs, resolved.On(req.ChainTo, RoleReceiver))
+		}
 	}
 
 	indirect := &models.IndirectRoute{
@@ -216,8 +246,9 @@ func (s *Pathfinder) buildIndirectResponse(req models.RouteRequest, routeInfo *I
 	}
 
 	return models.RouteResponse{
-		Success:   true,
-		RouteType: "indirect",
-		Indirect:  indirect,
+		Success:        true,
+		RouteType:      "indirect",
+		Indirect:       indirect,
+		RequiredChains: chainsFromNeeds(needs),
 	}
 }

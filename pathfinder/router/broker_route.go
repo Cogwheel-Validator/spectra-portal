@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"fmt"
 
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
@@ -43,15 +44,16 @@ func (s *Pathfinder) buildBrokerSwapResponse(
 	}
 
 	// Build the broker swap route information
-	brokerRoute, err := s.buildBrokerRoute(req, hopInfo, swapResult, brokerClient)
+	brokerRoute, requiredChains, err := s.buildBrokerRoute(req, hopInfo, swapResult, brokerClient)
 	if err != nil {
 		return models.RouteResponse{}, fmt.Errorf("failed to build broker route: %w", err)
 	}
 
 	return models.RouteResponse{
-		Success:    true,
-		RouteType:  "broker_swap",
-		BrokerSwap: brokerRoute,
+		Success:        true,
+		RouteType:      "broker_swap",
+		BrokerSwap:     brokerRoute,
+		RequiredChains: requiredChains,
 	}, nil
 }
 
@@ -86,12 +88,12 @@ func (s *Pathfinder) buildBrokerRoute(
 	hopInfo *MultiHopInfo,
 	swapResult *brokers.SwapResult,
 	brokerClient brokers.BrokerClient,
-) (*models.BrokerRoute, error) {
+) (*models.BrokerRoute, []string, error) {
 	if err := validateBrokerRouteInputs(hopInfo, swapResult); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if err := normalizeSlippage(&req); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	_, brokerExists := s.chainsMap[hopInfo.BrokerChainId]
@@ -120,7 +122,10 @@ func (s *Pathfinder) buildBrokerRoute(
 
 	outboundLegs, supportsPFM := s.buildBrokerOutboundLegs(hopInfo, swapResult, tokenOutOnBroker)
 
-	execution := s.buildBrokerExecutionData(req, hopInfo, swapResult, outboundLegs, brokerClient, brokerExists)
+	execution, requiredChains, err := s.buildBrokerExecutionData(req, hopInfo, swapResult, outboundLegs, brokerClient, brokerExists)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	return &models.BrokerRoute{
 		Path:                path,
@@ -129,7 +134,7 @@ func (s *Pathfinder) buildBrokerRoute(
 		OutboundLegs:        outboundLegs,
 		OutboundSupportsPFM: supportsPFM,
 		Execution:           execution,
-	}, nil
+	}, requiredChains, nil
 }
 
 // validateBrokerRouteInputs checks that the required hop and swap data are present.
@@ -352,9 +357,15 @@ func (s *Pathfinder) buildBrokerOutboundLegs(
 }
 
 // buildBrokerExecutionData generates execution data for the route when SmartRoute is
-// enabled, dispatching to the correct builder for the route shape. Execution data is
-// best-effort: builder failures are logged and result in nil execution, leaving the
-// route still usable as a manual route.
+// enabled, dispatching to the correct builder for the route shape. It also returns
+// the chain IDs the route requires an address for.
+//
+// Execution data is best-effort: builder failures are logged and result in nil
+// execution, leaving the route still usable as a manual route. Two exceptions
+// produce a hard error: a strict (v2beta) request whose address map is missing
+// required chains, reported as *MissingAddressesError. For mock requests (empty
+// address map) no execution data is built at all - only the required chains are
+// reported.
 func (s *Pathfinder) buildBrokerExecutionData(
 	req models.RouteRequest,
 	hopInfo *MultiHopInfo,
@@ -362,45 +373,64 @@ func (s *Pathfinder) buildBrokerExecutionData(
 	outboundLegs []*models.IBCLeg,
 	brokerClient brokers.BrokerClient,
 	brokerExists bool,
-) *models.BrokerExecutionData {
+) (*models.BrokerExecutionData, []string, error) {
+	needs := executionAddressNeeds(req, hopInfo, outboundLegs)
+	requiredChains := chainsFromNeeds(needs)
+
 	// Only build execution data if SmartRoute is explicitly true
 	if req.SmartRoute == nil || !*req.SmartRoute {
 		pathfinderLog.Debug().Msg("Manual route - skipping execution data generation")
-		return nil
+		return nil, requiredChains, nil
+	}
+
+	resolved, err := s.resolveRouteAddresses(req, needs)
+	if err != nil {
+		var missingErr *MissingAddressesError
+		if errors.As(err, &missingErr) {
+			return nil, requiredChains, err
+		}
+		pathfinderLog.Warn().Err(err).Msg("Failed to resolve route addresses, route still usable")
+		return nil, requiredChains, nil
+	}
+
+	if resolved.Placeholders {
+		// Mock discovery request: the route topology is the answer; never
+		// emit execution data built from placeholder addresses.
+		pathfinderLog.Debug().Msg("Mock request - skipping execution data generation")
+		return nil, requiredChains, nil
 	}
 
 	memoBuilder := brokerClient.GetMemoBuilder()
 	smartContractBuilder := brokerClient.GetSmartContractBuilder()
 
 	var execution *models.BrokerExecutionData
-	var err error
 
 	switch {
 	case hopInfo.SourceIsBroker && hopInfo.SwapOnly:
 		// Same-chain swap: Source == Broker == Destination
 		// Use smart contract data (direct contract call, no IBC)
 		pathfinderLog.Debug().Msg("Building same-chain swap route (smart contract)")
-		execution, err = s.buildSmartContractSwapExecution(req, hopInfo, swapResult, smartContractBuilder, brokerExists)
+		execution, err = s.buildSmartContractSwapExecution(req, hopInfo, swapResult, smartContractBuilder, brokerExists, resolved)
 	case hopInfo.SourceIsBroker:
 		// Source is broker, dest is not: swap + outbound IBC
 		// Use smart contract data with IBC forward built-in
 		pathfinderLog.Debug().Msg("Building broker-as-source route (smart contract + IBC forward)")
-		execution, err = s.buildSmartContractSwapAndForwardExecution(req, hopInfo, swapResult, outboundLegs, smartContractBuilder, brokerExists)
+		execution, err = s.buildSmartContractSwapAndForwardExecution(req, hopInfo, swapResult, outboundLegs, smartContractBuilder, brokerExists, resolved)
 	case hopInfo.SwapOnly:
 		// Source is not broker, dest is broker: inbound IBC + swap
 		// Use IBC memo (ibc-hooks will trigger swap)
 		pathfinderLog.Debug().Msg("Building swap-only route (IBC memo)")
-		execution, err = s.buildSwapOnlyExecution(req, hopInfo, swapResult, memoBuilder, brokerExists)
+		execution, err = s.buildSwapOnlyExecution(req, hopInfo, swapResult, memoBuilder, brokerExists, resolved)
 	default:
 		// Full route: source -> broker -> dest (all different chains)
 		// Use IBC memo (ibc-hooks will trigger swap + forward)
 		pathfinderLog.Debug().Int("outboundHops", len(outboundLegs)).Msg("Building full broker route (IBC memo)")
-		execution, err = s.buildSwapAndForwardExecution(req, hopInfo, swapResult, outboundLegs, memoBuilder, brokerExists)
+		execution, err = s.buildSwapAndForwardExecution(req, hopInfo, swapResult, outboundLegs, memoBuilder, brokerExists, resolved)
 	}
 
 	if err != nil {
 		pathfinderLog.Warn().Err(err).Msg("Failed to build execution data, route still usable")
 	}
 
-	return execution
+	return execution, requiredChains, nil
 }

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -54,8 +55,22 @@ func (s *Pathfinder) FindPath(req models.RouteRequest) models.RouteResponse {
 		Str("tokenFrom", req.TokenFromDenom).
 		Str("tokenTo", req.TokenToDenom).
 		Str("amount", req.AmountIn).
+		Bool("mock", len(req.Addresses) == 0).
 		Msg("Solving route")
 
+	return s.markIfMock(req, s.findPath(req))
+}
+
+// markIfMock flags successful responses to a mock (empty-address) discovery
+// request so the RPC layer can mark them as not executable.
+func (s *Pathfinder) markIfMock(req models.RouteRequest, resp models.RouteResponse) models.RouteResponse {
+	if resp.Success && len(req.Addresses) == 0 {
+		resp.Mock = true
+	}
+	return resp
+}
+
+func (s *Pathfinder) findPath(req models.RouteRequest) models.RouteResponse {
 	// First, try to find a direct IBC route (no swap needed)
 	directRoute := s.routeIndex.FindDirectRoute(req)
 	if directRoute != nil {
@@ -98,6 +113,18 @@ func (s *Pathfinder) FindPath(req models.RouteRequest) models.RouteResponse {
 		if err == nil {
 			pathfinderLog.Info().Str("broker", hopInfo.BrokerChain).Msg("Broker route succeeded")
 			return response
+		}
+		// A route was found but the request's address map does not cover it;
+		// trying other brokers would not fix the request.
+		var missingErr *MissingAddressesError
+		if errors.As(err, &missingErr) {
+			pathfinderLog.Warn().Strs("missingChains", missingErr.ChainIDs).Msg("Route found but addresses are missing")
+			return models.RouteResponse{
+				Success:              false,
+				RouteType:            "impossible",
+				ErrorMessage:         missingErr.Error(),
+				MissingAddressChains: missingErr.ChainIDs,
+			}
 		}
 		lastErr = err
 		pathfinderLog.Debug().Err(err).Str("broker", hopInfo.BrokerChain).Msg("Broker route failed, trying next")

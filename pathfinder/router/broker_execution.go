@@ -45,6 +45,7 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 	swapResult *brokers.SwapResult,
 	memoBuilder ibcmemo.MemoBuilder,
 	brokerExists bool,
+	resolved *ResolvedAddresses,
 ) (*models.BrokerExecutionData, error) {
 	if !brokerExists {
 		return nil, fmt.Errorf("broker chain %s not found", hopInfo.BrokerChainId)
@@ -56,20 +57,18 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 		return nil, fmt.Errorf("ibc-hooks contract not configured for broker %s", hopInfo.BrokerChainId)
 	}
 
-	// Derive addresses
-	addresses, err := s.addressConverter.DeriveRouteAddresses(req.SenderAddress, hopInfo.BrokerChainId, req.ReceiverAddress)
-	if err != nil {
-		return nil, fmt.Errorf("failed to derive addresses: %w", err)
-	}
+	brokerAddr := resolved.On(hopInfo.BrokerChainId, RoleSender)
+	destAddr := resolved.On(req.ChainTo, RoleReceiver)
 
 	minOutput := minOutputWithSlippage(req, swapResult)
 	tokenInDenom := tokenInDenomOnBroker(hopInfo)
 
 	var memo string
+	var err error
 
 	// Check if we need multi-hop inbound (Forward + Swap)
 	if len(hopInfo.InboundRoutes) > 1 {
-		inboundHops := s.buildInboundHops(hopInfo, req)
+		inboundHops := s.buildInboundHops(hopInfo, resolved)
 
 		if len(hopInfo.InboundRoutes) == 2 {
 			// Two inbound hops (source -> intermediate -> broker): use HopAndSwap memo.
@@ -83,11 +82,11 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 						MinOutputAmount:  minOutput,
 						RouteData:        swapResult.RouteData,
 						TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
-						RecoverAddress:   addresses.BrokerAddress,
-						ReceiverAddress:  addresses.DestinationAddress,
+						RecoverAddress:   brokerAddr,
+						ReceiverAddress:  destAddr,
 					},
 					SourceChannel:   "",
-					ForwardReceiver: addresses.DestinationAddress,
+					ForwardReceiver: destAddr,
 					ForwardMemo:     "",
 				},
 			})
@@ -106,11 +105,11 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 						MinOutputAmount:  minOutput,
 						RouteData:        swapResult.RouteData,
 						TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
-						RecoverAddress:   addresses.BrokerAddress,
-						ReceiverAddress:  addresses.DestinationAddress,
+						RecoverAddress:   brokerAddr,
+						ReceiverAddress:  destAddr,
 					},
 					SourceChannel:   "",
-					ForwardReceiver: addresses.DestinationAddress,
+					ForwardReceiver: destAddr,
 					ForwardMemo:     "",
 				},
 			})
@@ -126,8 +125,8 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 			MinOutputAmount:  minOutput,
 			RouteData:        swapResult.RouteData,
 			TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
-			RecoverAddress:   addresses.BrokerAddress,
-			ReceiverAddress:  addresses.DestinationAddress, // For swap-only, receiver is on broker chain
+			RecoverAddress:   brokerAddr,
+			ReceiverAddress:  destAddr, // For swap-only, receiver is on broker chain
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to build wasm memo: %w", err)
@@ -138,9 +137,9 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 	ibcReceiver := contractAddress
 	if len(hopInfo.InboundRoutes) == 2 {
 		chainId := hopInfo.InboundRoutes[0].ToChainId
-		addr, err := s.addressConverter.ConvertAddress(req.SenderAddress, chainId)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert address: %w", err)
+		addr, ok := resolved.Lookup(chainId, RoleSender)
+		if !ok {
+			return nil, fmt.Errorf("no address available for intermediate chain %s", chainId)
 		}
 		ibcReceiver = addr
 	}
@@ -148,7 +147,7 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 	return &models.BrokerExecutionData{
 		Memo:            &memo,
 		IBCReceiver:     &ibcReceiver,
-		RecoverAddress:  &addresses.BrokerAddress,
+		RecoverAddress:  &brokerAddr,
 		MinOutputAmount: minOutput,
 		UsesWasm:        true,
 		Description:     fmt.Sprintf("IBC transfer with swap on %s", hopInfo.BrokerChainId),
@@ -164,6 +163,7 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 	outboundLegs []*models.IBCLeg,
 	memoBuilder ibcmemo.MemoBuilder,
 	brokerExists bool,
+	resolved *ResolvedAddresses,
 ) (*models.BrokerExecutionData, error) {
 	contractAddress := memoBuilder.GetContractAddress()
 	if !brokerExists || contractAddress == "" {
@@ -174,33 +174,29 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 		return nil, fmt.Errorf("no outbound legs provided")
 	}
 
-	// Derive addresses
-	addresses, err := s.addressConverter.DeriveRouteAddresses(req.SenderAddress, hopInfo.BrokerChainId, req.ReceiverAddress)
-	if err != nil {
-		return nil, fmt.Errorf("failed to derive addresses: %w", err)
-	}
+	brokerAddr := resolved.On(hopInfo.BrokerChainId, RoleSender)
+	destAddr := resolved.On(req.ChainTo, RoleReceiver)
 
 	minOutput := minOutputWithSlippage(req, swapResult)
 	tokenInDenom := tokenInDenomOnBroker(hopInfo)
 
 	// Determine the receiver for the first IBC transfer (after swap)
 	// If there are more hops, receiver should be on the intermediate chain
-	firstHopReceiver := addresses.DestinationAddress
+	firstHopReceiver := destAddr
 	if len(outboundLegs) > 1 {
-		// For multi-hop, the receiver on the first intermediate chain
-		// We need to derive the address for the intermediate chain
+		// For multi-hop, the receiver is on the first intermediate chain
 		intermediateChain := outboundLegs[0].ToChain
-		intermediateAddr, addrErr := s.addressConverter.ConvertAddress(req.ReceiverAddress, intermediateChain)
-		if addrErr != nil {
+		if intermediateAddr, ok := resolved.Lookup(intermediateChain, RoleReceiver); ok {
+			firstHopReceiver = intermediateAddr
+		} else {
 			// Fallback to destination address (PFM will use it anyway)
-			pathfinderLog.Warn().Err(addrErr).Str("chain", intermediateChain).Msg("Failed to derive intermediate address")
-			intermediateAddr = addresses.DestinationAddress
+			pathfinderLog.Warn().Str("chain", intermediateChain).Msg("No address for intermediate chain, using destination address")
 		}
-		firstHopReceiver = intermediateAddr
 	}
 
 	// Build the memo based on inbound and outbound hop counts
 	var memo string
+	var err error
 	hasMultiHopInbound := len(hopInfo.InboundRoutes) > 1
 	hasMultiHopOutbound := len(outboundLegs) > 1
 
@@ -208,12 +204,12 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 		// Multi-hop inbound: use ForwardSwap or ForwardSwapForward.
 		// The memo is attached to the first IBC transfer (source → first intermediate).
 		// It must describe only the remaining hops (first intermediate → broker → ...).
-		inboundHops := s.buildInboundHops(hopInfo, req)
+		inboundHops := s.buildInboundHops(hopInfo, resolved)
 		memoInboundHops := inboundHops[1:]
 
 		if hasMultiHopOutbound {
 			// Forward + Swap + MultiHop Forward (case 5.4)
-			outboundHops := s.buildOutboundHops(outboundLegs, addresses.DestinationAddress, req)
+			outboundHops := s.buildOutboundHops(outboundLegs, destAddr, resolved)
 
 			memo, err = memoBuilder.BuildForwardSwapForwardMemo(ibcmemo.ForwardSwapForwardParams{
 				InboundHops: memoInboundHops,
@@ -224,11 +220,11 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 						MinOutputAmount:  minOutput,
 						RouteData:        swapResult.RouteData,
 						TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
-						RecoverAddress:   addresses.BrokerAddress,
+						RecoverAddress:   brokerAddr,
 						ReceiverAddress:  firstHopReceiver,
 					},
 					OutboundHops:  outboundHops,
-					FinalReceiver: addresses.DestinationAddress,
+					FinalReceiver: destAddr,
 				},
 			})
 		} else {
@@ -242,7 +238,7 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 						MinOutputAmount:  minOutput,
 						RouteData:        swapResult.RouteData,
 						TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
-						RecoverAddress:   addresses.BrokerAddress,
+						RecoverAddress:   brokerAddr,
 						ReceiverAddress:  firstHopReceiver,
 					},
 					SourceChannel:   outboundLegs[0].Channel,
@@ -255,7 +251,7 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 		// Single-hop inbound
 		if hasMultiHopOutbound {
 			// Swap + MultiHop Forward (case 5.3)
-			outboundHops := s.buildOutboundHops(outboundLegs, addresses.DestinationAddress, req)
+			outboundHops := s.buildOutboundHops(outboundLegs, destAddr, resolved)
 
 			memo, err = memoBuilder.BuildSwapAndMultiHopMemo(ibcmemo.SwapAndMultiHopParams{
 				SwapMemoParams: ibcmemo.SwapMemoParams{
@@ -264,11 +260,11 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 					MinOutputAmount:  minOutput,
 					RouteData:        swapResult.RouteData,
 					TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
-					RecoverAddress:   addresses.BrokerAddress,
+					RecoverAddress:   brokerAddr,
 					ReceiverAddress:  firstHopReceiver,
 				},
 				OutboundHops:  outboundHops,
-				FinalReceiver: addresses.DestinationAddress,
+				FinalReceiver: destAddr,
 			})
 		} else {
 			// Swap + Single Forward (case 5.1)
@@ -279,7 +275,7 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 					MinOutputAmount:  minOutput,
 					RouteData:        swapResult.RouteData,
 					TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
-					RecoverAddress:   addresses.BrokerAddress,
+					RecoverAddress:   brokerAddr,
 					ReceiverAddress:  firstHopReceiver,
 				},
 				SourceChannel:   outboundLegs[0].Channel,
@@ -306,7 +302,7 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 	return &models.BrokerExecutionData{
 		Memo:            &memo,
 		IBCReceiver:     &contractAddress,
-		RecoverAddress:  &addresses.BrokerAddress,
+		RecoverAddress:  &brokerAddr,
 		MinOutputAmount: minOutput,
 		UsesWasm:        true,
 		Description:     description,
@@ -321,6 +317,7 @@ func (s *Pathfinder) buildSmartContractSwapExecution(
 	swapResult *brokers.SwapResult,
 	scBuilder brokers.SmartContractBuilder,
 	brokerExists bool,
+	resolved *ResolvedAddresses,
 ) (*models.BrokerExecutionData, error) {
 	if !brokerExists {
 		return nil, fmt.Errorf("broker chain %s not found", hopInfo.BrokerChainId)
@@ -335,8 +332,8 @@ func (s *Pathfinder) buildSmartContractSwapExecution(
 		MinOutputAmount:  minOutput,
 		RouteData:        swapResult.RouteData,
 		TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
-		RecoverAddress:   req.SenderAddress,   // On same chain, use sender as recover
-		ReceiverAddress:  req.ReceiverAddress, // Final destination on same chain
+		RecoverAddress:   resolved.On(req.ChainFrom, RoleSender), // On same chain, use sender as recover
+		ReceiverAddress:  resolved.On(req.ChainTo, RoleReceiver), // Final destination on same chain
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to build smart contract data: %w", err)
@@ -359,6 +356,7 @@ func (s *Pathfinder) buildSmartContractSwapAndForwardExecution(
 	outboundLegs []*models.IBCLeg,
 	scBuilder brokers.SmartContractBuilder,
 	brokerExists bool,
+	resolved *ResolvedAddresses,
 ) (*models.BrokerExecutionData, error) {
 	if !brokerExists {
 		return nil, fmt.Errorf("broker chain %s not found", hopInfo.BrokerChainId)
@@ -366,6 +364,9 @@ func (s *Pathfinder) buildSmartContractSwapAndForwardExecution(
 	if len(outboundLegs) == 0 {
 		return nil, fmt.Errorf("no outbound legs for swap-and-forward")
 	}
+
+	senderAddr := resolved.On(req.ChainFrom, RoleSender)
+	destAddr := resolved.On(req.ChainTo, RoleReceiver)
 
 	minOutput := minOutputWithSlippage(req, swapResult)
 
@@ -375,7 +376,7 @@ func (s *Pathfinder) buildSmartContractSwapAndForwardExecution(
 	var forwardMemo string
 	if len(outboundLegs) > 1 {
 		// Build PFM memo for remaining hops
-		forwardMemo = s.generatePFMMemo(outboundLegs[1:], req.ReceiverAddress)
+		forwardMemo = s.generatePFMMemo(outboundLegs[1:], destAddr)
 	}
 
 	// Build smart contract data for swap + IBC forward
@@ -386,11 +387,11 @@ func (s *Pathfinder) buildSmartContractSwapAndForwardExecution(
 			MinOutputAmount:  minOutput,
 			RouteData:        swapResult.RouteData,
 			TimeoutTimestamp: ibcmemo.DefaultTimeoutTimestamp(),
-			RecoverAddress:   req.SenderAddress,   // On broker, use sender as recover
-			ReceiverAddress:  req.ReceiverAddress, // Used for forward action
+			RecoverAddress:   senderAddr, // On broker, use sender as recover
+			ReceiverAddress:  destAddr,   // Used for forward action
 		},
 		SourceChannel:   firstLeg.Channel,
-		ForwardReceiver: req.ReceiverAddress,
+		ForwardReceiver: destAddr,
 		ForwardMemo:     forwardMemo,
 	})
 	if err != nil {
@@ -411,17 +412,16 @@ func (s *Pathfinder) buildSmartContractSwapAndForwardExecution(
 }
 
 // buildInboundHops converts inbound routes to IBCHop slice for memo building.
-// For intermediate hops, Receiver is set to the address on that hop's destination chain
-// (via the address converter). The last hop's receiver is left empty; the memo builder
-// uses the broker contract address for it.
-func (s *Pathfinder) buildInboundHops(hopInfo *MultiHopInfo, req models.RouteRequest) []ibcmemo.IBCHop {
+// For intermediate hops, Receiver is set to the address on that hop's destination chain.
+// The last hop's receiver is left empty; the memo builder uses the broker contract
+// address for it.
+func (s *Pathfinder) buildInboundHops(hopInfo *MultiHopInfo, resolved *ResolvedAddresses) []ibcmemo.IBCHop {
 	hops := make([]ibcmemo.IBCHop, len(hopInfo.InboundRoutes))
 	for i, route := range hopInfo.InboundRoutes {
 		receiver := ""
 		if i < len(hopInfo.InboundRoutes)-1 {
-			// Intermediate hop: derive receiver address for the destination chain
-			addr, err := s.addressConverter.ConvertAddress(req.ReceiverAddress, route.ToChainId)
-			if err == nil {
+			// Intermediate hop: receiver address on the hop's destination chain
+			if addr, ok := resolved.Lookup(route.ToChainId, RoleReceiver); ok {
 				receiver = addr
 			}
 		}
@@ -436,15 +436,14 @@ func (s *Pathfinder) buildInboundHops(hopInfo *MultiHopInfo, req models.RouteReq
 }
 
 // buildOutboundHops converts outbound legs to IBCHop slice for memo building
-func (s *Pathfinder) buildOutboundHops(outboundLegs []*models.IBCLeg, finalReceiver string, req models.RouteRequest) []ibcmemo.IBCHop {
+func (s *Pathfinder) buildOutboundHops(outboundLegs []*models.IBCLeg, finalReceiver string, resolved *ResolvedAddresses) []ibcmemo.IBCHop {
 	hops := make([]ibcmemo.IBCHop, len(outboundLegs))
 	for i, leg := range outboundLegs {
 		receiver := finalReceiver
 		if i < len(outboundLegs)-1 {
-			// Intermediate hop - derive address for next chain
+			// Intermediate hop - receiver address on the next chain
 			nextChain := outboundLegs[i+1].FromChain
-			nextAddr, addrErr := s.addressConverter.ConvertAddress(req.ReceiverAddress, nextChain)
-			if addrErr == nil {
+			if nextAddr, ok := resolved.Lookup(nextChain, RoleReceiver); ok {
 				receiver = nextAddr
 			}
 		}
@@ -456,4 +455,43 @@ func (s *Pathfinder) buildOutboundHops(outboundLegs []*models.IBCLeg, finalRecei
 		}
 	}
 	return hops
+}
+
+// executionAddressNeeds declares the addresses the execution builder for the
+// route's shape will consume, so they can be resolved (or reported as
+// missing/required) in one place before any memo is built.
+func executionAddressNeeds(req models.RouteRequest, hopInfo *MultiHopInfo, outboundLegs []*models.IBCLeg) []AddressNeed {
+	needs := []AddressNeed{
+		{ChainID: req.ChainFrom, Role: RoleSender, Required: true},
+		{ChainID: req.ChainTo, Role: RoleReceiver, Required: true},
+	}
+
+	if !hopInfo.SourceIsBroker {
+		// The recover address lives on the broker chain and follows the
+		// sender's account.
+		needs = append(needs, AddressNeed{ChainID: hopInfo.BrokerChainId, Role: RoleSender, Required: true})
+
+		// Inbound intermediate hop receivers (multi-hop inbound memos).
+		for i, route := range hopInfo.InboundRoutes {
+			if i < len(hopInfo.InboundRoutes)-1 {
+				needs = append(needs, AddressNeed{ChainID: route.ToChainId, Role: RoleReceiver, Required: false})
+			}
+		}
+		// For 2-hop inbound the first transfer's receiver is the sender's
+		// account on the intermediate chain.
+		if len(hopInfo.InboundRoutes) == 2 {
+			needs = append(needs, AddressNeed{ChainID: hopInfo.InboundRoutes[0].ToChainId, Role: RoleSender, Required: true})
+		}
+	}
+
+	// Outbound intermediate hop receivers (first-hop receiver and multi-hop
+	// outbound memos). The final leg's destination is req.ChainTo, already
+	// covered above.
+	for i, leg := range outboundLegs {
+		if i < len(outboundLegs)-1 {
+			needs = append(needs, AddressNeed{ChainID: leg.ToChain, Role: RoleReceiver, Required: false})
+		}
+	}
+
+	return needs
 }

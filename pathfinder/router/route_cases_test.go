@@ -33,15 +33,17 @@ func TestPathfinder_SameChainSwap(t *testing.T) {
 	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
-		ChainFrom:       "osmosis-1",
-		ChainTo:         "osmosis-1",
-		TokenFromDenom:  "uosmo",
-		TokenToDenom:    "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "osmo"),
-		ReceiverAddress: testAddr(t, "osmo"),
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "osmosis-1",
+		ChainTo:        "osmosis-1",
+		TokenFromDenom: "uosmo",
+		TokenToDenom:   "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"osmosis-1": testAddr(t, "osmo"),
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -76,15 +78,18 @@ func TestPathfinder_SwapOnlyRoute(t *testing.T) {
 	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "osmosis-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "uosmo",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: testAddr(t, "osmo"),
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "osmosis-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "uosmo",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"osmosis-1":   testAddr(t, "osmo"),
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -123,15 +128,18 @@ func TestPathfinder_BrokerAsSourceRoute(t *testing.T) {
 	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
-		ChainFrom:       "osmosis-1",
-		ChainTo:         "cosmoshub-4",
-		TokenFromDenom:  "uosmo",
-		TokenToDenom:    "uatom",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "osmo"),
-		ReceiverAddress: testAddr(t, "cosmos"),
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "osmosis-1",
+		ChainTo:        "cosmoshub-4",
+		TokenFromDenom: "uosmo",
+		TokenToDenom:   "uatom",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"osmosis-1":   testAddr(t, "osmo"),
+			"cosmoshub-4": testAddr(t, "cosmos"),
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -168,15 +176,18 @@ func TestPathfinder_FourChainOutboundRoute(t *testing.T) {
 	// ATOM on Cosmos Hub -> USDC on Juno. USDC is native to Noble, so the swap
 	// output must unwind through Noble: hub -> osmosis (swap) -> noble -> juno.
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: testAddr(t, "juno"),
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"juno-1":      testAddr(t, "juno"),
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -220,15 +231,18 @@ func TestPathfinder_ManualRouteSkipsExecutionData(t *testing.T) {
 	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "ujuno",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: testAddr(t, "juno"),
-		SmartRoute:      boolPtr(false),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "ujuno",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"juno-1":      testAddr(t, "juno"),
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(false),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -243,14 +257,17 @@ func TestPathfinder_InvalidSlippageRejected(t *testing.T) {
 	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "ujuno",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: testAddr(t, "juno"),
-		SlippageBps:     uint32Ptr(10001),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "ujuno",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"juno-1":      testAddr(t, "juno"),
+		},
+		DeriveMissing: true,
+		SlippageBps:   uint32Ptr(10001),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -272,13 +289,16 @@ func TestPathfinder_MissingBrokerClient(t *testing.T) {
 	pathfinder := router.NewPathfinder(chains, routeIndex, map[string]brokers.BrokerClient{})
 
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "ujuno",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: testAddr(t, "juno"),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "ujuno",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"juno-1":      testAddr(t, "juno"),
+		},
+		DeriveMissing: true,
 	}
 
 	response := pathfinder.FindPath(req)
@@ -367,13 +387,16 @@ func TestPathfinder_IndirectRouteWithoutPFM(t *testing.T) {
 	pathfinder := router.NewPathfinder(noPfmChains, routeIndex, map[string]brokers.BrokerClient{})
 
 	req := models.RouteRequest{
-		ChainFrom:       "chain-a",
-		ChainTo:         "chain-c",
-		TokenFromDenom:  "utok",
-		TokenToDenom:    "ibc/utok-on-c",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "aaa"),
-		ReceiverAddress: testAddr(t, "ccc"),
+		ChainFrom:      "chain-a",
+		ChainTo:        "chain-c",
+		TokenFromDenom: "utok",
+		TokenToDenom:   "ibc/utok-on-c",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"chain-a": testAddr(t, "aaa"),
+			"chain-c": testAddr(t, "ccc"),
+		},
+		DeriveMissing: true,
 	}
 
 	response := pathfinder.FindPath(req)
@@ -392,13 +415,16 @@ func TestPathfinder_IndirectRoutePFMMemoStructure(t *testing.T) {
 
 	receiver := testAddr(t, "osmo")
 	req := models.RouteRequest{
-		ChainFrom:       "juno-1",
-		ChainTo:         "osmosis-1",
-		TokenFromDenom:  "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
-		TokenToDenom:    "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
-		AmountIn:        "5000000",
-		SenderAddress:   testAddr(t, "juno"),
-		ReceiverAddress: receiver,
+		ChainFrom:      "juno-1",
+		ChainTo:        "osmosis-1",
+		TokenFromDenom: "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
+		TokenToDenom:   "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
+		AmountIn:       "5000000",
+		Addresses: map[string]string{
+			"juno-1":    testAddr(t, "juno"),
+			"osmosis-1": receiver,
+		},
+		DeriveMissing: true,
 	}
 
 	response := pathfinder.FindPath(req)
@@ -426,13 +452,16 @@ func TestPathfinder_UnknownTokenIsImpossible(t *testing.T) {
 	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "ufake",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: testAddr(t, "juno"),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "ufake",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"juno-1":      testAddr(t, "juno"),
+		},
+		DeriveMissing: true,
 	}
 
 	response := pathfinder.FindPath(req)
@@ -446,13 +475,16 @@ func TestPathfinder_BrokerRouteToNonPFMChain(t *testing.T) {
 	pathfinder, _ := setupTestPathfinder()
 
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "atomone-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "uphoton",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: testAddr(t, "atone"),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "atomone-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "uphoton",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"atomone-1":   testAddr(t, "atone"),
+		},
+		DeriveMissing: true,
 	}
 
 	response := pathfinder.FindPath(req)
@@ -489,13 +521,16 @@ func TestPathfinder_BrokerQueryFailure(t *testing.T) {
 		map[string]brokers.BrokerClient{"osmosis-sqs": failingBroker})
 
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "ujuno",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: testAddr(t, "juno"),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "ujuno",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"juno-1":      testAddr(t, "juno"),
+		},
+		DeriveMissing: true,
 	}
 
 	response := pathfinder.FindPath(req)

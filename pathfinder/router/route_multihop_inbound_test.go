@@ -106,15 +106,18 @@ func TestPathfinder_MultiHopInboundFullRoute(t *testing.T) {
 	pathfinder, queriedTokensIn := setupMultiHopPathfinder(t)
 
 	req := models.RouteRequest{
-		ChainFrom:       "neutron-1",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "untrn",
-		TokenToDenom:    "ujuno",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "neutron"),
-		ReceiverAddress: testAddr(t, "juno"),
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "neutron-1",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "untrn",
+		TokenToDenom:   "ujuno",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"neutron-1": testAddr(t, "neutron"),
+			"juno-1":    testAddr(t, "juno"),
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -168,15 +171,18 @@ func TestPathfinder_MultiHopInboundSwapOnly(t *testing.T) {
 	pathfinder, queriedTokensIn := setupMultiHopPathfinder(t)
 
 	req := models.RouteRequest{
-		ChainFrom:       "neutron-1",
-		ChainTo:         "osmosis-1",
-		TokenFromDenom:  "untrn",
-		TokenToDenom:    "uosmo",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "neutron"),
-		ReceiverAddress: testAddr(t, "osmo"),
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "neutron-1",
+		ChainTo:        "osmosis-1",
+		TokenFromDenom: "untrn",
+		TokenToDenom:   "uosmo",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"neutron-1": testAddr(t, "neutron"),
+			"osmosis-1": testAddr(t, "osmo"),
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)

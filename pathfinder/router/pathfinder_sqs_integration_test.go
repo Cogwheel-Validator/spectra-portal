@@ -137,15 +137,18 @@ func TestIntegration_FullBrokerRoute(t *testing.T) {
 	sender := testAddr(t, "cosmos")
 	receiver := testAddr(t, "juno")
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "ujuno",
-		AmountIn:        "1000000",
-		SenderAddress:   sender,
-		ReceiverAddress: receiver,
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(150),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "ujuno",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": sender,
+			"juno-1":      receiver,
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(150),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -209,15 +212,18 @@ func TestIntegration_SwapOnlyRoute(t *testing.T) {
 
 	receiver := testAddr(t, "osmo")
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "osmosis-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "uosmo",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: receiver,
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "osmosis-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "uosmo",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"osmosis-1":   receiver,
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -247,15 +253,17 @@ func TestIntegration_SameChainSwap(t *testing.T) {
 
 	receiver := testAddr(t, "osmo")
 	req := models.RouteRequest{
-		ChainFrom:       "osmosis-1",
-		ChainTo:         "osmosis-1",
-		TokenFromDenom:  "uosmo",
-		TokenToDenom:    "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "osmo"),
-		ReceiverAddress: receiver,
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "osmosis-1",
+		ChainTo:        "osmosis-1",
+		TokenFromDenom: "uosmo",
+		TokenToDenom:   "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"osmosis-1": testAddr(t, "osmo"),
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -284,15 +292,18 @@ func TestIntegration_FourChainRoute(t *testing.T) {
 
 	receiver := testAddr(t, "juno")
 	req := models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: receiver,
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"juno-1":      receiver,
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -330,15 +341,18 @@ func TestIntegration_MultiHopInboundRoute(t *testing.T) {
 
 	receiver := testAddr(t, "juno")
 	req := models.RouteRequest{
-		ChainFrom:       "neutron-1",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "untrn",
-		TokenToDenom:    "ujuno",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "neutron"),
-		ReceiverAddress: receiver,
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "neutron-1",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "untrn",
+		TokenToDenom:   "ujuno",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"neutron-1": testAddr(t, "neutron"),
+			"juno-1":    receiver,
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	}
 
 	response := pathfinder.FindPath(req)
@@ -375,26 +389,32 @@ func TestIntegration_NonBrokerRoutesSkipSQS(t *testing.T) {
 
 	// Direct route
 	direct := pathfinder.FindPath(models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "osmosis-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: testAddr(t, "osmo"),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "osmosis-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"osmosis-1":   testAddr(t, "osmo"),
+		},
+		DeriveMissing: true,
 	})
 	assert.True(t, direct.Success)
 	assert.Equal(t, direct.RouteType, "direct")
 
 	// Indirect route (USDC Juno -> Noble -> Osmosis)
 	indirect := pathfinder.FindPath(models.RouteRequest{
-		ChainFrom:       "juno-1",
-		ChainTo:         "osmosis-1",
-		TokenFromDenom:  "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
-		TokenToDenom:    "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "juno"),
-		ReceiverAddress: testAddr(t, "osmo"),
+		ChainFrom:      "juno-1",
+		ChainTo:        "osmosis-1",
+		TokenFromDenom: "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
+		TokenToDenom:   "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"juno-1":    testAddr(t, "juno"),
+			"osmosis-1": testAddr(t, "osmo"),
+		},
+		DeriveMissing: true,
 	})
 	assert.True(t, indirect.Success)
 	assert.Equal(t, indirect.RouteType, "indirect")
@@ -411,15 +431,18 @@ func TestIntegration_MemoIsCompactJSON(t *testing.T) {
 	pathfinder, _ := setupIntegrationPathfinder(t, chains)
 
 	response := pathfinder.FindPath(models.RouteRequest{
-		ChainFrom:       "cosmoshub-4",
-		ChainTo:         "juno-1",
-		TokenFromDenom:  "uatom",
-		TokenToDenom:    "ujuno",
-		AmountIn:        "1000000",
-		SenderAddress:   testAddr(t, "cosmos"),
-		ReceiverAddress: testAddr(t, "juno"),
-		SmartRoute:      boolPtr(true),
-		SlippageBps:     uint32Ptr(100),
+		ChainFrom:      "cosmoshub-4",
+		ChainTo:        "juno-1",
+		TokenFromDenom: "uatom",
+		TokenToDenom:   "ujuno",
+		AmountIn:       "1000000",
+		Addresses: map[string]string{
+			"cosmoshub-4": testAddr(t, "cosmos"),
+			"juno-1":      testAddr(t, "juno"),
+		},
+		DeriveMissing: true,
+		SmartRoute:    boolPtr(true),
+		SlippageBps:   uint32Ptr(100),
 	})
 
 	assert.True(t, response.Success)
