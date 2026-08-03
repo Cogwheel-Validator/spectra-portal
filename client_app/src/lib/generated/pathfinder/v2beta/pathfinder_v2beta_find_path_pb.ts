@@ -2,8 +2,8 @@
 // @generated from file pathfinder/v2beta/pathfinder_v2beta_find_path.proto (package pathfinder.v2beta, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import { file_buf_validate_validate } from "../../buf/validate/validate_pb";
 import type { BrokerSwapRoute, DirectRoute, IndirectRoute } from "./pathfinder_v2beta_common_pb";
 import { file_pathfinder_v2beta_pathfinder_v2beta_common } from "./pathfinder_v2beta_common_pb";
@@ -13,7 +13,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file pathfinder/v2beta/pathfinder_v2beta_find_path.proto.
  */
 export const file_pathfinder_v2beta_pathfinder_v2beta_find_path: GenFile = /*@__PURE__*/
-  fileDesc("CjNwYXRoZmluZGVyL3YyYmV0YS9wYXRoZmluZGVyX3YyYmV0YV9maW5kX3BhdGgucHJvdG8SEXBhdGhmaW5kZXIudjJiZXRhIkcKDENoYWluQWRkcmVzcxIYCghjaGFpbl9pZBgBIAEoCUIGukgDyAEBEh0KB2FkZHJlc3MYAiABKAlCDLpICcgBAXIEECYYUCKoAgoPRmluZFBhdGhSZXF1ZXN0EhoKCmNoYWluX2Zyb20YASABKAlCBrpIA8gBARInChB0b2tlbl9mcm9tX2Rlbm9tGAIgASgJQg26SArIAQFyBRABGIABEhkKCWFtb3VudF9pbhgDIAEoCUIGukgDyAEBEhgKCGNoYWluX3RvGAQgASgJQga6SAPIAQESIAoOdG9rZW5fdG9fZGVub20YBSABKAlCCLpIBXIDGIABEj8KCWFkZHJlc3NlcxgGIAMoCzIfLnBhdGhmaW5kZXIudjJiZXRhLkNoYWluQWRkcmVzc0ILukgIyAEAkgECCAISEwoLc21hcnRfcm91dGUYByABKAgSIwoMc2xpcHBhZ2VfYnBzGAggASgNQg26SArIAQAqBRiQTigAIoICChBGaW5kUGF0aFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSJAoNZXJyb3JfbWVzc2FnZRgCIAEoCVINZXJyb3JfbWVzc2FnZRIwCgZkaXJlY3QYAyABKAsyHi5wYXRoZmluZGVyLnYyYmV0YS5EaXJlY3RSb3V0ZUgAEjQKCGluZGlyZWN0GAQgASgLMiAucGF0aGZpbmRlci52MmJldGEuSW5kaXJlY3RSb3V0ZUgAEkYKC2Jyb2tlcl9zd2FwGAUgASgLMiIucGF0aGZpbmRlci52MmJldGEuQnJva2VyU3dhcFJvdXRlSABSC2Jyb2tlcl9zd2FwQgcKBXJvdXRlIrECChhGaW5kUGF0aFN0cmVhbWluZ1JlcXVlc3QSGgoKY2hhaW5fZnJvbRgBIAEoCUIGukgDyAEBEicKEHRva2VuX2Zyb21fZGVub20YAiABKAlCDbpICsgBAXIFEAEYgAESGQoJYW1vdW50X2luGAMgASgJQga6SAPIAQESGAoIY2hhaW5fdG8YBCABKAlCBrpIA8gBARIgCg50b2tlbl90b19kZW5vbRgFIAEoCUIIukgFcgMYgAESPwoJYWRkcmVzc2VzGAYgAygLMh8ucGF0aGZpbmRlci52MmJldGEuQ2hhaW5BZGRyZXNzQgu6SAjIAQGSAQIIAhITCgtzbWFydF9yb3V0ZRgHIAEoCBIjCgxzbGlwcGFnZV9icHMYCCABKA1CDbpICsgBACoFGJBOKAAiiwIKGUZpbmRQYXRoU3RyZWFtaW5nUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIkCg1lcnJvcl9tZXNzYWdlGAIgASgJUg1lcnJvcl9tZXNzYWdlEjAKBmRpcmVjdBgDIAEoCzIeLnBhdGhmaW5kZXIudjJiZXRhLkRpcmVjdFJvdXRlSAASNAoIaW5kaXJlY3QYBCABKAsyIC5wYXRoZmluZGVyLnYyYmV0YS5JbmRpcmVjdFJvdXRlSAASRgoLYnJva2VyX3N3YXAYBSABKAsyIi5wYXRoZmluZGVyLnYyYmV0YS5Ccm9rZXJTd2FwUm91dGVIAFILYnJva2VyX3N3YXBCBwoFcm91dGUy5AEKD0ZpbmRQYXRoU2VydmljZRJYCghGaW5kUGF0aBIiLnBhdGhmaW5kZXIudjJiZXRhLkZpbmRQYXRoUmVxdWVzdBojLnBhdGhmaW5kZXIudjJiZXRhLkZpbmRQYXRoUmVzcG9uc2UiA5ACARJ3ChFGaW5kUGF0aFN0cmVhbWluZxIrLnBhdGhmaW5kZXIudjJiZXRhLkZpbmRQYXRoU3RyZWFtaW5nUmVxdWVzdBosLnBhdGhmaW5kZXIudjJiZXRhLkZpbmRQYXRoU3RyZWFtaW5nUmVzcG9uc2UiA5ACACgBMAFCWFpWZ2l0aHViLmNvbS9Db2d3aGVlbC1WYWxpZGF0b3Ivc3BlY3RyYS1wb3J0YWwvcGF0aGZpbmRlci9ycGMvc2VydmljZXMvcGF0aGZpbmRlci92MmJldGFiBnByb3RvMw", [file_buf_validate_validate, file_pathfinder_v2beta_pathfinder_v2beta_common]);
+  fileDesc("CjNwYXRoZmluZGVyL3YyYmV0YS9wYXRoZmluZGVyX3YyYmV0YV9maW5kX3BhdGgucHJvdG8SEXBhdGhmaW5kZXIudjJiZXRhIkcKDENoYWluQWRkcmVzcxIYCghjaGFpbl9pZBgBIAEoCUIGukgDyAEBEh0KB2FkZHJlc3MYAiABKAlCDLpICcgBAXIEECYYUCK9AwoPRmluZFBhdGhSZXF1ZXN0EhoKCmNoYWluX2Zyb20YASABKAlCBrpIA8gBARInChB0b2tlbl9mcm9tX2Rlbm9tGAIgASgJQg26SArIAQFyBRABGIABEhkKCWFtb3VudF9pbhgDIAEoCUIGukgDyAEBEhgKCGNoYWluX3RvGAQgASgJQga6SAPIAQESIAoOdG9rZW5fdG9fZGVub20YBSABKAlCCLpIBXIDGIABEtMBCglhZGRyZXNzZXMYBiADKAsyHy5wYXRoZmluZGVyLnYyYmV0YS5DaGFpbkFkZHJlc3NCngG6SJoBugGWAQobYWRkcmVzc2VzLmVtcHR5X29yX3R3b19wbHVzElFhZGRyZXNzZXMgbXVzdCBiZSBlbXB0eSAocmVhZC1vbmx5IHJvdXRlIGRpc2NvdmVyeSkgb3IgY29udGFpbiBhdCBsZWFzdCAyIGVudHJpZXMaJHRoaXMuc2l6ZSgpID09IDAgfHwgdGhpcy5zaXplKCkgPj0gMhITCgtzbWFydF9yb3V0ZRgHIAEoCBIjCgxzbGlwcGFnZV9icHMYCCABKA1CDbpICsgBACoFGJBOKAAi8wIKEEZpbmRQYXRoUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIkCg1lcnJvcl9tZXNzYWdlGAIgASgJUg1lcnJvcl9tZXNzYWdlEjAKBmRpcmVjdBgDIAEoCzIeLnBhdGhmaW5kZXIudjJiZXRhLkRpcmVjdFJvdXRlSAASNAoIaW5kaXJlY3QYBCABKAsyIC5wYXRoZmluZGVyLnYyYmV0YS5JbmRpcmVjdFJvdXRlSAASRgoLYnJva2VyX3N3YXAYBSABKAsyIi5wYXRoZmluZGVyLnYyYmV0YS5Ccm9rZXJTd2FwUm91dGVIAFILYnJva2VyX3N3YXASRQoNcmVzcG9uc2VfY29kZRgGIAEoDjIfLnBhdGhmaW5kZXIudjJiZXRhLlJlc3BvbnNlQ29kZVINcmVzcG9uc2VfY29kZRIoCg9yZXF1aXJlZF9jaGFpbnMYByADKAlSD3JlcXVpcmVkX2NoYWluc0IHCgVyb3V0ZSKxAgoYRmluZFBhdGhTdHJlYW1pbmdSZXF1ZXN0EhoKCmNoYWluX2Zyb20YASABKAlCBrpIA8gBARInChB0b2tlbl9mcm9tX2Rlbm9tGAIgASgJQg26SArIAQFyBRABGIABEhkKCWFtb3VudF9pbhgDIAEoCUIGukgDyAEBEhgKCGNoYWluX3RvGAQgASgJQga6SAPIAQESIAoOdG9rZW5fdG9fZGVub20YBSABKAlCCLpIBXIDGIABEj8KCWFkZHJlc3NlcxgGIAMoCzIfLnBhdGhmaW5kZXIudjJiZXRhLkNoYWluQWRkcmVzc0ILukgIyAEBkgECCAISEwoLc21hcnRfcm91dGUYByABKAgSIwoMc2xpcHBhZ2VfYnBzGAggASgNQg26SArIAQAqBRiQTigAIosCChlGaW5kUGF0aFN0cmVhbWluZ1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSJAoNZXJyb3JfbWVzc2FnZRgCIAEoCVINZXJyb3JfbWVzc2FnZRIwCgZkaXJlY3QYAyABKAsyHi5wYXRoZmluZGVyLnYyYmV0YS5EaXJlY3RSb3V0ZUgAEjQKCGluZGlyZWN0GAQgASgLMiAucGF0aGZpbmRlci52MmJldGEuSW5kaXJlY3RSb3V0ZUgAEkYKC2Jyb2tlcl9zd2FwGAUgASgLMiIucGF0aGZpbmRlci52MmJldGEuQnJva2VyU3dhcFJvdXRlSABSC2Jyb2tlcl9zd2FwQgcKBXJvdXRlKmUKDFJlc3BvbnNlQ29kZRIdChlSRVNQT05TRV9DT0RFX1VOU1BFQ0lGSUVEEAASFAoQUkVTUE9OU0VfQ09ERV9PSxABEiAKHFJFU1BPTlNFX0NPREVfTU9DS19BRERSRVNTRVMQAjLkAQoPRmluZFBhdGhTZXJ2aWNlElgKCEZpbmRQYXRoEiIucGF0aGZpbmRlci52MmJldGEuRmluZFBhdGhSZXF1ZXN0GiMucGF0aGZpbmRlci52MmJldGEuRmluZFBhdGhSZXNwb25zZSIDkAIBEncKEUZpbmRQYXRoU3RyZWFtaW5nEisucGF0aGZpbmRlci52MmJldGEuRmluZFBhdGhTdHJlYW1pbmdSZXF1ZXN0GiwucGF0aGZpbmRlci52MmJldGEuRmluZFBhdGhTdHJlYW1pbmdSZXNwb25zZSIDkAIAKAEwAUJYWlZnaXRodWIuY29tL0NvZ3doZWVsLVZhbGlkYXRvci9zcGVjdHJhLXBvcnRhbC9wYXRoZmluZGVyL3JwYy9zZXJ2aWNlcy9wYXRoZmluZGVyL3YyYmV0YWIGcHJvdG8z", [file_buf_validate_validate, file_pathfinder_v2beta_pathfinder_v2beta_common]);
 
 /**
  * ChainAddress binds an address to the chain it is valid on.
@@ -108,8 +108,13 @@ export type FindPathRequest = Message<"pathfinder.v2beta.FindPathRequest"> & {
    * (chain_to) addresses; supply addresses for any known intermediate
    * broker/PFM chains too, since a converted address is not guaranteed
    * to be valid across chains with different SLIP-44 coin types.
-   * Unlike the intial v1 you can ignore this field if you only need
-   * to find a route between two chains.
+   *
+   * May be left empty for a read-only route discovery request: the
+   * response is then marked RESPONSE_CODE_MOCK_ADDRESSES, carries no
+   * execution data or memos, and lists the chains that need an address
+   * in required_chains. A non-empty list missing an address for any
+   * chain the route requires is rejected with an error naming the
+   * missing chain IDs.
    *
    * @generated from field: repeated pathfinder.v2beta.ChainAddress addresses = 6;
    */
@@ -174,6 +179,19 @@ export type FindPathResponse = Message<"pathfinder.v2beta.FindPathResponse"> & {
     value: BrokerSwapRoute;
     case: "brokerSwap";
   } | { case: undefined; value?: undefined };
+
+  /**
+   * @generated from field: pathfinder.v2beta.ResponseCode response_code = 6 [json_name = "response_code"];
+   */
+  responseCode: ResponseCode;
+
+  /**
+   * Chain IDs the route touches; in mock mode, the full list of chains
+   * that need an address entry in a real request.
+   *
+   * @generated from field: repeated string required_chains = 7 [json_name = "required_chains"];
+   */
+  requiredChains: string[];
 };
 
 /**
@@ -241,6 +259,8 @@ export type FindPathStreamingRequest = Message<"pathfinder.v2beta.FindPathStream
    * (chain_to) addresses; supply addresses for any known intermediate
    * broker/PFM chains too, since a converted address is not guaranteed
    * to be valid across chains with different SLIP-44 coin types.
+   * Unlike the unary FindPath, the streaming variant always requires
+   * real addresses - there is no mock/discovery mode over streams.
    *
    * @generated from field: repeated pathfinder.v2beta.ChainAddress addresses = 6;
    */
@@ -313,6 +333,41 @@ export type FindPathStreamingResponse = Message<"pathfinder.v2beta.FindPathStrea
  */
 export const FindPathStreamingResponseSchema: GenMessage<FindPathStreamingResponse> = /*@__PURE__*/
   messageDesc(file_pathfinder_v2beta_pathfinder_v2beta_find_path, 4);
+
+/**
+ * ResponseCode qualifies a successful FindPathResponse.
+ *
+ * @generated from enum pathfinder.v2beta.ResponseCode
+ */
+export enum ResponseCode {
+  /**
+   * @generated from enum value: RESPONSE_CODE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Route was computed with real, caller-supplied addresses.
+   *
+   * @generated from enum value: RESPONSE_CODE_OK = 1;
+   */
+  OK = 1,
+
+  /**
+   * Route was computed from an empty addresses array using generated
+   * placeholder addresses. Execution data and memos are omitted and
+   * required_chains lists every chain that needs an address in a real
+   * request. Not usable for a real transfer.
+   *
+   * @generated from enum value: RESPONSE_CODE_MOCK_ADDRESSES = 2;
+   */
+  MOCK_ADDRESSES = 2,
+}
+
+/**
+ * Describes the enum pathfinder.v2beta.ResponseCode.
+ */
+export const ResponseCodeSchema: GenEnum<ResponseCode> = /*@__PURE__*/
+  enumDesc(file_pathfinder_v2beta_pathfinder_v2beta_find_path, 0);
 
 /**
  * FindPathService finds and validates routes between two chains for IBC

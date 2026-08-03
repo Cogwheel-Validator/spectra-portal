@@ -79,11 +79,18 @@ message FindPathRequest {
     // (chain_to) addresses; supply addresses for any known intermediate
     // broker/PFM chains too, since a converted address is not guaranteed
     // to be valid across chains with different SLIP-44 coin types.
-    // Unlike the intial v1 you can ignore this field if you only need
-    // to find a route between two chains.
-    repeated ChainAddress addresses = 6 [
-        (buf.validate.field).required = false,
-        (buf.validate.field).repeated.min_items = 2];
+    //
+    // May be left empty for a read-only route discovery request: the
+    // response is then marked RESPONSE_CODE_MOCK_ADDRESSES, carries no
+    // execution data or memos, and lists the chains that need an address
+    // in required_chains. A non-empty list missing an address for any
+    // chain the route requires is rejected with an error naming the
+    // missing chain IDs.
+    repeated ChainAddress addresses = 6 [(buf.validate.field).cel = {
+        id: "addresses.empty_or_two_plus"
+        message: "addresses must be empty (read-only route discovery) or contain at least 2 entries"
+        expression: "this.size() == 0 || this.size() >= 2"
+    }];
 
     // If true, return a smart route, if false, return a normal route
     bool smart_route = 7;
@@ -97,6 +104,18 @@ message FindPathRequest {
     ];
 }
 
+// ResponseCode qualifies a successful FindPathResponse.
+enum ResponseCode {
+    RESPONSE_CODE_UNSPECIFIED = 0;
+    // Route was computed with real, caller-supplied addresses.
+    RESPONSE_CODE_OK = 1;
+    // Route was computed from an empty addresses array using generated
+    // placeholder addresses. Execution data and memos are omitted and
+    // required_chains lists every chain that needs an address in a real
+    // request. Not usable for a real transfer.
+    RESPONSE_CODE_MOCK_ADDRESSES = 2;
+}
+
 message FindPathResponse {
     bool success = 1 [json_name = "success"];
     string error_message = 2 [json_name = "error_message"];
@@ -105,6 +124,10 @@ message FindPathResponse {
         IndirectRoute indirect = 4 [json_name = "indirect"];
         BrokerSwapRoute broker_swap = 5 [json_name = "broker_swap"];
     }
+    ResponseCode response_code = 6 [json_name = "response_code"];
+    // Chain IDs the route touches; in mock mode, the full list of chains
+    // that need an address entry in a real request.
+    repeated string required_chains = 7 [json_name = "required_chains"];
 }
 
 // FindPathStreamingRequest - Find a route between chains, streaming variant
@@ -143,6 +166,8 @@ message FindPathStreamingRequest {
     // (chain_to) addresses; supply addresses for any known intermediate
     // broker/PFM chains too, since a converted address is not guaranteed
     // to be valid across chains with different SLIP-44 coin types.
+    // Unlike the unary FindPath, the streaming variant always requires
+    // real addresses - there is no mock/discovery mode over streams.
     repeated ChainAddress addresses = 6 [
         (buf.validate.field).required = true,
         (buf.validate.field).repeated.min_items = 2];
