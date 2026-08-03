@@ -12,7 +12,11 @@ import (
 	"connectrpc.com/grpcreflect"
 	"connectrpc.com/otelconnect"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
-	v1connect "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/v1/v1connect"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/handlers/common"
+	v1handlers "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/handlers/v1"
+	v2betahandlers "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/handlers/v2beta"
+	v1connect "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v1/v1connect"
+	v2betaconnect "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v2beta/v2betaconnect"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
@@ -127,8 +131,12 @@ func NewServer(
 		_, _ = w.Write([]byte(`{"status":"ready"}`))
 	})
 
-	// Create the PathfinderServer implementation
-	pathfinderServer := NewPathfinderServer(pathfinder, denomResolver)
+	// Bundle the dependencies shared by all versioned handlers
+	deps := common.Deps{
+		Pathfinder:    pathfinder,
+		DenomResolver: denomResolver,
+		Logger:        Logger,
+	}
 
 	// Initialize protovalidate validator
 	validator, err := protovalidate.New()
@@ -159,31 +167,37 @@ func NewServer(
 		}
 	}
 
-	path, handler := v1connect.NewPathfinderServiceHandler(pathfinderServer, connectOpts...)
-	streamPath, streamHandler := v1connect.NewPathfinderStreamingSerivceHandler(pathfinderServer, connectOpts...)
+	v1Path, v1Handler := v1connect.NewPathfinderServiceHandler(v1handlers.NewServer(deps), connectOpts...)
+	_, findPathV2Handler := v2betaconnect.NewFindPathServiceHandler(v2betahandlers.NewFindPathServer(deps), connectOpts...)
+	queryV2Path, queryV2Handler := v2betaconnect.NewPathfinderQueryServiceHandler(v2betahandlers.NewQueryServer(deps), connectOpts...)
 
 	mux.Group(func(r chi.Router) {
 		r.Use(middleware.Timeout(60 * time.Second))
 		if config.MaxConcurrentRequests != nil && *config.MaxConcurrentRequests > 0 {
 			r.Use(middleware.Throttle(*config.MaxConcurrentRequests))
 		}
-		r.Handle(path+"*", handler)
+		r.Handle(v1Path+"*", v1Handler)
+		// v2beta FindPath is mounted per procedure so that the streaming
+		// procedure can live outside the timeout/throttle group.
+		r.Handle(v2betaconnect.FindPathServiceFindPathProcedure, findPathV2Handler)
+		r.Handle(queryV2Path+"*", queryV2Handler)
 
 		if config.EnableReflection {
 			reflector := grpcreflect.NewStaticReflector(
 				v1connect.PathfinderServiceName,
-				v1connect.PathfinderStreamingSerivceName,
+				v2betaconnect.FindPathServiceName,
+				v2betaconnect.PathfinderQueryServiceName,
 			)
-			v1Path, v1Handler := grpcreflect.NewHandlerV1(reflector, connectOpts...)
-			r.Handle(v1Path+"*", v1Handler)
-			v1AlphaPath, v1AlphaHandler := grpcreflect.NewHandlerV1Alpha(reflector, connectOpts...)
-			r.Handle(v1AlphaPath+"*", v1AlphaHandler)
+			reflectPath, reflectHandler := grpcreflect.NewHandlerV1(reflector, connectOpts...)
+			r.Handle(reflectPath+"*", reflectHandler)
+			reflectAlphaPath, reflectAlphaHandler := grpcreflect.NewHandlerV1Alpha(reflector, connectOpts...)
+			r.Handle(reflectAlphaPath+"*", reflectAlphaHandler)
 			Logger.Info().Msg("gRPC reflection enabled")
 		}
 	})
 
-	// Streaming handler — no timeout, no throttle, no compression
-	mux.Handle(streamPath+"*", streamHandler)
+	// Streaming handler — no timeout, no throttle
+	mux.Handle(v2betaconnect.FindPathServiceFindPathStreamingProcedure, findPathV2Handler)
 
 	// Setup CORS for gRPC-Web support
 	corsHandler := newCORSHandler(config.AllowedOrigins, mux)
@@ -225,8 +239,9 @@ func (s *Server) logServerInfo(protocol string) {
 		Msg("Spectra's Pathfinder RPC Server starting")
 
 	Logger.Info().Msg("Available endpoints:")
-	Logger.Info().Msg("\tRPC: /pathfinder.v1.PathfinderService/*")
-	Logger.Info().Msg("\tStreaming: /pathfinder.v1.PathfinderStreamingService/*")
+	Logger.Info().Msg("\tRPC v1: /pathfinder.v1.PathfinderService/*")
+	Logger.Info().Msg("\tRPC v2beta: /pathfinder.v2beta.FindPathService/* (unary + streaming)")
+	Logger.Info().Msg("\tRPC v2beta: /pathfinder.v2beta.PathfinderQueryService/*")
 	Logger.Info().Msg("\tHealth: /server/health")
 	Logger.Info().Msg("\tReady: /server/ready")
 
