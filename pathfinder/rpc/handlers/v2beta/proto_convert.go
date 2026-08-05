@@ -369,23 +369,23 @@ func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo, sortBySymbol
 	if *sortBySymbol {
 		for _, tokenInfo := range tokenInfo {
 			protoTokenInfos[tokenInfo.Symbol+"@"+tokenInfo.OriginChain] = &v2beta.TokenInfo{
-				ChainDenom:  tokenInfo.ChainDenom,
-				IbcDenom:    tokenInfo.IbcDenom,
-				BaseDenom:   tokenInfo.BaseDenom,
-				OriginChain: tokenInfo.OriginChain,
-				Decimals:    int32(tokenInfo.Decimals), //nolint:gosec // G115: Decimals is chain metadata, always within int32 range
-				Symbol:      tokenInfo.Symbol,
+				ChainDenom:       tokenInfo.ChainDenom,
+				CounterpartDenom: tokenInfo.IbcDenom,
+				BaseDenom:        tokenInfo.BaseDenom,
+				OriginChain:      tokenInfo.OriginChain,
+				Decimals:         int32(tokenInfo.Decimals), //nolint:gosec // G115: Decimals is chain metadata, always within int32 range
+				Symbol:           tokenInfo.Symbol,
 			}
 		}
 	} else {
 		for denom, tokenInfo := range tokenInfo {
 			protoTokenInfos[denom] = &v2beta.TokenInfo{
-				ChainDenom:  tokenInfo.ChainDenom,
-				IbcDenom:    tokenInfo.IbcDenom,
-				BaseDenom:   tokenInfo.BaseDenom,
-				OriginChain: tokenInfo.OriginChain,
-				Decimals:    int32(tokenInfo.Decimals), //nolint:gosec // G115: Decimals is chain metadata, always within int32 range
-				Symbol:      tokenInfo.Symbol,
+				ChainDenom:       tokenInfo.ChainDenom,
+				CounterpartDenom: tokenInfo.IbcDenom,
+				BaseDenom:        tokenInfo.BaseDenom,
+				OriginChain:      tokenInfo.OriginChain,
+				Decimals:         int32(tokenInfo.Decimals), //nolint:gosec // G115: Decimals is chain metadata, always within int32 range
+				Symbol:           tokenInfo.Symbol,
 			}
 		}
 	}

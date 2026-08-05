@@ -151,7 +151,7 @@ message ChainInfo {
 
 message TokenInfo {
     string chain_denom = 1 [json_name = "chain_denom"];
-    string ibc_denom = 2 [json_name = "ibc_denom"];
+    string counterpart_denom = 2 [json_name = "counterpart_denom"];
     string base_denom = 3 [json_name = "base_denom"];
     string origin_chain = 4 [json_name = "origin_chain"];
     int32 decimals = 5 [json_name = "decimals"];
