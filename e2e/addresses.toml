@@ -1,0 +1,27 @@
+[[test_address]]
+chain_id = "injective-1"
+address = "inj1c36mvev8tjzylhqzyc2h9uh6jxnjcdjfn4x7hg"
+
+[[test_address]]
+chain_id = "symphony-1"
+address = "symphony19j0x56sxl8r266jjnc8s0lzy3k259r7caf3y3w"
+
+[[test_address]]
+chain_id = "atomone-1"
+address = "atone19j0x56sxl8r266jjnc8s0lzy3k259r7cy3dv4s"
+
+[[test_address]]
+chain_id = "cosmoshub-4"
+address = "cosmos19j0x56sxl8r266jjnc8s0lzy3k259r7c233trg"
+
+[[test_address]]
+chain_id = "osmosis-1"
+address = "osmo19j0x56sxl8r266jjnc8s0lzy3k259r7cz2zm46"
+
+[[test_address]]
+chain_id = "juno-1"
+address = "juno19j0x56sxl8r266jjnc8s0lzy3k259r7curjsy5"
+
+[[test_address]]
+chain_id = "noble-1"
+address = "noble19j0x56sxl8r266jjnc8s0lzy3k259r7czjyrmx"

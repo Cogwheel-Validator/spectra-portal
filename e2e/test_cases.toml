@@ -1,0 +1,133 @@
+# These test cases need to be manually inserted. There is no way to test this
+# any other way. Include any multihop or broker swap related test cases.
+#
+# Follow the form and below. There are 3 types that need to be manually tested:
+# 1. broker swaps - Either start from broker chain or end at the broker chain.
+#    Example: ATONE on atomone-1 to OSMO on osmosis-1.
+# 2. multihop - Send token through more than 1 chain. Example: USDC on
+#    cosmoshub-4 to USDC on osmosis-1.
+# 3. multihop with swap - Send token that needs to hop later or swap to the
+#    broker chain. Example: ATOM on cosmoshub-4 to USDC on noble-1.
+#
+# The reason why these need to be inserted manually is because pathfinder
+# doesn't know on it's own if the token is tradable on the broker chain.
+#
+# Test at least a couple cases from each chain since the purpose of this test
+# is to know it can work, otherwise testing each and every possible trade is
+# unnecessary.
+[[case]]
+name = "ATONE to OSMO"
+chain_from = "atomone-1"
+token_from_denom = "uatone"
+amount_in = "1000000"
+chain_to = "osmosis-1"
+token_to_denom = "uosmo"
+type = "broker_swap"
+
+[[case]]
+name = "PHOTON to OSMO"
+chain_from = "atomone-1"
+token_from_denom = "uphoton"
+amount_in = "1000000"
+chain_to = "osmosis-1"
+token_to_denom = "uosmo"
+type = "broker_swap"
+
+[[case]]
+name = "ATOM to OSMO"
+chain_from = "cosmoshub-4"
+token_from_denom = "uatom"
+amount_in = "1000000"
+chain_to = "osmosis-1"
+token_to_denom = "uosmo"
+type = "broker_swap"
+
+[[case]]
+name = "INJ to OSMO"
+chain_from = "injective-1"
+token_from_denom = "inj"
+amount_in = "1000000000000"
+chain_to = "osmosis-1"
+token_to_denom = "uosmo"
+type = "broker_swap"
+
+[[case]]
+name = "USDC to OSMO"
+chain_from = "noble-1"
+token_from_denom = "uusdc"
+amount_in = "1000000"
+chain_to = "osmosis-1"
+token_to_denom = "uosmo"
+type = "broker_swap"
+
+[[case]]
+name = "JUNO to OSMO"
+chain_from = "juno-1"
+token_from_denom = "ujuno"
+amount_in = "1000000"
+chain_to = "osmosis-1"
+token_to_denom = "uosmo"
+type = "broker_swap"
+
+[[case]]
+name = "USDC(Noble) Injective-CosmosHub"
+chain_from = "injective-1"
+token_from_denom = "uusdc@noble-1"
+amount_in = "1000000"
+chain_to = "cosmoshub-4"
+token_to_denom = ""
+type = "multihop"
+
+[[case]]
+name = "USDC(Noble) Injective-Osmosis"
+chain_from = "injective-1"
+token_from_denom = "uusdc@noble-1"
+amount_in = "1000000"
+chain_to = "osmosis-1"
+token_to_denom = ""
+type = "multihop"
+
+[[case]]
+name = "USDC(Noble) Osmosis-CosmosHub"
+chain_from = "osmosis-1"
+token_from_denom = "uusdc@noble-1"
+amount_in = "1000000"
+chain_to = "cosmoshub-4"
+token_to_denom = ""
+type = "multihop"
+
+[[case]]
+name = "USDC(Noble) Injective to CosmosHub ATOM"
+chain_from = "injective-1"
+token_from_denom = "uusdc@noble-1"
+amount_in = "1000000"
+chain_to = "cosmoshub-4"
+token_to_denom = "uatom"
+type = "multihop_swap"
+
+[[case]]
+name = "ATONE from AtomOne to CosmosHub ATOM"
+chain_from = "atomone-1"
+token_from_denom = "uatone"
+amount_in = "1000000"
+chain_to = "cosmoshub-4"
+token_to_denom = "uatom"
+type = "multihop_swap"
+
+[[case]]
+name = "JUNO from Juno to Injective INJ"
+chain_from = "juno-1"
+token_from_denom = "ujuno"
+amount_in = "1000000"
+chain_to = "cosmoshub-4"
+token_to_denom = "uinj"
+type = "multihop_swap"
+
+[[case]]
+name = "USDC(Noble) from Noble to AtomOne PHOTON"
+chain_from = "noble-1"
+token_from_denom = "uusdc"
+amount_in = "1000000"
+chain_to = "atomone-4"
+token_to_denom = "uphoton"
+type = "multihop_swap"

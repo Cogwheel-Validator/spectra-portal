@@ -14,6 +14,8 @@
 	lint-commits
 	vulncheck-js
 	vulncheck-go
+	test-e2e
+	test
 
 # Sets up everything needed for local development
 setup: setup-hooks
@@ -36,7 +38,7 @@ generate-proto:
 	@echo "Generating protobuf files for the rpc server..."
 	cd proto && \
 	buf generate && \
-	buf generate --template buf.gen.osmosis.yaml
+	GIT_LFS_SKIP_SMUDGE=1 buf generate --template buf.gen.osmosis.yaml
 	@echo "Protobuf files generated successfully!"
 
 
@@ -146,3 +148,15 @@ snyk-local:
 	@echo "Vulnerability checking all files with snyk..."
 	snyk test --all-projects
 	@echo "All files vulnerability checked successfully with snyk!"
+
+test-e2e:
+	@echo "Running e2e tests..."
+	@read -p "Enter whole URL to working instance of pathfinder (example http://localhost:8080): " URL && \
+	E2E_PATHFINDER_URL=$URL go test -tags=e2e ./pathfinder/e2e/... -v.
+	@echo "E2e tests completed successfully!"
+
+test:
+	@echo "Running tests..."
+	go test -v ./... && \
+	cd client_app && pnpm test
+	@echo "Tests completed successfully!"
