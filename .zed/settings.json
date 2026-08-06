@@ -1,6 +1,7 @@
 {
   "tab_size": 2,
   "hard_tabs": false,
+  "format_on_save": "on",
   "lsp": {
     "biome": {
       "binary": {
@@ -11,6 +12,13 @@
         "config_path": "./client_app/biome.json",
       },
     },
+    "gopls": {
+      "initialization_options": {
+        "buildFlags": [
+          "-tags=e2e",
+        ],
+      }
+    }
   },
   "languages": {
     "JavaScript": {

@@ -32,6 +32,10 @@
 	"[go]": {
 		"editor.defaultFormatter": "golang.go"
 	},
+	"go.buildTags": "e2e",
+	"gopls": {
+		"build.buildFlags": ["-tags=e2e"]
+	},
 	"typescript.inlayHints.propertyDeclarationTypes.enabled": true,
 	"js/ts.implicitProjectConfig.checkJs": true,
 	"js/ts.implicitProjectConfig.module": "ES2022",
