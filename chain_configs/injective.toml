@@ -1,0 +1,53 @@
+[chain]
+name = "Injective"
+id = "injective-1"
+type = "cosmos"
+registry = "injective"
+explorer_url = "https://mintscan.io/injective"
+slip44 = 60
+bech32_prefix = "inj"
+keplr_json = "injective.json"
+
+# RPC endpoints
+[[chain.rpcs]]
+url = "https://injective-rpc.polkachu.com"
+provider = "Polkachu"
+
+[[chain.rpcs]]
+url = "https://public.stakewolle.com/cosmos/injective/rpc"
+provider = "StakeWolle"
+
+[[chain.rpcs]]
+url = "https://injective-rpc.highstakes.ch"
+provider = "HighStakes"
+
+# REST endpoints
+[[chain.rest]]
+url = "https://injective-api.polkachu.com"
+provider = "Polkachu"
+
+[[chain.rest]]
+url = "https://public.stakewolle.com/cosmos/injective/rest"
+provider = "StakeWolle"
+
+[[chain.rest]]
+url = "https://injective-api.highstakes.ch"
+provider = "HighStakes"
+
+[[token]]
+denom = "inj"
+name = "Injective"
+symbol = "INJ"
+exponent = 18
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/injective/inj.png"
+coingecko_id = "injective-protocol"
+allowed_destinations = ["osmosis-1"]
+
+[[token]]
+denom = "erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a"
+name = "USDC"
+symbol = "USDC"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/injective/usdc.png"
+coingecko_id = "usd-coin"
+allowed_destinations = ["osmosis-1"]
