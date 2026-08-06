@@ -63,9 +63,13 @@ func (ri *RouteIndex) BuildIndex(chains []PathfinderChain) error {
 		}
 
 		for _, route := range chain.Routes {
-			// Index token info
+			// Index token identity.
 			for denom, tokenInfo := range route.AllowedTokens {
-				ri.denomToTokenInfo[chain.Id][denom] = &tokenInfo
+				if _, exists := ri.denomToTokenInfo[chain.Id][denom]; !exists {
+					identity := tokenInfo
+					identity.IbcDenom = ""
+					ri.denomToTokenInfo[chain.Id][denom] = &identity
+				}
 			}
 
 			// Index direct routes
@@ -100,6 +104,5 @@ func (ri *RouteIndex) BuildIndex(chains []PathfinderChain) error {
 			}
 		}
 	}
-
 	return nil
 }

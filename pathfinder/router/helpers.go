@@ -19,3 +19,17 @@ func (ri *RouteIndex) findRouteFromChain(fromChain, toChain string) *BasicRoute 
 	}
 	return nil
 }
+
+// TokenInfoForRoute returns the token info for denom as it travels the
+// specific fromChain->toChain route.
+func (ri *RouteIndex) TokenInfoForRoute(fromChain, toChain, denom string) (*TokenInfo, bool) {
+	route, ok := ri.chainRoutes[fromChain][toChain]
+	if !ok {
+		return nil, false
+	}
+	tokenInfo, ok := route.AllowedTokens[denom]
+	if !ok {
+		return nil, false
+	}
+	return &tokenInfo, true
+}
