@@ -95,6 +95,9 @@ export const IBCLegSchema: GenMessage<IBCLeg> = /*@__PURE__*/
   messageDesc(file_pathfinder_v2beta_pathfinder_v2beta_common, 1);
 
 /**
+ * DirectRoute is a single IBC transfer directly between chain_from and
+ * chain_to, with no intermediate chains and no swap.
+ *
  * @generated from message pathfinder.v2beta.DirectRoute
  */
 export type DirectRoute = Message<"pathfinder.v2beta.DirectRoute"> & {
@@ -112,30 +115,48 @@ export const DirectRouteSchema: GenMessage<DirectRoute> = /*@__PURE__*/
   messageDesc(file_pathfinder_v2beta_pathfinder_v2beta_common, 2);
 
 /**
+ * IndirectRoute is a multi-hop IBC-only path with no swap involved - the
+ * token is simply forwarded through one or more intermediate chains.
+ *
  * @generated from message pathfinder.v2beta.IndirectRoute
  */
 export type IndirectRoute = Message<"pathfinder.v2beta.IndirectRoute"> & {
   /**
+   * All chain IDs in order, from chain_from to chain_to.
+   *
    * @generated from field: repeated string path = 1;
    */
   path: string[];
 
   /**
+   * One IBCLeg per hop, in order.
+   *
    * @generated from field: repeated pathfinder.v2beta.IBCLeg legs = 2;
    */
   legs: IBCLeg[];
 
   /**
+   * True if Packet Forward Middleware (PFM) can be used to chain the
+   * hops from pfm_start_chain onward into a single MsgTransfer with a
+   * forwarding memo, instead of the caller submitting one MsgTransfer
+   * per hop.
+   *
    * @generated from field: bool supports_pfm = 3 [json_name = "supports_pfm"];
    */
   supportsPfm: boolean;
 
   /**
+   * The first chain in the path from which PFM forwarding applies.
+   * Only meaningful when supports_pfm is true.
+   *
    * @generated from field: string pfm_start_chain = 4 [json_name = "pfm_start_chain"];
    */
   pfmStartChain: string;
 
   /**
+   * The PFM forward memo to attach to the MsgTransfer sent from
+   * pfm_start_chain. Only populated when supports_pfm is true.
+   *
    * @generated from field: string pfm_memo = 5 [json_name = "pfm_memo"];
    */
   pfmMemo: string;
@@ -211,7 +232,9 @@ export const BrokerSwapRouteSchema: GenMessage<BrokerSwapRoute> = /*@__PURE__*/
   messageDesc(file_pathfinder_v2beta_pathfinder_v2beta_common, 4);
 
 /**
- * BrokerExecutionData contains ready-to-use transaction data
+ * BrokerExecutionData contains ready-to-use transaction data. See
+ * docs/IBC_MEMO.md for how memo/smart_contract_data assemble into the
+ * ibc-hooks memo formats used to trigger the swap on the broker chain.
  *
  * @generated from message pathfinder.v2beta.BrokerExecutionData
  */

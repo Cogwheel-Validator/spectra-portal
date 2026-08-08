@@ -31,7 +31,17 @@ export const FindPathService = {
       idempotency: MethodIdempotency.NoSideEffects,
     },
     /**
-     * FindPathStreaming is the bidirectional-streaming counterpart of FindPath
+     * FindPathStreaming is the bidirectional-streaming counterpart of
+     * FindPath, for clients that want a route/quote that stays fresh
+     * without re-polling. Runtime contract:
+     * - The client must send its first FindPathStreamingRequest within 60s
+     *   of opening the stream, or the server closes it.
+     * - After each response, if the client sends no new request for 15s,
+     *   the server automatically recomputes the route from the
+     *   last-received request and pushes an updated response (no new
+     *   request needed to keep the quote current).
+     * - The stream has a hard 1-hour lifetime cap regardless of activity;
+     *   the server closes it at that point and the client must reopen.
      *
      * @generated from rpc pathfinder.v2beta.FindPathService.FindPathStreaming
      */

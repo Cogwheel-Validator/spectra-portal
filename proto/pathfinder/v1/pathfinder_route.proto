@@ -7,7 +7,16 @@ import "google/protobuf/empty.proto";
 
 option go_package = "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v1";
 
-// PathfinderService provides route discovery and validation for IBC transfers and swaps
+// PathfinderService provides route discovery and validation for IBC transfers and swaps.
+//
+// This is the legacy (v1) API surface. New integrations should prefer the
+// v2beta FindPathService/PathfinderQueryService. v1 is kept unchanged for
+// existing consumers; it identifies chains only via a single sender_address/
+// receiver_address pair on FindPathRequest, and derives any intermediate
+// broker/PFM chain address automatically via SLIP-44-guarded bech32
+// re-encoding. v2beta replaces that derivation with explicit,
+// caller-supplied per-chain addresses (ChainAddress), which is more robust
+// across chains that use different SLIP-44 coin types.
 service PathfinderService {
     // FindPath finds and validates a route between two chains
     // Supports human-readable denoms (e.g., "uatone") or IBC denoms
@@ -47,8 +56,11 @@ service PathfinderService {
 // FindPathRequest - Find a route between chains
 //
 // For token_from_denom and token_to_denom, you can use:
-// - Human-readable denom (e.g., "uatone", "uosmo", "ustars")
+// - Human-readable/native denom (e.g., "uatone", "uosmo", "ustars")
 // - Full IBC denom (e.g., "ibc/ABC123...")
+// - "symbol@origin_chain" convenience syntax (e.g., "uatone@atomone-1"),
+//   which disambiguates a base denom by naming the chain it's native to -
+//   useful when the same base denom could otherwise resolve ambiguously.
 //
 // The pathfinder will automatically resolve human-readable denoms.
 // If token_to_denom is empty, the pathfinder assumes you want the same token
@@ -57,8 +69,9 @@ message FindPathRequest {
     // Source chain ID (e.g., "osmosis-1", "atomone-1")
     string chain_from = 1 [(buf.validate.field).required = true];
 
-    // Token denom on source chain - can be human-readable (e.g., "uatone")
-    // or IBC denom (e.g., "ibc/...")
+    // Token denom on source chain. Accepts a native denom (e.g., "uatone"),
+    // an IBC denom (e.g., "ibc/..."), or "symbol@origin_chain" (e.g.,
+    // "uatone@atomone-1") to disambiguate by origin chain.
     string token_from_denom = 2 [
         (buf.validate.field).required = true,
         (buf.validate.field).string.min_len = 1,
@@ -70,8 +83,8 @@ message FindPathRequest {
     // Destination chain ID
     string chain_to = 4 [(buf.validate.field).required = true];
 
-    // Token denom you want to receive on destination chain
-    // Can be human-readable (e.g., "uosmo") or IBC denom
+    // Token denom you want to receive on destination chain. Accepts the
+    // same forms as token_from_denom (native, IBC, or "symbol@origin_chain").
     // If empty, assumes same token as token_from (bridging without swap)
     string token_to_denom = 5 [(buf.validate.field).string.max_len = 128];
 
@@ -102,6 +115,13 @@ message FindPathRequest {
 message FindPathResponse {
     bool success = 1 [json_name = "success"];
     string error_message = 2 [json_name = "error_message"];
+    // Exactly one of these is set when success is true, depending on the
+    // route shape the pathfinder found. Callers should switch on which
+    // field is populated rather than assuming a shape ahead of time:
+    // - direct: single IBC hop, no swap involved.
+    // - indirect: multiple IBC hops (PFM or manually chained), no swap.
+    // - broker_swap: one hop reaches a DEX broker chain (e.g. Osmosis),
+    //   a swap happens there, and zero or more hops continue onward.
     oneof route {
         DirectRoute direct = 3 [json_name = "direct"];
         IndirectRoute indirect = 4 [json_name = "indirect"];
@@ -109,15 +129,29 @@ message FindPathResponse {
     }
 }
 
+// DirectRoute is a single IBC transfer directly between chain_from and
+// chain_to, with no intermediate chains and no swap.
 message DirectRoute {
     IBCLeg transfer = 1 [json_name = "transfer"];
 }
 
+// IndirectRoute is a multi-hop IBC-only path with no swap involved - the
+// token is simply forwarded through one or more intermediate chains.
 message IndirectRoute {
+    // All chain IDs in order, from chain_from to chain_to.
     repeated string path = 1 [json_name = "path"];
+    // One IBCLeg per hop, in order.
     repeated IBCLeg legs = 2 [json_name = "legs"];
+    // True if Packet Forward Middleware (PFM) can be used to chain the
+    // hops from pfm_start_chain onward into a single MsgTransfer with a
+    // forwarding memo, instead of the caller submitting one MsgTransfer
+    // per hop.
     bool supports_pfm = 3 [json_name = "supports_pfm"];
+    // The first chain in the path from which PFM forwarding applies.
+    // Only meaningful when supports_pfm is true.
     string pfm_start_chain = 4 [json_name = "pfm_start_chain"];
+    // The PFM forward memo to attach to the MsgTransfer sent from
+    // pfm_start_chain. Only populated when supports_pfm is true.
     string pfm_memo = 5 [json_name = "pfm_memo"];
 }
 
@@ -143,7 +177,9 @@ message BrokerSwapRoute {
     BrokerExecutionData execution = 6 [json_name = "execution"];
 }
 
-// BrokerExecutionData contains ready-to-use transaction data
+// BrokerExecutionData contains ready-to-use transaction data. See
+// docs/IBC_MEMO.md for how memo/smart_contract_data assemble into the
+// ibc-hooks memo formats used to trigger the swap on the broker chain.
 message BrokerExecutionData {
     // The IBC memo to use with MsgTransfer (contains wasm swap_and_action)
     optional string memo = 1 [json_name = "memo"];
@@ -330,12 +366,24 @@ message ChainInfo {
     repeated BasicRoute routes = 5 [json_name = "routes"];
 }
 
+// TokenInfo describes one token allowed on a BasicRoute.
 message TokenInfo {
+    // The denom as it appears on the chain this TokenInfo is attached to
+    // (native or IBC hash).
     string chain_denom = 1 [json_name = "chain_denom"];
+    // The denom this token has on the other end of the route (the
+    // counterparty chain named by the enclosing BasicRoute.to_chain_id).
+    // Note: v2beta renames this field to counterpart_denom, since it is not
+    // always literally an IBC-hash-form denom (e.g. it may be the
+    // counterparty chain's native denom when this token originates there).
     string ibc_denom = 2 [json_name = "ibc_denom"];
+    // The base/native denom on the token's origin chain.
     string base_denom = 3 [json_name = "base_denom"];
+    // The chain ID where this token is native.
     string origin_chain = 4 [json_name = "origin_chain"];
+    // Number of decimals.
     int32 decimals = 5 [json_name = "decimals"];
+    // Human-readable symbol (e.g., "ATONE", "OSMO").
     string symbol = 6 [json_name = "symbol"];
 }
 

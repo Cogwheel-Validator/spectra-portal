@@ -29,15 +29,29 @@ message IBCLeg {
     string amount = 6 [json_name = "amount"];
 }
 
+// DirectRoute is a single IBC transfer directly between chain_from and
+// chain_to, with no intermediate chains and no swap.
 message DirectRoute {
     IBCLeg transfer = 1 [json_name = "transfer"];
 }
 
+// IndirectRoute is a multi-hop IBC-only path with no swap involved - the
+// token is simply forwarded through one or more intermediate chains.
 message IndirectRoute {
+    // All chain IDs in order, from chain_from to chain_to.
     repeated string path = 1 [json_name = "path"];
+    // One IBCLeg per hop, in order.
     repeated IBCLeg legs = 2 [json_name = "legs"];
+    // True if Packet Forward Middleware (PFM) can be used to chain the
+    // hops from pfm_start_chain onward into a single MsgTransfer with a
+    // forwarding memo, instead of the caller submitting one MsgTransfer
+    // per hop.
     bool supports_pfm = 3 [json_name = "supports_pfm"];
+    // The first chain in the path from which PFM forwarding applies.
+    // Only meaningful when supports_pfm is true.
     string pfm_start_chain = 4 [json_name = "pfm_start_chain"];
+    // The PFM forward memo to attach to the MsgTransfer sent from
+    // pfm_start_chain. Only populated when supports_pfm is true.
     string pfm_memo = 5 [json_name = "pfm_memo"];
 }
 
@@ -63,7 +77,9 @@ message BrokerSwapRoute {
     BrokerExecutionData execution = 6 [json_name = "execution"];
 }
 
-// BrokerExecutionData contains ready-to-use transaction data
+// BrokerExecutionData contains ready-to-use transaction data. See
+// docs/IBC_MEMO.md for how memo/smart_contract_data assemble into the
+// ibc-hooks memo formats used to trigger the swap on the broker chain.
 message BrokerExecutionData {
     // The IBC memo to use with MsgTransfer (contains wasm swap_and_action)
     optional string memo = 1 [json_name = "memo"];

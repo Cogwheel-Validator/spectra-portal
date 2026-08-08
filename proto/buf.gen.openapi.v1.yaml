@@ -1,0 +1,12 @@
+version: v2
+inputs:
+  - directory: .
+    paths:
+      - pathfinder/v1
+plugins:
+  - local: protoc-gen-connect-openapi
+    out: ../docs/openapi
+    opt:
+      - format=yaml
+      - path=v1.openapi.yaml
+      - content-types=json;proto

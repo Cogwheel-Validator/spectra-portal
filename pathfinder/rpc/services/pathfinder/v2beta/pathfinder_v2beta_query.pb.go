@@ -839,17 +839,29 @@ func (x *ChainInfo) GetRoutes() []*BasicRoute {
 	return nil
 }
 
+// TokenInfo describes one token allowed on a BasicRoute.
 type TokenInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ChainDenom       string `protobuf:"bytes,1,opt,name=chain_denom,proto3" json:"chain_denom,omitempty"`
+	// The denom as it appears on the chain this TokenInfo is attached to
+	// (native or IBC hash).
+	ChainDenom string `protobuf:"bytes,1,opt,name=chain_denom,proto3" json:"chain_denom,omitempty"`
+	// The denom this token has on the other end of the route (the
+	// counterparty chain named by the enclosing BasicRoute.to_chain_id).
+	// Renamed from v1's ibc_denom: this gives clearer intent, since the
+	// value is not always literally an IBC-hash-form denom - it can be a
+	// native denom when this token originates on the counterparty chain.
 	CounterpartDenom string `protobuf:"bytes,2,opt,name=counterpart_denom,proto3" json:"counterpart_denom,omitempty"`
-	BaseDenom        string `protobuf:"bytes,3,opt,name=base_denom,proto3" json:"base_denom,omitempty"`
-	OriginChain      string `protobuf:"bytes,4,opt,name=origin_chain,proto3" json:"origin_chain,omitempty"`
-	Decimals         int32  `protobuf:"varint,5,opt,name=decimals,proto3" json:"decimals,omitempty"`
-	Symbol           string `protobuf:"bytes,6,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	// The base/native denom on the token's origin chain.
+	BaseDenom string `protobuf:"bytes,3,opt,name=base_denom,proto3" json:"base_denom,omitempty"`
+	// The chain ID where this token is native.
+	OriginChain string `protobuf:"bytes,4,opt,name=origin_chain,proto3" json:"origin_chain,omitempty"`
+	// Number of decimals.
+	Decimals int32 `protobuf:"varint,5,opt,name=decimals,proto3" json:"decimals,omitempty"`
+	// Human-readable symbol (e.g., "ATONE", "OSMO").
+	Symbol string `protobuf:"bytes,6,opt,name=symbol,proto3" json:"symbol,omitempty"`
 }
 
 func (x *TokenInfo) Reset() {

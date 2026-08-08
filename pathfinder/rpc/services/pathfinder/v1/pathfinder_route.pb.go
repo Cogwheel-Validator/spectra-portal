@@ -25,8 +25,11 @@ const (
 // FindPathRequest - Find a route between chains
 //
 // For token_from_denom and token_to_denom, you can use:
-// - Human-readable denom (e.g., "uatone", "uosmo", "ustars")
-// - Full IBC denom (e.g., "ibc/ABC123...")
+//   - Human-readable/native denom (e.g., "uatone", "uosmo", "ustars")
+//   - Full IBC denom (e.g., "ibc/ABC123...")
+//   - "symbol@origin_chain" convenience syntax (e.g., "uatone@atomone-1"),
+//     which disambiguates a base denom by naming the chain it's native to -
+//     useful when the same base denom could otherwise resolve ambiguously.
 //
 // The pathfinder will automatically resolve human-readable denoms.
 // If token_to_denom is empty, the pathfinder assumes you want the same token
@@ -38,15 +41,16 @@ type FindPathRequest struct {
 
 	// Source chain ID (e.g., "osmosis-1", "atomone-1")
 	ChainFrom string `protobuf:"bytes,1,opt,name=chain_from,json=chainFrom,proto3" json:"chain_from,omitempty"`
-	// Token denom on source chain - can be human-readable (e.g., "uatone")
-	// or IBC denom (e.g., "ibc/...")
+	// Token denom on source chain. Accepts a native denom (e.g., "uatone"),
+	// an IBC denom (e.g., "ibc/..."), or "symbol@origin_chain" (e.g.,
+	// "uatone@atomone-1") to disambiguate by origin chain.
 	TokenFromDenom string `protobuf:"bytes,2,opt,name=token_from_denom,json=tokenFromDenom,proto3" json:"token_from_denom,omitempty"`
 	// Amount to transfer/swap (in base units)
 	AmountIn string `protobuf:"bytes,3,opt,name=amount_in,json=amountIn,proto3" json:"amount_in,omitempty"`
 	// Destination chain ID
 	ChainTo string `protobuf:"bytes,4,opt,name=chain_to,json=chainTo,proto3" json:"chain_to,omitempty"`
-	// Token denom you want to receive on destination chain
-	// Can be human-readable (e.g., "uosmo") or IBC denom
+	// Token denom you want to receive on destination chain. Accepts the
+	// same forms as token_from_denom (native, IBC, or "symbol@origin_chain").
 	// If empty, assumes same token as token_from (bridging without swap)
 	TokenToDenom string `protobuf:"bytes,5,opt,name=token_to_denom,json=tokenToDenom,proto3" json:"token_to_denom,omitempty"`
 	// Sender address on source chain
@@ -162,6 +166,14 @@ type FindPathResponse struct {
 
 	Success      bool   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,proto3" json:"error_message,omitempty"`
+	// Exactly one of these is set when success is true, depending on the
+	// route shape the pathfinder found. Callers should switch on which
+	// field is populated rather than assuming a shape ahead of time:
+	//   - direct: single IBC hop, no swap involved.
+	//   - indirect: multiple IBC hops (PFM or manually chained), no swap.
+	//   - broker_swap: one hop reaches a DEX broker chain (e.g. Osmosis),
+	//     a swap happens there, and zero or more hops continue onward.
+	//
 	// Types that are assignable to Route:
 	//
 	//	*FindPathResponse_Direct
@@ -266,6 +278,8 @@ func (*FindPathResponse_Indirect) isFindPathResponse_Route() {}
 
 func (*FindPathResponse_BrokerSwap) isFindPathResponse_Route() {}
 
+// DirectRoute is a single IBC transfer directly between chain_from and
+// chain_to, with no intermediate chains and no swap.
 type DirectRoute struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -313,16 +327,28 @@ func (x *DirectRoute) GetTransfer() *IBCLeg {
 	return nil
 }
 
+// IndirectRoute is a multi-hop IBC-only path with no swap involved - the
+// token is simply forwarded through one or more intermediate chains.
 type IndirectRoute struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Path          []string  `protobuf:"bytes,1,rep,name=path,proto3" json:"path,omitempty"`
-	Legs          []*IBCLeg `protobuf:"bytes,2,rep,name=legs,proto3" json:"legs,omitempty"`
-	SupportsPfm   bool      `protobuf:"varint,3,opt,name=supports_pfm,proto3" json:"supports_pfm,omitempty"`
-	PfmStartChain string    `protobuf:"bytes,4,opt,name=pfm_start_chain,proto3" json:"pfm_start_chain,omitempty"`
-	PfmMemo       string    `protobuf:"bytes,5,opt,name=pfm_memo,proto3" json:"pfm_memo,omitempty"`
+	// All chain IDs in order, from chain_from to chain_to.
+	Path []string `protobuf:"bytes,1,rep,name=path,proto3" json:"path,omitempty"`
+	// One IBCLeg per hop, in order.
+	Legs []*IBCLeg `protobuf:"bytes,2,rep,name=legs,proto3" json:"legs,omitempty"`
+	// True if Packet Forward Middleware (PFM) can be used to chain the
+	// hops from pfm_start_chain onward into a single MsgTransfer with a
+	// forwarding memo, instead of the caller submitting one MsgTransfer
+	// per hop.
+	SupportsPfm bool `protobuf:"varint,3,opt,name=supports_pfm,proto3" json:"supports_pfm,omitempty"`
+	// The first chain in the path from which PFM forwarding applies.
+	// Only meaningful when supports_pfm is true.
+	PfmStartChain string `protobuf:"bytes,4,opt,name=pfm_start_chain,proto3" json:"pfm_start_chain,omitempty"`
+	// The PFM forward memo to attach to the MsgTransfer sent from
+	// pfm_start_chain. Only populated when supports_pfm is true.
+	PfmMemo string `protobuf:"bytes,5,opt,name=pfm_memo,proto3" json:"pfm_memo,omitempty"`
 }
 
 func (x *IndirectRoute) Reset() {
@@ -492,7 +518,9 @@ func (x *BrokerSwapRoute) GetExecution() *BrokerExecutionData {
 	return nil
 }
 
-// BrokerExecutionData contains ready-to-use transaction data
+// BrokerExecutionData contains ready-to-use transaction data. See
+// docs/IBC_MEMO.md for how memo/smart_contract_data assemble into the
+// ibc-hooks memo formats used to trigger the swap on the broker chain.
 type BrokerExecutionData struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1922,17 +1950,29 @@ func (x *ChainInfo) GetRoutes() []*BasicRoute {
 	return nil
 }
 
+// TokenInfo describes one token allowed on a BasicRoute.
 type TokenInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ChainDenom  string `protobuf:"bytes,1,opt,name=chain_denom,proto3" json:"chain_denom,omitempty"`
-	IbcDenom    string `protobuf:"bytes,2,opt,name=ibc_denom,proto3" json:"ibc_denom,omitempty"`
-	BaseDenom   string `protobuf:"bytes,3,opt,name=base_denom,proto3" json:"base_denom,omitempty"`
+	// The denom as it appears on the chain this TokenInfo is attached to
+	// (native or IBC hash).
+	ChainDenom string `protobuf:"bytes,1,opt,name=chain_denom,proto3" json:"chain_denom,omitempty"`
+	// The denom this token has on the other end of the route (the
+	// counterparty chain named by the enclosing BasicRoute.to_chain_id).
+	// Note: v2beta renames this field to counterpart_denom, since it is not
+	// always literally an IBC-hash-form denom (e.g. it may be the
+	// counterparty chain's native denom when this token originates there).
+	IbcDenom string `protobuf:"bytes,2,opt,name=ibc_denom,proto3" json:"ibc_denom,omitempty"`
+	// The base/native denom on the token's origin chain.
+	BaseDenom string `protobuf:"bytes,3,opt,name=base_denom,proto3" json:"base_denom,omitempty"`
+	// The chain ID where this token is native.
 	OriginChain string `protobuf:"bytes,4,opt,name=origin_chain,proto3" json:"origin_chain,omitempty"`
-	Decimals    int32  `protobuf:"varint,5,opt,name=decimals,proto3" json:"decimals,omitempty"`
-	Symbol      string `protobuf:"bytes,6,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	// Number of decimals.
+	Decimals int32 `protobuf:"varint,5,opt,name=decimals,proto3" json:"decimals,omitempty"`
+	// Human-readable symbol (e.g., "ATONE", "OSMO").
+	Symbol string `protobuf:"bytes,6,opt,name=symbol,proto3" json:"symbol,omitempty"`
 }
 
 func (x *TokenInfo) Reset() {

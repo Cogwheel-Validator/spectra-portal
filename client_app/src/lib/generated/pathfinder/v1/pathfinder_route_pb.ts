@@ -19,8 +19,11 @@ export const file_pathfinder_v1_pathfinder_route: GenFile = /*@__PURE__*/
  * FindPathRequest - Find a route between chains
  *
  * For token_from_denom and token_to_denom, you can use:
- * - Human-readable denom (e.g., "uatone", "uosmo", "ustars")
+ * - Human-readable/native denom (e.g., "uatone", "uosmo", "ustars")
  * - Full IBC denom (e.g., "ibc/ABC123...")
+ * - "symbol@origin_chain" convenience syntax (e.g., "uatone@atomone-1"),
+ *   which disambiguates a base denom by naming the chain it's native to -
+ *   useful when the same base denom could otherwise resolve ambiguously.
  *
  * The pathfinder will automatically resolve human-readable denoms.
  * If token_to_denom is empty, the pathfinder assumes you want the same token
@@ -37,8 +40,9 @@ export type FindPathRequest = Message<"v1.FindPathRequest"> & {
   chainFrom: string;
 
   /**
-   * Token denom on source chain - can be human-readable (e.g., "uatone")
-   * or IBC denom (e.g., "ibc/...")
+   * Token denom on source chain. Accepts a native denom (e.g., "uatone"),
+   * an IBC denom (e.g., "ibc/..."), or "symbol@origin_chain" (e.g.,
+   * "uatone@atomone-1") to disambiguate by origin chain.
    *
    * @generated from field: string token_from_denom = 2;
    */
@@ -59,8 +63,8 @@ export type FindPathRequest = Message<"v1.FindPathRequest"> & {
   chainTo: string;
 
   /**
-   * Token denom you want to receive on destination chain
-   * Can be human-readable (e.g., "uosmo") or IBC denom
+   * Token denom you want to receive on destination chain. Accepts the
+   * same forms as token_from_denom (native, IBC, or "symbol@origin_chain").
    * If empty, assumes same token as token_from (bridging without swap)
    *
    * @generated from field: string token_to_denom = 5;
@@ -119,6 +123,14 @@ export type FindPathResponse = Message<"v1.FindPathResponse"> & {
   errorMessage: string;
 
   /**
+   * Exactly one of these is set when success is true, depending on the
+   * route shape the pathfinder found. Callers should switch on which
+   * field is populated rather than assuming a shape ahead of time:
+   * - direct: single IBC hop, no swap involved.
+   * - indirect: multiple IBC hops (PFM or manually chained), no swap.
+   * - broker_swap: one hop reaches a DEX broker chain (e.g. Osmosis),
+   *   a swap happens there, and zero or more hops continue onward.
+   *
    * @generated from oneof v1.FindPathResponse.route
    */
   route: {
@@ -150,6 +162,9 @@ export const FindPathResponseSchema: GenMessage<FindPathResponse> = /*@__PURE__*
   messageDesc(file_pathfinder_v1_pathfinder_route, 1);
 
 /**
+ * DirectRoute is a single IBC transfer directly between chain_from and
+ * chain_to, with no intermediate chains and no swap.
+ *
  * @generated from message v1.DirectRoute
  */
 export type DirectRoute = Message<"v1.DirectRoute"> & {
@@ -167,30 +182,48 @@ export const DirectRouteSchema: GenMessage<DirectRoute> = /*@__PURE__*/
   messageDesc(file_pathfinder_v1_pathfinder_route, 2);
 
 /**
+ * IndirectRoute is a multi-hop IBC-only path with no swap involved - the
+ * token is simply forwarded through one or more intermediate chains.
+ *
  * @generated from message v1.IndirectRoute
  */
 export type IndirectRoute = Message<"v1.IndirectRoute"> & {
   /**
+   * All chain IDs in order, from chain_from to chain_to.
+   *
    * @generated from field: repeated string path = 1;
    */
   path: string[];
 
   /**
+   * One IBCLeg per hop, in order.
+   *
    * @generated from field: repeated v1.IBCLeg legs = 2;
    */
   legs: IBCLeg[];
 
   /**
+   * True if Packet Forward Middleware (PFM) can be used to chain the
+   * hops from pfm_start_chain onward into a single MsgTransfer with a
+   * forwarding memo, instead of the caller submitting one MsgTransfer
+   * per hop.
+   *
    * @generated from field: bool supports_pfm = 3 [json_name = "supports_pfm"];
    */
   supportsPfm: boolean;
 
   /**
+   * The first chain in the path from which PFM forwarding applies.
+   * Only meaningful when supports_pfm is true.
+   *
    * @generated from field: string pfm_start_chain = 4 [json_name = "pfm_start_chain"];
    */
   pfmStartChain: string;
 
   /**
+   * The PFM forward memo to attach to the MsgTransfer sent from
+   * pfm_start_chain. Only populated when supports_pfm is true.
+   *
    * @generated from field: string pfm_memo = 5 [json_name = "pfm_memo"];
    */
   pfmMemo: string;
@@ -266,7 +299,9 @@ export const BrokerSwapRouteSchema: GenMessage<BrokerSwapRoute> = /*@__PURE__*/
   messageDesc(file_pathfinder_v1_pathfinder_route, 4);
 
 /**
- * BrokerExecutionData contains ready-to-use transaction data
+ * BrokerExecutionData contains ready-to-use transaction data. See
+ * docs/IBC_MEMO.md for how memo/smart_contract_data assemble into the
+ * ibc-hooks memo formats used to trigger the swap on the broker chain.
  *
  * @generated from message v1.BrokerExecutionData
  */
@@ -976,35 +1011,54 @@ export const ChainInfoSchema: GenMessage<ChainInfo> = /*@__PURE__*/
   messageDesc(file_pathfinder_v1_pathfinder_route, 23);
 
 /**
+ * TokenInfo describes one token allowed on a BasicRoute.
+ *
  * @generated from message v1.TokenInfo
  */
 export type TokenInfo = Message<"v1.TokenInfo"> & {
   /**
+   * The denom as it appears on the chain this TokenInfo is attached to
+   * (native or IBC hash).
+   *
    * @generated from field: string chain_denom = 1 [json_name = "chain_denom"];
    */
   chainDenom: string;
 
   /**
+   * The denom this token has on the other end of the route (the
+   * counterparty chain named by the enclosing BasicRoute.to_chain_id).
+   * Note: v2beta renames this field to counterpart_denom, since it is not
+   * always literally an IBC-hash-form denom (e.g. it may be the
+   * counterparty chain's native denom when this token originates there).
+   *
    * @generated from field: string ibc_denom = 2 [json_name = "ibc_denom"];
    */
   ibcDenom: string;
 
   /**
+   * The base/native denom on the token's origin chain.
+   *
    * @generated from field: string base_denom = 3 [json_name = "base_denom"];
    */
   baseDenom: string;
 
   /**
+   * The chain ID where this token is native.
+   *
    * @generated from field: string origin_chain = 4 [json_name = "origin_chain"];
    */
   originChain: string;
 
   /**
+   * Number of decimals.
+   *
    * @generated from field: int32 decimals = 5;
    */
   decimals: number;
 
   /**
+   * Human-readable symbol (e.g., "ATONE", "OSMO").
+   *
    * @generated from field: string symbol = 6;
    */
   symbol: string;
@@ -1345,7 +1399,16 @@ export const UserSwapSchema: GenMessage<UserSwap> = /*@__PURE__*/
   messageDesc(file_pathfinder_v1_pathfinder_route, 37);
 
 /**
- * PathfinderService provides route discovery and validation for IBC transfers and swaps
+ * PathfinderService provides route discovery and validation for IBC transfers and swaps.
+ *
+ * This is the legacy (v1) API surface. New integrations should prefer the
+ * v2beta FindPathService/PathfinderQueryService. v1 is kept unchanged for
+ * existing consumers; it identifies chains only via a single sender_address/
+ * receiver_address pair on FindPathRequest, and derives any intermediate
+ * broker/PFM chain address automatically via SLIP-44-guarded bech32
+ * re-encoding. v2beta replaces that derivation with explicit,
+ * caller-supplied per-chain addresses (ChainAddress), which is more robust
+ * across chains that use different SLIP-44 coin types.
  *
  * @generated from service v1.PathfinderService
  */

@@ -149,12 +149,24 @@ message ChainInfo {
     repeated BasicRoute routes = 5 [json_name = "routes"];
 }
 
+// TokenInfo describes one token allowed on a BasicRoute.
 message TokenInfo {
+    // The denom as it appears on the chain this TokenInfo is attached to
+    // (native or IBC hash).
     string chain_denom = 1 [json_name = "chain_denom"];
+    // The denom this token has on the other end of the route (the
+    // counterparty chain named by the enclosing BasicRoute.to_chain_id).
+    // Renamed from v1's ibc_denom: this gives clearer intent, since the
+    // value is not always literally an IBC-hash-form denom - it can be a
+    // native denom when this token originates on the counterparty chain.
     string counterpart_denom = 2 [json_name = "counterpart_denom"];
+    // The base/native denom on the token's origin chain.
     string base_denom = 3 [json_name = "base_denom"];
+    // The chain ID where this token is native.
     string origin_chain = 4 [json_name = "origin_chain"];
+    // Number of decimals.
     int32 decimals = 5 [json_name = "decimals"];
+    // Human-readable symbol (e.g., "ATONE", "OSMO").
     string symbol = 6 [json_name = "symbol"];
 }
 

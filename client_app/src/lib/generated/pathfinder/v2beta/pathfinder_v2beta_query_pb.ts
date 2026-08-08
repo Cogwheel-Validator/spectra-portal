@@ -414,35 +414,54 @@ export const ChainInfoSchema: GenMessage<ChainInfo> = /*@__PURE__*/
   messageDesc(file_pathfinder_v2beta_pathfinder_v2beta_query, 11);
 
 /**
+ * TokenInfo describes one token allowed on a BasicRoute.
+ *
  * @generated from message pathfinder.v2beta.TokenInfo
  */
 export type TokenInfo = Message<"pathfinder.v2beta.TokenInfo"> & {
   /**
+   * The denom as it appears on the chain this TokenInfo is attached to
+   * (native or IBC hash).
+   *
    * @generated from field: string chain_denom = 1 [json_name = "chain_denom"];
    */
   chainDenom: string;
 
   /**
+   * The denom this token has on the other end of the route (the
+   * counterparty chain named by the enclosing BasicRoute.to_chain_id).
+   * Renamed from v1's ibc_denom: this gives clearer intent, since the
+   * value is not always literally an IBC-hash-form denom - it can be a
+   * native denom when this token originates on the counterparty chain.
+   *
    * @generated from field: string counterpart_denom = 2 [json_name = "counterpart_denom"];
    */
   counterpartDenom: string;
 
   /**
+   * The base/native denom on the token's origin chain.
+   *
    * @generated from field: string base_denom = 3 [json_name = "base_denom"];
    */
   baseDenom: string;
 
   /**
+   * The chain ID where this token is native.
+   *
    * @generated from field: string origin_chain = 4 [json_name = "origin_chain"];
    */
   originChain: string;
 
   /**
+   * Number of decimals.
+   *
    * @generated from field: int32 decimals = 5;
    */
   decimals: number;
 
   /**
+   * Human-readable symbol (e.g., "ATONE", "OSMO").
+   *
    * @generated from field: string symbol = 6;
    */
   symbol: string;

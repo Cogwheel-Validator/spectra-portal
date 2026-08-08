@@ -54,8 +54,11 @@ export const ChainAddressSchema: GenMessage<ChainAddress> = /*@__PURE__*/
  * FindPathRequest - Find a route between chains
  *
  * For token_from_denom and token_to_denom, you can use:
- * - Human-readable denom (e.g., "uatone", "uosmo", "ustars")
+ * - Human-readable/native denom (e.g., "uatone", "uosmo", "ustars")
  * - Full IBC denom (e.g., "ibc/ABC123...")
+ * - "symbol@origin_chain" convenience syntax (e.g., "uatone@atomone-1"),
+ *   which disambiguates a base denom by naming the chain it's native to -
+ *   useful when the same base denom could otherwise resolve ambiguously.
  *
  * The pathfinder will automatically resolve human-readable denoms.
  * If token_to_denom is empty, the pathfinder assumes you want the same token
@@ -72,8 +75,9 @@ export type FindPathRequest = Message<"pathfinder.v2beta.FindPathRequest"> & {
   chainFrom: string;
 
   /**
-   * Token denom on source chain - can be human-readable (e.g., "uatone")
-   * or IBC denom (e.g., "ibc/...")
+   * Token denom on source chain. Accepts a native denom (e.g., "uatone"),
+   * an IBC denom (e.g., "ibc/..."), or "symbol@origin_chain" (e.g.,
+   * "uatone@atomone-1") to disambiguate by origin chain.
    *
    * @generated from field: string token_from_denom = 2;
    */
@@ -94,8 +98,8 @@ export type FindPathRequest = Message<"pathfinder.v2beta.FindPathRequest"> & {
   chainTo: string;
 
   /**
-   * Token denom you want to receive on destination chain
-   * Can be human-readable (e.g., "uosmo") or IBC denom
+   * Token denom you want to receive on destination chain. Accepts the
+   * same forms as token_from_denom (native, IBC, or "symbol@origin_chain").
    * If empty, assumes same token as token_from (bridging without swap)
    *
    * @generated from field: string token_to_denom = 5;
@@ -109,11 +113,9 @@ export type FindPathRequest = Message<"pathfinder.v2beta.FindPathRequest"> & {
    * broker/PFM chains too, since a converted address is not guaranteed
    * to be valid across chains with different SLIP-44 coin types.
    *
-   * May be left empty for a read-only route discovery request: the
-   * response is then marked RESPONSE_CODE_MOCK_ADDRESSES, carries no
-   * execution data or memos, and lists the chains that need an address
-   * in required_chains. A non-empty list missing an address for any
-   * chain the route requires is rejected with an error naming the
+   * May also be left empty; see ResponseCode.RESPONSE_CODE_MOCK_ADDRESSES
+   * below for what that triggers. A non-empty list missing an address for
+   * any chain the route requires is rejected with an error naming the
    * missing chain IDs.
    *
    * @generated from field: repeated pathfinder.v2beta.ChainAddress addresses = 6;
@@ -158,6 +160,14 @@ export type FindPathResponse = Message<"pathfinder.v2beta.FindPathResponse"> & {
   errorMessage: string;
 
   /**
+   * Exactly one of these is set when success is true, depending on the
+   * route shape the pathfinder found. Callers should switch on which
+   * field is populated rather than assuming a shape ahead of time:
+   * - direct: single IBC hop, no swap involved.
+   * - indirect: multiple IBC hops (PFM or manually chained), no swap.
+   * - broker_swap: one hop reaches a DEX broker chain (e.g. Osmosis),
+   *   a swap happens there, and zero or more hops continue onward.
+   *
    * @generated from oneof pathfinder.v2beta.FindPathResponse.route
    */
   route: {
@@ -205,8 +215,11 @@ export const FindPathResponseSchema: GenMessage<FindPathResponse> = /*@__PURE__*
  * FindPathStreamingRequest - Find a route between chains, streaming variant
  *
  * For token_from_denom and token_to_denom, you can use:
- * - Human-readable denom (e.g., "uatone", "uosmo", "ustars")
+ * - Human-readable/native denom (e.g., "uatone", "uosmo", "ustars")
  * - Full IBC denom (e.g., "ibc/ABC123...")
+ * - "symbol@origin_chain" convenience syntax (e.g., "uatone@atomone-1"),
+ *   which disambiguates a base denom by naming the chain it's native to -
+ *   useful when the same base denom could otherwise resolve ambiguously.
  *
  * The pathfinder will automatically resolve human-readable denoms.
  * If token_to_denom is empty, the pathfinder assumes you want the same token
@@ -223,8 +236,9 @@ export type FindPathStreamingRequest = Message<"pathfinder.v2beta.FindPathStream
   chainFrom: string;
 
   /**
-   * Token denom on source chain - can be human-readable (e.g., "uatone")
-   * or IBC denom (e.g., "ibc/...")
+   * Token denom on source chain. Accepts a native denom (e.g., "uatone"),
+   * an IBC denom (e.g., "ibc/..."), or "symbol@origin_chain" (e.g.,
+   * "uatone@atomone-1") to disambiguate by origin chain.
    *
    * @generated from field: string token_from_denom = 2;
    */
@@ -245,8 +259,8 @@ export type FindPathStreamingRequest = Message<"pathfinder.v2beta.FindPathStream
   chainTo: string;
 
   /**
-   * Token denom you want to receive on destination chain
-   * Can be human-readable (e.g., "uosmo") or IBC denom
+   * Token denom you want to receive on destination chain. Accepts the
+   * same forms as token_from_denom (native, IBC, or "symbol@origin_chain").
    * If empty, assumes same token as token_from (bridging without swap)
    *
    * @generated from field: string token_to_denom = 5;
@@ -290,6 +304,11 @@ export const FindPathStreamingRequestSchema: GenMessage<FindPathStreamingRequest
   messageDesc(file_pathfinder_v2beta_pathfinder_v2beta_find_path, 3);
 
 /**
+ * FindPathStreamingResponse intentionally has no response_code or
+ * required_chains fields: streaming never has a mock/discovery mode
+ * (FindPathStreamingRequest.addresses is always required with at least 2
+ * entries), so every response reflects a real, fully-addressed route.
+ *
  * @generated from message pathfinder.v2beta.FindPathStreamingResponse
  */
 export type FindPathStreamingResponse = Message<"pathfinder.v2beta.FindPathStreamingResponse"> & {
@@ -304,6 +323,9 @@ export type FindPathStreamingResponse = Message<"pathfinder.v2beta.FindPathStrea
   errorMessage: string;
 
   /**
+   * Exactly one of these is set when success is true; see
+   * FindPathResponse.route for the meaning of each branch.
+   *
    * @generated from oneof pathfinder.v2beta.FindPathStreamingResponse.route
    */
   route: {
@@ -390,7 +412,17 @@ export const FindPathService: GenService<{
     output: typeof FindPathResponseSchema;
   },
   /**
-   * FindPathStreaming is the bidirectional-streaming counterpart of FindPath
+   * FindPathStreaming is the bidirectional-streaming counterpart of
+   * FindPath, for clients that want a route/quote that stays fresh
+   * without re-polling. Runtime contract:
+   * - The client must send its first FindPathStreamingRequest within 60s
+   *   of opening the stream, or the server closes it.
+   * - After each response, if the client sends no new request for 15s,
+   *   the server automatically recomputes the route from the
+   *   last-received request and pushes an updated response (no new
+   *   request needed to keep the quote current).
+   * - The stream has a hard 1-hour lifetime cap regardless of activity;
+   *   the server closes it at that point and the client must reopen.
    *
    * @generated from rpc pathfinder.v2beta.FindPathService.FindPathStreaming
    */

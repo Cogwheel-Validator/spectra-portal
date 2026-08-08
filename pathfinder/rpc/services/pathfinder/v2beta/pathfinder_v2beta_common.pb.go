@@ -182,6 +182,8 @@ func (x *IBCLeg) GetAmount() string {
 	return ""
 }
 
+// DirectRoute is a single IBC transfer directly between chain_from and
+// chain_to, with no intermediate chains and no swap.
 type DirectRoute struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -229,16 +231,28 @@ func (x *DirectRoute) GetTransfer() *IBCLeg {
 	return nil
 }
 
+// IndirectRoute is a multi-hop IBC-only path with no swap involved - the
+// token is simply forwarded through one or more intermediate chains.
 type IndirectRoute struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Path          []string  `protobuf:"bytes,1,rep,name=path,proto3" json:"path,omitempty"`
-	Legs          []*IBCLeg `protobuf:"bytes,2,rep,name=legs,proto3" json:"legs,omitempty"`
-	SupportsPfm   bool      `protobuf:"varint,3,opt,name=supports_pfm,proto3" json:"supports_pfm,omitempty"`
-	PfmStartChain string    `protobuf:"bytes,4,opt,name=pfm_start_chain,proto3" json:"pfm_start_chain,omitempty"`
-	PfmMemo       string    `protobuf:"bytes,5,opt,name=pfm_memo,proto3" json:"pfm_memo,omitempty"`
+	// All chain IDs in order, from chain_from to chain_to.
+	Path []string `protobuf:"bytes,1,rep,name=path,proto3" json:"path,omitempty"`
+	// One IBCLeg per hop, in order.
+	Legs []*IBCLeg `protobuf:"bytes,2,rep,name=legs,proto3" json:"legs,omitempty"`
+	// True if Packet Forward Middleware (PFM) can be used to chain the
+	// hops from pfm_start_chain onward into a single MsgTransfer with a
+	// forwarding memo, instead of the caller submitting one MsgTransfer
+	// per hop.
+	SupportsPfm bool `protobuf:"varint,3,opt,name=supports_pfm,proto3" json:"supports_pfm,omitempty"`
+	// The first chain in the path from which PFM forwarding applies.
+	// Only meaningful when supports_pfm is true.
+	PfmStartChain string `protobuf:"bytes,4,opt,name=pfm_start_chain,proto3" json:"pfm_start_chain,omitempty"`
+	// The PFM forward memo to attach to the MsgTransfer sent from
+	// pfm_start_chain. Only populated when supports_pfm is true.
+	PfmMemo string `protobuf:"bytes,5,opt,name=pfm_memo,proto3" json:"pfm_memo,omitempty"`
 }
 
 func (x *IndirectRoute) Reset() {
@@ -408,7 +422,9 @@ func (x *BrokerSwapRoute) GetExecution() *BrokerExecutionData {
 	return nil
 }
 
-// BrokerExecutionData contains ready-to-use transaction data
+// BrokerExecutionData contains ready-to-use transaction data. See
+// docs/IBC_MEMO.md for how memo/smart_contract_data assemble into the
+// ibc-hooks memo formats used to trigger the swap on the broker chain.
 type BrokerExecutionData struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -7,7 +7,16 @@ import { ChainInfoRequest, ChainInfoResponse, FindPathRequest, FindPathResponse,
 import { Empty, MethodIdempotency, MethodKind } from "@bufbuild/protobuf";
 
 /**
- * PathfinderService provides route discovery and validation for IBC transfers and swaps
+ * PathfinderService provides route discovery and validation for IBC transfers and swaps.
+ *
+ * This is the legacy (v1) API surface. New integrations should prefer the
+ * v2beta FindPathService/PathfinderQueryService. v1 is kept unchanged for
+ * existing consumers; it identifies chains only via a single sender_address/
+ * receiver_address pair on FindPathRequest, and derives any intermediate
+ * broker/PFM chain address automatically via SLIP-44-guarded bech32
+ * re-encoding. v2beta replaces that derivation with explicit,
+ * caller-supplied per-chain addresses (ChainAddress), which is more robust
+ * across chains that use different SLIP-44 coin types.
  *
  * @generated from service v1.PathfinderService
  */

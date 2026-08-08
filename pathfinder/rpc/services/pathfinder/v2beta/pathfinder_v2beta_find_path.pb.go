@@ -144,8 +144,11 @@ func (x *ChainAddress) GetAddress() string {
 // FindPathRequest - Find a route between chains
 //
 // For token_from_denom and token_to_denom, you can use:
-// - Human-readable denom (e.g., "uatone", "uosmo", "ustars")
-// - Full IBC denom (e.g., "ibc/ABC123...")
+//   - Human-readable/native denom (e.g., "uatone", "uosmo", "ustars")
+//   - Full IBC denom (e.g., "ibc/ABC123...")
+//   - "symbol@origin_chain" convenience syntax (e.g., "uatone@atomone-1"),
+//     which disambiguates a base denom by naming the chain it's native to -
+//     useful when the same base denom could otherwise resolve ambiguously.
 //
 // The pathfinder will automatically resolve human-readable denoms.
 // If token_to_denom is empty, the pathfinder assumes you want the same token
@@ -157,15 +160,16 @@ type FindPathRequest struct {
 
 	// Source chain ID (e.g., "osmosis-1", "atomone-1")
 	ChainFrom string `protobuf:"bytes,1,opt,name=chain_from,json=chainFrom,proto3" json:"chain_from,omitempty"`
-	// Token denom on source chain - can be human-readable (e.g., "uatone")
-	// or IBC denom (e.g., "ibc/...")
+	// Token denom on source chain. Accepts a native denom (e.g., "uatone"),
+	// an IBC denom (e.g., "ibc/..."), or "symbol@origin_chain" (e.g.,
+	// "uatone@atomone-1") to disambiguate by origin chain.
 	TokenFromDenom string `protobuf:"bytes,2,opt,name=token_from_denom,json=tokenFromDenom,proto3" json:"token_from_denom,omitempty"`
 	// Amount to transfer/swap (in base units)
 	AmountIn string `protobuf:"bytes,3,opt,name=amount_in,json=amountIn,proto3" json:"amount_in,omitempty"`
 	// Destination chain ID
 	ChainTo string `protobuf:"bytes,4,opt,name=chain_to,json=chainTo,proto3" json:"chain_to,omitempty"`
-	// Token denom you want to receive on destination chain
-	// Can be human-readable (e.g., "uosmo") or IBC denom
+	// Token denom you want to receive on destination chain. Accepts the
+	// same forms as token_from_denom (native, IBC, or "symbol@origin_chain").
 	// If empty, assumes same token as token_from (bridging without swap)
 	TokenToDenom string `protobuf:"bytes,5,opt,name=token_to_denom,json=tokenToDenom,proto3" json:"token_to_denom,omitempty"`
 	// Addresses for every chain the route may touch, keyed by chain ID.
@@ -174,11 +178,9 @@ type FindPathRequest struct {
 	// broker/PFM chains too, since a converted address is not guaranteed
 	// to be valid across chains with different SLIP-44 coin types.
 	//
-	// May be left empty for a read-only route discovery request: the
-	// response is then marked RESPONSE_CODE_MOCK_ADDRESSES, carries no
-	// execution data or memos, and lists the chains that need an address
-	// in required_chains. A non-empty list missing an address for any
-	// chain the route requires is rejected with an error naming the
+	// May also be left empty; see ResponseCode.RESPONSE_CODE_MOCK_ADDRESSES
+	// below for what that triggers. A non-empty list missing an address for
+	// any chain the route requires is rejected with an error naming the
 	// missing chain IDs.
 	Addresses []*ChainAddress `protobuf:"bytes,6,rep,name=addresses,proto3" json:"addresses,omitempty"`
 	// If true, return a smart route, if false, return a normal route
@@ -283,6 +285,14 @@ type FindPathResponse struct {
 
 	Success      bool   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,proto3" json:"error_message,omitempty"`
+	// Exactly one of these is set when success is true, depending on the
+	// route shape the pathfinder found. Callers should switch on which
+	// field is populated rather than assuming a shape ahead of time:
+	//   - direct: single IBC hop, no swap involved.
+	//   - indirect: multiple IBC hops (PFM or manually chained), no swap.
+	//   - broker_swap: one hop reaches a DEX broker chain (e.g. Osmosis),
+	//     a swap happens there, and zero or more hops continue onward.
+	//
 	// Types that are assignable to Route:
 	//
 	//	*FindPathResponse_Direct
@@ -408,8 +418,11 @@ func (*FindPathResponse_BrokerSwap) isFindPathResponse_Route() {}
 // FindPathStreamingRequest - Find a route between chains, streaming variant
 //
 // For token_from_denom and token_to_denom, you can use:
-// - Human-readable denom (e.g., "uatone", "uosmo", "ustars")
-// - Full IBC denom (e.g., "ibc/ABC123...")
+//   - Human-readable/native denom (e.g., "uatone", "uosmo", "ustars")
+//   - Full IBC denom (e.g., "ibc/ABC123...")
+//   - "symbol@origin_chain" convenience syntax (e.g., "uatone@atomone-1"),
+//     which disambiguates a base denom by naming the chain it's native to -
+//     useful when the same base denom could otherwise resolve ambiguously.
 //
 // The pathfinder will automatically resolve human-readable denoms.
 // If token_to_denom is empty, the pathfinder assumes you want the same token
@@ -421,15 +434,16 @@ type FindPathStreamingRequest struct {
 
 	// Source chain ID (e.g., "osmosis-1", "atomone-1")
 	ChainFrom string `protobuf:"bytes,1,opt,name=chain_from,json=chainFrom,proto3" json:"chain_from,omitempty"`
-	// Token denom on source chain - can be human-readable (e.g., "uatone")
-	// or IBC denom (e.g., "ibc/...")
+	// Token denom on source chain. Accepts a native denom (e.g., "uatone"),
+	// an IBC denom (e.g., "ibc/..."), or "symbol@origin_chain" (e.g.,
+	// "uatone@atomone-1") to disambiguate by origin chain.
 	TokenFromDenom string `protobuf:"bytes,2,opt,name=token_from_denom,json=tokenFromDenom,proto3" json:"token_from_denom,omitempty"`
 	// Amount to transfer/swap (in base units)
 	AmountIn string `protobuf:"bytes,3,opt,name=amount_in,json=amountIn,proto3" json:"amount_in,omitempty"`
 	// Destination chain ID
 	ChainTo string `protobuf:"bytes,4,opt,name=chain_to,json=chainTo,proto3" json:"chain_to,omitempty"`
-	// Token denom you want to receive on destination chain
-	// Can be human-readable (e.g., "uosmo") or IBC denom
+	// Token denom you want to receive on destination chain. Accepts the
+	// same forms as token_from_denom (native, IBC, or "symbol@origin_chain").
 	// If empty, assumes same token as token_from (bridging without swap)
 	TokenToDenom string `protobuf:"bytes,5,opt,name=token_to_denom,json=tokenToDenom,proto3" json:"token_to_denom,omitempty"`
 	// Addresses for every chain the route may touch, keyed by chain ID.
@@ -535,6 +549,10 @@ func (x *FindPathStreamingRequest) GetSlippageBps() uint32 {
 	return 0
 }
 
+// FindPathStreamingResponse intentionally has no response_code or
+// required_chains fields: streaming never has a mock/discovery mode
+// (FindPathStreamingRequest.addresses is always required with at least 2
+// entries), so every response reflects a real, fully-addressed route.
 type FindPathStreamingResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -542,6 +560,9 @@ type FindPathStreamingResponse struct {
 
 	Success      bool   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,proto3" json:"error_message,omitempty"`
+	// Exactly one of these is set when success is true; see
+	// FindPathResponse.route for the meaning of each branch.
+	//
 	// Types that are assignable to Route:
 	//
 	//	*FindPathStreamingResponse_Direct
