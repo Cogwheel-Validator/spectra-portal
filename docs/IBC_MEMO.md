@@ -1,5 +1,10 @@
 # How does the IBC memo work?
 
+> **See also:** this document explains the `memo`/`smart_contract_data` fields returned inside `execution` on a
+> `broker_swap` route. For how to query for that route in the first place, see
+> [`docs/pathfinder/overview.md`](./pathfinder/overview.md), [`docs/pathfinder/v1.md`](./pathfinder/v1.md), and
+> [`docs/pathfinder/v2beta.md`](./pathfinder/v2beta.md).
+
 The current focus will be on the Osmosis chain and using the Skip Go ibc-hooks entry point contract.
 Now there are some other chains that support IBC hooks, but we will focus on the Osmosis chain for now.
 
@@ -368,11 +373,12 @@ of the memo should be similar to what was already explained in Swap and Transfer
     }
     }
 }
+```
 
 So here the ibc_transfer.ibc_info.memo is wrapped into the forward memo. The receiver address in the
 IBC transaction is the smart contract address on the Osmosis chain.
 
-5.4 Two Inbound Legs and Two Outbound Legs
+### 5.4 Two Inbound Legs and Two Outbound Legs
 
 ```json
 {
