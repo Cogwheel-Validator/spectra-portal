@@ -39,11 +39,11 @@ func (l *ChainConfigLoader) LoadFromFile(filePath string) ([]router.PathfinderCh
 		}
 	}
 
-	return l.ConvertToRouterTypes(&pathfinderConfig)
+	return l.convertToRouterTypes(&pathfinderConfig)
 }
 
-// ConvertToRouterTypes converts a PathfinderConfig to the router.PathfinderChain type.
-func (l *ChainConfigLoader) ConvertToRouterTypes(config *output.PathfinderConfig) ([]router.PathfinderChain, error) {
+// convertToRouterTypes converts a PathfinderConfig to the router.PathfinderChain type.
+func (l *ChainConfigLoader) convertToRouterTypes(config *output.PathfinderConfig) ([]router.PathfinderChain, error) {
 	if config == nil || len(config.Chains) == 0 {
 		return nil, fmt.Errorf("no chains in config")
 	}

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -58,6 +59,7 @@ func bindEnvKeys(v *viper.Viper) {
 		"enable_metrics", "use_prometheus", "use_otlp_metrics", "otlp_metrics_url",
 		"enable_logs", "use_otlp_logs", "otlp_logs_url",
 		"insecure_otlp", "development_mode", "sqs_urls",
+		"ip_addr_detect", "ip_options",
 	}
 	for _, k := range keys {
 		_ = v.BindEnv(k)
@@ -104,10 +106,22 @@ func verifyConfig(config *RPCPathfinderConfig) error {
 		return fmt.Errorf("sqs_urls is required")
 	}
 
-	for _, url := range config.SqsURLs {
-		if url == "" {
-			return fmt.Errorf("sqs_urls must not be empty")
-		}
+	if slices.Contains(config.SqsURLs, "") {
+		return fmt.Errorf("sqs_urls must not be empty")
+	}
+
+	if config.IpAddrDetect != "" &&
+		!slices.Contains([]string{"off", "direct", "header", "proxy"}, config.IpAddrDetect) {
+		return fmt.Errorf("ip_addr_detect must be one of: off, direct, header, proxy")
+	}
+
+	if config.IpAddrDetect == "header" || config.IpAddrDetect == "proxy" &&
+		len(*config.IpOptions) == 0 {
+		return fmt.Errorf("ip_options must not be empty")
+	}
+
+	if config.IpAddrDetect == "header" && len(*config.IpOptions) > 1 {
+		return fmt.Errorf("ip_options must contain only one header")
 	}
 
 	return nil

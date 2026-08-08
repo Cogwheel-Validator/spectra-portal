@@ -13,8 +13,8 @@ import (
 func unsetPathfinderEnv() {
 	for _, e := range os.Environ() {
 		if len(e) > 12 && e[:12] == "PATHFINDER_" {
-			if idx := strings.Index(e, "="); idx != -1 {
-				_ = os.Unsetenv(e[:idx])
+			if before, _, ok := strings.Cut(e, "="); ok {
+				_ = os.Unsetenv(before)
 			}
 		}
 	}
