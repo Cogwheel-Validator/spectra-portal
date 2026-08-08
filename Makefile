@@ -152,7 +152,7 @@ snyk-local:
 test-e2e:
 	@echo "Running e2e tests..."
 	@read -p "Enter whole URL to working instance of pathfinder (example http://localhost:8080): " URL && \
-	E2E_PATHFINDER_URL=$URL go test -tags=e2e ./pathfinder/e2e/... -v.
+	E2E_PATHFINDER_URL=$$URL go test -tags=e2e ./pathfinder/e2e/... -v
 	@echo "E2e tests completed successfully!"
 
 test:
