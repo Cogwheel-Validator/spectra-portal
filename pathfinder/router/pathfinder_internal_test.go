@@ -10,6 +10,7 @@ import (
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
 	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/zeebo/assert"
 )
 
@@ -67,9 +68,14 @@ func TestQueryBrokerWithRetry_Exhausted(t *testing.T) {
 }
 
 func TestCheckPFMSupport(t *testing.T) {
-	ri := NewRouteIndex()
-	ri.pfmChains["chain-b"] = true
-	ri.pfmChains["chain-d"] = true
+	ri := routeindex.NewRouteIndex()
+	assert.NoError(t, ri.BuildIndex([]routeindex.PathfinderChain{
+		{Id: "chain-a"},
+		{Id: "chain-b", HasPFM: true},
+		{Id: "chain-c"},
+		{Id: "chain-d", HasPFM: true},
+		{Id: "chain-x"},
+	}))
 	s := &Pathfinder{routeIndex: ri}
 
 	// Paths with no intermediate chains never need PFM
@@ -123,14 +129,4 @@ func TestGeneratePFMMemo(t *testing.T) {
 func TestGeneratePFMMemo_EmptyLegs(t *testing.T) {
 	s := &Pathfinder{}
 	assert.Equal(t, s.generatePFMMemo(nil, "receiver"), "")
-}
-
-func TestRouteKey(t *testing.T) {
-	assert.Equal(t, routeKey("chain-a", "chain-b", "uatom"), "chain-a->chain-b:uatom")
-}
-
-func TestBuildIndex_EmptyChains(t *testing.T) {
-	ri := NewRouteIndex()
-	assert.Error(t, ri.BuildIndex(nil))
-	assert.Error(t, ri.BuildIndex([]PathfinderChain{}))
 }

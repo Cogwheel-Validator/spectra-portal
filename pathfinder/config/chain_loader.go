@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/output"
-	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -21,7 +21,7 @@ func NewChainConfigLoader() *ChainConfigLoader {
 }
 
 // LoadFromFile loads a pathfinder config from a file and returns router-compatible types.
-func (l *ChainConfigLoader) LoadFromFile(filePath string) ([]router.PathfinderChain, error) {
+func (l *ChainConfigLoader) LoadFromFile(filePath string) ([]routeindex.PathfinderChain, error) {
 	data, err := os.ReadFile(filePath) //nolint:gosec // G304: filePath is an operator-supplied startup config path, not external input
 	if err != nil {
 		return nil, fmt.Errorf("failed to read chain config file: %w", err)
@@ -42,16 +42,16 @@ func (l *ChainConfigLoader) LoadFromFile(filePath string) ([]router.PathfinderCh
 	return l.convertToRouterTypes(&pathfinderConfig)
 }
 
-// convertToRouterTypes converts a PathfinderConfig to the router.PathfinderChain type.
-func (l *ChainConfigLoader) convertToRouterTypes(config *output.PathfinderConfig) ([]router.PathfinderChain, error) {
+// convertToRouterTypes converts a PathfinderConfig to the routeindex.PathfinderChain type.
+func (l *ChainConfigLoader) convertToRouterTypes(config *output.PathfinderConfig) ([]routeindex.PathfinderChain, error) {
 	if config == nil || len(config.Chains) == 0 {
 		return nil, fmt.Errorf("no chains in config")
 	}
 
-	chains := make([]router.PathfinderChain, len(config.Chains))
+	chains := make([]routeindex.PathfinderChain, len(config.Chains))
 
 	for i, pathfinderChain := range config.Chains {
-		chains[i] = router.PathfinderChain{
+		chains[i] = routeindex.PathfinderChain{
 			Name:             pathfinderChain.Name,
 			Id:               pathfinderChain.ID,
 			HasPFM:           pathfinderChain.HasPFM,
@@ -60,13 +60,13 @@ func (l *ChainConfigLoader) convertToRouterTypes(config *output.PathfinderConfig
 			IBCHooksContract: pathfinderChain.IBCHooksContract,
 			Bech32Prefix:     pathfinderChain.Bech32Prefix,
 			Slip44:           pathfinderChain.Slip44,
-			NativeTokens:     make([]router.TokenInfo, len(pathfinderChain.NativeTokens)),
-			Routes:           make([]router.BasicRoute, len(pathfinderChain.Routes)),
+			NativeTokens:     make([]routeindex.TokenInfo, len(pathfinderChain.NativeTokens)),
+			Routes:           make([]routeindex.BasicRoute, len(pathfinderChain.Routes)),
 		}
 
 		// Convert native tokens
 		for j, nativeToken := range pathfinderChain.NativeTokens {
-			chains[i].NativeTokens[j] = router.TokenInfo{
+			chains[i].NativeTokens[j] = routeindex.TokenInfo{
 				ChainDenom:  nativeToken.ChainDenom,
 				IbcDenom:    nativeToken.IBCDenom,
 				BaseDenom:   nativeToken.BaseDenom,
@@ -77,17 +77,17 @@ func (l *ChainConfigLoader) convertToRouterTypes(config *output.PathfinderConfig
 		}
 
 		for j, route := range pathfinderChain.Routes {
-			chains[i].Routes[j] = router.BasicRoute{
+			chains[i].Routes[j] = routeindex.BasicRoute{
 				ToChain:       route.ToChain,
 				ToChainId:     route.ToChainID,
 				ConnectionId:  route.ConnectionID,
 				ChannelId:     route.ChannelID,
 				PortId:        route.PortID,
-				AllowedTokens: make(map[string]router.TokenInfo),
+				AllowedTokens: make(map[string]routeindex.TokenInfo),
 			}
 
 			for denom, tokenInfo := range route.AllowedTokens {
-				chains[i].Routes[j].AllowedTokens[denom] = router.TokenInfo{
+				chains[i].Routes[j].AllowedTokens[denom] = routeindex.TokenInfo{
 					ChainDenom:  tokenInfo.ChainDenom,
 					IbcDenom:    tokenInfo.IBCDenom,
 					BaseDenom:   tokenInfo.BaseDenom,

@@ -12,6 +12,8 @@ import (
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers/osmosis"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/denomresolver"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc"
 	"github.com/rs/zerolog"
 )
@@ -61,7 +63,7 @@ func main() {
 	log.Info().Int("count", len(chains)).Msg("Loaded chains")
 
 	// Build the route index
-	routeIndex := router.NewRouteIndex()
+	routeIndex := routeindex.NewRouteIndex()
 	if err := routeIndex.BuildIndex(chains); err != nil {
 		log.Fatal().Err(err).Msg("Failed to build route index")
 	}
@@ -105,7 +107,7 @@ func main() {
 	pathfinder := router.NewPathfinder(chains, routeIndex, brokerClients)
 
 	// Create denom resolver for the RPC server
-	denomResolver := router.NewDenomResolver(routeIndex)
+	denomResolver := denomresolver.NewDenomResolver(routeIndex)
 	denomResolver.SetChains(chains)
 
 	// Create the RPC server configuration

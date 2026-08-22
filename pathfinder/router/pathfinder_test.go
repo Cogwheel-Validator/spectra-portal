@@ -8,10 +8,11 @@ import (
 	router "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
 	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/zeebo/assert"
 )
 
-var chains = []router.PathfinderChain{
+var chains = []routeindex.PathfinderChain{
 	{
 		Name:         "Osmosis",
 		Id:           "osmosis-1",
@@ -19,14 +20,14 @@ var chains = []router.PathfinderChain{
 		BrokerId:     "osmosis-sqs",
 		HasPFM:       true,
 		Bech32Prefix: "osmo",
-		Routes: []router.BasicRoute{
+		Routes: []routeindex.BasicRoute{
 			{
 				ToChain:      "cosmoshub",
 				ToChainId:    "cosmoshub-4",
 				ConnectionId: "connection-0",
 				ChannelId:    "channel-0",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2": {
 						ChainDenom:  "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
 						IbcDenom:    "uatom",
@@ -49,7 +50,7 @@ var chains = []router.PathfinderChain{
 				ConnectionId: "connection-1",
 				ChannelId:    "channel-1",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ibc/ujuno-osmosis": {
 						ChainDenom:  "ibc/ujuno-osmosis",
 						IbcDenom:    "ujuno",
@@ -72,7 +73,7 @@ var chains = []router.PathfinderChain{
 				ConnectionId: "connection-2",
 				ChannelId:    "channel-2",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ibc/uatone-osmo": {
 						ChainDenom:  "ibc/uatone-osmo",
 						IbcDenom:    "uatone",
@@ -95,7 +96,7 @@ var chains = []router.PathfinderChain{
 				ConnectionId: "connection-3",
 				ChannelId:    "channel-3",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4": {
 						ChainDenom:  "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4",
 						IbcDenom:    "uusdc", // What it becomes on Noble (native)
@@ -114,14 +115,14 @@ var chains = []router.PathfinderChain{
 		BrokerId:     "",
 		HasPFM:       true,
 		Bech32Prefix: "cosmos",
-		Routes: []router.BasicRoute{
+		Routes: []routeindex.BasicRoute{
 			{
 				ToChain:      "osmosis",
 				ToChainId:    "osmosis-1",
 				ConnectionId: "connection-0",
 				ChannelId:    "channel-0",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"uatom": {
 						ChainDenom:  "uatom",
 						IbcDenom:    "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
@@ -153,7 +154,7 @@ var chains = []router.PathfinderChain{
 				ConnectionId: "connection-1",
 				ChannelId:    "channel-1",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9": {
 						ChainDenom:  "ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9",
 						IbcDenom:    "ujuno",
@@ -172,14 +173,14 @@ var chains = []router.PathfinderChain{
 		BrokerId:     "",
 		HasPFM:       true,
 		Bech32Prefix: "juno",
-		Routes: []router.BasicRoute{
+		Routes: []routeindex.BasicRoute{
 			{
 				ToChain:      "cosmoshub",
 				ToChainId:    "cosmoshub-4",
 				ConnectionId: "connection-1",
 				ChannelId:    "channel-1",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ujuno": {
 						ChainDenom:  "ujuno",
 						IbcDenom:    "ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9",
@@ -195,7 +196,7 @@ var chains = []router.PathfinderChain{
 				ConnectionId: "connection-0",
 				ChannelId:    "channel-0",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ujuno": {
 						ChainDenom:  "ujuno",
 						IbcDenom:    "ibc/ujuno-osmosis",
@@ -211,7 +212,7 @@ var chains = []router.PathfinderChain{
 				ConnectionId: "connection-3",
 				ChannelId:    "channel-3",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034": {
 						ChainDenom:  "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034",
 						IbcDenom:    "uusdc", // What it becomes on Noble (native)
@@ -230,14 +231,14 @@ var chains = []router.PathfinderChain{
 		BrokerId:     "",
 		HasPFM:       false,
 		Bech32Prefix: "atone",
-		Routes: []router.BasicRoute{
+		Routes: []routeindex.BasicRoute{
 			{
 				ToChain:      "osmosis",
 				ToChainId:    "osmosis-1",
 				ConnectionId: "connection-0",
 				ChannelId:    "channel-0",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"uatone": {
 						ChainDenom:  "uatone",
 						IbcDenom:    "ibc/uatone",
@@ -263,14 +264,14 @@ var chains = []router.PathfinderChain{
 		BrokerId:     "",
 		HasPFM:       true,
 		Bech32Prefix: "noble",
-		Routes: []router.BasicRoute{
+		Routes: []routeindex.BasicRoute{
 			{
 				ToChain:      "juno",
 				ToChainId:    "juno-1",
 				ConnectionId: "connection-1",
 				ChannelId:    "channel-1",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"uusdc": {
 						ChainDenom:  "uusdc",
 						IbcDenom:    "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034", // What it becomes on Juno
@@ -286,7 +287,7 @@ var chains = []router.PathfinderChain{
 				ConnectionId: "connection-0",
 				ChannelId:    "channel-0",
 				PortId:       "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"uusdc": {
 						ChainDenom:  "uusdc",
 						IbcDenom:    "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4", // What it becomes on Osmosis
@@ -417,9 +418,9 @@ func (m *MockSmartContractBuilder) BuildSwapAndForward(params ibcmemo.SwapAndFor
 }
 
 // setupTestPathfinder creates a solver with test chains and a mock broker client
-func setupTestPathfinder() (*router.Pathfinder, *router.RouteIndex) {
+func setupTestPathfinder() (*router.Pathfinder, *routeindex.RouteIndex) {
 	// Build index with test chains
-	routeIndex := router.NewRouteIndex()
+	routeIndex := routeindex.NewRouteIndex()
 	err := routeIndex.BuildIndex(chains)
 	if err != nil {
 		panic(fmt.Sprintf("failed to build index: %v", err))

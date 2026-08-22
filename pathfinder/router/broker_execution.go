@@ -6,6 +6,7 @@ import (
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
 	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 )
 
 // minOutputWithSlippage applies the request's slippage tolerance to the broker's
@@ -27,7 +28,7 @@ func minOutputWithSlippage(req models.RouteRequest, swapResult *brokers.SwapResu
 
 // tokenInDenomOnBroker returns the denom of the inbound token once it has landed
 // on the broker chain after all inbound IBC transfers.
-func tokenInDenomOnBroker(hopInfo *MultiHopInfo) string {
+func tokenInDenomOnBroker(hopInfo *routeindex.MultiHopInfo) string {
 	if len(hopInfo.InboundIntermediateTokens) > 0 {
 		// Multi-hop: use the IBC denom from the last intermediate token
 		lastIntToken := hopInfo.InboundIntermediateTokens[len(hopInfo.InboundIntermediateTokens)-1]
@@ -41,7 +42,7 @@ func tokenInDenomOnBroker(hopInfo *MultiHopInfo) string {
 // Supports both single-hop and multi-hop inbound paths
 func (s *Pathfinder) buildSwapOnlyExecution(
 	req models.RouteRequest,
-	hopInfo *MultiHopInfo,
+	hopInfo *routeindex.MultiHopInfo,
 	swapResult *brokers.SwapResult,
 	memoBuilder ibcmemo.MemoBuilder,
 	brokerExists bool,
@@ -158,7 +159,7 @@ func (s *Pathfinder) buildSwapOnlyExecution(
 // Supports both single-hop and multi-hop inbound/outbound via nested PFM memos
 func (s *Pathfinder) buildSwapAndForwardExecution(
 	req models.RouteRequest,
-	hopInfo *MultiHopInfo,
+	hopInfo *routeindex.MultiHopInfo,
 	swapResult *brokers.SwapResult,
 	outboundLegs []*models.IBCLeg,
 	memoBuilder ibcmemo.MemoBuilder,
@@ -313,7 +314,7 @@ func (s *Pathfinder) buildSwapAndForwardExecution(
 // Returns smart contract data instead of IBC memo since no IBC transfer is needed.
 func (s *Pathfinder) buildSmartContractSwapExecution(
 	req models.RouteRequest,
-	hopInfo *MultiHopInfo,
+	hopInfo *routeindex.MultiHopInfo,
 	swapResult *brokers.SwapResult,
 	scBuilder brokers.SmartContractBuilder,
 	brokerExists bool,
@@ -351,7 +352,7 @@ func (s *Pathfinder) buildSmartContractSwapExecution(
 // (source == broker, dest != broker). Returns smart contract data with IBC forward built-in.
 func (s *Pathfinder) buildSmartContractSwapAndForwardExecution(
 	req models.RouteRequest,
-	hopInfo *MultiHopInfo,
+	hopInfo *routeindex.MultiHopInfo,
 	swapResult *brokers.SwapResult,
 	outboundLegs []*models.IBCLeg,
 	scBuilder brokers.SmartContractBuilder,
@@ -415,7 +416,7 @@ func (s *Pathfinder) buildSmartContractSwapAndForwardExecution(
 // For intermediate hops, Receiver is set to the address on that hop's destination chain.
 // The last hop's receiver is left empty; the memo builder uses the broker contract
 // address for it.
-func (s *Pathfinder) buildInboundHops(hopInfo *MultiHopInfo, resolved *ResolvedAddresses) []ibcmemo.IBCHop {
+func (s *Pathfinder) buildInboundHops(hopInfo *routeindex.MultiHopInfo, resolved *ResolvedAddresses) []ibcmemo.IBCHop {
 	hops := make([]ibcmemo.IBCHop, len(hopInfo.InboundRoutes))
 	for i, route := range hopInfo.InboundRoutes {
 		receiver := ""
@@ -460,7 +461,7 @@ func (s *Pathfinder) buildOutboundHops(outboundLegs []*models.IBCLeg, finalRecei
 // executionAddressNeeds declares the addresses the execution builder for the
 // route's shape will consume, so they can be resolved (or reported as
 // missing/required) in one place before any memo is built.
-func executionAddressNeeds(req models.RouteRequest, hopInfo *MultiHopInfo, outboundLegs []*models.IBCLeg) []AddressNeed {
+func executionAddressNeeds(req models.RouteRequest, hopInfo *routeindex.MultiHopInfo, outboundLegs []*models.IBCLeg) []AddressNeed {
 	needs := []AddressNeed{
 		{ChainID: req.ChainFrom, Role: RoleSender, Required: true},
 		{ChainID: req.ChainTo, Role: RoleReceiver, Required: true},

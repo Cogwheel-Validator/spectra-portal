@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/handlers/common"
 	v2beta "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v2beta"
 	"github.com/btcsuite/btcutil/bech32"
@@ -12,11 +13,11 @@ import (
 )
 
 func testServer() *FindPathServer {
-	chains := []router.PathfinderChain{
+	chains := []routeindex.PathfinderChain{
 		{Name: "Cosmos Hub", Id: "cosmoshub-4", Bech32Prefix: "cosmos", Slip44: 118},
 		{Name: "Osmosis", Id: "osmosis-1", Bech32Prefix: "osmo", Slip44: 118},
 	}
-	pathfinder := router.NewPathfinder(chains, router.NewRouteIndex(), nil)
+	pathfinder := router.NewPathfinder(chains, routeindex.NewRouteIndex(), nil)
 	return NewFindPathServer(common.Deps{Pathfinder: pathfinder})
 }
 

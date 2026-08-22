@@ -290,7 +290,7 @@ func (s *FindPathServer) FindPathStreaming(
 			}
 			s.Logger.Info().Msgf("Stream request received; %+v", result.req)
 			if lastReq == nil {
-				// First message — stop the first-message timer and start the refresh ticker.
+				// First message - stop the first-message timer and start the refresh ticker.
 				firstMsgTimer.Stop()
 				ticker = time.NewTicker(idleRefreshInterval)
 				defer ticker.Stop()

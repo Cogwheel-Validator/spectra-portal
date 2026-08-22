@@ -12,6 +12,7 @@ import (
 	"connectrpc.com/grpcreflect"
 	"connectrpc.com/otelconnect"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/denomresolver"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/handlers/common"
 	v1handlers "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/handlers/v1"
 	v2betahandlers "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/handlers/v2beta"
@@ -31,12 +32,12 @@ func init() {
 	Logger = zerolog.New(out).With().Timestamp().Logger()
 }
 
-// SetLogger allows setting a custom logger
+// SetLogger allows setting a custom logger.
 func SetLogger(l zerolog.Logger) {
 	Logger = l
 }
 
-// ServerConfig holds configuration for the RPC server
+// ServerConfig holds configuration for the RPC server.
 type ServerConfig struct {
 	Address               string
 	AllowedOrigins        []string
@@ -49,7 +50,7 @@ type ServerConfig struct {
 	IpOptions             *[]string
 }
 
-// DefaultServerConfig returns a default server configuration
+// DefaultServerConfig returns a default server configuration.
 func DefaultServerConfig() *ServerConfig {
 	rateLimit := 0
 	maxConcurrentRequests := 200
@@ -64,25 +65,24 @@ func DefaultServerConfig() *ServerConfig {
 	}
 }
 
-// Server wraps the HTTP server and provides life-cycle management
+// Server wraps the HTTP server and provides life-cycle management.
 type Server struct {
 	config       *ServerConfig
 	httpServer   *http.Server
 	otelShutdown func(context.Context) error
 }
 
-// NewServer creates a new RPC server with the given configuration
+// NewServer creates a new RPC server with the given configuration.
 func NewServer(
 	ctx context.Context,
 	config *ServerConfig,
 	pathfinder *router.Pathfinder,
-	denomResolver *router.DenomResolver,
+	denomResolver *denomresolver.DenomResolver,
 ) (*Server, error) {
 	if config == nil {
 		config = DefaultServerConfig()
 	}
 
-	// Initialize OpenTelemetry if configured
 	var otelShutdown func(context.Context) error
 	if config.OTelConfig != nil && (config.OTelConfig.EnableTracing || config.OTelConfig.EnableMetrics || config.OTelConfig.EnableLogs) {
 		shutdown, err := NewOTelSDK(ctx, config.OTelConfig)
@@ -94,16 +94,10 @@ func NewServer(
 		}
 	}
 
-	// Create chi router
 	mux := chi.NewMux()
-
-	// Middleware setup
 	setupMiddleware(mux, config)
-
-	// Setup routes
 	setupRoutes(mux, config, pathfinder, denomResolver)
 
-	// Start HTTP server
 	p := new(http.Protocols)
 	p.SetHTTP1(true)
 	p.SetUnencryptedHTTP2(true) // This is needed to support the gRPC
@@ -130,13 +124,13 @@ func (s *Server) Start() error {
 	return s.httpServer.ListenAndServe()
 }
 
-// StartTLS begins serving RPC requests with TLS
+// StartTLS begins serving RPC requests with TLS.
 func (s *Server) StartTLS(certFile, keyFile string) error {
 	s.logServerInfo("https")
 	return s.httpServer.ListenAndServeTLS(certFile, keyFile)
 }
 
-// logServerInfo logs server startup information
+// logServerInfo logs server startup information.
 func (s *Server) logServerInfo(protocol string) {
 	Logger.Info().
 		Str("address", s.config.Address).
@@ -159,16 +153,16 @@ func (s *Server) logServerInfo(protocol string) {
 	}
 }
 
-// Shutdown gracefully shuts down the server
+// Shutdown gracefully shuts down the server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	Logger.Info().Msg("Shutting down RPC server...")
 
-	// Shutdown HTTP server first
+	// Shutdown HTTP server first.
 	if err := s.httpServer.Shutdown(ctx); err != nil {
 		Logger.Error().Err(err).Msg("Error shutting down HTTP server")
 	}
 
-	// Then shutdown OpenTelemetry to flush any pending telemetry
+	// Then shutdown OpenTelemetry to flush any pending telemetry.
 	if s.otelShutdown != nil {
 		if err := s.otelShutdown(ctx); err != nil {
 			Logger.Error().Err(err).Msg("Error shutting down OpenTelemetry")
@@ -180,13 +174,13 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-// recoverHandler handles panics in RPC handlers
+// recoverHandler handles panics in RPC handlers.
 func recoverHandler(ctx context.Context, spec connect.Spec, header http.Header, p any) error {
 	Logger.Error().
 		Interface("panic", p).
 		Str("procedure", spec.Procedure).
 		Msg("Panic in RPC handler")
-	// Return a generic error message to clients (don't expose internal panic details)
+	// Return a generic error message to clients (don't expose internal panic details).
 	return connect.NewError(connect.CodeInternal, fmt.Errorf("internal server error"))
 }
 
@@ -194,15 +188,15 @@ func setupRoutes(
 	mux *chi.Mux,
 	config *ServerConfig,
 	pathfinder *router.Pathfinder,
-	denomResolver *router.DenomResolver,
+	denomResolver *denomresolver.DenomResolver,
 ) {
 	addApiRoutes(mux, config)
 	addConnectRoutes(mux, config, pathfinder, denomResolver)
 }
 
-// Add general routes that are relevant to health, readiness, and metrics
+// Add general routes that are relevant to health, readiness, and metrics.
 func addApiRoutes(mux *chi.Mux, config *ServerConfig) {
-	// Health/ready/metrics respond instantly — no timeout group needed
+	// Health/ready/metrics respond instantly so no timeout group needed.
 	metricsEnabled := config.EnableMetrics || (config.OTelConfig != nil && config.OTelConfig.UsePrometheus)
 	if metricsEnabled {
 		mux.Handle("/server/metrics", promhttp.Handler())
@@ -224,16 +218,16 @@ func addConnectRoutes(
 	mux *chi.Mux,
 	config *ServerConfig,
 	pathfinder *router.Pathfinder,
-	denomResolver *router.DenomResolver,
+	denomResolver *denomresolver.DenomResolver,
 ) {
-	// Bundle the dependencies shared by all versioned handlers
+	// Bundle the dependencies shared by all versioned handlers.
 	deps := common.Deps{
 		Pathfinder:    pathfinder,
 		DenomResolver: denomResolver,
 		Logger:        Logger,
 	}
 
-	// Initialize protovalidate validator
+	// Initialize protovalidate validator.
 	validator, err := protovalidate.New()
 	if err != nil {
 		Logger.Warn().Err(err).Msg("Failed to initialize protovalidate, continuing without validation")
@@ -242,7 +236,7 @@ func addConnectRoutes(
 		Logger.Info().Msg("Protovalidate initialized successfully")
 	}
 
-	// Configure connect options
+	// Configure connect options.
 	connectOpts := []connect.HandlerOption{
 		connect.WithRecover(recoverHandler),
 		connect.WithInterceptors(
@@ -291,6 +285,6 @@ func addConnectRoutes(
 		}
 	})
 
-	// Streaming handler — no timeout, no throttle
+	// Streaming handler, lives outside the timeout/throttle group.
 	mux.Handle(v2betaconnect.FindPathServiceFindPathStreamingProcedure, findPathV2Handler)
 }

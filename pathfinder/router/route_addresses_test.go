@@ -6,11 +6,13 @@ import (
 	"testing"
 
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/addressing"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/zeebo/assert"
 )
 
-var resolverChains = []PathfinderChain{
+var resolverChains = []routeindex.PathfinderChain{
 	{Name: "Cosmos Hub", Id: "cosmoshub-4", Bech32Prefix: "cosmos", Slip44: 118},
 	{Name: "Osmosis", Id: "osmosis-1", Bech32Prefix: "osmo", Slip44: 118},
 	// Different SLIP-44 coin type than the Cosmos chains.
@@ -20,13 +22,13 @@ var resolverChains = []PathfinderChain{
 }
 
 func resolverPathfinder() *Pathfinder {
-	chainMap := make(map[string]PathfinderChain, len(resolverChains))
+	chainMap := make(map[string]routeindex.PathfinderChain, len(resolverChains))
 	for _, chain := range resolverChains {
 		chainMap[chain.Id] = chain
 	}
 	return &Pathfinder{
 		chainsMap:        chainMap,
-		addressConverter: NewAddressConverter(resolverChains),
+		addressConverter: addressing.NewAddressConverter(resolverChains),
 	}
 }
 

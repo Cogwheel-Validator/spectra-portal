@@ -1,4 +1,4 @@
-package router
+package routeindex
 
 import (
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"

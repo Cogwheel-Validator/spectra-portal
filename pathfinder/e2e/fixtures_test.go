@@ -10,7 +10,7 @@ import (
 // TestAddresses maps chain IDs to a real, funds-empty wallet address on that
 // chain. FindPath never checks balances or broadcasts anything, so these
 // only need to be real, well-formed bech32 addresses for the chain's
-// prefix — the server validates address-prefix/chain match, so a made-up
+// prefix - the server validates address-prefix/chain match, so a made-up
 // string won't pass. They don't need to be addresses you control funds on.
 var TestAddresses map[string]string
 
@@ -36,7 +36,7 @@ func init() {
 
 	if BaseURL() == "" {
 		// No target server configured. Individual tests skip themselves via
-		// RequireBaseURL, so there's nothing to query yet — leave
+		// RequireBaseURL, so there's nothing to query yet - leave
 		// PathfinderBasicCases empty instead of failing here.
 		return
 	}

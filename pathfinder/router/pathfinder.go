@@ -7,7 +7,10 @@ import (
 	"time"
 
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/addressing"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/denomresolver"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/rs/zerolog"
 )
 
@@ -20,18 +23,18 @@ func init() {
 
 // Pathfinder orchestrates route finding and integrates with broker DEX APIs
 type Pathfinder struct {
-	chainsMap        map[string]PathfinderChain      // mapped chainId -> PathfinderChain
-	routeIndex       *RouteIndex                     // routeIndex from which all routes are found
-	brokerClients    map[string]brokers.BrokerClient // mapped brokerId -> broker client interface
-	denomResolver    *DenomResolver                  // denomResolver for resolving denoms across chains
-	addressConverter *AddressConverter               // addressConverter for converting addresses across chains
-	maxRetries       int                             // maximum number of retries for broker queries
-	retryDelay       time.Duration                   // delay between retries for broker queries
+	chainsMap        map[string]routeindex.PathfinderChain // mapped chainId -> PathfinderChain
+	routeIndex       *routeindex.RouteIndex                // routeIndex from which all routes are found
+	brokerClients    map[string]brokers.BrokerClient       // mapped brokerId -> broker client interface
+	denomResolver    *denomresolver.DenomResolver          // denomResolver for resolving denoms across chains
+	addressConverter *addressing.AddressConverter          // addressConverter for converting addresses across chains
+	maxRetries       int                                   // maximum number of retries for broker queries
+	retryDelay       time.Duration                         // delay between retries for broker queries
 }
 
 // NewPathfinder creates a new Pathfinder with the given route index and broker clients
-func NewPathfinder(chains []PathfinderChain, routeIndex *RouteIndex, brokerClients map[string]brokers.BrokerClient) *Pathfinder {
-	chainMap := make(map[string]PathfinderChain, len(chains))
+func NewPathfinder(chains []routeindex.PathfinderChain, routeIndex *routeindex.RouteIndex, brokerClients map[string]brokers.BrokerClient) *Pathfinder {
+	chainMap := make(map[string]routeindex.PathfinderChain, len(chains))
 	for _, chain := range chains {
 		chainMap[chain.Id] = chain
 	}
@@ -39,8 +42,8 @@ func NewPathfinder(chains []PathfinderChain, routeIndex *RouteIndex, brokerClien
 		chainsMap:        chainMap,
 		routeIndex:       routeIndex,
 		brokerClients:    brokerClients,
-		denomResolver:    NewDenomResolver(routeIndex),
-		addressConverter: NewAddressConverter(chains),
+		denomResolver:    denomresolver.NewDenomResolver(routeIndex),
+		addressConverter: addressing.NewAddressConverter(chains),
 		maxRetries:       3,
 		retryDelay:       500 * time.Millisecond,
 	}
@@ -191,10 +194,10 @@ Returns:
 - PathfinderChain: the information about the chain
 - error: if the chain is not found
 */
-func (s *Pathfinder) GetChainInfo(chainId string) (PathfinderChain, error) {
+func (s *Pathfinder) GetChainInfo(chainId string) (routeindex.PathfinderChain, error) {
 	chain, exists := s.chainsMap[chainId]
 	if !exists {
-		return PathfinderChain{}, fmt.Errorf("chain %s not found", chainId)
+		return routeindex.PathfinderChain{}, fmt.Errorf("chain %s not found", chainId)
 	}
 	return chain, nil
 }

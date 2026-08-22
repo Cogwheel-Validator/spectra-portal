@@ -15,7 +15,7 @@ func (s *Pathfinder) checkPFMSupport(path []string) bool {
 
 	// Check all intermediate chains (exclude first and last)
 	for i := 1; i < len(path)-1; i++ {
-		if !s.routeIndex.pfmChains[path[i]] {
+		if !s.routeIndex.SupportsPFM(path[i]) {
 			return false
 		}
 	}

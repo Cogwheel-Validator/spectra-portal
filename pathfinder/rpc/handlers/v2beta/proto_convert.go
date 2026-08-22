@@ -2,9 +2,9 @@ package v2betahandlers
 
 import (
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
-	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers/osmosis"
 	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	v2beta "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v2beta"
 )
 
@@ -339,7 +339,7 @@ func convertOsmosisRouteData(data *osmosis.RouteData) *v2beta.OsmosisRouteData {
 	}
 }
 
-func convertToProtoChainInfo(chain *router.PathfinderChain, showSymbols *bool) *v2beta.ChainInfo {
+func convertToProtoChainInfo(chain *routeindex.PathfinderChain, showSymbols *bool) *v2beta.ChainInfo {
 	return &v2beta.ChainInfo{
 		ChainId:   chain.Id,
 		ChainName: chain.Name,
@@ -349,7 +349,7 @@ func convertToProtoChainInfo(chain *router.PathfinderChain, showSymbols *bool) *
 	}
 }
 
-func convertToProtoBasicRoute(routes []router.BasicRoute, showSymbols *bool) []*v2beta.BasicRoute {
+func convertToProtoBasicRoute(routes []routeindex.BasicRoute, showSymbols *bool) []*v2beta.BasicRoute {
 	protoRoutes := make([]*v2beta.BasicRoute, len(routes))
 	for i := range routes {
 		protoRoutes[i] = &v2beta.BasicRoute{
@@ -364,7 +364,7 @@ func convertToProtoBasicRoute(routes []router.BasicRoute, showSymbols *bool) []*
 	return protoRoutes
 }
 
-func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo, sortBySymbol *bool) map[string]*v2beta.TokenInfo {
+func convertToProtoTokenInfo(tokenInfo map[string]routeindex.TokenInfo, sortBySymbol *bool) map[string]*v2beta.TokenInfo {
 	protoTokenInfos := make(map[string]*v2beta.TokenInfo, len(tokenInfo))
 	if *sortBySymbol {
 		for _, tokenInfo := range tokenInfo {

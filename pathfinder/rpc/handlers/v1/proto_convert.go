@@ -2,9 +2,9 @@ package v1handlers
 
 import (
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
-	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers/osmosis"
 	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	v1 "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v1"
 )
 
@@ -295,7 +295,7 @@ func convertOsmosisRouteData(data *osmosis.RouteData) *v1.OsmosisRouteData {
 	}
 }
 
-func convertToProtoChainInfo(chain *router.PathfinderChain, showSymbols *bool) *v1.ChainInfo {
+func convertToProtoChainInfo(chain *routeindex.PathfinderChain, showSymbols *bool) *v1.ChainInfo {
 	return &v1.ChainInfo{
 		ChainId:   chain.Id,
 		ChainName: chain.Name,
@@ -305,7 +305,7 @@ func convertToProtoChainInfo(chain *router.PathfinderChain, showSymbols *bool) *
 	}
 }
 
-func convertToProtoBasicRoute(routes []router.BasicRoute, showSymbols *bool) []*v1.BasicRoute {
+func convertToProtoBasicRoute(routes []routeindex.BasicRoute, showSymbols *bool) []*v1.BasicRoute {
 	protoRoutes := make([]*v1.BasicRoute, len(routes))
 	for i := range routes {
 		protoRoutes[i] = &v1.BasicRoute{
@@ -320,7 +320,7 @@ func convertToProtoBasicRoute(routes []router.BasicRoute, showSymbols *bool) []*
 	return protoRoutes
 }
 
-func convertToProtoTokenInfo(tokenInfo map[string]router.TokenInfo, sortBySymbol *bool) map[string]*v1.TokenInfo {
+func convertToProtoTokenInfo(tokenInfo map[string]routeindex.TokenInfo, sortBySymbol *bool) map[string]*v1.TokenInfo {
 	protoTokenInfos := make(map[string]*v1.TokenInfo, len(tokenInfo))
 	if *sortBySymbol {
 		for _, tokenInfo := range tokenInfo {

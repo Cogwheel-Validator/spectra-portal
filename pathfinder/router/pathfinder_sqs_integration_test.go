@@ -23,6 +23,7 @@ import (
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers/osmosis"
 	ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/ibc_memo"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	sqsquery "github.com/Cogwheel-Validator/spectra-portal/pathfinder/sqs_query"
 	"github.com/zeebo/assert"
 )
@@ -113,12 +114,12 @@ func (m *mockSQS) lastRequest(t *testing.T) sqsRequest {
 
 // setupIntegrationPathfinder wires a real Pathfinder with a real SqsBroker
 // pointed at the mock SQS server.
-func setupIntegrationPathfinder(t *testing.T, fixture []router.PathfinderChain) (*router.Pathfinder, *mockSQS) {
+func setupIntegrationPathfinder(t *testing.T, fixture []routeindex.PathfinderChain) (*router.Pathfinder, *mockSQS) {
 	t.Helper()
 
 	mock := newMockSQS(t)
 
-	routeIndex := router.NewRouteIndex()
+	routeIndex := routeindex.NewRouteIndex()
 	assert.NoError(t, routeIndex.BuildIndex(fixture))
 
 	broker := osmosis.NewSqsBroker([]string{mock.server.URL}, integrationContract)

@@ -9,6 +9,7 @@ import (
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 	router "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/zeebo/assert"
 )
@@ -281,7 +282,7 @@ func TestPathfinder_InvalidSlippageRejected(t *testing.T) {
 
 // A broker route candidate without a configured broker client must fail cleanly.
 func TestPathfinder_MissingBrokerClient(t *testing.T) {
-	routeIndex := router.NewRouteIndex()
+	routeIndex := routeindex.NewRouteIndex()
 	err := routeIndex.BuildIndex(chains)
 	assert.NoError(t, err)
 
@@ -346,13 +347,13 @@ func TestPathfinder_IndirectRouteRejectsDifferentTokens(t *testing.T) {
 func TestPathfinder_IndirectRouteWithoutPFM(t *testing.T) {
 	// Small dedicated topology: token native to chain-a travels a -> b -> c,
 	// but chain-b (the forwarding chain) has no PFM.
-	noPfmChains := []router.PathfinderChain{
+	noPfmChains := []routeindex.PathfinderChain{
 		{
 			Name: "Chain A", Id: "chain-a", HasPFM: true, Bech32Prefix: "aaa",
-			Routes: []router.BasicRoute{
+			Routes: []routeindex.BasicRoute{
 				{
 					ToChain: "chainb", ToChainId: "chain-b", ChannelId: "channel-1", PortId: "transfer",
-					AllowedTokens: map[string]router.TokenInfo{
+					AllowedTokens: map[string]routeindex.TokenInfo{
 						"utok": {ChainDenom: "utok", IbcDenom: "ibc/utok-on-b", BaseDenom: "utok", OriginChain: "chain-a"},
 					},
 				},
@@ -360,10 +361,10 @@ func TestPathfinder_IndirectRouteWithoutPFM(t *testing.T) {
 		},
 		{
 			Name: "Chain B", Id: "chain-b", HasPFM: false, Bech32Prefix: "bbb",
-			Routes: []router.BasicRoute{
+			Routes: []routeindex.BasicRoute{
 				{
 					ToChain: "chainc", ToChainId: "chain-c", ChannelId: "channel-2", PortId: "transfer",
-					AllowedTokens: map[string]router.TokenInfo{
+					AllowedTokens: map[string]routeindex.TokenInfo{
 						"ibc/utok-on-b": {ChainDenom: "ibc/utok-on-b", IbcDenom: "ibc/utok-on-c", BaseDenom: "utok", OriginChain: "chain-a"},
 					},
 				},
@@ -371,10 +372,10 @@ func TestPathfinder_IndirectRouteWithoutPFM(t *testing.T) {
 		},
 		{
 			Name: "Chain C", Id: "chain-c", HasPFM: true, Bech32Prefix: "ccc",
-			Routes: []router.BasicRoute{
+			Routes: []routeindex.BasicRoute{
 				{
 					ToChain: "chainb", ToChainId: "chain-b", ChannelId: "channel-2", PortId: "transfer",
-					AllowedTokens: map[string]router.TokenInfo{
+					AllowedTokens: map[string]routeindex.TokenInfo{
 						"ibc/utok-on-c": {ChainDenom: "ibc/utok-on-c", IbcDenom: "ibc/utok-on-b", BaseDenom: "utok", OriginChain: "chain-a"},
 					},
 				},
@@ -382,7 +383,7 @@ func TestPathfinder_IndirectRouteWithoutPFM(t *testing.T) {
 		},
 	}
 
-	routeIndex := router.NewRouteIndex()
+	routeIndex := routeindex.NewRouteIndex()
 	assert.NoError(t, routeIndex.BuildIndex(noPfmChains))
 	pathfinder := router.NewPathfinder(noPfmChains, routeIndex, map[string]brokers.BrokerClient{})
 
@@ -505,7 +506,7 @@ func TestPathfinder_BrokerQueryFailure(t *testing.T) {
 		t.Skip("retry backoff makes this test slow; skipping in -short mode")
 	}
 
-	routeIndex := router.NewRouteIndex()
+	routeIndex := routeindex.NewRouteIndex()
 	assert.NoError(t, routeIndex.BuildIndex(chains))
 
 	attempts := 0

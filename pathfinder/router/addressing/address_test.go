@@ -1,10 +1,11 @@
-package router_test
+package addressing_test
 
 import (
 	"strings"
 	"testing"
 
-	router "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/addressing"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/zeebo/assert"
 )
@@ -24,7 +25,7 @@ func makeAddress(t *testing.T, prefix string) string {
 	return addr
 }
 
-var slip44Chains = []router.PathfinderChain{
+var slip44Chains = []routeindex.PathfinderChain{
 	{Name: "Cosmos Hub", Id: "cosmoshub-4", Bech32Prefix: "cosmos", Slip44: 118},
 	{Name: "Osmosis", Id: "osmosis-1", Bech32Prefix: "osmo", Slip44: 118},
 	// Different SLIP-44 coin type than the Cosmos chains.
@@ -32,7 +33,7 @@ var slip44Chains = []router.PathfinderChain{
 }
 
 func TestConvertAddress_SameSlip44(t *testing.T) {
-	conv := router.NewAddressConverter(slip44Chains)
+	conv := addressing.NewAddressConverter(slip44Chains)
 	cosmosAddr := makeAddress(t, "cosmos")
 
 	got, err := conv.ConvertAddress(cosmosAddr, "osmosis-1")
@@ -46,7 +47,7 @@ func TestConvertAddress_SameSlip44(t *testing.T) {
 }
 
 func TestConvertAddress_DifferentSlip44IsBlocked(t *testing.T) {
-	conv := router.NewAddressConverter(slip44Chains)
+	conv := addressing.NewAddressConverter(slip44Chains)
 	cosmosAddr := makeAddress(t, "cosmos")
 
 	_, err := conv.ConvertAddress(cosmosAddr, "evmos_9001-2")
@@ -55,7 +56,7 @@ func TestConvertAddress_DifferentSlip44IsBlocked(t *testing.T) {
 }
 
 func TestConvertAddress_UnknownSourcePrefixIsBlocked(t *testing.T) {
-	conv := router.NewAddressConverter(slip44Chains)
+	conv := addressing.NewAddressConverter(slip44Chains)
 	// "stars" is not a configured chain, so its SLIP-44 type is unknown.
 	starsAddr := makeAddress(t, "stars")
 
@@ -64,7 +65,7 @@ func TestConvertAddress_UnknownSourcePrefixIsBlocked(t *testing.T) {
 }
 
 func TestConvertAddress_UnknownTargetChain(t *testing.T) {
-	conv := router.NewAddressConverter(slip44Chains)
+	conv := addressing.NewAddressConverter(slip44Chains)
 	cosmosAddr := makeAddress(t, "cosmos")
 
 	_, err := conv.ConvertAddress(cosmosAddr, "does-not-exist")
@@ -72,7 +73,7 @@ func TestConvertAddress_UnknownTargetChain(t *testing.T) {
 }
 
 func TestDeriveRouteAddresses_DifferentSlip44IsBlocked(t *testing.T) {
-	conv := router.NewAddressConverter(slip44Chains)
+	conv := addressing.NewAddressConverter(slip44Chains)
 	cosmosAddr := makeAddress(t, "cosmos")
 
 	_, err := conv.DeriveRouteAddresses(cosmosAddr, "evmos_9001-2", cosmosAddr)

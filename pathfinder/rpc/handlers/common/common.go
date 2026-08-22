@@ -8,6 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/denomresolver"
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/rs/zerolog"
 )
@@ -15,7 +16,7 @@ import (
 // Deps bundles what a handler needs to serve requests.
 type Deps struct {
 	Pathfinder    *router.Pathfinder
-	DenomResolver *router.DenomResolver
+	DenomResolver *denomresolver.DenomResolver
 	Logger        zerolog.Logger
 }
 

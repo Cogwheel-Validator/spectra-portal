@@ -1,4 +1,4 @@
-package router
+package routeindex
 
 // ChainMapId maps chain names to their integer IDs
 type ChainMapId map[string]int
@@ -83,6 +83,26 @@ type RouteIndex struct {
 	brokerChains        map[string]string                 // chainId -> brokerId (for chains that are brokers)
 	pfmChains           map[string]bool                   // chainId -> supports PFM
 	chainRoutes         map[string]map[string]*BasicRoute // chainId -> toChainId -> BasicRoute (all routes from a chain)
+}
+
+// TokensOnChain returns the denom -> TokenInfo lookup map for a chain.
+func (ri *RouteIndex) TokensOnChain(chainID string) map[string]*TokenInfo {
+	return ri.denomToTokenInfo[chainID]
+}
+
+// RoutesFromChain returns the toChainId -> BasicRoute map of all routes originating from a chain.
+func (ri *RouteIndex) RoutesFromChain(chainID string) map[string]*BasicRoute {
+	return ri.chainRoutes[chainID]
+}
+
+// AllChainTokens returns the full chainId -> denom -> TokenInfo lookup map.
+func (ri *RouteIndex) AllChainTokens() map[string]map[string]*TokenInfo {
+	return ri.denomToTokenInfo
+}
+
+// SupportsPFM reports whether the given chain supports packet forwarding middleware.
+func (ri *RouteIndex) SupportsPFM(chainID string) bool {
+	return ri.pfmChains[chainID]
 }
 
 // MultiHopInfo represents a route that goes through a broker with token swaps

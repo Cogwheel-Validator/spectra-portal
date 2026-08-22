@@ -6,12 +6,13 @@ import (
 
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 )
 
 // buildBrokerSwapResponse creates a RouteResponse for a broker swap route
 func (s *Pathfinder) buildBrokerSwapResponse(
 	req models.RouteRequest,
-	hopInfo *MultiHopInfo,
+	hopInfo *routeindex.MultiHopInfo,
 ) (models.RouteResponse, error) {
 	// Get the broker client for this broker chain
 	brokerClient, exists := s.brokerClients[hopInfo.BrokerChain]
@@ -60,7 +61,7 @@ func (s *Pathfinder) buildBrokerSwapResponse(
 // brokerSwapInputDenom determines the denom to quote against on the broker chain.
 // Osmosis SQS expects broker-chain denoms, so the denom depends on how the token
 // reaches the broker.
-func (s *Pathfinder) brokerSwapInputDenom(hopInfo *MultiHopInfo) string {
+func (s *Pathfinder) brokerSwapInputDenom(hopInfo *routeindex.MultiHopInfo) string {
 	switch {
 	case hopInfo.SourceIsBroker:
 		// Source is the broker - token is already on broker, use ChainDenom directly
@@ -85,7 +86,7 @@ func (s *Pathfinder) brokerSwapInputDenom(hopInfo *MultiHopInfo) string {
 // - Full route: both inbound and outbound legs
 func (s *Pathfinder) buildBrokerRoute(
 	req models.RouteRequest,
-	hopInfo *MultiHopInfo,
+	hopInfo *routeindex.MultiHopInfo,
 	swapResult *brokers.SwapResult,
 	brokerClient brokers.BrokerClient,
 ) (*models.BrokerRoute, []string, error) {
@@ -138,7 +139,7 @@ func (s *Pathfinder) buildBrokerRoute(
 }
 
 // validateBrokerRouteInputs checks that the required hop and swap data are present.
-func validateBrokerRouteInputs(hopInfo *MultiHopInfo, swapResult *brokers.SwapResult) error {
+func validateBrokerRouteInputs(hopInfo *routeindex.MultiHopInfo, swapResult *brokers.SwapResult) error {
 	if hopInfo == nil {
 		return fmt.Errorf("hopInfo is nil")
 	}
@@ -171,7 +172,7 @@ func normalizeSlippage(req *models.RouteRequest) error {
 
 // buildBrokerPath assembles the ordered chain path for the route based on whether
 // the source/destination is the broker and whether there are multi-hop inbound routes.
-func (s *Pathfinder) buildBrokerPath(req models.RouteRequest, hopInfo *MultiHopInfo) []string {
+func (s *Pathfinder) buildBrokerPath(req models.RouteRequest, hopInfo *routeindex.MultiHopInfo) []string {
 	switch {
 	case hopInfo.SourceIsBroker && hopInfo.SwapOnly:
 		// Same-chain swap
@@ -194,7 +195,7 @@ func (s *Pathfinder) buildBrokerPath(req models.RouteRequest, hopInfo *MultiHopI
 // token as it lands on the broker chain. Returns nil legs when the source is the broker.
 func (s *Pathfinder) buildBrokerInboundLegs(
 	req models.RouteRequest,
-	hopInfo *MultiHopInfo,
+	hopInfo *routeindex.MultiHopInfo,
 ) ([]*models.IBCLeg, *models.TokenMapping) {
 	if hopInfo.SourceIsBroker {
 		// Source is broker - token is already on broker chain
@@ -299,7 +300,7 @@ func (s *Pathfinder) buildBrokerInboundLegs(
 // destination and reports whether all intermediate outbound chains support PFM.
 // Returns nil legs when the destination is the broker (swap-only).
 func (s *Pathfinder) buildBrokerOutboundLegs(
-	hopInfo *MultiHopInfo,
+	hopInfo *routeindex.MultiHopInfo,
 	swapResult *brokers.SwapResult,
 	tokenOutOnBroker *models.TokenMapping,
 ) ([]*models.IBCLeg, bool) {
@@ -347,7 +348,7 @@ func (s *Pathfinder) buildBrokerOutboundLegs(
 	// PFM support check - all intermediate chains must support PFM
 	supportsPFM := true
 	for i := 0; i < len(hopInfo.OutboundRoutes)-1; i++ {
-		if !s.routeIndex.pfmChains[hopInfo.OutboundRoutes[i].ToChainId] {
+		if !s.routeIndex.SupportsPFM(hopInfo.OutboundRoutes[i].ToChainId) {
 			supportsPFM = false
 			break
 		}
@@ -368,7 +369,7 @@ func (s *Pathfinder) buildBrokerOutboundLegs(
 // reported.
 func (s *Pathfinder) buildBrokerExecutionData(
 	req models.RouteRequest,
-	hopInfo *MultiHopInfo,
+	hopInfo *routeindex.MultiHopInfo,
 	swapResult *brokers.SwapResult,
 	outboundLegs []*models.IBCLeg,
 	brokerClient brokers.BrokerClient,

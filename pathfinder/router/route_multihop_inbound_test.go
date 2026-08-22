@@ -6,6 +6,7 @@ import (
 	models "github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 	router "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/zeebo/assert"
 )
 
@@ -13,14 +14,14 @@ import (
 // channel to the broker (osmosis-1) and must route through cosmoshub-4:
 //
 //	neutron-1 -> cosmoshub-4 -> osmosis-1 (swap) [-> juno-1]
-var multiHopChains = []router.PathfinderChain{
+var multiHopChains = []routeindex.PathfinderChain{
 	{
 		Name: "Osmosis", Id: "osmosis-1", Broker: true, BrokerId: "osmosis-sqs",
 		HasPFM: true, Bech32Prefix: "osmo",
-		Routes: []router.BasicRoute{
+		Routes: []routeindex.BasicRoute{
 			{
 				ToChain: "juno", ToChainId: "juno-1", ChannelId: "channel-42", PortId: "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ibc/ujuno-osmo": {
 						ChainDenom: "ibc/ujuno-osmo", IbcDenom: "ujuno",
 						BaseDenom: "ujuno", OriginChain: "juno-1", Decimals: 6,
@@ -35,10 +36,10 @@ var multiHopChains = []router.PathfinderChain{
 	},
 	{
 		Name: "Cosmos Hub", Id: "cosmoshub-4", HasPFM: true, Bech32Prefix: "cosmos",
-		Routes: []router.BasicRoute{
+		Routes: []routeindex.BasicRoute{
 			{
 				ToChain: "osmosis", ToChainId: "osmosis-1", ChannelId: "channel-141", PortId: "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ibc/untrn-hub": {
 						ChainDenom: "ibc/untrn-hub", IbcDenom: "ibc/untrn-osmo",
 						BaseDenom: "untrn", OriginChain: "neutron-1", Decimals: 6,
@@ -49,10 +50,10 @@ var multiHopChains = []router.PathfinderChain{
 	},
 	{
 		Name: "Neutron", Id: "neutron-1", HasPFM: true, Bech32Prefix: "neutron",
-		Routes: []router.BasicRoute{
+		Routes: []routeindex.BasicRoute{
 			{
 				ToChain: "cosmoshub", ToChainId: "cosmoshub-4", ChannelId: "channel-1", PortId: "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"untrn": {
 						ChainDenom: "untrn", IbcDenom: "ibc/untrn-hub",
 						BaseDenom: "untrn", OriginChain: "neutron-1", Decimals: 6,
@@ -63,10 +64,10 @@ var multiHopChains = []router.PathfinderChain{
 	},
 	{
 		Name: "Juno", Id: "juno-1", HasPFM: true, Bech32Prefix: "juno",
-		Routes: []router.BasicRoute{
+		Routes: []routeindex.BasicRoute{
 			{
 				ToChain: "osmosis", ToChainId: "osmosis-1", ChannelId: "channel-0", PortId: "transfer",
-				AllowedTokens: map[string]router.TokenInfo{
+				AllowedTokens: map[string]routeindex.TokenInfo{
 					"ujuno": {
 						ChainDenom: "ujuno", IbcDenom: "ibc/ujuno-osmo",
 						BaseDenom: "ujuno", OriginChain: "juno-1", Decimals: 6,
@@ -82,7 +83,7 @@ var multiHopChains = []router.PathfinderChain{
 func setupMultiHopPathfinder(t *testing.T) (*router.Pathfinder, *[]string) {
 	t.Helper()
 
-	routeIndex := router.NewRouteIndex()
+	routeIndex := routeindex.NewRouteIndex()
 	assert.NoError(t, routeIndex.BuildIndex(multiHopChains))
 
 	queriedTokensIn := []string{}

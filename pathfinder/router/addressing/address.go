@@ -1,8 +1,9 @@
-package router
+package addressing
 
 import (
 	"fmt"
 
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/btcsuite/btcutil/bech32"
 )
 
@@ -19,7 +20,7 @@ type AddressConverter struct {
 }
 
 // NewAddressConverter creates a new address converter with the given chain prefix mappings
-func NewAddressConverter(chains []PathfinderChain) *AddressConverter {
+func NewAddressConverter(chains []routeindex.PathfinderChain) *AddressConverter {
 	prefixes := make(map[string]string)
 	chainSlip44 := make(map[string]int)
 	prefixSlip44 := make(map[string]int)
