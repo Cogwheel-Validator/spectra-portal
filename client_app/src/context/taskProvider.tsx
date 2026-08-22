@@ -21,9 +21,9 @@ import type {
 } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/swap_route";
 import type {
     BrokerSwapRoute,
-    FindPathResponse,
     WasmMsg,
-} from "@/lib/generated/pathfinder/pathfinder_route_pb";
+} from "@/lib/generated/pathfinder/v2beta/pathfinder_v2beta_common_pb";
+import type { FindPathResponse } from "@/lib/generated/pathfinder/v2beta/pathfinder_v2beta_find_path_pb";
 import {
     AddTransactionToDb,
     ConnectToDb,

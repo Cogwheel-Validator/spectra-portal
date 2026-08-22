@@ -5,7 +5,7 @@ import type {
     SwapAmountInRoute,
     SwapAmountInSplitRoute,
 } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/swap_route";
-import type { WasmMsg } from "@/lib/generated/pathfinder/pathfinder_route_pb";
+import type { WasmMsg } from "@/lib/generated/pathfinder/v2beta/pathfinder_v2beta_common_pb";
 
 export default function useTransactionConstructor() {
     /**

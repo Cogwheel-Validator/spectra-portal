@@ -2,7 +2,8 @@
 
 import { createContext, type ReactNode, useCallback, useContext, useReducer } from "react";
 import type { ClientToken } from "@/components/modules/tomlTypes";
-import type { FindPathResponse, WasmData } from "@/lib/generated/pathfinder/pathfinder_route_pb";
+import type { WasmData } from "@/lib/generated/pathfinder/v2beta/pathfinder_v2beta_common_pb";
+import type { FindPathResponse } from "@/lib/generated/pathfinder/v2beta/pathfinder_v2beta_find_path_pb";
 
 // ============================================================================
 // Types

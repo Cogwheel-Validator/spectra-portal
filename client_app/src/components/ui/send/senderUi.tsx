@@ -16,6 +16,10 @@ import { useDebouncedCallback } from "@/hooks/useDebounce";
 import { usePathfinderQuery } from "@/hooks/usePathfinderQuery";
 import { useRouteInfo } from "@/hooks/useRouteInfo";
 import { useTransferFormState } from "@/hooks/useTransferFormState";
+import {
+    type ChainAddress,
+    ResponseCode,
+} from "@/lib/generated/pathfinder/v2beta/pathfinder_v2beta_find_path_pb";
 import { humanToBaseUnits } from "@/lib/utils";
 
 interface SendUIProps {
@@ -196,9 +200,41 @@ export default function SendUI({
 
     const slippageBps = transfer.state.slippageBps;
 
+    // Chain IDs that need a wallet address, per the v2beta FindPath discovery
+    // response. `transfer.state.pathfinderResponse` holds the previous
+    // render's quote (synced below), which is what lets us know which
+    // chains are required before issuing this render's request - reading
+    // this render's own query result here would be a temporal-dead-zone
+    // problem, since that result depends on the params we're building now.
+    // Before any response has come back, fall back to just the two
+    // endpoints the user picked.
+    const requiredChainIds = useMemo(() => {
+        const previousResponse = transfer.state.pathfinderResponse;
+        if (previousResponse?.requiredChains && previousResponse.requiredChains.length > 0) {
+            return previousResponse.requiredChains;
+        }
+        return [sendChain, receiveChain].filter(Boolean);
+    }, [transfer.state.pathfinderResponse, sendChain, receiveChain]);
+
+    // Once every required chain has a connected wallet address, build the
+    // real ChainAddress list for an executable route. Until then this stays
+    // empty, which keeps the pathfinder query in read-only discovery mode.
+    const chainAddresses = useMemo((): ChainAddress[] => {
+        if (requiredChainIds.length === 0) return [];
+        const addresses: ChainAddress[] = [];
+        for (const chainId of requiredChainIds) {
+            const address = getAddress(chainId);
+            if (!address) return [];
+            addresses.push({ chainId, address } as ChainAddress);
+        }
+        return addresses;
+    }, [requiredChainIds, getAddress]);
+
+    const addressesPresent = chainAddresses.length > 0;
+
     // Base parameters for pathfinder queries
     const basePathfinderParams = useMemo(() => {
-        if (!sendChain || !receiveChain || !sendToken || !senderAddress || !receiverAddress) {
+        if (!sendChain || !receiveChain || !sendToken) {
             return null;
         }
         return {
@@ -207,8 +243,7 @@ export default function SendUI({
             amountIn: amountInBaseUnits,
             chainTo: receiveChain,
             tokenToDenom: selectedReceiveToken?.denom ?? "",
-            senderAddress,
-            receiverAddress,
+            addresses: chainAddresses,
             slippageBps: slippageBps,
         };
     }, [
@@ -216,19 +251,11 @@ export default function SendUI({
         receiveChain,
         sendToken,
         amountInBaseUnits,
-        senderAddress,
-        receiverAddress,
+        chainAddresses,
         selectedSendToken,
         selectedReceiveToken,
         slippageBps,
     ]);
-
-    const addressesPresent = useMemo(() => {
-        if (senderAddress.length > 0 && receiverAddress.length > 0) {
-            return true;
-        }
-        return false;
-    }, [senderAddress, receiverAddress]);
 
     // Separate parameters for smart and manual modes
     const smartPathfinderParams = useMemo(() => {
@@ -241,14 +268,14 @@ export default function SendUI({
         return { ...basePathfinderParams, smartRoute: false };
     }, [basePathfinderParams]);
 
+    // Ready to query as soon as the route shape is known - a route can be
+    // discovered (in mock-address mode) before any wallet is connected.
     const isReadyToQuery = !!(
         sendChain &&
         receiveChain &&
         sendToken &&
         amount &&
-        Number.parseFloat(amount) > 0 &&
-        senderAddress &&
-        receiverAddress
+        Number.parseFloat(amount) > 0
     );
 
     const queryOptions = {
@@ -284,8 +311,10 @@ export default function SendUI({
     } = mode === "smart" ? smartQuery : manualQuery;
 
     // Route information hook
-    const { routeInfo, supportsPfm, supportsWasm, isDirectRoute, intermediateChainIds } =
-        useRouteInfo(pathfinderResponse, mode);
+    const { routeInfo, supportsPfm, supportsWasm, isDirectRoute } = useRouteInfo(
+        pathfinderResponse,
+        mode,
+    );
 
     // Extract stable setters from transfer context
     const {
@@ -335,32 +364,24 @@ export default function SendUI({
         setTransferMode,
     ]);
 
-    // Required chains for wallet connection (including intermediate chains)
-    const requiredChains = useMemo(() => {
-        const chains: ClientChain[] = [];
-        const addedIds = new Set<string>();
+    // Required chains for wallet connection. Sourced from the pathfinder's
+    // own `required_chains` (populated once a discovery-mode quote comes
+    // back), which already includes source, destination, and any
+    // intermediate broker/PFM chains - falling back to just the two
+    // endpoints before a quote has been returned.
+    const requiredChains = useMemo((): ClientChain[] => {
+        const chains = requiredChainIds
+            .map((chainId) => getChainById(chainId))
+            .filter((chain): chain is ClientChain => chain !== undefined);
+        if (chains.length > 0) return chains;
 
-        if (sendChainData) {
-            chains.push(sendChainData);
-            addedIds.add(sendChainData.id);
+        const fallback: ClientChain[] = [];
+        if (sendChainData) fallback.push(sendChainData);
+        if (receiveChainData && receiveChainData.id !== sendChainData?.id) {
+            fallback.push(receiveChainData);
         }
-
-        for (const chainId of intermediateChainIds) {
-            if (!addedIds.has(chainId)) {
-                const chain = getChainById(chainId);
-                if (chain) {
-                    chains.push(chain);
-                    addedIds.add(chainId);
-                }
-            }
-        }
-
-        if (receiveChainData && !addedIds.has(receiveChainData.id)) {
-            chains.push(receiveChainData);
-        }
-
-        return chains;
-    }, [sendChainData, receiveChainData, intermediateChainIds, getChainById]);
+        return fallback;
+    }, [requiredChainIds, getChainById, sendChainData, receiveChainData]);
 
     // Validation
     const isWalletReady = useMemo(() => {
@@ -375,6 +396,9 @@ export default function SendUI({
         return (
             isWalletReady.ready &&
             pathfinderResponse?.success === true &&
+            // A mock-address discovery response can't be executed - only a
+            // real, address-backed quote (RESPONSE_CODE_OK) can be submitted.
+            pathfinderResponse?.responseCode === ResponseCode.OK &&
             !routeLoading &&
             !routePending &&
             Number.parseFloat(amount) > 0 &&
@@ -402,7 +426,7 @@ export default function SendUI({
             setIsRefreshing(true);
             try {
                 const freshResponse = await refetchFresh();
-                if (!freshResponse?.success) {
+                if (!freshResponse?.success || freshResponse.responseCode !== ResponseCode.OK) {
                     setIsRefreshing(false);
                     return;
                 }

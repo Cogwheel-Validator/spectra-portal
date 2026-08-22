@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { TransferMode } from "@/context/transferContext";
 import { getRouteStepCount, routeSupportsPfm } from "@/hooks/usePathfinderQuery";
-import type { FindPathResponse } from "@/lib/generated/pathfinder/pathfinder_route_pb";
+import type { FindPathResponse } from "@/lib/generated/pathfinder/v2beta/pathfinder_v2beta_find_path_pb";
 
 export interface RouteInfo {
     routeType: string;
