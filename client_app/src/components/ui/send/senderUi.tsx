@@ -173,12 +173,12 @@ export default function SendUI({
     }, [baseSendTokens, senderBalance]);
 
     const selectedSendToken = useMemo(
-        () => availableSendTokens.find((t) => t.symbol === sendToken) ?? null,
+        () => availableSendTokens.find((t) => t.denom === sendToken) ?? null,
         [availableSendTokens, sendToken],
     );
 
     const selectedReceiveToken = useMemo(
-        () => availableReceiveTokens.find((t) => t.symbol === receiveToken) ?? null,
+        () => availableReceiveTokens.find((t) => t.denom === receiveToken) ?? null,
         [availableReceiveTokens, receiveToken],
     );
 

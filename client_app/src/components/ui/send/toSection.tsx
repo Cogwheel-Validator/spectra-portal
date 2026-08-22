@@ -10,7 +10,7 @@ interface ToSectionProps {
     sendChain: string;
     isPending: boolean;
     onReceiveChainChange: (chainId: string) => void;
-    onReceiveTokenChange: (tokenSymbol: string) => void;
+    onReceiveTokenChange: (tokenDenom: string) => void;
 }
 
 export default function ToSection({
@@ -45,7 +45,7 @@ export default function ToSection({
 
                 <AssetDropdown
                     tokens={availableReceiveTokens}
-                    selectedSymbol={receiveToken}
+                    selectedDenom={receiveToken}
                     onSelect={onReceiveTokenChange}
                     placeholder="Select asset to receive"
                     disabled={isPending || !receiveChain}

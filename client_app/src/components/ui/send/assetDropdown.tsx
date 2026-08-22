@@ -8,8 +8,8 @@ import { formatBaseUnitsForDisplay } from "@/lib/utils";
 
 interface AssetDropdownProps {
     tokens: ClientToken[];
-    selectedSymbol: string;
-    onSelect: (symbol: string) => void;
+    selectedDenom: string;
+    onSelect: (denom: string) => void;
     placeholder?: string;
     disabled?: boolean;
     label?: string;
@@ -30,7 +30,7 @@ interface AssetDropdownProps {
 
 export default function AssetDropdown({
     tokens,
-    selectedSymbol,
+    selectedDenom,
     onSelect,
     placeholder = "Select token",
     disabled = false,
@@ -43,7 +43,7 @@ export default function AssetDropdown({
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const selectedToken = tokens.find((t) => t.symbol === selectedSymbol);
+    const selectedToken = tokens.find((t) => t.denom === selectedDenom);
 
     const balanceMap = useMemo(() => {
         if (!senderBalance) return new Map();
@@ -88,8 +88,8 @@ export default function AssetDropdown({
     }, [isOpen]);
 
     const handleSelect = useCallback(
-        (symbol: string) => {
-            onSelect(symbol);
+        (denom: string) => {
+            onSelect(denom);
             setIsOpen(false);
             setSearchQuery("");
         },
@@ -102,7 +102,7 @@ export default function AssetDropdown({
                 setIsOpen(false);
                 setSearchQuery("");
             } else if (e.key === "Enter" && filteredTokens.length === 1) {
-                handleSelect(filteredTokens[0].symbol);
+                handleSelect(filteredTokens[0].denom);
             }
         },
         [filteredTokens, handleSelect],
@@ -132,7 +132,7 @@ export default function AssetDropdown({
         <button
             key={token.denom}
             type="button"
-            onClick={() => handleSelect(token.symbol)}
+            onClick={() => handleSelect(token.denom)}
             className={`
                 w-full flex items-center gap-3 px-4 py-3 text-left
                 transition-colors duration-150
@@ -246,7 +246,7 @@ export default function AssetDropdown({
                                             <TokenRow
                                                 key={token.denom}
                                                 token={token}
-                                                isSelected={token.symbol === selectedSymbol}
+                                                isSelected={token.denom === selectedDenom}
                                             />
                                         ))}
                                     </>
@@ -262,7 +262,7 @@ export default function AssetDropdown({
                                             <TokenRow
                                                 key={token.denom}
                                                 token={token}
-                                                isSelected={token.symbol === selectedSymbol}
+                                                isSelected={token.denom === selectedDenom}
                                             />
                                         ))}
                                     </>

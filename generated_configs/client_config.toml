@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-08-05T18:14:21Z'
+generated_at = '2026-08-21T14:02:11Z'
 
 [[chains]]
 name = 'Atom One'
@@ -135,7 +135,7 @@ coin_gecko_id = 'atomone'
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['ATONE', 'PHOTON']
+sendable_tokens = ['uatone', 'uphoton']
 
 [[chains]]
 name = 'Cosmos Hub'
@@ -305,7 +305,7 @@ coin_gecko_id = 'cosmos'
 id = 'injective-1'
 name = 'Injective'
 logo = '/icons/injective/logo.png'
-sendable_tokens = ['ATOM']
+sendable_tokens = ['uatom']
 
 [[chains.connected_chains]]
 id = 'juno-1'
@@ -317,13 +317,13 @@ sendable_tokens = []
 id = 'noble-1'
 name = 'Noble'
 logo = '/icons/noble/logo.png'
-sendable_tokens = ['USDC']
+sendable_tokens = ['ibc/F663521BF1836B00F5F177680F74BFB9A8B5654A694D0D2BC249E03CF2509013']
 
 [[chains.connected_chains]]
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['WBTC', 'ATOM']
+sendable_tokens = ['ibc/99B00614DDBE6189AA03B77066FF8EB3F93680BD790C43CF56096B7F23542015', 'uatom']
 
 [[chains]]
 name = 'Injective'
@@ -689,19 +689,19 @@ coin_gecko_id = 'injective-protocol'
 id = 'cosmoshub-4'
 name = 'Cosmos Hub'
 logo = '/icons/cosmoshub/logo.png'
-sendable_tokens = ['ATOM']
+sendable_tokens = ['ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9']
 
 [[chains.connected_chains]]
 id = 'noble-1'
 name = 'Noble'
 logo = '/icons/noble/logo.png'
-sendable_tokens = ['USDC']
+sendable_tokens = ['ibc/2CBC2EA121AE42563B08028466F37B600F2D7D4282342DE938283CC3FB2BC00E']
 
 [[chains.connected_chains]]
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['USDC', 'INJ']
+sendable_tokens = ['erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a', 'inj']
 
 [[chains]]
 name = 'Juno Network'
@@ -839,7 +839,7 @@ sendable_tokens = []
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['NETA', 'JUNO']
+sendable_tokens = ['cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr', 'ujuno']
 
 [[chains]]
 name = 'Noble'
@@ -1033,13 +1033,13 @@ coin_gecko_id = ''
 id = 'cosmoshub-4'
 name = 'Cosmos Hub'
 logo = '/icons/cosmoshub/logo.png'
-sendable_tokens = ['USDC']
+sendable_tokens = ['uusdc']
 
 [[chains.connected_chains]]
 id = 'injective-1'
 name = 'Injective'
 logo = '/icons/injective/logo.png'
-sendable_tokens = ['USDC']
+sendable_tokens = ['uusdc']
 
 [[chains.connected_chains]]
 id = 'juno-1'
@@ -1051,7 +1051,7 @@ sendable_tokens = []
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['USDY', 'EURe', 'USDC', 'USDN']
+sendable_tokens = ['ausdy', 'ueure', 'uusdc', 'uusdn']
 
 [[chains]]
 name = 'Osmosis'
@@ -1551,6 +1551,20 @@ coin_decimals = 6
 coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/osmosis/factory/osmo1x7s7a2erqspkm6e79n7yh7fw3yh7xx4lt54mxg/uquark.png'
 coin_gecko_id = ''
 
+[[chains.keplr_chain_config.currencies]]
+coin_denom = 'nBTC'
+coin_minimal_denom = 'ibc/75345531D87BD90BF108BE7240BD721CB2CB0A1F16D4EBA71B09EC3C43E15C8F'
+coin_decimals = 14
+coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/osmosis/ibc/75345531D87BD90BF108BE7240BD721CB2CB0A1F16D4EBA71B09EC3C43E15C8F.png'
+coin_gecko_id = ''
+
+[[chains.keplr_chain_config.currencies]]
+coin_denom = 'REDS'
+coin_minimal_denom = 'factory/osmo1q77cw0mmlluxu0wr29fcdd0tdnh78gzhkvhe4n6ulal9qvrtu43qtd0nh8/reds'
+coin_decimals = 6
+coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/osmosis/factory/osmo1q77cw0mmlluxu0wr29fcdd0tdnh78gzhkvhe4n6ulal9qvrtu43qtd0nh8/reds.png'
+coin_gecko_id = ''
+
 [[chains.keplr_chain_config.fee_currencies]]
 coin_denom = 'OSMO'
 coin_minimal_denom = 'uosmo'
@@ -1574,37 +1588,37 @@ coin_gecko_id = 'osmosis'
 id = 'atomone-1'
 name = 'Atom One'
 logo = '/icons/atomone/logo.png'
-sendable_tokens = ['ATONE', 'PHOTON']
+sendable_tokens = ['ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB', 'ibc/D6E02C5AE8A37FC2E3AB1FC8AC168878ADB870549383DFFEA9FD020C234520A7']
 
 [[chains.connected_chains]]
 id = 'cosmoshub-4'
 name = 'Cosmos Hub'
 logo = '/icons/cosmoshub/logo.png'
-sendable_tokens = ['WBTC', 'ATOM']
+sendable_tokens = ['factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc', 'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2']
 
 [[chains.connected_chains]]
 id = 'injective-1'
 name = 'Injective'
 logo = '/icons/injective/logo.png'
-sendable_tokens = ['USDC', 'INJ']
+sendable_tokens = ['ibc/794C7D7F3B857713878A3A1927251FA6AC1EEE520424C1F6FAFE9BA26D476138', 'ibc/64BA6E31FE887D66C6F8F31C7B1A80C7CA179239677B4088BB55F5EA07DBE273']
 
 [[chains.connected_chains]]
 id = 'juno-1'
 name = 'Juno Network'
 logo = '/icons/juno/logo.png'
-sendable_tokens = ['NETA', 'JUNO']
+sendable_tokens = ['ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA', 'ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED']
 
 [[chains.connected_chains]]
 id = 'noble-1'
 name = 'Noble'
 logo = '/icons/noble/logo.png'
-sendable_tokens = ['USDY', 'EURe', 'USDC', 'USDN']
+sendable_tokens = ['ibc/23104D411A6EB6031FA92FB75F227422B84989969E91DCAD56A535DD7FF0A373', 'ibc/92AE2F53284505223A1BB80D132F859A00E190C6A738772F0B3EF65E20BA484F', 'ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4', 'ibc/0C39BD03B5C57A1753A9B73164705871A9B549F1A5226CFD7E39BE7BF73CF8CF']
 
 [[chains.connected_chains]]
 id = 'symphony-1'
 name = 'Symphony Network'
 logo = '/icons/symphony/logo.png'
-sendable_tokens = ['MLD']
+sendable_tokens = ['ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24']
 
 [[chains]]
 name = 'Symphony Network'
@@ -1709,7 +1723,7 @@ coin_gecko_id = ''
 id = 'osmosis-1'
 name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['MLD']
+sendable_tokens = ['note']
 
 [[all_tokens]]
 base_denom = 'ausdy'

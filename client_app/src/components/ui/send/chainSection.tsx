@@ -88,7 +88,7 @@ export default function ChainSection(props: ChainSelectionProps): ReactElement {
 
     const availableTokens = useMemo(() => {
         if (!isFromChain || sendableTokens.length === 0) return allAvailableTokens;
-        return allAvailableTokens.filter((token) => sendableTokens.includes(token.symbol));
+        return allAvailableTokens.filter((token) => sendableTokens.includes(token.denom));
     }, [allAvailableTokens, sendableTokens, isFromChain]);
 
     // Determine which chains to show
@@ -154,7 +154,7 @@ export default function ChainSection(props: ChainSelectionProps): ReactElement {
                 <h3 className="text-sm font-medium text-slate-300 mb-2">{assetTitle}</h3>
                 <AssetDropdown
                     tokens={availableTokens}
-                    selectedSymbol={tokenSymbol}
+                    selectedDenom={tokenSymbol}
                     onSelect={onTokenChange}
                     placeholder={
                         isFromChain ? "Select token to send" : "Select token to receive (optional)"
