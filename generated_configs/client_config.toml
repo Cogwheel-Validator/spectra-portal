@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-08-22T18:06:51Z'
+generated_at = '2026-08-23T12:32:17Z'
 
 [[chains]]
 name = 'Atom One'
@@ -199,7 +199,7 @@ base_denom = 'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q6
 
 [[chains.ibc_tokens]]
 denom = 'ibc/F663521BF1836B00F5F177680F74BFB9A8B5654A694D0D2BC249E03CF2509013'
-name = 'USDC'
+name = 'USDC (Noble)'
 symbol = 'USDC'
 decimals = 6
 icon = '/icons/noble/usdc.png'
@@ -365,7 +365,7 @@ provider = 'StakeWolle'
 
 [[chains.native_tokens]]
 denom = 'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a'
-name = 'USDC'
+name = 'USDC (Injective)'
 symbol = 'USDC'
 decimals = 6
 icon = '/icons/injective/usdc.png'
@@ -385,7 +385,7 @@ is_native = true
 
 [[chains.ibc_tokens]]
 denom = 'ibc/2CBC2EA121AE42563B08028466F37B600F2D7D4282342DE938283CC3FB2BC00E'
-name = 'USDC'
+name = 'USDC (Noble)'
 symbol = 'USDC'
 decimals = 6
 icon = '/icons/noble/usdc.png'
@@ -900,7 +900,7 @@ is_native = true
 
 [[chains.native_tokens]]
 denom = 'uusdc'
-name = 'USDC'
+name = 'USDC (Noble)'
 symbol = 'USDC'
 decimals = 6
 icon = '/icons/noble/usdc.png'
@@ -1222,7 +1222,7 @@ base_denom = 'ujuno'
 
 [[chains.ibc_tokens]]
 denom = 'ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4'
-name = 'USDC'
+name = 'USDC (Noble)'
 symbol = 'USDC'
 decimals = 6
 icon = '/icons/noble/usdc.png'
@@ -1244,7 +1244,7 @@ base_denom = 'inj'
 
 [[chains.ibc_tokens]]
 denom = 'ibc/794C7D7F3B857713878A3A1927251FA6AC1EEE520424C1F6FAFE9BA26D476138'
-name = 'USDC'
+name = 'USDC (Injective)'
 symbol = 'USDC'
 decimals = 6
 icon = '/icons/injective/usdc.png'
@@ -1756,7 +1756,7 @@ coingecko_id = 'neta'
 [[all_tokens]]
 base_denom = 'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a'
 symbol = 'USDC'
-name = 'USDC'
+name = 'USDC (Injective)'
 icon = '/icons/injective/usdc.png'
 origin_chain = 'injective-1'
 origin_chain_name = ''
@@ -1823,7 +1823,7 @@ available_on = ['cosmoshub-4']
 [[all_tokens]]
 base_denom = 'ibc/2CBC2EA121AE42563B08028466F37B600F2D7D4282342DE938283CC3FB2BC00E'
 symbol = 'USDC'
-name = 'USDC'
+name = 'USDC (Noble)'
 icon = '/icons/noble/usdc.png'
 origin_chain = 'noble-1'
 origin_chain_name = 'Noble'
@@ -1859,7 +1859,7 @@ available_on = ['juno-1']
 [[all_tokens]]
 base_denom = 'ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4'
 symbol = 'USDC'
-name = 'USDC'
+name = 'USDC (Noble)'
 icon = '/icons/noble/usdc.png'
 origin_chain = 'noble-1'
 origin_chain_name = 'Noble'
@@ -1877,7 +1877,7 @@ available_on = ['injective-1']
 [[all_tokens]]
 base_denom = 'ibc/794C7D7F3B857713878A3A1927251FA6AC1EEE520424C1F6FAFE9BA26D476138'
 symbol = 'USDC'
-name = 'USDC'
+name = 'USDC (Injective)'
 icon = '/icons/injective/usdc.png'
 origin_chain = 'injective-1'
 origin_chain_name = 'Injective'
@@ -1931,7 +1931,7 @@ available_on = ['atomone-1']
 [[all_tokens]]
 base_denom = 'ibc/F663521BF1836B00F5F177680F74BFB9A8B5654A694D0D2BC249E03CF2509013'
 symbol = 'USDC'
-name = 'USDC'
+name = 'USDC (Noble)'
 icon = '/icons/noble/usdc.png'
 origin_chain = 'noble-1'
 origin_chain_name = 'Noble'
@@ -2016,7 +2016,7 @@ available_on = ['atomone-1']
 [[all_tokens]]
 base_denom = 'uusdc'
 symbol = 'USDC'
-name = 'USDC'
+name = 'USDC (Noble)'
 icon = '/icons/noble/usdc.png'
 origin_chain = 'noble-1'
 origin_chain_name = ''

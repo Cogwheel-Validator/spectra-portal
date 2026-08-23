@@ -50,7 +50,7 @@ allowed_destinations = ["osmosis-1"]
 
 [[token]]
 denom = "erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a"
-name = "USDC"
+name = "USDC (Injective)"
 symbol = "USDC"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/injective/usdc.png"

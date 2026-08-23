@@ -46,7 +46,7 @@ allowed_destinations = ["osmosis-1"]
 
 [[token]]
 denom = "uusdc"
-name = "USDC"
+name = "USDC (Noble)"
 symbol = "USDC"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdc.png"
