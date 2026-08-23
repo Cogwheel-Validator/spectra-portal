@@ -65,6 +65,7 @@ func WithTimeout(timeout time.Duration) BuilderOption {
 // WithSkipNetworkCheck disables the REST/RPC endpoint reachability checks, assuming all
 // configured endpoints are healthy. It does not skip the additional node info fetch used
 // for PFM support detection, since that data cannot be derived offline.
+//
 // Deprecated: will only be used within the testing until a better solution is found.
 func WithSkipNetworkCheck(skip bool) BuilderOption {
 	return func(b *Builder) {

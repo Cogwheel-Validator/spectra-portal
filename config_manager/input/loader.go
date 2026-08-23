@@ -72,8 +72,8 @@ func (l *Loader) LoadAllConfigs(dirPath string) (map[string]*ChainInput, error) 
 		switch config.Chain.AccountType {
 		case "":
 			errs = append(errs, fmt.Errorf("%s: missing account_type", entry.Name()))
-		case "cosmos", "ethereum":
-		case "ethermint":
+		case AccountTypeCosmos, AccountTypeEthereum:
+		case AccountTypeEthermint:
 			if config.Chain.EvmChainID == nil {
 				errs = append(errs, fmt.Errorf("%s: account_type is ethermint but evm_chain_id is missing", entry.Name()))
 			}

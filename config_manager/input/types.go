@@ -6,11 +6,16 @@ package input
 
 import "github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
 
+// AccountType defines the type of account to use for a chain.
 type AccountType string
 
 const (
-	AccountTypeCosmos    AccountType = "cosmos"
-	AccountTypeEthereum  AccountType = "ethereum"
+	// AccountTypeCosmos is the default account type for Cosmos chains.
+	AccountTypeCosmos AccountType = "cosmos"
+	// AccountTypeEthereum is the account type for Ethereum or any EVM-compatible chains.
+	AccountTypeEthereum AccountType = "ethereum"
+	// AccountTypeEthermint is the account type for Ethermint chains such as Evmos and Injective,
+	// chains that have BaseAccounts that contain bech32 and uint8 byte arrays.
 	AccountTypeEthermint AccountType = "ethermint"
 )
 
