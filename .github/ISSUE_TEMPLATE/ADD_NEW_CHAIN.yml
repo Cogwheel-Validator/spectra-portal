@@ -15,7 +15,7 @@ body:
         1. **Enabled IBC transfers**
         2. **Running IBC relayers** (by validators or by the team behind the chain)
         3. **Public RPC and REST endpoints** (e.g. on [cosmos.directory](https://cosmos.directory) or similar)
-        4. **An explorer** where chain data can be shown (e.g. Mintscan, PingPub — nothing fancy required)
+        4. **An explorer** where chain data can be shown (e.g. Mintscan, PingPub - nothing fancy required)
         5. **An asset** that can actually be transferred to other chains (very rare that this is not the case)
 
         If your chain meets these requirements, please fill out the form below.
@@ -120,5 +120,3 @@ body:
       options:
         - label: I confirm that the information I have provided is correct and I understand the terms above.
           required: true
-
-  
