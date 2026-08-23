@@ -2,6 +2,7 @@
 
 import { Buffer } from "node:buffer";
 import { createWasmAminoConverters, wasmTypes } from "@cosmjs/cosmwasm-stargate";
+import type { OfflineDirectSigner } from "@cosmjs/proto-signing";
 import { type EncodeObject, type GeneratedType, Registry } from "@cosmjs/proto-signing";
 import {
     AminoTypes,
@@ -22,6 +23,9 @@ import {
     MsgSplitRouteSwapExactAmountIn,
     MsgSwapExactAmountIn,
 } from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/tx";
+import { injectiveAccountParser } from "@/lib/injective/account";
+import { sendEthermintLedgerTransaction } from "@/lib/injective/ledger";
+import { signAndBroadcastEthermintDirect, simulateEthermintTx } from "@/lib/injective/tx";
 import {
     getWalletProviderAsync,
     type WalletConnectionState,
@@ -486,7 +490,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
             try {
                 const wallet = await getWalletFromProvider(walletType);
                 const key = await wallet.getKey(chainId);
-                const isLedger = key.isNanoLedger;
+                // Dev-only override to exercise the Ledger signing path (notably
+                // ethermint's EIP-712 flow) using a regular software wallet.
+                // Only ever set via the `*:ledger` package.json scripts - never in
+                // a real deployment, or software-wallet users will be routed down
+                // the Ledger signing path and fail to sign.
+                const isLedger =
+                    key.isNanoLedger || process.env.NEXT_PUBLIC_FORCE_LEDGER_SIGNING === "true";
                 const offlineSigner = await wallet.getOfflineSignerAuto(chainId);
 
                 // Create registry with Osmosis + CosmWasm types
@@ -518,6 +528,94 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                 const randomHealthyRpc = await getRandomHealthyRpcImperative(chainId);
                 if (!randomHealthyRpc) {
                     throw new Error(`No healthy RPC found for chain ${chainId}`);
+                }
+
+                // Ethermint (Injective) accounts use eth_secp256k1 keys and are queried
+                // as /injective.types.v1beta1.EthAccount, neither of which cosmjs's
+                // default SigningStargateClient understands - handle them separately.
+                if (configToUse.account_type === "ethermint") {
+                    if (isLedger) {
+                        const { evm_chain_id: evmChainId } = configToUse;
+                        if (evmChainId === undefined) {
+                            throw new Error(
+                                `Chain ${chainId} is missing evm_chain_id, required for Ledger signing`,
+                            );
+                        }
+
+                        const result = await sendEthermintLedgerTransaction({
+                            wallet,
+                            chainId,
+                            address,
+                            pubkeyBytes: key.pubKey,
+                            evmChainId,
+                            messages,
+                            memo,
+                            registry,
+                            aminoTypes,
+                            rpcEndpoint: randomHealthyRpc,
+                            fee,
+                            gasAdjustment,
+                            gasPrice,
+                        });
+
+                        return {
+                            transactionHash: result.transactionHash,
+                            code: result.code,
+                            height: result.height,
+                        };
+                    }
+
+                    const directSigner = offlineSigner as OfflineDirectSigner;
+                    const signerAccounts = await directSigner.getAccounts();
+                    const signerAccount = signerAccounts.find((a) => a.address === address);
+                    if (!signerAccount) {
+                        throw new Error(
+                            `No account found for address ${address} on chain ${chainId}`,
+                        );
+                    }
+
+                    const queryClient = await StargateClient.connect(randomHealthyRpc, {
+                        accountParser: injectiveAccountParser,
+                    });
+                    const chainAccount = await queryClient.getAccount(address);
+                    if (!chainAccount) {
+                        throw new Error("Could not retrieve account details for signing.");
+                    }
+
+                    const ethermintCtx = {
+                        rpcEndpoint: randomHealthyRpc,
+                        registry,
+                        signerAddress: address,
+                        pubkeyBytes: signerAccount.pubkey,
+                        messages,
+                        memo,
+                    };
+
+                    let finalFee: StdFee;
+                    if (fee === "auto") {
+                        const gasEstimated = await simulateEthermintTx(
+                            ethermintCtx,
+                            chainAccount.sequence,
+                        );
+                        finalFee = calculateFee(Math.round(gasEstimated * gasAdjustment), gasPrice);
+                    } else {
+                        finalFee = fee;
+                    }
+
+                    const result = await signAndBroadcastEthermintDirect({
+                        ...ethermintCtx,
+                        signer: directSigner,
+                        chainId,
+                        accountNumber: chainAccount.accountNumber,
+                        sequence: chainAccount.sequence,
+                        fee: finalFee,
+                    });
+
+                    return {
+                        transactionHash: result.transactionHash,
+                        code: result.code,
+                        height: result.height,
+                    };
                 }
 
                 let client: SigningStargateClient;

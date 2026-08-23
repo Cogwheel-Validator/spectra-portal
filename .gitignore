@@ -40,3 +40,4 @@ next-env.d.ts
 /keplr-registry
 
 rpc-config.toml
+coverage.out

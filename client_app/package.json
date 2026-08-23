@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:ledger": "NEXT_PUBLIC_FORCE_LEDGER_SIGNING=true next dev --turbopack",
     "build": "next build --turbopack",
+    "build:ledger": "NEXT_PUBLIC_FORCE_LEDGER_SIGNING=true next build --turbopack",
     "start": "next start",
+    "start:ledger": "NEXT_PUBLIC_FORCE_LEDGER_SIGNING=true next build --turbopack && NEXT_PUBLIC_FORCE_LEDGER_SIGNING=true next start",
     "test": "vitest run",
     "lint": "./node_modules/@biomejs/biome/bin/biome check --config-path ./biome.json",
     "format": "./node_modules/@biomejs/biome/bin/biome format --write --config-path ./biome.json",
