@@ -1,0 +1,11 @@
+version: v2
+plugins:
+  - local: protoc-gen-ts_proto
+    out: ../client_app/src/lib/generated/injective
+inputs:
+  - git_repo: https://github.com/InjectiveLabs/injective-proto.git
+    branch: master
+    subdir: all_protos
+    paths:
+      - injective/types/v1beta1
+      - injective/crypto/v1beta1/ethsecp256k1

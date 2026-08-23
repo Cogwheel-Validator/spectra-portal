@@ -2,6 +2,7 @@
 	setup
 	setup-hooks
 	generate-proto
+	generate-openapi
 	generate-config
 	generate-config-c
 	validate-config
@@ -16,6 +17,7 @@
 	vulncheck-go
 	test-e2e
 	test
+	gotest-coverage
 
 # Sets up everything needed for local development
 setup: setup-hooks
@@ -38,8 +40,17 @@ generate-proto:
 	@echo "Generating protobuf files for the rpc server..."
 	cd proto && \
 	buf generate && \
-	GIT_LFS_SKIP_SMUDGE=1 buf generate --template buf.gen.osmosis.yaml
+	GIT_LFS_SKIP_SMUDGE=1 buf generate --template buf.gen.osmosis.yaml && \
+	GIT_LFS_SKIP_SMUDGE=1 buf generate --template buf.gen.injective.yaml
 	@echo "Protobuf files generated successfully!"
+
+# Generate OpenAPI 3.1 specs for the pathfinder RPC (v1 and v2beta) from proto definitions
+generate-openapi:
+	@echo "Generating OpenAPI specs for the pathfinder RPC..."
+	cd proto && \
+	buf generate --template buf.gen.openapi.v1.yaml && \
+	buf generate --template buf.gen.openapi.v2beta.yaml
+	@echo "OpenAPI specs generated successfully!"
 
 
 # Generate the config files for the client app and pathfinder backend
@@ -160,3 +171,12 @@ test:
 	go test -v ./... && \
 	cd client_app && pnpm test
 	@echo "Tests completed successfully!"
+
+gotest-coverage:
+	@echo "Running tests with coverage..."
+	go test -covermode=atomic -coverprofile=coverage.out -coverpkg=./... ./...
+	@echo "Tests with coverage completed successfully!"
+	@echo "Coverage report:"
+	{ head -1 coverage.out; tail -n +2 coverage.out | grep -Ev '\.pb\.go:|\.connect\.go:'; } > coverage.filtered.out
+	mv coverage.filtered.out coverage.out
+	go tool cover -func=coverage.out
