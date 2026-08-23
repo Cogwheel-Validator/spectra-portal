@@ -26,7 +26,7 @@ jobs:
       - name: Install typos
         run: |
           mkdir -p "$RUNNER_TEMP/bin"
-          curl -sSL -o typos.tar.gz "https://github.com/crate-ci/typos/releases/download/${TYPOS_VERSION}/typos-${TYPOS_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          curl --proto "=https" -sSL -o typos.tar.gz "https://github.com/crate-ci/typos/releases/download/${TYPOS_VERSION}/typos-${TYPOS_VERSION}-x86_64-unknown-linux-musl.tar.gz"
           echo "72a930c9a94fc3914aa56835c5b859c892a797d40c1c42638b98d93f16ff519c  typos.tar.gz" | sha256sum -c -
           tar xzf typos.tar.gz ./typos
           install -m 755 typos "$RUNNER_TEMP/bin/typos"
@@ -35,7 +35,7 @@ jobs:
       - name: Install cocogitto
         run: |
           mkdir -p "$RUNNER_TEMP/bin"
-          curl -sSL -o cog.tar.gz "https://github.com/cocogitto/cocogitto/releases/download/${COCOGITTO_VERSION}/cocogitto-${COCOGITTO_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          curl --proto "=https" -sSL -o cog.tar.gz "https://github.com/cocogitto/cocogitto/releases/download/${COCOGITTO_VERSION}/cocogitto-${COCOGITTO_VERSION}-x86_64-unknown-linux-musl.tar.gz"
           echo "e03938ff2c4c86d71c00c0f3284dbbe95c5ca76fe34a51f33e945c23010d59bb  cog.tar.gz" | sha256sum -c -
           tar xzf cog.tar.gz x86_64-unknown-linux-musl/cog --strip-components=1
           install -m 755 cog "$RUNNER_TEMP/bin/cog"

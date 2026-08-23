@@ -41,7 +41,7 @@ jobs:
       - name: Wait for Pathfinder
         run: |
           for i in $(seq 1 30); do
-            if curl -sf http://0.0.0.0:8080/server/health >/dev/null 2>&1; then
+            if curl -sf http://127.0.0.1:8080/server/health >/dev/null 2>&1; then
               exit 0
             fi
             sleep 1
@@ -50,7 +50,7 @@ jobs:
           exit 1
 
       - name: Run E2E tests
-        run: E2E_PATHFINDER_URL=http://0.0.0.0:8080 go test -tags=e2e ./pathfinder/e2e/...
+        run: E2E_PATHFINDER_URL=http://127.0.0.1:8080 go test -tags=e2e ./pathfinder/e2e/...
 
       - name: Stop Pathfinder
         if: always()
