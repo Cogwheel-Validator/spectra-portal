@@ -1,0 +1,56 @@
+name: E2E RPC Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+jobs:
+  pathfinder-e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Install deps
+        run: apt-get update && apt-get install make -y
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version: "1.26"
+          cache: true
+
+      - name: Build Pathfinder
+        run: make build-pathfinder
+
+      - name: Start Pathfinder
+        run: |
+          ./build/pathfinder-rpc -config-rpc .github/workflows/e2e_rpc_cfg.toml &
+          echo $! > pathfinder.pid
+
+      - name: Wait for Pathfinder
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://0.0.0.0:8080/server/health >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "pathfinder did not become ready in time" >&2
+          exit 1
+
+      - name: Run E2E tests
+        run: E2E_PATHFINDER_URL=http://0.0.0.0:8080 go test -tags=e2e ./pathfinder/e2e/...
+
+      - name: Stop Pathfinder
+        if: always()
+        run: kill "$(cat pathfinder.pid)" 2>/dev/null || true
