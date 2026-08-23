@@ -12,7 +12,6 @@ minimumReleaseAgeExclude:
   - "@types/node"
   - "@types/react"
   - "@types/react-dom"
-  - "@next/env"
   - "@next/swc-darwin-arm64"
   - "@next/swc-darwin-x64"
   - "@next/swc-linux-arm64-gnu"
@@ -21,5 +20,3 @@ minimumReleaseAgeExclude:
   - "@next/swc-linux-x64-musl"
   - "@next/swc-win32-arm64-msvc"
   - "@next/swc-win32-x64-msvc"
-overrides:
-  "ws": "7.5.11"
