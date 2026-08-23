@@ -86,6 +86,8 @@ func (c *ClientConverter) convertChain(
 		Name:         chain.Name,
 		ID:           chain.ID,
 		Bech32Prefix: chain.Bech32Prefix,
+		AccountType:  chain.AccountType,
+		EvmChainID:   chain.EvmChainID,
 		Slip44:       chain.Slip44,
 		ExplorerDetails: ExplorerDetails{
 			BaseUrl:         chain.ExplorerDetails.Url,

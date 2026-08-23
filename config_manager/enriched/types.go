@@ -10,10 +10,12 @@ import "github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
 // It contains all data needed to generate both backend and frontend configs.
 type ChainConfig struct {
 	// Basic chain identification (from input config)
-	Name     string `json:"name"`
-	ID       string `json:"id"`
-	Type     string `json:"type"`
-	Registry string `json:"registry"`
+	Name        string `json:"name"`
+	ID          string `json:"id"`
+	Type        string `json:"type"`
+	Registry    string `json:"registry"`
+	AccountType string `json:"account_type"`
+	EvmChainID  *int   `json:"evm_chain_id,omitempty"`
 
 	ExplorerDetails ExplorerDetails `json:"explorer_details"`
 

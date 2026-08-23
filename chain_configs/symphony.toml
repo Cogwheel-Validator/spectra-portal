@@ -7,6 +7,7 @@ explorer_url = "https://thespectra.io/symphony"
 slip44 = 118
 bech32_prefix = "symphony"
 keplr_json = "symphony.json"
+account_type = "cosmos"
 
 # RPC endpoints
 [[chain.rpcs]]

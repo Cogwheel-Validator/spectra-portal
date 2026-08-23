@@ -6,6 +6,18 @@ package input
 
 import "github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
 
+type AccountType string
+
+const (
+	AccountTypeCosmos    AccountType = "cosmos"
+	AccountTypeEthereum  AccountType = "ethereum"
+	AccountTypeEthermint AccountType = "ethermint"
+)
+
+func (a *AccountType) String() string {
+	return string(*a)
+}
+
 // ChainInput is the human-readable chain configuration that developers write.
 // This is parsed from TOML files in the chain_configs/ directory.
 type ChainInput struct {
@@ -56,6 +68,14 @@ type ChainMeta struct {
 	// This is the entry point contract for wasm swap_and_action (e.g., Osmosis entry point)
 	// Required if IsBroker is true and you want to generate executable swap memos
 	IBCHooksContract string `toml:"ibc_hooks_contract,omitempty"`
+
+	// Required: Account type (e.g., "cosmos", "ethereum", "ethermint")
+	AccountType AccountType `toml:"account_type"`
+
+	// Required if AccountType is "ethermint": the EIP-155 chain id used in the
+	// EIP-712 signing domain for Ledger transactions (e.g. 1 for Injective
+	// mainnet, which - confusingly - reuses Ethereum mainnet's chain id here).
+	EvmChainID *int `toml:"evm_chain_id,omitempty"`
 
 	// RPC and REST endpoints
 	RPCs []APIEndpoint `toml:"rpcs"`

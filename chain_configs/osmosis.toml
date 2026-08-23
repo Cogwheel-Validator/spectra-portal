@@ -10,6 +10,7 @@ explorer_url = "https://mintscan.io/osmosis"
 slip44 = 118
 bech32_prefix = "osmo"
 keplr_json = "osmosis.json"
+account_type = "cosmos"
 
 # Osmosis is a DEX broker
 is_broker = true

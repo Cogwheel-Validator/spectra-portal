@@ -7,6 +7,11 @@ explorer_url = "https://mintscan.io/injective"
 slip44 = 60
 bech32_prefix = "inj"
 keplr_json = "injective.json"
+account_type = "ethermint"
+# EIP-712 signing domain chain id for Injective mainnet (injective-1). Per
+# InjectiveLabs/injective-ts's `getMainnetChainInfo()`, this reuses Ethereum
+# mainnet's chain id (1), not injective-1's own numeric suffix.
+evm_chain_id = 1
 
 # RPC endpoints
 [[chain.rpcs]]

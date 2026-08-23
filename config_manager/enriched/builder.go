@@ -153,6 +153,8 @@ func (b *Builder) buildChainConfig(
 		Name:             chain.Name,
 		ID:               chain.ID,
 		Type:             chain.Type,
+		AccountType:      chain.AccountType.String(),
+		EvmChainID:       chain.EvmChainID,
 		Registry:         chain.Registry,
 		ExplorerDetails:  explorerDetails,
 		Slip44:           chain.Slip44,

@@ -31,6 +31,12 @@ type ClientChain struct {
 	// Bech32 address prefix
 	Bech32Prefix string `json:"bech32_prefix" toml:"bech32_prefix"`
 
+	// Account type (cosmos, ethereum or ethermint)
+	AccountType string `json:"account_type" toml:"account_type"`
+
+	// EIP-712 signing domain chain id, only set when AccountType is "ethermint"
+	EvmChainID *int `json:"evm_chain_id,omitempty" toml:"evm_chain_id,omitempty"`
+
 	// SLIP-44 coin type
 	Slip44 int `json:"slip44" toml:"slip44"`
 
