@@ -14,11 +14,9 @@
     },
     "gopls": {
       "initialization_options": {
-        "buildFlags": [
-          "-tags=e2e",
-        ],
-      }
-    }
+        "buildFlags": ["-tags=e2e"],
+      },
+    },
   },
   "languages": {
     "JavaScript": {
@@ -46,6 +44,10 @@
         "source.fixAll.biome": true,
         "source.organizeImports.biome": true,
       },
+    },
+
+    "Markdown": {
+      "format_on_save": "off",
     },
   },
 }

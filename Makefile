@@ -80,7 +80,7 @@ validate-config:
 # Build the pathfinder rpc binary
 build-pathfinder:
 	@echo "Building pathfinder rpc binary..."
-	go build -ldflags="-s -w" -o build/pathfinder-rpc ./pathfinder/cmd/main.go
+	GOTOOLCHAIN=auto go build -ldflags="-s -w" -o build/pathfinder-rpc ./pathfinder/cmd/main.go
 	@echo "Pathfinder rpc binary built successfully!"
 
 build-client:
@@ -91,7 +91,7 @@ build-client:
 # This check requires the golangci-lint cli to be installed
 lint-all:
 	@echo "Linting all files..."
-	golangci-lint run ./... && \
+	GOTOOLCHAIN=auto golangci-lint run ./... && \
 	cd client_app && \
 	pnpm run lint
 	@echo "All files linted successfully!"
@@ -151,7 +151,7 @@ vulncheck-semgrep-local:
 # This check requires the govulncheck cli to be installed
 vulncheck-go:
 	@echo "Vulnerability checking go files..."
-	govulncheck ./...
+	GOTOOLCHAIN=auto govulncheck ./...
 	@echo "Go files vulnerability checked successfully!"
 
 # This check requires the snyk cli to be installed

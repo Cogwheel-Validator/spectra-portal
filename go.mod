@@ -1,6 +1,8 @@
 module github.com/Cogwheel-Validator/spectra-portal
 
-go 1.25.8
+go 1.26.1
+
+toolchain go1.26.7
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260709200747-435963d16310.1

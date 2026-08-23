@@ -155,7 +155,7 @@ The server enforces three timing rules:
 
 ### Example timeline
 
-```
+```text
 t=0s     client opens stream, sends FindPathStreamingRequest #1 (osmosis-1 -> noble-1, 5000000 uatom)
 t=0.3s   server responds with response #1 (a broker_swap route)
 t=~15s   client has sent nothing new; server auto-recomputes from request #1 and pushes response #2
