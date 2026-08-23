@@ -22,7 +22,7 @@ jobs:
           ref: ${{ github.event.inputs.branch }}
 
       - name: Install deps
-        run: apt-get update && apt-get install make -y
+        run: sudo apt-get update && sudo apt-get install make -y
 
       - name: Setup Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
