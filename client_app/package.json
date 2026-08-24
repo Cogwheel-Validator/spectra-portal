@@ -61,7 +61,16 @@
     "typescript": "6.0.3",
     "vitest": "^4.1.10"
   },
-  "engines": {
-    "pnpm": ">=11.0.0"
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.0.0",
+      "onFail": "download"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "^24.13.3",
+      "onFail": "download"
+    }
   }
 }
