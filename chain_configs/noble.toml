@@ -7,6 +7,7 @@ explorer_url = "https://mintscan.io/noble"
 slip44 = 118
 bech32_prefix = "noble"
 keplr_json = "noble.json"
+account_type = "cosmos"
 
 # RPC endpoints
 [[chain.rpcs]]
@@ -45,12 +46,12 @@ allowed_destinations = ["osmosis-1"]
 
 [[token]]
 denom = "uusdc"
-name = "USDC"
+name = "USDC (Noble)"
 symbol = "USDC"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/noble/usdc.png"
 coingecko_id = "usd-coin"
-allowed_destinations = ["cosmoshub-4", "osmosis-1"]
+allowed_destinations = ["cosmoshub-4", "injective-1", "osmosis-1"]
 
 [[token]]
 denom = "uusdn"

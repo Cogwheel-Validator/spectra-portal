@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-06-16T15:12:54Z'
+generated_at = '2026-08-23T17:06:59Z'
 
 [[chains]]
 name = 'Atom One'
@@ -7,6 +7,7 @@ id = 'atomone-1'
 has_pfm = false
 broker = false
 bech32_prefix = 'atone'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'uatone'
@@ -32,22 +33,6 @@ channel_id = 'channel-2'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/3084F459D56B8B7EEDA4FAE492E26E414BDDE27C55D3367EEF3BF0BBB2238C24']
-chain_denom = 'ibc/3084F459D56B8B7EEDA4FAE492E26E414BDDE27C55D3367EEF3BF0BBB2238C24'
-ibc_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-origin_chain = 'osmosis-1'
-symbol = 'allBTC'
-decimals = 8
-
-[chains.routes.allowed_tokens.'ibc/87AA9F542C783F86AA98B3433CAF540F84CC1C379D411BD400C8B1A1844F3C08']
-chain_denom = 'ibc/87AA9F542C783F86AA98B3433CAF540F84CC1C379D411BD400C8B1A1844F3C08'
-ibc_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-origin_chain = 'osmosis-1'
-symbol = 'allETH'
-decimals = 18
-
 [chains.routes.allowed_tokens.uatone]
 chain_denom = 'uatone'
 ibc_denom = 'ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB'
@@ -70,10 +55,27 @@ id = 'cosmoshub-4'
 has_pfm = true
 broker = false
 bech32_prefix = 'cosmos'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'uatom'
 ibc_denom = ''
+base_denom = 'uatom'
+origin_chain = 'cosmoshub-4'
+symbol = 'ATOM'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Injective'
+to_chain_id = 'injective-1'
+connection_id = 'connection-388'
+channel_id = 'channel-220'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.uatom]
+chain_denom = 'uatom'
+ibc_denom = 'ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9'
 base_denom = 'uatom'
 origin_chain = 'cosmoshub-4'
 symbol = 'ATOM'
@@ -87,7 +89,6 @@ channel_id = 'channel-207'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-
 [[chains.routes]]
 to_chain = 'Noble'
 to_chain_id = 'noble-1'
@@ -112,22 +113,6 @@ channel_id = 'channel-141'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/247A6392BCB1756C7118EC04D6AFC7F9DEA56E95D13296088BB9304D0C39C24F']
-chain_denom = 'ibc/247A6392BCB1756C7118EC04D6AFC7F9DEA56E95D13296088BB9304D0C39C24F'
-ibc_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-origin_chain = 'osmosis-1'
-symbol = 'allBTC'
-decimals = 8
-
-[chains.routes.allowed_tokens.'ibc/5770F05B6EDB3DC66FA11B4F2D2791F7E61C40BD54DA563EA8325FBBD84110F5']
-chain_denom = 'ibc/5770F05B6EDB3DC66FA11B4F2D2791F7E61C40BD54DA563EA8325FBBD84110F5'
-ibc_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-origin_chain = 'osmosis-1'
-symbol = 'allETH'
-decimals = 18
-
 [chains.routes.allowed_tokens.'ibc/99B00614DDBE6189AA03B77066FF8EB3F93680BD790C43CF56096B7F23542015']
 chain_denom = 'ibc/99B00614DDBE6189AA03B77066FF8EB3F93680BD790C43CF56096B7F23542015'
 ibc_denom = 'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc'
@@ -145,11 +130,92 @@ symbol = 'ATOM'
 decimals = 6
 
 [[chains]]
+name = 'Injective'
+id = 'injective-1'
+has_pfm = true
+broker = false
+bech32_prefix = 'inj'
+slip44 = 60
+
+[[chains.native_tokens]]
+chain_denom = 'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a'
+ibc_denom = ''
+base_denom = 'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a'
+origin_chain = 'injective-1'
+symbol = 'USDC'
+decimals = 6
+
+[[chains.native_tokens]]
+chain_denom = 'inj'
+ibc_denom = ''
+base_denom = 'inj'
+origin_chain = 'injective-1'
+symbol = 'INJ'
+decimals = 18
+
+[[chains.routes]]
+to_chain = 'Cosmos Hub'
+to_chain_id = 'cosmoshub-4'
+connection_id = 'connection-2'
+channel_id = 'channel-1'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9']
+chain_denom = 'ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9'
+ibc_denom = 'uatom'
+base_denom = 'uatom'
+origin_chain = 'cosmoshub-4'
+symbol = 'ATOM'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Noble'
+to_chain_id = 'noble-1'
+connection_id = 'connection-195'
+channel_id = 'channel-148'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/2CBC2EA121AE42563B08028466F37B600F2D7D4282342DE938283CC3FB2BC00E']
+chain_denom = 'ibc/2CBC2EA121AE42563B08028466F37B600F2D7D4282342DE938283CC3FB2BC00E'
+ibc_denom = 'uusdc'
+base_denom = 'uusdc'
+origin_chain = 'noble-1'
+symbol = 'USDC'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Osmosis'
+to_chain_id = 'osmosis-1'
+connection_id = 'connection-14'
+channel_id = 'channel-8'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a']
+chain_denom = 'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a'
+ibc_denom = 'ibc/794C7D7F3B857713878A3A1927251FA6AC1EEE520424C1F6FAFE9BA26D476138'
+base_denom = 'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a'
+origin_chain = 'injective-1'
+symbol = 'USDC'
+decimals = 6
+
+[chains.routes.allowed_tokens.inj]
+chain_denom = 'inj'
+ibc_denom = 'ibc/64BA6E31FE887D66C6F8F31C7B1A80C7CA179239677B4088BB55F5EA07DBE273'
+base_denom = 'inj'
+origin_chain = 'injective-1'
+symbol = 'INJ'
+decimals = 18
+
+[[chains]]
 name = 'Juno Network'
 id = 'juno-1'
 has_pfm = true
 broker = false
 bech32_prefix = 'juno'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
@@ -175,7 +241,6 @@ channel_id = 'channel-1'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-
 [[chains.routes]]
 to_chain = 'Noble'
 to_chain_id = 'noble-1'
@@ -184,7 +249,6 @@ channel_id = 'channel-224'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-
 [[chains.routes]]
 to_chain = 'Osmosis'
 to_chain_id = 'osmosis-1'
@@ -201,22 +265,6 @@ origin_chain = 'juno-1'
 symbol = 'NETA'
 decimals = 6
 
-[chains.routes.allowed_tokens.'ibc/7879B1CBBD2E07347002334792368E65C11A7D1629297D04B6A2155F557E02D4']
-chain_denom = 'ibc/7879B1CBBD2E07347002334792368E65C11A7D1629297D04B6A2155F557E02D4'
-ibc_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-origin_chain = 'osmosis-1'
-symbol = 'allETH'
-decimals = 18
-
-[chains.routes.allowed_tokens.'ibc/E45CFCB959F4F6D1065B7033EE49A88E606E6AD82E75725219B3D68B0FA89987']
-chain_denom = 'ibc/E45CFCB959F4F6D1065B7033EE49A88E606E6AD82E75725219B3D68B0FA89987'
-ibc_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-origin_chain = 'osmosis-1'
-symbol = 'allBTC'
-decimals = 8
-
 [chains.routes.allowed_tokens.ujuno]
 chain_denom = 'ujuno'
 ibc_denom = 'ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED'
@@ -231,6 +279,7 @@ id = 'noble-1'
 has_pfm = true
 broker = false
 bech32_prefix = 'noble'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'ausdy'
@@ -281,6 +330,22 @@ symbol = 'USDC'
 decimals = 6
 
 [[chains.routes]]
+to_chain = 'Injective'
+to_chain_id = 'injective-1'
+connection_id = 'connection-55'
+channel_id = 'channel-31'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.uusdc]
+chain_denom = 'uusdc'
+ibc_denom = 'ibc/2CBC2EA121AE42563B08028466F37B600F2D7D4282342DE938283CC3FB2BC00E'
+base_denom = 'uusdc'
+origin_chain = 'noble-1'
+symbol = 'USDC'
+decimals = 6
+
+[[chains.routes]]
 to_chain = 'Juno Network'
 to_chain_id = 'juno-1'
 connection_id = 'connection-8'
@@ -288,7 +353,6 @@ channel_id = 'channel-3'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-
 [[chains.routes]]
 to_chain = 'Osmosis'
 to_chain_id = 'osmosis-1'
@@ -303,22 +367,6 @@ ibc_denom = 'ibc/23104D411A6EB6031FA92FB75F227422B84989969E91DCAD56A535DD7FF0A37
 base_denom = 'ausdy'
 origin_chain = 'noble-1'
 symbol = 'USDY'
-decimals = 18
-
-[chains.routes.allowed_tokens.'ibc/2E13104D0924DDB574E98CF01E1FD2D8913779BCB5B514B6468C6EC6037A15DC']
-chain_denom = 'ibc/2E13104D0924DDB574E98CF01E1FD2D8913779BCB5B514B6468C6EC6037A15DC'
-ibc_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-origin_chain = 'osmosis-1'
-symbol = 'allBTC'
-decimals = 8
-
-[chains.routes.allowed_tokens.'ibc/D7B7D0835B5CAACA52109939CEB064D81EBC098B4E2C3FD71106FEFFC06CC308']
-chain_denom = 'ibc/D7B7D0835B5CAACA52109939CEB064D81EBC098B4E2C3FD71106FEFFC06CC308'
-ibc_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-origin_chain = 'osmosis-1'
-symbol = 'allETH'
 decimals = 18
 
 [chains.routes.allowed_tokens.ueure]
@@ -353,6 +401,7 @@ broker = true
 broker_id = 'osmosis-sqs'
 ibc_hooks_contract = 'osmo10a3k4hvk37cc4hnxctw4p95fhscd2z6h2rmx0aukc6rm8u9qqx9smfsh7u'
 bech32_prefix = 'osmo'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
@@ -394,22 +443,6 @@ channel_id = 'channel-94814'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH']
-chain_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-ibc_denom = 'ibc/87AA9F542C783F86AA98B3433CAF540F84CC1C379D411BD400C8B1A1844F3C08'
-base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-origin_chain = 'osmosis-1'
-symbol = 'allETH'
-decimals = 18
-
-[chains.routes.allowed_tokens.'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC']
-chain_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-ibc_denom = 'ibc/3084F459D56B8B7EEDA4FAE492E26E414BDDE27C55D3367EEF3BF0BBB2238C24'
-base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-origin_chain = 'osmosis-1'
-symbol = 'allBTC'
-decimals = 8
-
 [chains.routes.allowed_tokens.'ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB']
 chain_denom = 'ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB'
 ibc_denom = 'uatone'
@@ -434,28 +467,12 @@ channel_id = 'channel-0'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH']
-chain_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-ibc_denom = 'ibc/5770F05B6EDB3DC66FA11B4F2D2791F7E61C40BD54DA563EA8325FBBD84110F5'
-base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-origin_chain = 'osmosis-1'
-symbol = 'allETH'
-decimals = 18
-
 [chains.routes.allowed_tokens.'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc']
 chain_denom = 'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc'
 ibc_denom = 'ibc/99B00614DDBE6189AA03B77066FF8EB3F93680BD790C43CF56096B7F23542015'
 base_denom = 'factory/osmo1z0qrq605sjgcqpylfl4aa6s90x738j7m58wyatt0tdzflg2ha26q67k743/wbtc'
 origin_chain = 'osmosis-1'
 symbol = 'WBTC'
-decimals = 8
-
-[chains.routes.allowed_tokens.'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC']
-chain_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-ibc_denom = 'ibc/247A6392BCB1756C7118EC04D6AFC7F9DEA56E95D13296088BB9304D0C39C24F'
-base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-origin_chain = 'osmosis-1'
-symbol = 'allBTC'
 decimals = 8
 
 [chains.routes.allowed_tokens.'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2']
@@ -467,6 +484,30 @@ symbol = 'ATOM'
 decimals = 6
 
 [[chains.routes]]
+to_chain = 'Injective'
+to_chain_id = 'injective-1'
+connection_id = 'connection-1298'
+channel_id = 'channel-122'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/64BA6E31FE887D66C6F8F31C7B1A80C7CA179239677B4088BB55F5EA07DBE273']
+chain_denom = 'ibc/64BA6E31FE887D66C6F8F31C7B1A80C7CA179239677B4088BB55F5EA07DBE273'
+ibc_denom = 'inj'
+base_denom = 'inj'
+origin_chain = 'injective-1'
+symbol = 'INJ'
+decimals = 18
+
+[chains.routes.allowed_tokens.'ibc/794C7D7F3B857713878A3A1927251FA6AC1EEE520424C1F6FAFE9BA26D476138']
+chain_denom = 'ibc/794C7D7F3B857713878A3A1927251FA6AC1EEE520424C1F6FAFE9BA26D476138'
+ibc_denom = 'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a'
+base_denom = 'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a'
+origin_chain = 'injective-1'
+symbol = 'USDC'
+decimals = 6
+
+[[chains.routes]]
 to_chain = 'Juno Network'
 to_chain_id = 'juno-1'
 connection_id = 'connection-1142'
@@ -474,22 +515,6 @@ channel_id = 'channel-42'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH']
-chain_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-ibc_denom = 'ibc/7879B1CBBD2E07347002334792368E65C11A7D1629297D04B6A2155F557E02D4'
-base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-origin_chain = 'osmosis-1'
-symbol = 'allETH'
-decimals = 18
-
-[chains.routes.allowed_tokens.'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC']
-chain_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-ibc_denom = 'ibc/E45CFCB959F4F6D1065B7033EE49A88E606E6AD82E75725219B3D68B0FA89987'
-base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-origin_chain = 'osmosis-1'
-symbol = 'allBTC'
-decimals = 8
-
 [chains.routes.allowed_tokens.'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA']
 chain_denom = 'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA'
 ibc_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
@@ -514,22 +539,6 @@ channel_id = 'channel-750'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH']
-chain_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-ibc_denom = 'ibc/D7B7D0835B5CAACA52109939CEB064D81EBC098B4E2C3FD71106FEFFC06CC308'
-base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-origin_chain = 'osmosis-1'
-symbol = 'allETH'
-decimals = 18
-
-[chains.routes.allowed_tokens.'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC']
-chain_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-ibc_denom = 'ibc/2E13104D0924DDB574E98CF01E1FD2D8913779BCB5B514B6468C6EC6037A15DC'
-base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-origin_chain = 'osmosis-1'
-symbol = 'allBTC'
-decimals = 8
-
 [chains.routes.allowed_tokens.'ibc/0C39BD03B5C57A1753A9B73164705871A9B549F1A5226CFD7E39BE7BF73CF8CF']
 chain_denom = 'ibc/0C39BD03B5C57A1753A9B73164705871A9B549F1A5226CFD7E39BE7BF73CF8CF'
 ibc_denom = 'uusdn'
@@ -570,22 +579,6 @@ channel_id = 'channel-104867'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH']
-chain_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-ibc_denom = 'ibc/7879B1CBBD2E07347002334792368E65C11A7D1629297D04B6A2155F557E02D4'
-base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-origin_chain = 'osmosis-1'
-symbol = 'allETH'
-decimals = 18
-
-[chains.routes.allowed_tokens.'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC']
-chain_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-ibc_denom = 'ibc/E45CFCB959F4F6D1065B7033EE49A88E606E6AD82E75725219B3D68B0FA89987'
-base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-origin_chain = 'osmosis-1'
-symbol = 'allBTC'
-decimals = 8
-
 [chains.routes.allowed_tokens.'ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24']
 chain_denom = 'ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24'
 ibc_denom = 'note'
@@ -600,6 +593,7 @@ id = 'symphony-1'
 has_pfm = true
 broker = false
 bech32_prefix = 'symphony'
+slip44 = 118
 
 [[chains.native_tokens]]
 chain_denom = 'note'
@@ -617,22 +611,6 @@ channel_id = 'channel-0'
 port_id = 'transfer'
 
 [chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/7879B1CBBD2E07347002334792368E65C11A7D1629297D04B6A2155F557E02D4']
-chain_denom = 'ibc/7879B1CBBD2E07347002334792368E65C11A7D1629297D04B6A2155F557E02D4'
-ibc_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-base_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
-origin_chain = 'osmosis-1'
-symbol = 'allETH'
-decimals = 18
-
-[chains.routes.allowed_tokens.'ibc/E45CFCB959F4F6D1065B7033EE49A88E606E6AD82E75725219B3D68B0FA89987']
-chain_denom = 'ibc/E45CFCB959F4F6D1065B7033EE49A88E606E6AD82E75725219B3D68B0FA89987'
-ibc_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-base_denom = 'factory/osmo1z6r6qdknhgsc0zeracktgpcxf43j6sekq07nw8sxduc9lg0qjjlqfu25e3/alloyed/allBTC'
-origin_chain = 'osmosis-1'
-symbol = 'allBTC'
-decimals = 8
-
 [chains.routes.allowed_tokens.note]
 chain_denom = 'note'
 ibc_denom = 'ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24'

@@ -10,10 +10,12 @@ import "github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
 // It contains all data needed to generate both backend and frontend configs.
 type ChainConfig struct {
 	// Basic chain identification (from input config)
-	Name     string `json:"name"`
-	ID       string `json:"id"`
-	Type     string `json:"type"`
-	Registry string `json:"registry"`
+	Name        string `json:"name"`
+	ID          string `json:"id"`
+	Type        string `json:"type"`
+	Registry    string `json:"registry"`
+	AccountType string `json:"account_type"`
+	EvmChainID  *int   `json:"evm_chain_id,omitempty"`
 
 	ExplorerDetails ExplorerDetails `json:"explorer_details"`
 
@@ -46,7 +48,7 @@ type ChainConfig struct {
 	Routes []RouteConfig `json:"routes"`
 
 	// Keplr chain config used for client only
-	KeplrChainConfig keplr.KeplrChainConfig `json:"keplr_chain_config,omitempty"`
+	KeplrChainConfig keplr.ChainConfig `json:"keplr_chain_config,omitempty"`
 }
 
 // Endpoint represents a verified RPC or REST endpoint.
@@ -179,7 +181,7 @@ type RegistryConfig struct {
 	Chains map[string]*ChainConfig `json:"chains"`
 }
 
-// Explorer details for the client app such as url link to account and transaction
+// ExplorerDetails holds details for the client app such as url link to account and transaction
 type ExplorerDetails struct {
 	Url             string `json:"url"`
 	AccountPath     string `json:"account_path"`

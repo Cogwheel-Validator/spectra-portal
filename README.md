@@ -140,7 +140,7 @@ While the Pathfinder is great and fully open sourced, it is not perfect and it h
 | Open Source | Yes ✅ | Partially ⚠️( Only SDK, and Widget are Open Source ) |
 | Fully Customizable | Yes ✅ | Partially ⚠️ |
 | Self-Hostable | Yes ✅ | No ❌ |
-| Transfer Across Cosmos SDK chains | Mostly ⚠️ ( chains using non-standard slip44 values, will be resolved in the future) | Yes ✅ |
+| Transfer Across Cosmos SDK chains | Yes ✅ | Yes ✅ |
 | Usage of multiple DEXs | No ❌(Only Osmosis is supported for now) | Yes ✅ |
 | Transfer Assets to non Cosmos SDK chains | No ❌ | Yes ✅ ( through usage of external APIs such as Axelar and custom made implementation for IBC Eureka (ETH) ) |
 | Track transaction progress | No ❌ | Yes ✅ |
@@ -162,7 +162,7 @@ fully open sourced and publicly available app that provides this kind of functio
 
 To run the Spectra Portal, you need to have the following prerequisites:
 
-- Golang v1.25.5+
+- Golang v1.26
 - Node.js with pnpm
 - Docker
 
@@ -175,6 +175,7 @@ run the Spectra Portal.
   - protoc-gen-es
   - protoc-gen-connect-es
   - protoc-gen-ts_proto
+  - protoc-gen-connect-openapi (only needed to regenerate the OpenAPI specs under `docs/openapi/`, via `go install github.com/sudorandom/protoc-gen-connect-openapi@latest`)
 - Buf CLI
 - Golangci-lint
 - Govulncheck
@@ -182,6 +183,8 @@ run the Spectra Portal.
 - Semgrep CLI
 - Biome
 - Make
+- Lefthook (githook)
+- Koji, Typos and Cog (for githook commits)
 
 This also assumes that you are running all of this on some Linux based system. Any commands will assume
 you have Debian based OS.
@@ -302,7 +305,7 @@ After=network-online.target
 User=portal
 ExecStart=$(which pnpm) run start
 WorkingDirectory=/etc/portal
-Restart=on-failure 
+Restart=on-failure
 RestartSec=5
 LimitNOFILE=8192
 Environment="NEXT_PUBLIC_PATHFINDER_RPC_URL=https://pathfinder.thespectra.io"
@@ -331,7 +334,7 @@ After=network-online.target
 User=portal
 ExecStart=/etc/portal/build/pathfinder-rpc -config-rpc rpc-config.toml
 WorkingDirectory=/etc/portal
-Restart=on-failure 
+Restart=on-failure
 RestartSec=5
 LimitNOFILE=8192
 
@@ -390,27 +393,26 @@ server {
 
     location / {
         proxy_pass http://portal_connect;
-        
+
         proxy_http_version 1.1;
-        
+
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         proxy_set_header Connection "";
         proxy_set_header Upgrade $http_upgrade;
 
-        
         proxy_read_timeout 60s;
         proxy_send_timeout 60s;
         proxy_connect_timeout 60s;
-        
+
         proxy_buffering off;
         proxy_request_buffering off;
-        
+
     }
-    
+
     location /server/* {
         deny all;
         return 403;
@@ -443,9 +445,9 @@ server {
     include /etc/nginx/ssl.conf;
     charset utf-8;
     client_max_body_size 50M;
-    
+
     location / {
-        
+
         proxy_pass http://portal_frontend;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -455,11 +457,11 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
-        
+
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
-        
+
         proxy_buffer_size 8k;
         proxy_buffers 16 8k;
         proxy_busy_buffers_size 16k;

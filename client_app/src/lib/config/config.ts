@@ -87,9 +87,9 @@ class FullClientConfig {
         return [...chain.native_tokens, ...chain.ibc_tokens];
     }
 
-    public getTokenBySymbol(chainId: string, symbol: string): ClientToken | undefined {
+    public getTokenByDenom(chainId: string, denom: string): ClientToken | undefined {
         const tokens = this.getTokensForChain(chainId);
-        return tokens.find((token) => token.symbol === symbol);
+        return tokens.find((token) => token.denom === denom);
     }
 
     public getConnectedChains(chainId: string): ConnectedChainInfo[] {

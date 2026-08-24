@@ -19,7 +19,7 @@ interface FromSectionProps {
     balanceLoading: boolean;
     isPending: boolean;
     onSendChainChange: (chainId: string) => void;
-    onSendTokenChange: (tokenSymbol: string) => void;
+    onSendTokenChange: (tokenDenom: string) => void;
     onAmountChange: (value: string) => void;
     senderBalance:
         | {
@@ -76,7 +76,7 @@ export default function FromSection({
 
                 <AssetDropdown
                     tokens={availableSendTokens}
-                    selectedSymbol={sendToken}
+                    selectedDenom={sendToken}
                     onSelect={onSendTokenChange}
                     placeholder="Select asset to send"
                     disabled={isPending || !sendChain}

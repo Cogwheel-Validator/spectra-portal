@@ -86,6 +86,8 @@ func (c *ClientConverter) convertChain(
 		Name:         chain.Name,
 		ID:           chain.ID,
 		Bech32Prefix: chain.Bech32Prefix,
+		AccountType:  chain.AccountType,
+		EvmChainID:   chain.EvmChainID,
 		Slip44:       chain.Slip44,
 		ExplorerDetails: ExplorerDetails{
 			BaseUrl:         chain.ExplorerDetails.Url,
@@ -271,14 +273,16 @@ func (c *ClientConverter) buildConnectedChains(
 			continue
 		}
 
-		// Collect sendable token symbols - check both native and IBC tokens
+		// Collect sendable token denoms - check both native and IBC tokens.
+		// Denom (not symbol) is used because it's guaranteed unique per chain,
+		// unlike symbol which can collide across different assets.
 		sendableTokens := make([]string, 0)
 		for _, token := range route.AllowedTokens {
 			// First check native tokens
 			found := false
 			for _, nativeToken := range chain.NativeTokens {
 				if nativeToken.Denom == token.SourceDenom {
-					sendableTokens = append(sendableTokens, nativeToken.Symbol)
+					sendableTokens = append(sendableTokens, nativeToken.Denom)
 					found = true
 					break
 				}
@@ -288,7 +292,7 @@ func (c *ClientConverter) buildConnectedChains(
 			if !found {
 				for _, ibcToken := range chain.IBCTokens {
 					if ibcToken.IBCDenom == token.SourceDenom {
-						sendableTokens = append(sendableTokens, ibcToken.Symbol)
+						sendableTokens = append(sendableTokens, ibcToken.IBCDenom)
 						break
 					}
 				}

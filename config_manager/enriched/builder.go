@@ -31,6 +31,11 @@ type Builder struct {
 	timeout          time.Duration
 	skipNetCheck     bool
 	allowedExplorers []input.AllowedExplorer
+	// fetchNodeInfo fetches the additional node info (CosmosSdkVersion, PFM support via build deps)
+	// used to enrich a chain config. It is always called, even when skipNetCheck is set, because PFM
+	// support cannot be determined offline. Overridable so tests can supply canned responses instead
+	// of making real HTTP calls.
+	fetchNodeInfo func(url string) (query.NodeInfoResponse, error)
 }
 
 // BuilderOption configures the builder.
@@ -57,7 +62,11 @@ func WithTimeout(timeout time.Duration) BuilderOption {
 	}
 }
 
-// WithSkipNetworkCheck disables network reachability checks.
+// WithSkipNetworkCheck disables the REST/RPC endpoint reachability checks, assuming all
+// configured endpoints are healthy. It does not skip the additional node info fetch used
+// for PFM support detection, since that data cannot be derived offline.
+//
+// Deprecated: will only be used within the testing until a better solution is found.
 func WithSkipNetworkCheck(skip bool) BuilderOption {
 	return func(b *Builder) {
 		b.skipNetCheck = skip
@@ -72,6 +81,7 @@ func NewBuilder(allowedExplorers []input.AllowedExplorer, opts ...BuilderOption)
 		timeout:          defaultTimeout,
 		skipNetCheck:     false,
 		allowedExplorers: allowedExplorers,
+		fetchNodeInfo:    query.GetAdditionalNodeInfo,
 	}
 	for _, opt := range opts {
 		opt(b)
@@ -87,7 +97,7 @@ func NewBuilder(allowedExplorers []input.AllowedExplorer, opts ...BuilderOption)
 func (b *Builder) BuildRegistry(
 	inputConfigs map[string]*input.ChainInput,
 	ibcData []registry.ChainIbcData,
-	keplrConfigs []keplr.KeplrChainConfig,
+	keplrConfigs []keplr.ChainConfig,
 ) (*RegistryConfig, error) {
 	if len(inputConfigs) == 0 {
 		return nil, fmt.Errorf("no input configurations provided")
@@ -105,7 +115,7 @@ func (b *Builder) BuildRegistry(
 	// Create the route builder with all configs and IBC data
 	routeBuilder := NewRouteBuilder(inputConfigs, ibcData)
 
-	keplrData := make(map[string]keplr.KeplrChainConfig)
+	keplrData := make(map[string]keplr.ChainConfig)
 	for _, keplrConfig := range keplrConfigs {
 		keplrData[keplrConfig.ChainID] = keplrConfig
 	}
@@ -131,19 +141,21 @@ func (b *Builder) BuildRegistry(
 func (b *Builder) buildChainConfig(
 	inputCfg *input.ChainInput,
 	routeBuilder *RouteBuilder,
-	keplrConfig keplr.KeplrChainConfig,
+	keplrConfig keplr.ChainConfig,
 ) (*ChainConfig, error) {
 	chain := inputCfg.Chain
 
 	explorerDetails, err := b.findExplorerDetails(chain.ExplorerURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find explorer details for chain %s: %v", chain.ID, err)
+		return nil, fmt.Errorf("failed to find explorer details for chain %s: %w", chain.ID, err)
 	}
 
 	config := &ChainConfig{
 		Name:             chain.Name,
 		ID:               chain.ID,
 		Type:             chain.Type,
+		AccountType:      chain.AccountType.String(),
+		EvmChainID:       chain.EvmChainID,
 		Registry:         chain.Registry,
 		ExplorerDetails:  explorerDetails,
 		Slip44:           chain.Slip44,
@@ -168,10 +180,10 @@ func (b *Builder) buildChainConfig(
 	config.IBCTokens = routeBuilder.BuildIBCTokensForChain(chain.ID)
 
 	// Get the additional node info from the REST endpoint
-	randomRestEndpoint := config.HealthyRests[rand.Intn(len(config.HealthyRests))]
-	additionalNodeInfo, err := query.GetAdditionalNodeInfo(randomRestEndpoint.URL)
+	randomRestEndpoint := config.HealthyRests[rand.Intn(len(config.HealthyRests))] //nolint:gosec // G404: non-cryptographic load-balancing choice
+	additionalNodeInfo, err := b.fetchNodeInfo(randomRestEndpoint.URL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get additional node info for chain %s: %v", chain.ID, err)
+		return nil, fmt.Errorf("failed to get additional node info for chain %s: %w", chain.ID, err)
 	}
 	config.CosmosSdkVersion = additionalNodeInfo.ApplicationVersion.CosmosSdkVersion
 	config.HasPFM = findPfmSupport(additionalNodeInfo)

@@ -65,6 +65,7 @@ type Pagination struct {
 	Total   string `json:"total"`
 }
 
+// NodeStatus holds the collected node status data used for endpoint validation.
 type NodeStatus struct {
 	BaseUrl          string
 	Provider         string
@@ -77,7 +78,7 @@ type NodeStatus struct {
 	CosmosSdkVersion string
 }
 
-// nodeInfoResponse represents the structure of the REST API response
+// NodeInfoResponse represents the structure of the REST API response
 type NodeInfoResponse struct {
 	DefaultNodeInfo    DefaultNodeInfo `json:"default_node_info"`
 	ApplicationVersion struct {
@@ -89,6 +90,7 @@ type NodeInfoResponse struct {
 	} `json:"application_version"`
 }
 
+// BuildDeps describes a single build dependency reported by the node's application version.
 type BuildDeps struct {
 	Path    string `json:"path"`
 	Version string `json:"version"`
@@ -101,7 +103,7 @@ type DefaultNodeInfo struct {
 	Other   NodeInfoOther `json:"other"`
 }
 
-// Partial Data from the Cosmos SDK request for the block data, used for validation
+// BlockData is partial data from the Cosmos SDK request for the block data, used for validation
 type BlockData struct {
 	BlockID struct {
 		Hash          string `json:"hash"`

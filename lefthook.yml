@@ -1,0 +1,27 @@
+# Git hooks managed by lefthook (https://github.com/evilmartians/lefthook).
+# Run `make setup-hooks` (or `lefthook install`) once after cloning to enable these.
+#
+# To skip a single command for one commit (e.g. typos flagging something
+# intentional), run: LEFTHOOK_EXCLUDE=typos git commit -m "..."
+# To allow a word for good, add it to _typos.toml instead.
+
+# Interactively builds a conventional-commit message (type + scope) using
+# koji (https://github.com/cococonscious/koji), configured in .koji.toml.
+# Only runs for a bare `git commit` -- koji itself detects -m/-F, --amend,
+# merges and squashes and steps aside for those.
+prepare-commit-msg:
+  commands:
+    koji:
+      interactive: true
+      run: exec < /dev/tty && koji --hook || true
+      env:
+        LEFTHOOK: "0"
+
+commit-msg:
+  commands:
+    conventional-commit:
+      run: cog verify --file {1}
+    require-scope:
+      run: scripts/require-scope.sh {1}
+    typos:
+      run: typos {1}

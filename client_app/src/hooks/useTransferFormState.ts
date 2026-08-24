@@ -18,8 +18,8 @@ interface UseTransferFormStateReturn {
     setMode: (mode: TransferMode) => void;
     handleSendChainChange: (chainId: string) => void;
     handleReceiveChainChange: (chainId: string) => void;
-    handleSendTokenChange: (tokenSymbol: string) => void;
-    handleReceiveTokenChange: (tokenSymbol: string) => void;
+    handleSendTokenChange: (tokenDenom: string) => void;
+    handleReceiveTokenChange: (tokenDenom: string) => void;
     handleAmountChange: (value: string, debouncedUpdate: (value: string) => void) => void;
 }
 
@@ -101,17 +101,17 @@ export function useTransferFormState({
     );
 
     const handleSendTokenChange = useCallback(
-        (tokenSymbol: string) => {
-            setSendToken(tokenSymbol);
-            updateURL({ send_asset: tokenSymbol });
+        (tokenDenom: string) => {
+            setSendToken(tokenDenom);
+            updateURL({ send_asset: tokenDenom });
         },
         [updateURL],
     );
 
     const handleReceiveTokenChange = useCallback(
-        (tokenSymbol: string) => {
-            setReceiveToken(tokenSymbol);
-            updateURL({ receive_asset: tokenSymbol });
+        (tokenDenom: string) => {
+            setReceiveToken(tokenDenom);
+            updateURL({ receive_asset: tokenDenom });
         },
         [updateURL],
     );

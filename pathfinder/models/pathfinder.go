@@ -4,13 +4,16 @@ import ibcmemo "github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/i
 
 // RouteRequest - POST body
 type RouteRequest struct {
-	ChainFrom       string // e.g., "juno"
-	TokenFromDenom  string // e.g., "ujuno"
-	AmountIn        string // e.g., "1000000"
-	ChainTo         string // e.g., "cosmoshub"
-	TokenToDenom    string // e.g., "uatom"
-	SenderAddress   string // For validation
-	ReceiverAddress string // e.g., "cosmos1234567890"
+	ChainFrom      string            // e.g., "juno"
+	TokenFromDenom string            // e.g., "ujuno"
+	AmountIn       string            // e.g., "1000000"
+	ChainTo        string            // e.g., "cosmoshub"
+	TokenToDenom   string            // e.g., "uatom"
+	Addresses      map[string]string // e.g., {"juno-1": "juno123", "cosmoshub-4": "cosmos123" }
+	// DeriveMissing enables the legacy v1 behavior: addresses missing from the
+	// map are derived via slip-44-guarded bech32 conversion. Only the v1 RPC
+	// handler sets this; v2beta requires an explicit address per chain.
+	DeriveMissing bool
 	// If true the route will query the sqs api with single route on.
 	// If false the route will query the data with the single route off and provide the best trade route.
 	SmartRoute  *bool
@@ -123,6 +126,16 @@ type RouteResponse struct {
 	Direct       *DirectRoute   `json:"direct_route,omitempty"`
 	Indirect     *IndirectRoute `json:"indirect_route,omitempty"`
 	BrokerSwap   *BrokerRoute   `json:"broker_swap,omitempty"`
+	// Mock is true when the request carried no addresses: the route was found
+	// with generated placeholder addresses, execution data and memos are
+	// omitted, and RequiredChains lists what a real request must supply.
+	Mock bool `json:"mock,omitempty"`
+	// RequiredChains lists the chain IDs that need an address entry to
+	// execute this route.
+	RequiredChains []string `json:"required_chains,omitempty"`
+	// MissingAddressChains lists chain IDs the route requires but the
+	// request's address map did not cover. Non-empty implies Success=false.
+	MissingAddressChains []string `json:"missing_address_chains,omitempty"`
 }
 
 // DenomLookupRequest - request to lookup denom information

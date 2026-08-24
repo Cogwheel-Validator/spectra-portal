@@ -1,13 +1,13 @@
 package keplr
 
-// This KeplrChainConfig is the config for the keplr chain config
+// ChainConfig is the config for the keplr chain config
 // it will be used at 2 places:
 //
 // 1. To generate files from the keplr chain registry
 //
 // 2. As a source for the events to overwrite the config that will be within the spectra ibc chain configs
 // in case the keplr chain config needs to be overwritten or it doesn't exists in the keplr chain registry
-type KeplrChainConfig struct {
+type ChainConfig struct {
 	RPC                 string        `json:"rpc" toml:"rpc"`
 	Rest                string        `json:"rest" toml:"rest"`
 	ChainID             string        `json:"chainId" toml:"chain_id"`
@@ -22,10 +22,12 @@ type KeplrChainConfig struct {
 	Features            []string      `json:"features" toml:"features"`
 }
 
+// Bip44 holds the BIP44 coin type used to derive accounts for the chain.
 type Bip44 struct {
 	CoinType int `json:"coinType" toml:"coin_type"`
 }
 
+// Bech32Config holds the bech32 address prefixes for the chain.
 type Bech32Config struct {
 	Bech32PrefixAccAddr  string `json:"bech32PrefixAccAddr" toml:"bech32_prefix_acc_addr"`
 	Bech32PrefixAccPub   string `json:"bech32PrefixAccPub" toml:"bech32_prefix_acc_pub"`
@@ -35,6 +37,7 @@ type Bech32Config struct {
 	Bech32PrefixConsPub  string `json:"bech32PrefixConsPub" toml:"bech32_prefix_cons_pub"`
 }
 
+// Currency describes a currency supported by the chain.
 type Currency struct {
 	CoinDenom        string `json:"coinDenom" toml:"coin_denom"`
 	CoinMinimalDenom string `json:"coinMinimalDenom" toml:"coin_minimal_denom"`
@@ -43,6 +46,7 @@ type Currency struct {
 	CoinGeckoID      string `json:"coinGeckoId" toml:"coin_gecko_id"`
 }
 
+// FeeCurrency describes a currency that can be used to pay transaction fees.
 type FeeCurrency struct {
 	CoinDenom        string       `json:"coinDenom" toml:"coin_denom"`
 	CoinMinimalDenom string       `json:"coinMinimalDenom" toml:"coin_minimal_denom"`
@@ -52,12 +56,14 @@ type FeeCurrency struct {
 	GasPriceStep     GasPriceStep `json:"gasPriceStep" toml:"gas_price_step"`
 }
 
+// GasPriceStep holds the low, average, and high gas price recommendations.
 type GasPriceStep struct {
 	Low     float64 `json:"low" toml:"low"`
 	Average float64 `json:"average" toml:"average"`
 	High    float64 `json:"high" toml:"high"`
 }
 
+// StakeCurrency describes the currency used for staking on the chain.
 type StakeCurrency struct {
 	CoinDenom        string `json:"coinDenom" toml:"coin_denom"`
 	CoinMinimalDenom string `json:"coinMinimalDenom" toml:"coin_minimal_denom"`

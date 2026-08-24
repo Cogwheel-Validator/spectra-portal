@@ -29,6 +29,7 @@ const v050ChainConfig: ClientChain = {
     id: "osmosis-1",
     name: "Osmosis",
     bech32_prefix: "osmo",
+    account_type: "cosmos",
     slip44: 118,
     explorer_details: {
         base_url: "https://mintscan.io",
@@ -53,6 +54,7 @@ const v047ChainConfig: ClientChain = {
     id: "atomone-1",
     name: "Atom One",
     bech32_prefix: "atone",
+    account_type: "cosmos",
     slip44: 118,
     explorer_details: {
         base_url: "https://thespectra.io",

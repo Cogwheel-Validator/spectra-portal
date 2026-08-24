@@ -3,11 +3,12 @@
 import { type Client, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type {
-    FindPathRequest,
-    FindPathResponse,
-} from "@/lib/generated/pathfinder/pathfinder_route_pb";
-import { PathfinderService } from "@/lib/generated/pathfinder/pathfinder_route_pb";
+import {
+    type ChainAddress,
+    type FindPathRequest,
+    type FindPathResponse,
+    FindPathService,
+} from "@/lib/generated/pathfinder/v2beta/pathfinder_v2beta_find_path_pb";
 import { useDebounce } from "./useDebounce";
 
 /**
@@ -19,8 +20,7 @@ export interface PathfinderQueryParams {
     amountIn: string;
     chainTo: string;
     tokenToDenom?: string;
-    senderAddress: string;
-    receiverAddress: string;
+    addresses: ChainAddress[];
     smartRoute?: boolean;
     slippageBps?: number;
 }
@@ -55,9 +55,9 @@ export interface PathfinderQueryState {
 /**
  * Creates a pathfinder client instance
  */
-function createPathfinderClient(pathfinderUrl: string): Client<typeof PathfinderService> {
+function createPathfinderClient(pathfinderUrl: string): Client<typeof FindPathService> {
     const transport = createConnectTransport({ baseUrl: pathfinderUrl });
-    return createClient(PathfinderService, transport);
+    return createClient(FindPathService, transport);
 }
 
 const DEFAULT_OPTIONS: Required<PathfinderQueryOptions> = {
@@ -99,6 +99,14 @@ export function usePathfinderQuery(
     const debouncedAmount = useDebounce(params?.amountIn ?? "", opts.debounceMs);
     const isPending = params?.amountIn !== debouncedAmount;
 
+    // Generate a JSON param key because JavaScript objects compare them to memory reference
+    // and it will cause infinite re-renders if the key is not stable.
+    const paramsKey = useMemo(() => {
+        if (!params) return null;
+        const { amountIn: _amountIn, ...rest } = params;
+        return JSON.stringify(rest);
+    }, [params]);
+
     // Keep track of the latest request to handle race conditions
     const requestIdRef = useRef(0);
 
@@ -115,6 +123,7 @@ export function usePathfinderQuery(
         return () => clearInterval(interval);
     }, []);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally keyed on paramsKey (content) rather than params (reference) - see the comment on paramsKey above.
     const fetchRouteInternal = useCallback(
         async (amountOverride?: string): Promise<FindPathResponse | null> => {
             const amount = amountOverride ?? debouncedAmount;
@@ -124,14 +133,7 @@ export function usePathfinderQuery(
                 return null;
             }
 
-            // Validate required fields
-            if (
-                !params.chainFrom ||
-                !params.chainTo ||
-                !params.tokenFromDenom ||
-                !params.senderAddress ||
-                !params.receiverAddress
-            ) {
+            if (!params.chainFrom || !params.chainTo || !params.tokenFromDenom) {
                 setData(null);
                 return null;
             }
@@ -156,8 +158,8 @@ export function usePathfinderQuery(
                     amountIn: amount,
                     chainTo: params.chainTo,
                     tokenToDenom: params.tokenToDenom || "",
-                    senderAddress: params.senderAddress,
-                    receiverAddress: params.receiverAddress,
+                    // Empty array = read-only route discovery (mock addresses).
+                    addresses: params.addresses,
                     smartRoute: params.smartRoute ?? false,
                     slippageBps: params.slippageBps ?? 100, // Default 1% slippage
                 };
@@ -193,7 +195,7 @@ export function usePathfinderQuery(
                 }
             }
         },
-        [client, params, enabled, debouncedAmount],
+        [client, paramsKey, enabled, debouncedAmount],
     );
 
     // Debounced fetch (for UI typing)
@@ -214,6 +216,7 @@ export function usePathfinderQuery(
     }, [fetchRoute]);
 
     // Auto-refresh interval (only when enabled and we have valid data)
+    // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on paramsKey (content), not params (reference) - see paramsKey above.
     useEffect(() => {
         if (!enabled || !data || opts.autoRefreshMs === 0) return;
 
@@ -225,7 +228,7 @@ export function usePathfinderQuery(
         }, opts.autoRefreshMs);
 
         return () => clearInterval(interval);
-    }, [enabled, data, params, opts.autoRefreshMs, fetchRouteInternal]);
+    }, [enabled, data, paramsKey, opts.autoRefreshMs, fetchRouteInternal]);
 
     return {
         data,

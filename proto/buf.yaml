@@ -2,10 +2,13 @@
 version: v2
 deps:
   - buf.build/bufbuild/protovalidate
-  - buf.build/googleapis/googleapis
+modules:
+  - path: .
 lint:
   use:
     - STANDARD
+  ignore:
+    - pathfinder/v1
 breaking:
   use:
     - FILE

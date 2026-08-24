@@ -130,7 +130,7 @@ type IBCHop struct {
 	Timeout int64
 }
 
-// buildNestedForwardMemo builds a nested PFM forward structure for multi-hop forwarding.
+// BuildNestedForwardMemo builds a nested PFM forward structure for multi-hop forwarding.
 // The hops slice should contain all hops except the first one (which is handled separately).
 // Each hop's Receiver should be the address on that hop's destination chain (callers
 // typically set this via the address converter); finalReceiver is used as fallback for

@@ -1,0 +1,1244 @@
+openapi: 3.1.0
+info: {}
+paths:
+  /v1.PathfinderService/FindPath:
+    post:
+      tags:
+        - v1.PathfinderService
+      summary: FindPath
+      description: |-
+        FindPath finds and validates a route between two chains
+         Supports human-readable denoms (e.g., "uatone") or IBC denoms
+      operationId: v1.PathfinderService.FindPath
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/v1.FindPathRequest'
+          application/proto:
+            schema:
+              $ref: '#/components/schemas/v1.FindPathRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/v1.FindPathResponse'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/v1.FindPathResponse'
+  /v1.PathfinderService/GetChainInfo:
+    post:
+      tags:
+        - v1.PathfinderService
+      summary: GetChainInfo
+      description: GetChainInfo returns information about a specific chain
+      operationId: v1.PathfinderService.GetChainInfo
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/v1.ChainInfoRequest'
+          application/proto:
+            schema:
+              $ref: '#/components/schemas/v1.ChainInfoRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/v1.ChainInfoResponse'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/v1.ChainInfoResponse'
+  /v1.PathfinderService/GetChainTokens:
+    post:
+      tags:
+        - v1.PathfinderService
+      summary: GetChainTokens
+      description: |-
+        GetChainTokens returns all tokens available on a specific chain
+         Includes both native tokens and IBC tokens with their denoms
+      operationId: v1.PathfinderService.GetChainTokens
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/v1.GetChainTokensRequest'
+          application/proto:
+            schema:
+              $ref: '#/components/schemas/v1.GetChainTokensRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/v1.GetChainTokensResponse'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/v1.GetChainTokensResponse'
+  /v1.PathfinderService/GetTokenDenoms:
+    post:
+      tags:
+        - v1.PathfinderService
+      summary: GetTokenDenoms
+      description: |-
+        GetTokenDenoms returns all IBC denoms for a token across supported chains
+         Use this to discover what denom a token has on different chains
+      operationId: v1.PathfinderService.GetTokenDenoms
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/v1.GetTokenDenomsRequest'
+          application/proto:
+            schema:
+              $ref: '#/components/schemas/v1.GetTokenDenomsRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/v1.GetTokenDenomsResponse'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/v1.GetTokenDenomsResponse'
+  /v1.PathfinderService/ListSupportedChains:
+    post:
+      tags:
+        - v1.PathfinderService
+      summary: ListSupportedChains
+      description: ListSupportedChains returns a list of supported chains
+      operationId: v1.PathfinderService.ListSupportedChains
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/google.protobuf.Empty'
+          application/proto:
+            schema:
+              $ref: '#/components/schemas/google.protobuf.Empty'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/v1.PathfinderSupportedChainsResponse'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/v1.PathfinderSupportedChainsResponse'
+  /v1.PathfinderService/LookupDenom:
+    post:
+      tags:
+        - v1.PathfinderService
+      summary: LookupDenom
+      description: |-
+        LookupDenom resolves denom information on a specific chain
+         Accepts human-readable base denoms or IBC denom hashes
+      operationId: v1.PathfinderService.LookupDenom
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/v1.LookupDenomRequest'
+          application/proto:
+            schema:
+              $ref: '#/components/schemas/v1.LookupDenomRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/v1.LookupDenomResponse'
+            application/proto:
+              schema:
+                $ref: '#/components/schemas/v1.LookupDenomResponse'
+components:
+  schemas:
+    connect-protocol-version:
+      type: number
+      title: Connect-Protocol-Version
+      enum:
+        - 1
+      description: Define the version of the Connect protocol
+      const: 1
+    connect-timeout-header:
+      type: number
+      title: Connect-Timeout-Ms
+      description: Define the timeout, in ms
+    connect.error:
+      type: object
+      properties:
+        code:
+          type: string
+          examples:
+            - not_found
+          enum:
+            - canceled
+            - unknown
+            - invalid_argument
+            - deadline_exceeded
+            - not_found
+            - already_exists
+            - permission_denied
+            - resource_exhausted
+            - failed_precondition
+            - aborted
+            - out_of_range
+            - unimplemented
+            - internal
+            - unavailable
+            - data_loss
+            - unauthenticated
+          description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+        message:
+          type: string
+          description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/connect.error_details.Any'
+          description: A list of messages that carry the error details. There is no limit on the number of messages.
+      title: Connect Error
+      additionalProperties: true
+      description: 'Error type returned by Connect: https://connectrpc.com/docs/go/errors/#http-representation'
+    connect.error_details.Any:
+      type: object
+      properties:
+        type:
+          type: string
+          description: 'A URL that acts as a globally unique identifier for the type of the serialized message. For example: `type.googleapis.com/google.rpc.ErrorInfo`. This is used to determine the schema of the data in the `value` field and is the discriminator for the `debug` field.'
+        value:
+          type: string
+          format: binary
+          description: The Protobuf message, serialized as bytes and base64-encoded. The specific message type is identified by the `type` field.
+        debug:
+          oneOf:
+            - type: object
+              title: Any
+              additionalProperties: true
+              description: Detailed error information.
+          discriminator:
+            propertyName: type
+          title: Debug
+          description: Deserialized error detail payload. The 'type' field indicates the schema. This field is for easier debugging and should not be relied upon for application logic.
+      additionalProperties: true
+      description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message, with an additional debug field for ConnectRPC error details.
+    google.protobuf.Empty:
+      type: object
+      description: |-
+        A generic empty message that you can re-use to avoid defining duplicated
+         empty messages in your APIs. A typical example is to use it as the request
+         or the response type of an API method. For instance:
+
+             service Foo {
+               rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);
+             }
+    v1.Asset:
+      type: object
+      properties:
+        amount:
+          type: string
+          title: amount
+        denom:
+          type: string
+          title: denom
+      title: Asset
+      additionalProperties: false
+    v1.BasicRoute:
+      type: object
+      properties:
+        to_chain:
+          type: string
+          title: to_chain
+        to_chain_id:
+          type: string
+          title: to_chain_id
+        connection_id:
+          type: string
+          title: connection_id
+        channel_id:
+          type: string
+          title: channel_id
+        port_id:
+          type: string
+          title: port_id
+        allowed_tokens:
+          type: object
+          title: allowed_tokens
+          additionalProperties:
+            title: value
+            $ref: '#/components/schemas/v1.TokenInfo'
+      title: BasicRoute
+      additionalProperties: false
+    v1.BasicRoute.AllowedTokensEntry:
+      type: object
+      properties:
+        key:
+          type: string
+          title: key
+        value:
+          title: value
+          $ref: '#/components/schemas/v1.TokenInfo'
+      title: AllowedTokensEntry
+      additionalProperties: false
+    v1.BrokerExecutionData:
+      type: object
+      properties:
+        memo:
+          type:
+            - string
+            - "null"
+          title: memo
+          description: The IBC memo to use with MsgTransfer (contains wasm swap_and_action)
+        smart_contract_data:
+          oneOf:
+            - $ref: '#/components/schemas/v1.WasmData'
+            - type: "null"
+          title: smart_contract_data
+          description: The smart contract data to use with the swap and transfer
+        ibc_receiver:
+          type:
+            - string
+            - "null"
+          title: ibc_receiver
+          description: Receiver address for MsgTransfer (the ibc-hooks contract)
+        recover_address:
+          type: string
+          title: recover_address
+          description: Recovery address on broker chain (where funds go if swap/forward fails)
+        min_output_amount:
+          type: string
+          title: min_output_amount
+          description: Minimum output amount after slippage (1% default)
+        uses_wasm:
+          type: boolean
+          title: uses_wasm
+          description: True if using wasm ibc-hooks (vs simple PFM)
+        description:
+          type: string
+          title: description
+          description: Human-readable description
+      title: BrokerExecutionData
+      additionalProperties: false
+      description: |-
+        BrokerExecutionData contains ready-to-use transaction data. See
+         docs/IBC_MEMO.md for how memo/smart_contract_data assemble into the
+         ibc-hooks memo formats used to trigger the swap on the broker chain.
+    v1.BrokerSwapRoute:
+      type: object
+      properties:
+        path:
+          type: array
+          items:
+            type: string
+          title: path
+          description: All chain IDs in order
+        inbound_legs:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.IBCLeg'
+          title: inbound_legs
+          description: IBC transfer to reach broker (absent if starting from broker)
+        swap:
+          title: swap
+          description: The swap operation on the broker chain
+          $ref: '#/components/schemas/v1.SwapQuote'
+        outbound_legs:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.IBCLeg'
+          title: outbound_legs
+          description: |-
+            IBC transfers after swap (empty if destination is broker)
+             Can be multiple for multi-hop forwarding via PFM
+        outbound_supports_pfm:
+          type: boolean
+          title: outbound_supports_pfm
+          description: Can use PFM for outbound legs
+        execution:
+          title: execution
+          description: Execution data for building transactions
+          $ref: '#/components/schemas/v1.BrokerExecutionData'
+      title: BrokerSwapRoute
+      additionalProperties: false
+      description: |-
+        BrokerSwapRoute represents a route involving a swap on a broker chain.
+         Supports various scenarios:
+         - Same-chain swap: inbound_leg absent, outbound_legs=[] (e.g., osmosis ATOM -> osmosis OSMO)
+         - Swap from broker: inbound_leg absent (e.g., osmosis USDC -> juno JUNO)
+         - Standard 3-chain: inbound_leg set, len(outbound_legs)=1
+         - Multi-hop outbound: inbound_leg set, len(outbound_legs)>1 (e.g., cosmos ATOM -> swap -> noble -> juno)
+    v1.ChainDenom:
+      type: object
+      properties:
+        chain_id:
+          type: string
+          title: chain_id
+        chain_name:
+          type: string
+          title: chain_name
+        denom:
+          type: string
+          title: denom
+        is_native:
+          type: boolean
+          title: is_native
+      title: ChainDenom
+      additionalProperties: false
+      description: ChainDenom represents a token's denom on a specific chain
+    v1.ChainInfo:
+      type: object
+      properties:
+        chain_id:
+          type: string
+          title: chain_id
+        chain_name:
+          type: string
+          title: chain_name
+        has_pfm:
+          type: boolean
+          title: has_pfm
+        is_broker:
+          type: boolean
+          title: is_broker
+        routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.BasicRoute'
+          title: routes
+      title: ChainInfo
+      additionalProperties: false
+    v1.ChainInfoRequest:
+      type: object
+      properties:
+        chainId:
+          type: string
+          title: chain_id
+          description: The chain id of the chain to get information for
+        showSymbols:
+          type: boolean
+          title: show_symbols
+          description: Whether to show the symbols of the tokens on the chain, default is false
+      title: ChainInfoRequest
+      required:
+        - chainId
+      additionalProperties: false
+    v1.ChainInfoResponse:
+      type: object
+      properties:
+        chain_info:
+          title: chain_info
+          $ref: '#/components/schemas/v1.ChainInfo'
+      title: ChainInfoResponse
+      additionalProperties: false
+    v1.DirectRoute:
+      type: object
+      properties:
+        transfer:
+          title: transfer
+          $ref: '#/components/schemas/v1.IBCLeg'
+      title: DirectRoute
+      additionalProperties: false
+      description: |-
+        DirectRoute is a single IBC transfer directly between chain_from and
+         chain_to, with no intermediate chains and no swap.
+    v1.FindPathRequest:
+      type: object
+      properties:
+        chainFrom:
+          type: string
+          title: chain_from
+          description: Source chain ID (e.g., "osmosis-1", "atomone-1")
+        tokenFromDenom:
+          type: string
+          title: token_from_denom
+          maxLength: 128
+          minLength: 1
+          description: |-
+            Token denom on source chain. Accepts a native denom (e.g., "uatone"),
+             an IBC denom (e.g., "ibc/..."), or "symbol@origin_chain" (e.g.,
+             "uatone@atomone-1") to disambiguate by origin chain.
+        amountIn:
+          type: string
+          title: amount_in
+          description: Amount to transfer/swap (in base units)
+        chainTo:
+          type: string
+          title: chain_to
+          description: Destination chain ID
+        tokenToDenom:
+          type: string
+          title: token_to_denom
+          maxLength: 128
+          description: |-
+            Token denom you want to receive on destination chain. Accepts the
+             same forms as token_from_denom (native, IBC, or "symbol@origin_chain").
+             If empty, assumes same token as token_from (bridging without swap)
+        senderAddress:
+          type: string
+          title: sender_address
+          maxLength: 68
+          minLength: 38
+          description: Sender address on source chain
+        receiverAddress:
+          type: string
+          title: receiver_address
+          maxLength: 68
+          minLength: 38
+          description: Receiver address on destination chain
+        smartRoute:
+          type: boolean
+          title: smart_route
+          description: If true, return a smart route, if false, return a normal route
+        slippageBps:
+          type: integer
+          title: slippage_bps
+          maximum: 10000
+          minimum: 0
+          description: |-
+            Slippage in basis points (e.g., 100 = 1%, 1000 = 10%)
+             Must be less than 10000
+      title: FindPathRequest
+      required:
+        - chainFrom
+        - tokenFromDenom
+        - amountIn
+        - chainTo
+        - senderAddress
+        - receiverAddress
+      additionalProperties: false
+      description: |-
+        FindPathRequest - Find a route between chains
+
+         For token_from_denom and token_to_denom, you can use:
+         - Human-readable/native denom (e.g., "uatone", "uosmo", "ustars")
+         - Full IBC denom (e.g., "ibc/ABC123...")
+         - "symbol@origin_chain" convenience syntax (e.g., "uatone@atomone-1"),
+           which disambiguates a base denom by naming the chain it's native to -
+           useful when the same base denom could otherwise resolve ambiguously.
+
+         The pathfinder will automatically resolve human-readable denoms.
+         If token_to_denom is empty, the pathfinder assumes you want the same token
+         on the destination chain (useful for bridging without swapping).
+    v1.FindPathResponse:
+      type: object
+      allOf:
+        - properties:
+            success:
+              type: boolean
+              title: success
+            error_message:
+              type: string
+              title: error_message
+        - oneOf:
+            - type: object
+              properties:
+                broker_swap:
+                  title: broker_swap
+                  $ref: '#/components/schemas/v1.BrokerSwapRoute'
+              title: broker_swap
+              required:
+                - broker_swap
+            - type: object
+              properties:
+                direct:
+                  title: direct
+                  $ref: '#/components/schemas/v1.DirectRoute'
+              title: direct
+              required:
+                - direct
+            - type: object
+              properties:
+                indirect:
+                  title: indirect
+                  $ref: '#/components/schemas/v1.IndirectRoute'
+              title: indirect
+              required:
+                - indirect
+      title: FindPathResponse
+      additionalProperties: false
+    v1.GetChainTokensRequest:
+      type: object
+      properties:
+        chainId:
+          type: string
+          title: chain_id
+      title: GetChainTokensRequest
+      required:
+        - chainId
+      additionalProperties: false
+      description: GetChainTokensRequest - Get all tokens on a chain
+    v1.GetChainTokensResponse:
+      type: object
+      properties:
+        chain_id:
+          type: string
+          title: chain_id
+        chain_name:
+          type: string
+          title: chain_name
+        native_tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.TokenDetails'
+          title: native_tokens
+          description: Native tokens on this chain
+        ibc_tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.TokenDetails'
+          title: ibc_tokens
+          description: IBC tokens received on this chain
+      title: GetChainTokensResponse
+      additionalProperties: false
+    v1.GetTokenDenomsRequest:
+      type: object
+      properties:
+        baseDenom:
+          type: string
+          title: base_denom
+          description: The base denom (e.g., "uatone", "uosmo", "ustars")
+        originChain:
+          type: string
+          title: origin_chain
+          description: The chain where this token is native (e.g., "atomone-1", "osmosis-1")
+        onChainId:
+          type: string
+          title: on_chain_id
+          description: 'Optional: Filter to a specific chain. If empty, returns denoms on all chains'
+      title: GetTokenDenomsRequest
+      required:
+        - baseDenom
+        - originChain
+      additionalProperties: false
+      description: |-
+        GetTokenDenomsRequest - Get all denoms for a token across chains
+         Use this to discover what denom a token has on different chains
+    v1.GetTokenDenomsResponse:
+      type: object
+      properties:
+        found:
+          type: boolean
+          title: found
+        base_denom:
+          type: string
+          title: base_denom
+        origin_chain:
+          type: string
+          title: origin_chain
+        denoms:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.ChainDenom'
+          title: denoms
+          description: All chains where this token is available and what denom it has
+      title: GetTokenDenomsResponse
+      additionalProperties: false
+    v1.IBCInfo:
+      type: object
+      properties:
+        memo:
+          type: string
+          title: memo
+        receiver:
+          type: string
+          title: receiver
+        recover_address:
+          type: string
+          title: recover_address
+        source_channel:
+          type: string
+          title: source_channel
+      title: IBCInfo
+      additionalProperties: false
+    v1.IBCLeg:
+      type: object
+      properties:
+        from_chain:
+          type: string
+          title: from_chain
+        to_chain:
+          type: string
+          title: to_chain
+        channel:
+          type: string
+          title: channel
+        port:
+          type: string
+          title: port
+        token:
+          title: token
+          $ref: '#/components/schemas/v1.TokenMapping'
+        amount:
+          type: string
+          title: amount
+      title: IBCLeg
+      additionalProperties: false
+    v1.IBCTransfer:
+      type: object
+      properties:
+        ibc_info:
+          title: ibc_info
+          $ref: '#/components/schemas/v1.IBCInfo'
+      title: IBCTransfer
+      additionalProperties: false
+    v1.IndirectRoute:
+      type: object
+      properties:
+        path:
+          type: array
+          items:
+            type: string
+          title: path
+          description: All chain IDs in order, from chain_from to chain_to.
+        legs:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.IBCLeg'
+          title: legs
+          description: One IBCLeg per hop, in order.
+        supports_pfm:
+          type: boolean
+          title: supports_pfm
+          description: |-
+            True if Packet Forward Middleware (PFM) can be used to chain the
+             hops from pfm_start_chain onward into a single MsgTransfer with a
+             forwarding memo, instead of the caller submitting one MsgTransfer
+             per hop.
+        pfm_start_chain:
+          type: string
+          title: pfm_start_chain
+          description: |-
+            The first chain in the path from which PFM forwarding applies.
+             Only meaningful when supports_pfm is true.
+        pfm_memo:
+          type: string
+          title: pfm_memo
+          description: |-
+            The PFM forward memo to attach to the MsgTransfer sent from
+             pfm_start_chain. Only populated when supports_pfm is true.
+      title: IndirectRoute
+      additionalProperties: false
+      description: |-
+        IndirectRoute is a multi-hop IBC-only path with no swap involved - the
+         token is simply forwarded through one or more intermediate chains.
+    v1.LookupDenomRequest:
+      type: object
+      properties:
+        chainId:
+          type: string
+          title: chain_id
+        denom:
+          type: string
+          title: denom
+          maxLength: 128
+          minLength: 1
+      title: LookupDenomRequest
+      required:
+        - chainId
+        - denom
+      additionalProperties: false
+      description: |-
+        LookupDenomRequest - Resolve token information
+         Accepts either:
+         - Human-readable denom (e.g., "uatone", "uosmo")
+         - IBC denom (e.g., "ibc/ABC123...")
+    v1.LookupDenomResponse:
+      type: object
+      properties:
+        found:
+          type: boolean
+          title: found
+        chain_denom:
+          type: string
+          title: chain_denom
+          description: The denom as it appears on this chain
+        base_denom:
+          type: string
+          title: base_denom
+          description: The base/native denom
+        origin_chain:
+          type: string
+          title: origin_chain
+          description: Where this token is native
+        is_native:
+          type: boolean
+          title: is_native
+          description: True if this is the token's native chain
+        ibc_path:
+          type: string
+          title: ibc_path
+          description: IBC path if this is an IBC token (e.g., "transfer/channel-75")
+        available_on:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.ChainDenom'
+          title: available_on
+          description: Denoms on other chains where this token is available
+      title: LookupDenomResponse
+      additionalProperties: false
+    v1.MinAsset:
+      type: object
+      properties:
+        native:
+          title: native
+          $ref: '#/components/schemas/v1.Asset'
+      title: MinAsset
+      additionalProperties: false
+    v1.OsmosisPool:
+      type: object
+      properties:
+        id:
+          type: integer
+          title: id
+          format: int32
+        type:
+          type: integer
+          title: type
+          format: int32
+        spread_factor:
+          type: string
+          title: spread_factor
+        token_out_denom:
+          type: string
+          title: token_out_denom
+        taker_fee:
+          type: string
+          title: taker_fee
+        liquidity_cap:
+          type: string
+          title: liquidity_cap
+      title: OsmosisPool
+      additionalProperties: false
+    v1.OsmosisRoute:
+      type: object
+      properties:
+        pools:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.OsmosisPool'
+          title: pools
+        has_cw_pool:
+          type: boolean
+          title: has_cw_pool
+        out_amount:
+          type: string
+          title: out_amount
+        in_amount:
+          type: string
+          title: in_amount
+      title: OsmosisRoute
+      additionalProperties: false
+    v1.OsmosisRouteData:
+      type: object
+      properties:
+        routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.OsmosisRoute'
+          title: routes
+        liquidity_cap:
+          type: string
+          title: liquidity_cap
+        liquidity_cap_overflow:
+          type: boolean
+          title: liquidity_cap_overflow
+      title: OsmosisRouteData
+      additionalProperties: false
+      description: Osmosis-specific route data (from SQS API)
+    v1.PathfinderSupportedChainsResponse:
+      type: object
+      properties:
+        chain_ids:
+          type: array
+          items:
+            type: string
+          title: chain_ids
+      title: PathfinderSupportedChainsResponse
+      required:
+        - chain_ids
+      additionalProperties: false
+    v1.PostSwapAction:
+      type: object
+      oneOf:
+        - type: object
+          properties:
+            ibc_transfer:
+              title: ibc_transfer
+              $ref: '#/components/schemas/v1.IBCTransfer'
+          title: ibc_transfer
+          required:
+            - ibc_transfer
+        - type: object
+          properties:
+            transfer:
+              title: transfer
+              $ref: '#/components/schemas/v1.Transfer'
+          title: transfer
+          required:
+            - transfer
+      title: PostSwapAction
+      additionalProperties: false
+    v1.SwapAndAction:
+      type: object
+      properties:
+        user_swap:
+          title: user_swap
+          description: SwapAndAction is the entry point contract message structure
+          $ref: '#/components/schemas/v1.UserSwap'
+        min_asset:
+          title: min_asset
+          $ref: '#/components/schemas/v1.MinAsset'
+        timeout_timestamp:
+          type:
+            - integer
+            - string
+          title: timeout_timestamp
+          format: int64
+        post_swap_action:
+          title: post_swap_action
+          $ref: '#/components/schemas/v1.PostSwapAction'
+        affiliates:
+          type: array
+          items:
+            type: string
+          title: affiliates
+      title: SwapAndAction
+      additionalProperties: false
+    v1.SwapExactAssetIn:
+      type: object
+      properties:
+        swap_venue_name:
+          type: string
+          title: swap_venue_name
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/v1.SwapOperation'
+          title: operations
+      title: SwapExactAssetIn
+      additionalProperties: false
+    v1.SwapOperation:
+      type: object
+      properties:
+        pool:
+          type: string
+          title: pool
+        denom_in:
+          type: string
+          title: denom_in
+        denom_out:
+          type: string
+          title: denom_out
+        interface:
+          type:
+            - string
+            - "null"
+          title: interface
+          description: Interface is used by some DEXs (like Injective), optional
+      title: SwapOperation
+      additionalProperties: false
+    v1.SwapQuote:
+      type: object
+      allOf:
+        - properties:
+            broker:
+              type: string
+              title: broker
+            token_in:
+              title: token_in
+              $ref: '#/components/schemas/v1.TokenMapping'
+            token_out:
+              title: token_out
+              $ref: '#/components/schemas/v1.TokenMapping'
+            amount_in:
+              type: string
+              title: amount_in
+            amount_out:
+              type: string
+              title: amount_out
+            price_impact:
+              type: string
+              title: price_impact
+            effective_fee:
+              type: string
+              title: effective_fee
+        - oneOf:
+            - type: object
+              properties:
+                osmosis_route_data:
+                  title: osmosis_route_data
+                  description: Future brokers can be added here without breaking existing clients
+                  $ref: '#/components/schemas/v1.OsmosisRouteData'
+              title: osmosis_route_data
+              required:
+                - osmosis_route_data
+      title: SwapQuote
+      additionalProperties: false
+      description: SwapQuote with broker-specific route data
+    v1.TokenDetails:
+      type: object
+      properties:
+        denom:
+          type: string
+          title: denom
+          description: Denom on this chain (native or IBC hash)
+        symbol:
+          type: string
+          title: symbol
+          description: Human-readable symbol (e.g., "ATONE", "OSMO")
+        base_denom:
+          type: string
+          title: base_denom
+          description: Base denom on origin chain
+        origin_chain:
+          type: string
+          title: origin_chain
+          description: Chain where token is native
+        decimals:
+          type: integer
+          title: decimals
+          format: int32
+          description: Number of decimals
+        is_native:
+          type: boolean
+          title: is_native
+          description: True if native to this chain
+      title: TokenDetails
+      additionalProperties: false
+      description: TokenDetails - Full token information
+    v1.TokenInfo:
+      type: object
+      properties:
+        chain_denom:
+          type: string
+          title: chain_denom
+          description: |-
+            The denom as it appears on the chain this TokenInfo is attached to
+             (native or IBC hash).
+        ibc_denom:
+          type: string
+          title: ibc_denom
+          description: |-
+            The denom this token has on the other end of the route (the
+             counterparty chain named by the enclosing BasicRoute.to_chain_id).
+             Note: v2beta renames this field to counterpart_denom, since it is not
+             always literally an IBC-hash-form denom (e.g. it may be the
+             counterparty chain's native denom when this token originates there).
+        base_denom:
+          type: string
+          title: base_denom
+          description: The base/native denom on the token's origin chain.
+        origin_chain:
+          type: string
+          title: origin_chain
+          description: The chain ID where this token is native.
+        decimals:
+          type: integer
+          title: decimals
+          format: int32
+          description: Number of decimals.
+        symbol:
+          type: string
+          title: symbol
+          description: Human-readable symbol (e.g., "ATONE", "OSMO").
+      title: TokenInfo
+      additionalProperties: false
+      description: TokenInfo describes one token allowed on a BasicRoute.
+    v1.TokenMapping:
+      type: object
+      properties:
+        chain_denom:
+          type: string
+          title: chain_denom
+          description: The denom as it appears on the current chain (native or IBC)
+        base_denom:
+          type: string
+          title: base_denom
+          description: The base/native denom on the token's origin chain
+        origin_chain:
+          type: string
+          title: origin_chain
+          description: The chain ID where this token is native
+        is_native:
+          type: boolean
+          title: is_native
+          description: True if this is the token's native chain
+      title: TokenMapping
+      additionalProperties: false
+    v1.Transfer:
+      type: object
+      properties:
+        to_address:
+          type: string
+          title: to_address
+      title: Transfer
+      additionalProperties: false
+    v1.UserSwap:
+      type: object
+      properties:
+        swap_exact_asset_in:
+          title: swap_exact_asset_in
+          $ref: '#/components/schemas/v1.SwapExactAssetIn'
+      title: UserSwap
+      additionalProperties: false
+    v1.WasmData:
+      type: object
+      properties:
+        contract:
+          type: string
+          title: contract
+        msg:
+          title: msg
+          $ref: '#/components/schemas/v1.WasmMsg'
+      title: WasmData
+      additionalProperties: false
+    v1.WasmMsg:
+      type: object
+      properties:
+        swap_and_action:
+          title: swap_and_action
+          $ref: '#/components/schemas/v1.SwapAndAction'
+      title: WasmMsg
+      additionalProperties: false
+security: []
+tags:
+  - name: v1.PathfinderService
+    description: |-
+      PathfinderService provides route discovery and validation for IBC transfers and swaps.
+
+       This is the legacy (v1) API surface. New integrations should prefer the
+       v2beta FindPathService/PathfinderQueryService. v1 is kept unchanged for
+       existing consumers; it identifies chains only via a single sender_address/
+       receiver_address pair on FindPathRequest, and derives any intermediate
+       broker/PFM chain address automatically via SLIP-44-guarded bech32
+       re-encoding. v2beta replaces that derivation with explicit,
+       caller-supplied per-chain addresses (ChainAddress), which is more robust
+       across chains that use different SLIP-44 coin types.

@@ -7,6 +7,7 @@ explorer_url = "https://mintscan.io/cosmos"
 slip44 = 118
 bech32_prefix = "cosmos"
 keplr_json = "cosmoshub.json"
+account_type = "cosmos"
 
 # RPC endpoints
 [[chain.rpcs]]
@@ -40,4 +41,4 @@ name = "Atom"
 symbol = "ATOM"
 exponent = 6
 icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/cosmoshub/atom.png"
-allowed_destinations = ["osmosis-1"]
+allowed_destinations = ["osmosis-1", "injective-1"]

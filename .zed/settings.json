@@ -1,4 +1,7 @@
 {
+  "tab_size": 2,
+  "hard_tabs": false,
+  "format_on_save": "on",
   "lsp": {
     "biome": {
       "binary": {
@@ -7,6 +10,11 @@
       },
       "settings": {
         "config_path": "./client_app/biome.json",
+      },
+    },
+    "gopls": {
+      "initialization_options": {
+        "buildFlags": ["-tags=e2e"],
       },
     },
   },
@@ -36,6 +44,10 @@
         "source.fixAll.biome": true,
         "source.organizeImports.biome": true,
       },
+    },
+
+    "Markdown": {
+      "format_on_save": "off",
     },
   },
 }

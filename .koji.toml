@@ -1,0 +1,36 @@
+# Config for koji (https://github.com/cococonscious/koji), the interactive
+# commit builder run via lefthook's prepare-commit-msg hook.
+# Commit types use koji's built-in defaults (feat, fix, docs, style, refactor,
+# perf, test, build, ci, chore, revert), which already match our allowed
+# conventional-commit types.
+#
+# Scopes are restricted to this repo's areas and required on every commit,
+# same list enforced by cog.toml's `scopes`.
+force_config_scopes = true
+allow_empty_scope = false
+emoji = false
+issues = false
+
+[[commit_scopes]]
+name = "ci"
+description = "CI workflows and pipelines"
+patterns = "^/\\.github/.*"
+
+[[commit_scopes]]
+name = "repo"
+description = "Repo-wide, non-code changes (docs, Makefile, root configs, ...)"
+
+[[commit_scopes]]
+name = "cfg_mng"
+description = "config_manager"
+patterns = "^/config_manager/.*"
+
+[[commit_scopes]]
+name = "pathfinder"
+description = "pathfinder"
+patterns = "^/pathfinder/.*"
+
+[[commit_scopes]]
+name = "client"
+description = "client_app"
+patterns = "^/client_app/.*"

@@ -27,7 +27,7 @@ export function useIbcTracking() {
             txHash: string,
         ): Promise<{ packetData: PacketData; timestamp: string } | null> => {
             const txResponse = await fetchTransactionByHash(sourceChainId, txHash);
-            if (!txResponse || !txResponse.tx_response) return null;
+            if (!txResponse?.tx_response) return null;
 
             const packetData = extractSendPacket(txResponse);
             if (!packetData) return null;
@@ -311,7 +311,7 @@ export function useIbcTracking() {
                 if (!result.nextSendPacket) {
                     return {
                         success: false,
-                        error: `No send_packet found in relay tx on ${destChainId} — forwarding may have failed`,
+                        error: `No send_packet found in relay tx on ${destChainId} - forwarding may have failed`,
                         txHash: result.txHash,
                     };
                 }

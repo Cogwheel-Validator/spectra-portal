@@ -8,7 +8,9 @@ import (
 
 	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
 	"github.com/rs/cors"
 	"google.golang.org/protobuf/proto"
 )
@@ -37,7 +39,9 @@ func zerologMiddleware(next http.Handler) http.Handler {
 
 // realIPMiddleware sets the remote address to the real IP address of the client
 // This is useful for logging and rate limiting
-func realIPMiddleware(next http.Handler) http.Handler {
+//
+// Deprecated: should be trackable by chi's new ClientIP middleware.
+func realIPMiddleware(next http.Handler) http.Handler { //nolint:unused // ignore it it will be removed in future releases
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check CF-Connecting-IP first (most reliable with Cloudflare)
 		if ip := r.Header.Get("CF-Connecting-IP"); ip != "" {
@@ -90,7 +94,7 @@ func otelHTTPMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func newCORSHandler(allowedOrigins []string, next http.Handler) http.Handler {
+func newCORSHandler(allowedOrigins []string) *cors.Cors {
 	if len(allowedOrigins) == 0 {
 		allowedOrigins = []string{"*"}
 	}
@@ -133,7 +137,7 @@ func newCORSHandler(allowedOrigins []string, next http.Handler) http.Handler {
 		},
 		AllowCredentials: allowCredentials,
 		MaxAge:           int(2 * time.Hour / time.Second),
-	}).Handler(next)
+	})
 }
 
 // loggingInterceptor logs gRPC/Connect requests with timing.
@@ -211,4 +215,47 @@ func validationInterceptor(validator protovalidate.Validator) connect.UnaryInter
 			return next(ctx, req)
 		}
 	}
+}
+
+func setupMiddleware(mux *chi.Mux, config *ServerConfig) {
+	// CORS Middleware
+	cors := newCORSHandler(config.AllowedOrigins)
+	mux.Use(cors.Handler)
+
+	// IP tracking and RequestID
+	ipTracking(mux, config)
+	mux.Use(middleware.RequestID)
+
+	// Zerolog
+	mux.Use(zerologMiddleware)
+	mux.Use(zerologRecoverer)
+
+	if config.OTelConfig != nil && config.OTelConfig.EnableTracing {
+		mux.Use(otelHTTPMiddleware)
+	}
+
+	// TODO: this is localized and good enough for testing and local development
+	// Add Valkey support in future releases
+	if config.RatePerMinute != nil && *config.RatePerMinute > 0 {
+		mux.Use(httprate.LimitBy(*config.RatePerMinute, 1*time.Minute, clientIpKey))
+	}
+}
+
+// ipTracking sets up the IP tracking middleware based on the config
+func ipTracking(mux *chi.Mux, config *ServerConfig) {
+	switch config.IpAddrDetect {
+	case "direct":
+		mux.Use(middleware.ClientIPFromRemoteAddr)
+	case "header":
+		header := (*config.IpOptions)[0]
+		mux.Use(middleware.ClientIPFromHeader(header))
+	case "proxy":
+		IPs := (*config.IpOptions)
+		mux.Use(middleware.ClientIPFromXFF(IPs...))
+	}
+}
+
+// clientIpKey returns the canonicalized IP address from the request
+func clientIpKey(r *http.Request) (string, error) {
+	return httprate.CanonicalizeIP(middleware.GetClientIP(r.Context())), nil
 }

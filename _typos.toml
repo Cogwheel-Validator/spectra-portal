@@ -1,0 +1,13 @@
+# Config for typos (https://github.com/crate-ci/typos), used by lefthook's
+# commit-msg hook to catch typos in commit messages.
+#
+# To permanently allow a word that typos flags as a false positive (chain
+# names, abbreviations, etc.), add it here rather than skipping the check:
+#
+# [default.extend-words]
+# osmo = "osmo"
+# keplr = "keplr"
+#
+# For a one-off exception on a single commit, skip just this check instead:
+#   LEFTHOOK_EXCLUDE=typos git commit -m "..."
+[default.extend-words]

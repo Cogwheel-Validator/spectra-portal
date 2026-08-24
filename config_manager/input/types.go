@@ -6,6 +6,23 @@ package input
 
 import "github.com/Cogwheel-Validator/spectra-portal/config_manager/keplr"
 
+// AccountType defines the type of account to use for a chain.
+type AccountType string
+
+const (
+	// AccountTypeCosmos is the default account type for Cosmos chains.
+	AccountTypeCosmos AccountType = "cosmos"
+	// AccountTypeEthereum is the account type for Ethereum or any EVM-compatible chains.
+	AccountTypeEthereum AccountType = "ethereum"
+	// AccountTypeEthermint is the account type for Ethermint chains such as Evmos and Injective,
+	// chains that have BaseAccounts that contain bech32 and uint8 byte arrays.
+	AccountTypeEthermint AccountType = "ethermint"
+)
+
+func (a *AccountType) String() string {
+	return string(*a)
+}
+
 // ChainInput is the human-readable chain configuration that developers write.
 // This is parsed from TOML files in the chain_configs/ directory.
 type ChainInput struct {
@@ -57,6 +74,14 @@ type ChainMeta struct {
 	// Required if IsBroker is true and you want to generate executable swap memos
 	IBCHooksContract string `toml:"ibc_hooks_contract,omitempty"`
 
+	// Required: Account type (e.g., "cosmos", "ethereum", "ethermint")
+	AccountType AccountType `toml:"account_type"`
+
+	// Required if AccountType is "ethermint": the EIP-155 chain id used in the
+	// EIP-712 signing domain for Ledger transactions (e.g. 1 for Injective
+	// mainnet, which - confusingly - reuses Ethereum mainnet's chain id here).
+	EvmChainID *int `toml:"evm_chain_id,omitempty"`
+
 	// RPC and REST endpoints
 	RPCs []APIEndpoint `toml:"rpcs"`
 	Rest []APIEndpoint `toml:"rest"`
@@ -66,7 +91,7 @@ type ChainMeta struct {
 	// Usage:
 	//
 	// Mostly will be used for the adding custom chains to the wallets
-	KeplrChainConfig *keplr.KeplrChainConfig `toml:"keplr_chain_config,omitempty"`
+	KeplrChainConfig *keplr.ChainConfig `toml:"keplr_chain_config,omitempty"`
 }
 
 // APIEndpoint represents an RPC or REST API endpoint.
@@ -154,10 +179,12 @@ func (t *TokenMeta) IsRoutableIBC() bool {
 	return t.OriginChain != ""
 }
 
+// ExplorerMeta holds the list of explorers allowed for chains.
 type ExplorerMeta struct {
 	AllowedExplorers []AllowedExplorer `toml:"allowed_explorers"`
 }
 
+// AllowedExplorer describes an explorer that chains may link to.
 type AllowedExplorer struct {
 	Name                 string `toml:"name"`
 	BaseURL              string `toml:"base_url"`
@@ -173,6 +200,7 @@ type AllowedExplorer struct {
 	GithubProfile        string `toml:"github_profile"`
 }
 
+// IbcParams holds the send/receive enabled flags from the IBC transfer module params.
 type IbcParams struct {
 	Params struct {
 		SendEnabled    bool `json:"send_enabled"`

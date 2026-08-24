@@ -23,7 +23,7 @@ func (l *Loader) LoadChainConfig(filePath string) (*ChainInput, error) {
 		return nil, fmt.Errorf("config file must be a .toml file: %s", filePath)
 	}
 
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(filePath) //nolint:gosec // G304: filePath is an operator-supplied CLI/config path, not external input
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file %s: %w", filePath, err)
 	}
@@ -69,6 +69,18 @@ func (l *Loader) LoadAllConfigs(dirPath string) (map[string]*ChainInput, error) 
 			continue
 		}
 
+		switch config.Chain.AccountType {
+		case "":
+			errs = append(errs, fmt.Errorf("%s: missing account_type", entry.Name()))
+		case AccountTypeCosmos, AccountTypeEthereum:
+		case AccountTypeEthermint:
+			if config.Chain.EvmChainID == nil {
+				errs = append(errs, fmt.Errorf("%s: account_type is ethermint but evm_chain_id is missing", entry.Name()))
+			}
+		default:
+			errs = append(errs, fmt.Errorf("%s: invalid account_type %s", entry.Name(), config.Chain.AccountType))
+		}
+
 		configs[config.Chain.ID] = config
 	}
 
@@ -98,16 +110,14 @@ func (l *Loader) GetRegistryKeywords(configs map[string]*ChainInput) []string {
 	return keywords
 }
 
-/*
-Extracts keplr json file name from loaded configs.
-
-Params:
-- configs: the loaded configs
-
-Returns:
-- []string: the keplr json file names
-- []string: the chains that do not have a keplr json file name, or have an overwrite keplr chain config
-*/
+// GetKeplrJSONFileNames extracts keplr json file name from loaded configs.
+//
+// Params:
+// - configs: the loaded configs
+//
+// Returns:
+// - []string: the keplr json file names
+// - []string: the chains that do not have a keplr json file name, or have an overwrite keplr chain config
 func (l *Loader) GetKeplrJSONFileNames(configs map[string]*ChainInput) ([]string, []string) {
 	jsonFileNames := make([]string, 0, len(configs))
 	chainsWithoutKeplrJSONFileName := make([]string, 0, len(configs))
@@ -138,7 +148,7 @@ func (l *Loader) LoadListOfAllowedExplorers(filePath string) ([]AllowedExplorer,
 		return nil, fmt.Errorf("config file must be a .toml file: %s", filePath)
 	}
 
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(filePath) //nolint:gosec // G304: filePath is an operator-supplied CLI/config path, not external input
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file %s: %w", filePath, err)
 	}

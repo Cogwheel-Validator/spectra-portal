@@ -1,0 +1,2 @@
+scopes = ["ci", "repo", "cfg_mng", "pathfinder", "client"]
+ignore_merge_commits = true

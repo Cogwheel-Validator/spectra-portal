@@ -13,18 +13,18 @@ import (
 	"time"
 )
 
-// DenomQuerier provides methods to query and resolve IBC denoms on a chain.
+// DenomQuery provides methods to query and resolve IBC denoms on a chain.
 // It uses a simple HTTP client without the full REST client validation overhead.
-type DenomQuerier struct {
+type DenomQuery struct {
 	baseURL       string
 	client        *http.Client
 	retryAttempts int
 	retryDelay    time.Duration
 }
 
-// NewDenomQuerier creates a querier for a single REST endpoint.
-func NewDenomQuerier(baseURL string, timeout time.Duration, retryAttempts int, retryDelay time.Duration) *DenomQuerier {
-	return &DenomQuerier{
+// NewDenomQuery creates a Query for a single REST endpoint.
+func NewDenomQuery(baseURL string, timeout time.Duration, retryAttempts int, retryDelay time.Duration) *DenomQuery {
+	return &DenomQuery{
 		baseURL: strings.TrimSuffix(baseURL, "/"),
 		client: &http.Client{
 			Timeout: timeout,
@@ -52,7 +52,7 @@ type ParsedDenomTrace struct {
 }
 
 // QueryAllDenomTraces fetches all denom traces from the chain.
-func (q *DenomQuerier) QueryAllDenomTraces() ([]DenomTraceInfo, error) {
+func (q *DenomQuery) QueryAllDenomTraces() ([]DenomTraceInfo, error) {
 	traces := make([]DenomTraceInfo, 0)
 	nextKey := ""
 
@@ -99,7 +99,7 @@ func (q *DenomQuerier) QueryAllDenomTraces() ([]DenomTraceInfo, error) {
 
 // QueryDenomHash queries the chain for the IBC denom hash of a given trace.
 // trace should be in format "transfer/channel-X/denom" or "transfer/channel-X/transfer/channel-Y/denom"
-func (q *DenomQuerier) QueryDenomHash(trace string) (string, error) {
+func (q *DenomQuery) QueryDenomHash(trace string) (string, error) {
 	escapedTrace := url.PathEscape(trace)
 	url := fmt.Sprintf("%s/ibc/apps/transfer/v1/denom_hashes/%s", q.baseURL, escapedTrace)
 
@@ -189,7 +189,7 @@ func FilterDirectTraces(traces []DenomTraceInfo, channelID string) []ParsedDenom
 	return filtered
 }
 
-func (q *DenomQuerier) doGetWithRetry(url string) ([]byte, error) {
+func (q *DenomQuery) doGetWithRetry(url string) ([]byte, error) {
 	var lastErr error
 
 	for attempt := 0; attempt <= q.retryAttempts; attempt++ {
@@ -197,11 +197,12 @@ func (q *DenomQuerier) doGetWithRetry(url string) ([]byte, error) {
 			time.Sleep(q.retryDelay)
 		}
 
-		resp, err := q.client.Get(url)
+		resp, cancel, err := getWithContext(q.client, url, q.client.Timeout)
 		if err != nil {
 			lastErr = err
 			continue
 		}
+		defer cancel()
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				log.Printf("failed to close response body: %v", err)
@@ -226,12 +227,13 @@ func (q *DenomQuerier) doGetWithRetry(url string) ([]byte, error) {
 }
 
 // IsHealthy checks if the REST endpoint is healthy.
-func (q *DenomQuerier) IsHealthy() bool {
+func (q *DenomQuery) IsHealthy() bool {
 	url := fmt.Sprintf("%s/cosmos/base/tendermint/v1beta1/node_info", q.baseURL)
-	resp, err := q.client.Get(url)
+	resp, cancel, err := getWithContext(q.client, url, q.client.Timeout)
 	if err != nil {
 		return false
 	}
+	defer cancel()
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.Printf("failed to close response body: %v", err)

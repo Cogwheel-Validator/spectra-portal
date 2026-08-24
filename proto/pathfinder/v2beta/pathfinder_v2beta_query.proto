@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package pathfinder.v2beta;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v2beta";
+
+// PathfinderQueryService provides chain/denom lookups that are independent
+// of route-finding. Kept separate from FindPathService so that a breaking
+// change to route discovery doesn't force these to be versioned in lockstep.
+service PathfinderQueryService {
+    // LookupDenom resolves denom information on a specific chain
+    // Accepts human-readable base denoms or IBC denom hashes
+    rpc LookupDenom(LookupDenomRequest) returns (LookupDenomResponse) {
+        option idempotency_level = NO_SIDE_EFFECTS;
+    }
+
+    // GetTokenDenoms returns all IBC denoms for a token across supported chains
+    // Use this to discover what denom a token has on different chains
+    rpc GetTokenDenoms(GetTokenDenomsRequest) returns (GetTokenDenomsResponse) {
+        option idempotency_level = NO_SIDE_EFFECTS;
+    }
+
+    // GetChainInfo returns information about a specific chain
+    rpc GetChainInfo(GetChainInfoRequest) returns (GetChainInfoResponse) {
+        option idempotency_level = NO_SIDE_EFFECTS;
+    }
+
+    // ListSupportedChains returns a list of supported chains
+    rpc ListSupportedChains(google.protobuf.Empty) returns (ListSupportedChainsResponse) {
+        option idempotency_level = NO_SIDE_EFFECTS;
+    }
+
+    // GetChainTokens returns all tokens available on a specific chain
+    // Includes both native tokens and IBC tokens with their denoms
+    rpc GetChainTokens(GetChainTokensRequest) returns (GetChainTokensResponse) {
+        option idempotency_level = NO_SIDE_EFFECTS;
+    }
+}
+
+// LookupDenomRequest - Resolve token information
+// Accepts either:
+// - Human-readable denom (e.g., "uatone", "uosmo")
+// - IBC denom (e.g., "ibc/ABC123...")
+message LookupDenomRequest {
+    string chain_id = 1 [(buf.validate.field).required = true];
+    string denom = 2 [
+        (buf.validate.field).required = true,
+        (buf.validate.field).string.min_len = 1,
+        (buf.validate.field).string.max_len = 128
+    ];
+}
+
+message LookupDenomResponse {
+    bool found = 1 [json_name = "found"];
+    // The denom as it appears on this chain
+    string chain_denom = 2 [json_name = "chain_denom"];
+    // The base/native denom
+    string base_denom = 3 [json_name = "base_denom"];
+    // Where this token is native
+    string origin_chain = 4 [json_name = "origin_chain"];
+    // True if this is the token's native chain
+    bool is_native = 5 [json_name = "is_native"];
+    // IBC path if this is an IBC token (e.g., "transfer/channel-75")
+    string ibc_path = 6 [json_name = "ibc_path"];
+    // Denoms on other chains where this token is available
+    repeated ChainDenom available_on = 7 [json_name = "available_on"];
+}
+
+// ChainDenom represents a token's denom on a specific chain
+message ChainDenom {
+    string chain_id = 1 [json_name = "chain_id"];
+    string chain_name = 2 [json_name = "chain_name"];
+    string denom = 3 [json_name = "denom"];
+    bool is_native = 4 [json_name = "is_native"];
+}
+
+// GetTokenDenomsRequest - Get all denoms for a token across chains
+// Use this to discover what denom a token has on different chains
+message GetTokenDenomsRequest {
+    // The base denom (e.g., "uatone", "uosmo", "ustars")
+    string base_denom = 1 [(buf.validate.field).required = true];
+    // The chain where this token is native (e.g., "atomone-1", "osmosis-1")
+    string origin_chain = 2 [(buf.validate.field).required = true];
+    // Optional: Filter to a specific chain. If empty, returns denoms on all chains
+    string on_chain_id = 3;
+}
+
+message GetTokenDenomsResponse {
+    bool found = 1 [json_name = "found"];
+    string base_denom = 2 [json_name = "base_denom"];
+    string origin_chain = 3 [json_name = "origin_chain"];
+    // All chains where this token is available and what denom it has
+    repeated ChainDenom denoms = 4 [json_name = "denoms"];
+}
+
+// GetChainTokensRequest - Get all tokens on a chain
+message GetChainTokensRequest {
+    string chain_id = 1 [(buf.validate.field).required = true];
+}
+
+message GetChainTokensResponse {
+    string chain_id = 1 [json_name = "chain_id"];
+    string chain_name = 2 [json_name = "chain_name"];
+    // Native tokens on this chain
+    repeated TokenDetails native_tokens = 3 [json_name = "native_tokens"];
+    // IBC tokens received on this chain
+    repeated TokenDetails ibc_tokens = 4 [json_name = "ibc_tokens"];
+}
+
+// TokenDetails - Full token information
+message TokenDetails {
+    // Denom on this chain (native or IBC hash)
+    string denom = 1 [json_name = "denom"];
+    // Human-readable symbol (e.g., "ATONE", "OSMO")
+    string symbol = 2 [json_name = "symbol"];
+    // Base denom on origin chain
+    string base_denom = 3 [json_name = "base_denom"];
+    // Chain where token is native
+    string origin_chain = 4 [json_name = "origin_chain"];
+    // Number of decimals
+    int32 decimals = 5 [json_name = "decimals"];
+    // True if native to this chain
+    bool is_native = 6 [json_name = "is_native"];
+}
+
+message ListSupportedChainsResponse {
+    repeated string chain_ids = 1 [(buf.validate.field).required = true, json_name = "chain_ids"];
+}
+
+message GetChainInfoRequest {
+    // The chain id of the chain to get information for
+    string chain_id = 1 [(buf.validate.field).required = true];
+    // Whether to show the symbols of the tokens on the chain, default is false
+    bool show_symbols = 2;
+}
+
+message GetChainInfoResponse {
+    ChainInfo chain_info = 1 [json_name = "chain_info"];
+}
+
+message ChainInfo {
+    string chain_id = 1 [json_name = "chain_id"];
+    string chain_name = 2 [json_name = "chain_name"];
+    bool has_pfm = 3 [json_name = "has_pfm"];
+    bool is_broker = 4 [json_name = "is_broker"];
+    repeated BasicRoute routes = 5 [json_name = "routes"];
+}
+
+// TokenInfo describes one token allowed on a BasicRoute.
+message TokenInfo {
+    // The denom as it appears on the chain this TokenInfo is attached to
+    // (native or IBC hash).
+    string chain_denom = 1 [json_name = "chain_denom"];
+    // The denom this token has on the other end of the route (the
+    // counterparty chain named by the enclosing BasicRoute.to_chain_id).
+    // Renamed from v1's ibc_denom: this gives clearer intent, since the
+    // value is not always literally an IBC-hash-form denom - it can be a
+    // native denom when this token originates on the counterparty chain.
+    string counterpart_denom = 2 [json_name = "counterpart_denom"];
+    // The base/native denom on the token's origin chain.
+    string base_denom = 3 [json_name = "base_denom"];
+    // The chain ID where this token is native.
+    string origin_chain = 4 [json_name = "origin_chain"];
+    // Number of decimals.
+    int32 decimals = 5 [json_name = "decimals"];
+    // Human-readable symbol (e.g., "ATONE", "OSMO").
+    string symbol = 6 [json_name = "symbol"];
+}
+
+message BasicRoute {
+    string to_chain = 1 [json_name = "to_chain"];
+    string to_chain_id = 2 [json_name = "to_chain_id"];
+    string connection_id = 3 [json_name = "connection_id"];
+    string channel_id = 4 [json_name = "channel_id"];
+    string port_id = 5 [json_name = "port_id"];
+    map<string, TokenInfo> allowed_tokens = 6 [json_name = "allowed_tokens"];
+}

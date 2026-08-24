@@ -1,5 +1,8 @@
 .PHONY:
+	setup
+	setup-hooks
 	generate-proto
+	generate-openapi
 	generate-config
 	generate-config-c
 	validate-config
@@ -9,16 +12,45 @@
 	lint-all
 	lint-go
 	lint-js
+	lint-commits
 	vulncheck-js
 	vulncheck-go
+	test-e2e
+	test
+	gotest-coverage
+
+# Sets up everything needed for local development
+setup: setup-hooks
+	@echo "Development environment set up successfully!"
+	# Add later more setup steps
+
+# Installs the git hooks (commit-msg linting, etc.) via lefthook
+# This check requires the following clis to be installed:
+#   - lefthook:   https://github.com/evilmartians/lefthook (go install github.com/evilmartians/lefthook/v2@latest)
+#   - cocogitto:  https://github.com/cocogitto/cocogitto (cargo install --locked cocogitto)
+#   - koji:       https://github.com/cococonscious/koji (cargo install --locked koji)
+#   - typos:      https://github.com/crate-ci/typos (cargo install --locked typos-cli)
+setup-hooks:
+	@echo "Installing git hooks..."
+	lefthook install
+	@echo "Git hooks installed successfully!"
 
 # Generate the protobuf files for the RPC server and client app
 generate-proto:
 	@echo "Generating protobuf files for the rpc server..."
 	cd proto && \
 	buf generate && \
-	buf generate --template buf.gen.osmosis.yaml
+	GIT_LFS_SKIP_SMUDGE=1 buf generate --template buf.gen.osmosis.yaml && \
+	GIT_LFS_SKIP_SMUDGE=1 buf generate --template buf.gen.injective.yaml
 	@echo "Protobuf files generated successfully!"
+
+# Generate OpenAPI 3.1 specs for the pathfinder RPC (v1 and v2beta) from proto definitions
+generate-openapi:
+	@echo "Generating OpenAPI specs for the pathfinder RPC..."
+	cd proto && \
+	buf generate --template buf.gen.openapi.v1.yaml && \
+	buf generate --template buf.gen.openapi.v2beta.yaml
+	@echo "OpenAPI specs generated successfully!"
 
 
 # Generate the config files for the client app and pathfinder backend
@@ -48,7 +80,7 @@ validate-config:
 # Build the pathfinder rpc binary
 build-pathfinder:
 	@echo "Building pathfinder rpc binary..."
-	go build -ldflags="-s -w" -o build/pathfinder-rpc ./pathfinder/cmd/main.go
+	GOTOOLCHAIN=auto go build -ldflags="-s -w" -o build/pathfinder-rpc ./pathfinder/cmd/main.go
 	@echo "Pathfinder rpc binary built successfully!"
 
 build-client:
@@ -59,7 +91,7 @@ build-client:
 # This check requires the golangci-lint cli to be installed
 lint-all:
 	@echo "Linting all files..."
-	golangci-lint run ./... && \
+	GOTOOLCHAIN=auto golangci-lint run ./... && \
 	cd client_app && \
 	pnpm run lint
 	@echo "All files linted successfully!"
@@ -75,6 +107,19 @@ lint-js:
 	cd client_app && \
 	pnpm run lint
 	@echo "Js files linted successfully!"
+
+# Lints commit messages on the current branch against Conventional Commits
+# This check requires the cocogitto and typos clis to be installed (see setup-hooks)
+lint-commits:
+	@echo "Linting commit messages..."
+	cog check
+	@for sha in $$(git rev-list HEAD); do \
+		git show -s --format=%B "$$sha" > /tmp/spectra-commit-msg.txt; \
+		scripts/require-scope.sh /tmp/spectra-commit-msg.txt || exit 1; \
+	done
+	git log --format=%B > /tmp/spectra-commit-msgs.txt
+	typos /tmp/spectra-commit-msgs.txt
+	@echo "Commit messages linted successfully!"
 
 vulncheck-js:
 	@echo "Vulnerability checking js files..."
@@ -106,7 +151,7 @@ vulncheck-semgrep-local:
 # This check requires the govulncheck cli to be installed
 vulncheck-go:
 	@echo "Vulnerability checking go files..."
-	govulncheck ./...
+	GOTOOLCHAIN=auto govulncheck ./...
 	@echo "Go files vulnerability checked successfully!"
 
 # This check requires the snyk cli to be installed
@@ -114,3 +159,24 @@ snyk-local:
 	@echo "Vulnerability checking all files with snyk..."
 	snyk test --all-projects
 	@echo "All files vulnerability checked successfully with snyk!"
+
+test-e2e:
+	@echo "Running e2e tests..."
+	@read -p "Enter whole URL to working instance of pathfinder (example http://localhost:8080): " URL && \
+	E2E_PATHFINDER_URL=$$URL go test -tags=e2e ./pathfinder/e2e/... -v
+	@echo "E2e tests completed successfully!"
+
+test:
+	@echo "Running tests..."
+	go test -v ./... && \
+	cd client_app && pnpm test
+	@echo "Tests completed successfully!"
+
+gotest-coverage:
+	@echo "Running tests with coverage..."
+	go test -covermode=atomic -coverprofile=coverage.out -coverpkg=./... ./...
+	@echo "Tests with coverage completed successfully!"
+	@echo "Coverage report:"
+	{ head -1 coverage.out; tail -n +2 coverage.out | grep -Ev '\.pb\.go:|\.connect\.go:'; } > coverage.filtered.out
+	mv coverage.filtered.out coverage.out
+	go tool cover -func=coverage.out

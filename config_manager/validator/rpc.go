@@ -12,6 +12,7 @@ import (
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/query"
 )
 
+// ValidateRpcEndpoints validates the RPC endpoints and returns a map of healthy endpoints.
 func ValidateRpcEndpoints(
 	endpoints []input.APIEndpoint,
 	retryAttempts int,

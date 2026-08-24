@@ -1,6 +1,7 @@
 package sqsquery
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,14 +25,13 @@ func init() {
 	log = zerolog.New(out).With().Timestamp().Str("component", "sqs").Logger()
 }
 
-// SqsQueryClient provides access to the Osmosis SQS API with failover support.
+// Client provides access to the Osmosis SQS API with failover support.
 // It maintains a primary endpoint and can automatically switch to backup endpoints
 // when the primary is unavailable.
-type SqsQueryClient struct {
+type Client struct {
 	httpClient     *http.Client
 	urls           []string
 	healthyURLs    []string
-	mu             sync.RWMutex
 	healthChecker  *healthChecker
 	failoverConfig FailoverConfig
 }
@@ -60,7 +60,7 @@ func DefaultFailoverConfig() FailoverConfig {
 
 // healthChecker periodically checks if the endpoints are healthy
 type healthChecker struct {
-	client    *SqsQueryClient
+	client    *Client
 	stopCh    chan struct{}
 	stoppedCh chan struct{}
 	isRunning bool
@@ -68,12 +68,12 @@ type healthChecker struct {
 }
 
 // NewSqsQueryClient creates a new SqsQueryClient with a single endpoint (backward compatible)
-func NewSqsQueryClient(urls []string) *SqsQueryClient {
+func NewSqsQueryClient(urls []string) *Client {
 	return NewSqsQueryClientWithFailover(urls, DefaultFailoverConfig())
 }
 
 // NewSqsQueryClientWithFailover creates a new SqsQueryClient with failover support
-func NewSqsQueryClientWithFailover(urls []string, config FailoverConfig) *SqsQueryClient {
+func NewSqsQueryClientWithFailover(urls []string, config FailoverConfig) *Client {
 	// Validate the primary URL
 	for _, u := range urls {
 		if _, err := url.Parse(u); err != nil {
@@ -85,7 +85,7 @@ func NewSqsQueryClientWithFailover(urls []string, config FailoverConfig) *SqsQue
 	healthyURLs := make([]string, len(urls))
 	copy(healthyURLs, urls)
 
-	client := &SqsQueryClient{
+	client := &Client{
 		httpClient: &http.Client{
 			Timeout: config.Timeout,
 		},
@@ -106,7 +106,7 @@ func NewSqsQueryClientWithFailover(urls []string, config FailoverConfig) *SqsQue
 }
 
 // startHealthChecker starts the background health checker goroutine
-func (c *SqsQueryClient) startHealthChecker() {
+func (c *Client) startHealthChecker() {
 	c.healthChecker = &healthChecker{
 		client:    c,
 		stopCh:    make(chan struct{}),
@@ -173,11 +173,28 @@ func (h *healthChecker) checkAndRestore() {
 	}
 }
 
+// getWithContext issues a GET request bounded by the client's timeout, avoiding
+// the context-less http.Client.Get so a stalled or spoofed endpoint can't hang
+// past the configured deadline.
+func getWithContext(client *http.Client, url string) (*http.Response, error) {
+	ctx := context.Background()
+	if client.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, client.Timeout)
+		defer cancel()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return client.Do(req)
+}
+
 // isEndpointHealthy checks if an endpoint is responding
-func (c *SqsQueryClient) isEndpointHealthy(endpoint string) bool {
+func (c *Client) isEndpointHealthy(endpoint string) bool {
 	// Try a simple health check on the endpoint's swagger page
 	healthURL := fmt.Sprintf("%s/swagger/index.html", endpoint)
-	resp, err := c.httpClient.Get(healthURL)
+	resp, err := getWithContext(c.httpClient, healthURL)
 	if err != nil {
 		log.Debug().Err(err).Str("url", healthURL).Msg("Health check failed")
 		return false
@@ -190,15 +207,15 @@ func (c *SqsQueryClient) isEndpointHealthy(endpoint string) bool {
 }
 
 // getCurrentURL returns the current active endpoint
-func (c *SqsQueryClient) getRandomHealthyURL() string {
+func (c *Client) getRandomHealthyURL() string {
 	if len(c.healthyURLs) == 0 {
 		return ""
 	}
-	return c.healthyURLs[rand.Intn(len(c.healthyURLs))]
+	return c.healthyURLs[rand.Intn(len(c.healthyURLs))] //nolint:gosec // G404: non-cryptographic load-balancing choice
 }
 
 // Close stops the health checker and cleans up resources
-func (c *SqsQueryClient) Close() {
+func (c *Client) Close() {
 	if c.healthChecker != nil {
 		c.healthChecker.stop()
 	}
@@ -206,7 +223,7 @@ func (c *SqsQueryClient) Close() {
 
 // doRequestWithFailover performs an HTTP GET request with retry and failover logic.
 // Each attempt is timed so we can observe SQS latency and detect slow endpoints.
-func (c *SqsQueryClient) doRequestWithFailover(path string) ([]byte, error) {
+func (c *Client) doRequestWithFailover(path string) ([]byte, error) {
 	var lastErr error
 	retryDelay := c.failoverConfig.RetryDelay
 	overallStart := time.Now()
@@ -309,9 +326,9 @@ func (c *SqsQueryClient) doRequestWithFailover(path string) ([]byte, error) {
 
 // doSingleRequest performs a single HTTP GET, returning body, status, elapsed time and error.
 // Timing is measured around the GET + body read so it reflects total time-to-bytes.
-func (c *SqsQueryClient) doSingleRequest(fullURL string) ([]byte, int, time.Duration, error) {
+func (c *Client) doSingleRequest(fullURL string) ([]byte, int, time.Duration, error) {
 	start := time.Now()
-	resp, err := c.httpClient.Get(fullURL)
+	resp, err := getWithContext(c.httpClient, fullURL)
 	if err != nil {
 		return nil, 0, time.Since(start), err
 	}
@@ -338,7 +355,7 @@ So when using this query, you can only use one of the following parameters:
 - tokenIn and tokenOutDenom
 - tokenOut and tokenInDenom
 */
-func (c *SqsQueryClient) GetRoute(
+func (c *Client) GetRoute(
 	tokenIn, tokenOut *TokenRequest,
 	tokenInDenom, tokenOutDenom *string,
 	singleRoute bool) (RouteTokenResponse, error) {
@@ -421,7 +438,7 @@ func (c *SqsQueryClient) GetRoute(
 }
 
 // GetTokenPrice fetches the price of a token in USD terms
-func (c *SqsQueryClient) GetTokenPrice(tokenDenom string) (decimal.Decimal, error) {
+func (c *Client) GetTokenPrice(tokenDenom string) (decimal.Decimal, error) {
 	start := time.Now()
 	path := fmt.Sprintf("/token-price?tokenDenom=%s", url.QueryEscape(tokenDenom))
 
@@ -478,7 +495,7 @@ func (c *SqsQueryClient) GetTokenPrice(tokenDenom string) (decimal.Decimal, erro
 }
 
 // GetAllPossibleRoutes returns all possible routes between two tokens
-func (c *SqsQueryClient) GetAllPossibleRoutes(tokenInDenom, tokenOutDenom string) (AllPossibleRoutesResponse, error) {
+func (c *Client) GetAllPossibleRoutes(tokenInDenom, tokenOutDenom string) (AllPossibleRoutesResponse, error) {
 	start := time.Now()
 	path := fmt.Sprintf(
 		"/router/routes?tokenInDenom=%s&tokenOutDenom=%s",

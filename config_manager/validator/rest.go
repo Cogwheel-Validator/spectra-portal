@@ -11,6 +11,7 @@ import (
 	"github.com/Cogwheel-Validator/spectra-portal/config_manager/query"
 )
 
+// ValidateRestEndpoints validates the REST endpoints and returns a map of healthy endpoints.
 func ValidateRestEndpoints(
 	endpoints []input.APIEndpoint,
 	retryAttempts int,

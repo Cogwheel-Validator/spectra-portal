@@ -13,8 +13,8 @@ import (
 func unsetPathfinderEnv() {
 	for _, e := range os.Environ() {
 		if len(e) > 12 && e[:12] == "PATHFINDER_" {
-			if idx := strings.Index(e, "="); idx != -1 {
-				_ = os.Unsetenv(e[:idx])
+			if before, _, ok := strings.Cut(e, "="); ok {
+				_ = os.Unsetenv(before)
 			}
 		}
 	}
@@ -50,8 +50,15 @@ func TestLoadRPCPathfinderConfig_FromEnv_FailVerification(t *testing.T) {
 	unsetPathfinderEnv()
 	_ = os.Unsetenv("PATHFINDER_HOST")
 	// Run in empty dir so godotenv.Load() inside the loader doesn't set PATHFINDER_* from a .env file
-	origWd, _ := os.Getwd()
-	defer os.Chdir(origWd)
+	origWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
+	defer func() {
+		if err := os.Chdir(origWd); err != nil {
+			t.Fatalf("failed to restore working directory: %v", err)
+		}
+	}()
 	_ = os.Chdir(t.TempDir())
 
 	// missing HOST
@@ -59,7 +66,7 @@ func TestLoadRPCPathfinderConfig_FromEnv_FailVerification(t *testing.T) {
 	_ = os.Setenv("PATHFINDER_ALLOWED_ORIGINS", "*")
 	_ = os.Setenv("PATHFINDER_SQS_URLS", "https://sqs.example.com/q1")
 
-	_, err := LoadRPCPathfinderConfig(nil)
+	_, err = LoadRPCPathfinderConfig(nil)
 	if err == nil {
 		t.Fatalf("expected error due to missing host, got nil")
 	}

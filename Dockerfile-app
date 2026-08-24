@@ -20,6 +20,9 @@ ENV CI=true
 
 RUN pnpm run build
 
+FROM debian:13-slim AS tini-getter
+RUN apt-get update && apt-get install -y tini
+
 FROM gcr.io/distroless/nodejs24-debian13 AS distroless
 
 WORKDIR /app
@@ -28,9 +31,13 @@ COPY --from=builder --chown=nextjs:nextjs /app/client_config.toml ./client_confi
 COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone/ ./
 COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nextjs /app/public ./public
+COPY --from=tini-getter /usr/bin/tini /sbin/tini
 
 EXPOSE 3000
 
 USER nonroot
+ENV HOST=0.0.0.0
+ENV PORT=3000
 
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["server.js"]

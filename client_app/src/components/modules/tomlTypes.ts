@@ -10,6 +10,9 @@ export type ClientChain = {
     id: string;
     bech32_prefix: string;
     slip44: number;
+    account_type: "cosmos" | "ethereum" | "ethermint";
+    // EIP-712 signing domain chain id, only set when account_type is "ethermint".
+    evm_chain_id?: number;
     explorer_details: ExplorerDetails;
     cosmos_sdk_version: string;
     chain_logo?: string;

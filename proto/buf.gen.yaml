@@ -1,18 +1,18 @@
 version: v2
 plugins:
   - local: protoc-gen-go
-    out: ../pathfinder/rpc/v1
+    out: ../pathfinder/rpc/services
     opt: paths=source_relative
     include_imports: true
   - local: protoc-gen-connect-go
-    out: ../pathfinder/rpc/v1
+    out: ../pathfinder/rpc/services
     opt:
       - paths=source_relative
     include_imports: true
   - local: protoc-gen-es
-    out: ../client_app/src/lib/generated/pathfinder
+    out: ../client_app/src/lib/generated
     opt: target=ts
     include_imports: true
   - local: protoc-gen-connect-es
-    out: ../client_app/src/lib/generated/pathfinder
+    out: ../client_app/src/lib/generated
     opt: target=ts

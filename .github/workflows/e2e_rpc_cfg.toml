@@ -1,0 +1,99 @@
+# Spectra's Pathfinder RPC Configuration Example
+# Copy this file to rpc-config.toml and customize as needed
+
+# =============================================================================
+# RPC Server Configuration
+# =============================================================================
+
+# Server address binding
+host = "0.0.0.0"
+port = 8080
+
+# =============================================================================
+# CORS Configuration
+# =============================================================================
+
+# Allowed origins for CORS requests
+# Use ["*"] to allow all origins (not recommended for production)
+allowed_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+    "https://your-frontend.example.com"
+]
+
+# Enable gRPC reflection (useful for development tools like grpcurl)
+# If you don't want to expose the reflection endpoint, set to false
+enable_reflection = true
+
+
+# =============================================================================
+# IP Tracking
+# =============================================================================
+
+# Ip Address Detection config serves to have some sort of control of who is accessing IpAddrDetect.
+#
+# For the pathfinder to know the location it needs to know how to handle this there are 4 options:
+# 1. off - it won't collect any IP and it won't use any sort of middleware for tracking.
+# 2. direct - it is exposed directly to internet with no proxies, gateways or CDNs in front.
+# 3. header - there is some program of CDN in front like Cloudflare, Nginx or something else.
+# 4. proxy - behind one or more proxies which IP is known to you
+ip_addr_detect = "direct"
+# Depending on the IpAddrDetect option, you may need to provide additional information.
+# 1. If it is set to `off` or `direct` leave it empty.
+# 2. If it is set to header place a header that is assumed as a trusted option, example:
+# For Nginx: "X-Real-IP", for Cloudflare: "CF-Connecting-IP", for Apache: "X-Client-IP" etc...
+# ip_options = ["X-Real-IP"]
+# 3. If set to proxy through AWS Cloudfront or similar. Fill it with the proper IP addresses, example:
+# ip_options = ["13.32.0.0/15", "52.46.0.0/18"]
+
+# =============================================================================
+# Rate Limiting
+# =============================================================================
+
+# Maximum requests per IP per minute
+rate_per_minute = 100
+
+# Set the amount of possible concurrent request possible to the RPC
+max_concurrent_requests = 200
+
+# =============================================================================
+# Osmosis SQS Configuration
+# =============================================================================
+
+# SQS endpoints (Osmosis Sidecar Query Server)
+sqs_urls = [
+    "https://sqs.osmosis.zone",
+    #"https://sqs-osmosis.example.com",
+]
+# =============================================================================
+# OpenTelemetry Configuration (Optional)
+# =============================================================================
+
+# Service identification
+service_name = "spectra-portal"
+service_version = "1.0.0"
+environment = "development"  # PROD, DEV, TEST, LOCAL
+
+# Tracing configuration
+enable_tracing = false
+use_otlp_traces = false
+otlp_traces_url = "http://localhost:4317"
+
+# Metrics configuration
+enable_metrics = false
+use_prometheus = true        # Expose /metrics endpoint for Prometheus
+use_otlp_metrics = false
+otlp_metrics_url = "http://localhost:4317"
+
+# Logging configuration
+enable_logs = false
+use_otlp_logs = false
+otlp_logs_url = "http://localhost:4317"
+
+# OTLP connection security (set to true for development without TLS)
+insecure_otlp = true
+
+# Development mode - uses console exporters instead of OTLP
+development_mode = true

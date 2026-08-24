@@ -7,6 +7,7 @@ explorer_url = "https://thespectra.io/symphony"
 slip44 = 118
 bech32_prefix = "symphony"
 keplr_json = "symphony.json"
+account_type = "cosmos"
 
 # RPC endpoints
 [[chain.rpcs]]
@@ -17,10 +18,6 @@ provider = "Cogwheel ⚙️"
 url = "https://symphony-rpc.polkachu.com"
 provider = "Polkachu"
 
-[[chain.rpcs]]
-url = "https://rpc.symphony.citizenweb3.com"
-provider = "CitizenWeb3"
-
 # REST endpoints
 [[chain.rest]]
 url = "https://symphony-api.cogwheel.zone"
@@ -29,10 +26,6 @@ provider = "Cogwheel ⚙️"
 [[chain.rest]]
 url = "https://symphony-api.polkachu.com"
 provider = "Polkachu"
-
-[[chain.rest]]
-url = "https://api.symphony.citizenweb3.com"
-provider = "CitizenWeb3"
 
 [[token]]
 denom = "note"

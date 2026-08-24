@@ -12,18 +12,16 @@ import (
 	"github.com/hashicorp/go-getter"
 )
 
-/*
-Download the keplr registry from the chainapsis github repository
-
-Params:
-- dst: the directory to download the registry to
-
-Returns:
-- error: if the registry cannot be downloaded
-
-Usage:
-- Used to download the keplr registry from the chainapsis github repository
-*/
+// GetKeplrRegistry downloads the keplr registry from the chainapsis github repository
+//
+// Params:
+// - dst: the directory to download the registry to
+//
+// Returns:
+// - error: if the registry cannot be downloaded
+//
+// Usage:
+// - Used to download the keplr registry from the chainapsis github repository
 func GetKeplrRegistry(dst string) error {
 	url := "github.com/chainapsis/keplr-chain-registry//cosmos"
 	deadline := time.Now().Add(120 * time.Second)
@@ -50,25 +48,23 @@ func GetKeplrRegistry(dst string) error {
 	return nil
 }
 
-/*
-Process the keplr registry from the chainapsis github repository
-
-Params:
-- dst: the directory to read the registry from
-- jsonNames: the names of the json files to process
-
-Returns:
-- []KeplrChainConfig: the keplr chain configs
-- error: if the registry cannot be processed
-
-Usage:
-- Used to process the keplr registry from the chainapsis github repository
-*/
-func ProcessKeplrRegistry(dst string, jsonNames []string) ([]KeplrChainConfig, error) {
-	keplrConfigs := []KeplrChainConfig{}
+// ProcessKeplrRegistry processes the keplr registry from the chainapsis github repository
+//
+// Params:
+// - dst: the directory to read the registry from
+// - jsonNames: the names of the json files to process
+//
+// Returns:
+// - []ChainConfig: the keplr chain configs
+// - error: if the registry cannot be processed
+//
+// Usage:
+// - Used to process the keplr registry from the chainapsis github repository
+func ProcessKeplrRegistry(dst string, jsonNames []string) ([]ChainConfig, error) {
+	keplrConfigs := []ChainConfig{}
 	for _, jsonName := range jsonNames {
 		filePath := fmt.Sprintf("%s/%s", dst, jsonName)
-		jsonFile, err := os.Open(filePath)
+		jsonFile, err := os.Open(filePath) //nolint:gosec // G304: filePath built from operator-supplied chain config + local registry dir
 		if err != nil {
 			return nil, fmt.Errorf("failed to open file: %w", err)
 		}
@@ -81,7 +77,7 @@ func ProcessKeplrRegistry(dst string, jsonNames []string) ([]KeplrChainConfig, e
 		if err != nil {
 			return nil, fmt.Errorf("failed to read file: %w", err)
 		}
-		var keplrConfig KeplrChainConfig
+		var keplrConfig ChainConfig
 		err = json.Unmarshal(body, &keplrConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal file: %w", err)

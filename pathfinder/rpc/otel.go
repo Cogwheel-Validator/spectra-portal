@@ -69,7 +69,7 @@ type OTelConfig struct {
 // DefaultOTelConfig returns a sensible default configuration
 func DefaultOTelConfig() *OTelConfig {
 	return &OTelConfig{
-		ServiceName:     "spectra-ibc-hub",
+		ServiceName:     "spectra-portal",
 		ServiceVersion:  "1.0.0",
 		Environment:     "production",
 		EnableTracing:   true,

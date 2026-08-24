@@ -40,6 +40,10 @@ type PathfinderChain struct {
 	// Bech32 prefix for addresses on this chain (e.g., "osmo", "cosmos")
 	Bech32Prefix string `json:"bech32_prefix,omitempty" toml:"bech32_prefix,omitempty"`
 
+	// SLIP-44 coin type used for key derivation on this chain (e.g., 118 for Cosmos, 60 for Injective).
+	// Address conversion between chains is only valid when both chains share the same SLIP-44 type.
+	Slip44 int `json:"slip44" toml:"slip44"`
+
 	// Native tokens on this chain (includes tokens with no allowed destinations)
 	// These are always available on their native chain even if they can't be sent via IBC.
 	//

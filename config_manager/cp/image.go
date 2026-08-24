@@ -34,7 +34,7 @@ func CopyChainImages(imagesDir, publicDir string, registryName string) error {
 	destPath := filepath.Join(publicDir, "icons", registryName)
 
 	// Create destination directory
-	if err := os.MkdirAll(destPath, 0755); err != nil {
+	if err := os.MkdirAll(destPath, 0750); err != nil {
 		return fmt.Errorf("failed to create destination directory %s: %w", destPath, err)
 	}
 
@@ -63,7 +63,7 @@ func CopyChainImages(imagesDir, publicDir string, registryName string) error {
 
 // copyFile copies a single file from src to dst
 func copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
+	sourceFile, err := os.Open(src) //nolint:gosec // G304: src is built from local registry dir names, not external input
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func copyFile(src, dst string) error {
 		}
 	}()
 
-	destFile, err := os.Create(dst)
+	destFile, err := os.Create(dst) //nolint:gosec // G304: dst is built from local registry dir names, not external input
 	if err != nil {
 		return err
 	}

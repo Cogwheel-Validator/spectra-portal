@@ -31,6 +31,12 @@ type ClientChain struct {
 	// Bech32 address prefix
 	Bech32Prefix string `json:"bech32_prefix" toml:"bech32_prefix"`
 
+	// Account type (cosmos, ethereum or ethermint)
+	AccountType string `json:"account_type" toml:"account_type"`
+
+	// EIP-712 signing domain chain id, only set when AccountType is "ethermint"
+	EvmChainID *int `json:"evm_chain_id,omitempty" toml:"evm_chain_id,omitempty"`
+
 	// SLIP-44 coin type
 	Slip44 int `json:"slip44" toml:"slip44"`
 
@@ -59,13 +65,13 @@ type ClientChain struct {
 	IBCTokens []ClientToken `json:"ibc_tokens" toml:"ibc_tokens"`
 
 	// Keplr data for wallets
-	KeplrChainConfig keplr.KeplrChainConfig `json:"keplr_chain_config" toml:"keplr_chain_config"`
+	KeplrChainConfig keplr.ChainConfig `json:"keplr_chain_config" toml:"keplr_chain_config"`
 
 	// Chains this chain can send tokens to
 	ConnectedChains []ConnectedChainInfo `json:"connected_chains" toml:"connected_chains"`
 }
 
-// Explorer details for the client app such as url link to account and transaction
+// ExplorerDetails holds details for the client app such as url link to account and transaction
 type ExplorerDetails struct {
 	BaseUrl         string `json:"base_url" toml:"base_url"`
 	AccountPath     string `json:"account_path" toml:"account_path"`

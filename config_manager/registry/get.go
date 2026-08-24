@@ -15,7 +15,7 @@ import (
 	getter "github.com/hashicorp/go-getter"
 )
 
-// RegistryGitDownload downloads the IBC registry from the GitHub repository
+// GitDownload downloads the IBC registry from the GitHub repository
 //
 // Params:
 //   - dst: the directory to download the registry to
@@ -25,7 +25,7 @@ import (
 //
 // Usage:
 //   - Used to download the IBC registry from the GitHub repository
-func RegistryGitDownload(dst string) error {
+func GitDownload(dst string) error {
 	// format for using go getter
 	url := "github.com/cosmos/chain-registry//_IBC"
 	deadline := time.Now().Add(120 * time.Second)
@@ -87,7 +87,7 @@ func ProcessIbcRegistry(dst string, keywords []string) ([]ChainIbcData, error) {
 			if slices.Contains(keywords, chainNames[0]) && slices.Contains(keywords, chainNames[1]) {
 				// open the file and read the contents with untrimmed name
 				filePath := filepath.Join(dst, file.Name())
-				jsonFile, err := os.Open(filePath)
+				jsonFile, err := os.Open(filePath) //nolint:gosec // G304: filePath from local dir listing (file.Name()), not external input
 				if err != nil {
 					return nil, fmt.Errorf("failed to open file: %w", err)
 				}

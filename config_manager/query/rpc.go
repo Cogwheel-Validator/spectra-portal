@@ -2,6 +2,7 @@ package query
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -19,6 +20,7 @@ const (
 	block_query = "block"
 )
 
+// NewRpcClient creates a new RpcClient with the given base URLs, retry policy, and timeout.
 func NewRpcClient(baseURLs []string, retryAttempts int, retryDelay time.Duration, timeout time.Duration) *RpcClient {
 	return &RpcClient{
 		BaseURLs: baseURLs,
@@ -37,6 +39,29 @@ func NewRpcClient(baseURLs []string, retryAttempts int, retryDelay time.Duration
 	}
 }
 
+// postWithContext issues a POST request bounded by the client's timeout, avoiding
+// the context-less http.Client.Post so a stalled or malicious RPC endpoint can't
+// hang past the configured deadline.
+func postWithContext(client *http.Client, url, contentType string, body []byte) (*http.Response, context.CancelFunc, error) {
+	ctx := context.Background()
+	cancel := context.CancelFunc(func() {})
+	if client.Timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, client.Timeout)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(body))
+	if err != nil {
+		cancel()
+		return nil, cancel, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	resp, err := client.Do(req)
+	if err != nil {
+		cancel()
+		return nil, cancel, err
+	}
+	return resp, cancel, nil
+}
+
 func (c *RpcClient) performRequest(url, method string, params map[string]any, result any) error {
 	requestBody, err := json.Marshal(map[string]any{
 		"jsonrpc": "2.0",
@@ -49,11 +74,11 @@ func (c *RpcClient) performRequest(url, method string, params map[string]any, re
 	}
 
 	// perform the request
-	resp, err := c.Client.Post(url, "application/json", bytes.NewBuffer(requestBody))
+	resp, cancel, err := postWithContext(c.Client, url, "application/json", requestBody)
 	if err != nil {
 		retryAttempt := 0
 		for retryAttempt < c.RetryAttempts {
-			resp, err = c.Client.Post(url, "application/json", bytes.NewBuffer(requestBody))
+			resp, cancel, err = postWithContext(c.Client, url, "application/json", requestBody)
 			if err == nil {
 				break
 			}
@@ -64,6 +89,7 @@ func (c *RpcClient) performRequest(url, method string, params map[string]any, re
 			return fmt.Errorf("failed to perform request %s method %s: %w", url, method, err)
 		}
 	}
+	defer cancel()
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.Printf("failed to close response body: %v", err)
@@ -82,6 +108,7 @@ func (c *RpcClient) performRequest(url, method string, params map[string]any, re
 	return nil
 }
 
+// QueryStatus queries the RPC status endpoint.
 func (c *RpcClient) QueryStatus(url string) (RpcStatusResponse, error) {
 	var response RpcStatusResponse
 	err := c.performRequest(url, status, nil, &response)
@@ -91,6 +118,7 @@ func (c *RpcClient) QueryStatus(url string) (RpcStatusResponse, error) {
 	return response, nil
 }
 
+// QueryAbciInfo queries the RPC abci_info endpoint.
 func (c *RpcClient) QueryAbciInfo(url string) (AbciInfoResponse, error) {
 	var response AbciInfoResponse
 	err := c.performRequest(url, abci_info, nil, &response)
@@ -268,6 +296,7 @@ func ValidateRpcEndpoints(
 	return validEndpoints
 }
 
+// QueryBlock queries the RPC block endpoint for the given block height.
 func (c *RpcClient) QueryBlock(url string, block int) (RpcBlockResponse, error) {
 	var response RpcBlockResponse
 	err := c.performRequest(url, block_query, map[string]any{"height": block}, &response)
