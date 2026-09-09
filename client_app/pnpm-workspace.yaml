@@ -20,3 +20,7 @@ minimumReleaseAgeExclude:
   - "@next/swc-linux-x64-musl"
   - "@next/swc-win32-arm64-msvc"
   - "@next/swc-win32-x64-msvc"
+overrides:
+  "nanoid": ">=3.3.18"
+  "baseline-browser-mapping": ">=2.11.0"
+  "vite": ">=7.3.5"

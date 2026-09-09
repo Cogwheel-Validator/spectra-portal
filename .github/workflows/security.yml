@@ -57,9 +57,9 @@ jobs:
       - uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
           package-json-file: ./client_app/package.json
-          version: 11.18.0
+          version: 12.3.4
           install: false # since we just need to do the audit
           runtime: node
       - name: audit
         working-directory: ./client_app
-        run: pnpm audit
+        run: pnpm audit -P
