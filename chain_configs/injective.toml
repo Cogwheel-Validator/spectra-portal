@@ -26,6 +26,10 @@ provider = "StakeWolle"
 url = "https://injective-rpc.highstakes.ch"
 provider = "HighStakes"
 
+[[chain.rpcs]]
+url = "https://injective-rpc.publicnode.com:443/"
+provider = "PublicNode"
+
 # REST endpoints
 [[chain.rest]]
 url = "https://injective-api.polkachu.com"
@@ -38,6 +42,10 @@ provider = "StakeWolle"
 [[chain.rest]]
 url = "https://injective-api.highstakes.ch"
 provider = "HighStakes"
+
+[[chain.rest]]
+url = "https://injective-rest.publicnode.com"
+provider = "PublicNode"
 
 [[token]]
 denom = "inj"

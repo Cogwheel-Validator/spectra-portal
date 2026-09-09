@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-08-23T17:06:59Z'
+generated_at = '2026-09-09T11:02:01Z'
 
 [[chains]]
 name = 'Atom One'
@@ -572,6 +572,22 @@ symbol = 'EURe'
 decimals = 6
 
 [[chains.routes]]
+to_chain = 'Nolus Protocol'
+to_chain_id = 'pirin-1'
+connection_id = 'connection-2289'
+channel_id = 'channel-783'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/D9AFCECDD361D38302AA66EB3BAC23B95234832C51D12489DC451FA2B7C72782']
+chain_denom = 'ibc/D9AFCECDD361D38302AA66EB3BAC23B95234832C51D12489DC451FA2B7C72782'
+ibc_denom = 'unls'
+base_denom = 'unls'
+origin_chain = 'pirin-1'
+symbol = 'NLS'
+decimals = 6
+
+[[chains.routes]]
 to_chain = 'Symphony Network'
 to_chain_id = 'symphony-1'
 connection_id = 'connection-10760'
@@ -585,6 +601,38 @@ ibc_denom = 'note'
 base_denom = 'note'
 origin_chain = 'symphony-1'
 symbol = 'MLD'
+decimals = 6
+
+[[chains]]
+name = 'Nolus Protocol'
+id = 'pirin-1'
+has_pfm = false
+broker = false
+bech32_prefix = 'nolus'
+slip44 = 118
+
+[[chains.native_tokens]]
+chain_denom = 'unls'
+ibc_denom = ''
+base_denom = 'unls'
+origin_chain = 'pirin-1'
+symbol = 'NLS'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Osmosis'
+to_chain_id = 'osmosis-1'
+connection_id = 'connection-0'
+channel_id = 'channel-0'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.unls]
+chain_denom = 'unls'
+ibc_denom = 'ibc/D9AFCECDD361D38302AA66EB3BAC23B95234832C51D12489DC451FA2B7C72782'
+base_denom = 'unls'
+origin_chain = 'pirin-1'
+symbol = 'NLS'
 decimals = 6
 
 [[chains]]
