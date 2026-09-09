@@ -91,7 +91,7 @@ func NewGenerator(config GeneratorConfig) *Generator {
 	// Builder handles all network validation (version consensus, height sync, tx indexer)
 	var builderOpts []enriched.BuilderOption
 	if config.SkipNetworkValidation {
-		builderOpts = append(builderOpts, enriched.WithSkipNetworkCheck(true))
+		builderOpts = append(builderOpts, enriched.WithSkipNetworkCheck(true)) //nolint:staticcheck
 	}
 	builderOpts = append(builderOpts, enriched.WithTimeout(timeout))
 
