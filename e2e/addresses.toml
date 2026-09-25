@@ -3,8 +3,8 @@ chain_id = "injective-1"
 address = "inj1c36mvev8tjzylhqzyc2h9uh6jxnjcdjfn4x7hg"
 
 [[test_address]]
-chain_id = "symphony-1"
-address = "symphony19j0x56sxl8r266jjnc8s0lzy3k259r7caf3y3w"
+chain_id = "celestia"
+address = "celestia19j0x56sxl8r266jjnc8s0lzy3k259r7cmmqme9"
 
 [[test_address]]
 chain_id = "atomone-1"
@@ -25,3 +25,7 @@ address = "juno19j0x56sxl8r266jjnc8s0lzy3k259r7curjsy5"
 [[test_address]]
 chain_id = "noble-1"
 address = "noble19j0x56sxl8r266jjnc8s0lzy3k259r7czjyrmx"
+
+[[test_address]]
+chain_id = "pirin-1"
+address = "nolus19j0x56sxl8r266jjnc8s0lzy3k259r7cupp5pd"

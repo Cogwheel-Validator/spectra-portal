@@ -1,0 +1,36 @@
+[chain]
+name = "Celestia"
+id = "celestia"
+type = "cosmos"
+registry = "celestia"
+explorer_url = "https://mintscan.io/celestia"
+slip44 = 118
+bech32_prefix = "celestia"
+keplr_json = "celestia.json"
+account_type = "cosmos"
+
+# RPC endpoints
+[[chain.rpcs]]
+url = "https://celestia-rpc.cogwheel.zone"
+provider = "Cogwheel ⚙️"
+
+[[chain.rpcs]]
+url = "https://celestia-rpc.polkachu.com"
+provider = "Polkachu"
+
+# REST endpoints
+[[chain.rest]]
+url = "https://celestia-api.cogwheel.zone"
+provider = "Cogwheel ⚙️"
+
+[[chain.rest]]
+url = "https://celestia-api.polkachu.com"
+provider = "Polkachu"
+
+[[token]]
+denom = "utia"
+name = "Celestia"
+symbol = "TIA"
+exponent = 6
+icon = "https://raw.githubusercontent.com/Cogwheel-Validator/spectra-ibc-hub/main/images/celestia/tia.png"
+allowed_destinations = ["osmosis-1", "injective-1", "cosmoshub-4"]

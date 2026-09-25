@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-09-09T11:02:01Z'
+generated_at = '2026-09-25T10:07:34Z'
 
 [[chains]]
 name = 'Atom One'
@@ -50,6 +50,70 @@ symbol = 'PHOTON'
 decimals = 6
 
 [[chains]]
+name = 'Celestia'
+id = 'celestia'
+has_pfm = true
+broker = false
+bech32_prefix = 'celestia'
+slip44 = 118
+
+[[chains.native_tokens]]
+chain_denom = 'utia'
+ibc_denom = ''
+base_denom = 'utia'
+origin_chain = 'celestia'
+symbol = 'TIA'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Cosmos Hub'
+to_chain_id = 'cosmoshub-4'
+connection_id = 'connection-103'
+channel_id = 'channel-278'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.utia]
+chain_denom = 'utia'
+ibc_denom = 'ibc/55148A7DA8BEC90853F68D58085D56ED3531907CEE97C379F9534BDEA7E64698'
+base_denom = 'utia'
+origin_chain = 'celestia'
+symbol = 'TIA'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Injective'
+to_chain_id = 'injective-1'
+connection_id = 'connection-6'
+channel_id = 'channel-7'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.utia]
+chain_denom = 'utia'
+ibc_denom = 'ibc/F51BB221BAA275F2EBF654F70B005627D7E713AFFD6D86AFD1E43CAA886149F4'
+base_denom = 'utia'
+origin_chain = 'celestia'
+symbol = 'TIA'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Osmosis'
+to_chain_id = 'osmosis-1'
+connection_id = 'connection-2'
+channel_id = 'channel-2'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.utia]
+chain_denom = 'utia'
+ibc_denom = 'ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877'
+base_denom = 'utia'
+origin_chain = 'celestia'
+symbol = 'TIA'
+decimals = 6
+
+[[chains]]
 name = 'Cosmos Hub'
 id = 'cosmoshub-4'
 has_pfm = true
@@ -63,6 +127,22 @@ ibc_denom = ''
 base_denom = 'uatom'
 origin_chain = 'cosmoshub-4'
 symbol = 'ATOM'
+decimals = 6
+
+[[chains.routes]]
+to_chain = 'Celestia'
+to_chain_id = 'celestia'
+connection_id = 'connection-1272'
+channel_id = 'channel-1879'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/55148A7DA8BEC90853F68D58085D56ED3531907CEE97C379F9534BDEA7E64698']
+chain_denom = 'ibc/55148A7DA8BEC90853F68D58085D56ED3531907CEE97C379F9534BDEA7E64698'
+ibc_denom = 'utia'
+base_denom = 'utia'
+origin_chain = 'celestia'
+symbol = 'TIA'
 decimals = 6
 
 [[chains.routes]]
@@ -152,6 +232,22 @@ base_denom = 'inj'
 origin_chain = 'injective-1'
 symbol = 'INJ'
 decimals = 18
+
+[[chains.routes]]
+to_chain = 'Celestia'
+to_chain_id = 'celestia'
+connection_id = 'connection-210'
+channel_id = 'channel-152'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/F51BB221BAA275F2EBF654F70B005627D7E713AFFD6D86AFD1E43CAA886149F4']
+chain_denom = 'ibc/F51BB221BAA275F2EBF654F70B005627D7E713AFFD6D86AFD1E43CAA886149F4'
+ibc_denom = 'utia'
+base_denom = 'utia'
+origin_chain = 'celestia'
+symbol = 'TIA'
+decimals = 6
 
 [[chains.routes]]
 to_chain = 'Cosmos Hub'
@@ -460,6 +556,22 @@ symbol = 'PHOTON'
 decimals = 6
 
 [[chains.routes]]
+to_chain = 'Celestia'
+to_chain_id = 'celestia'
+connection_id = 'connection-2503'
+channel_id = 'channel-6994'
+port_id = 'transfer'
+
+[chains.routes.allowed_tokens]
+[chains.routes.allowed_tokens.'ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877']
+chain_denom = 'ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877'
+ibc_denom = 'utia'
+base_denom = 'utia'
+origin_chain = 'celestia'
+symbol = 'TIA'
+decimals = 6
+
+[[chains.routes]]
 to_chain = 'Cosmos Hub'
 to_chain_id = 'cosmoshub-4'
 connection_id = 'connection-1'
@@ -587,22 +699,6 @@ origin_chain = 'pirin-1'
 symbol = 'NLS'
 decimals = 6
 
-[[chains.routes]]
-to_chain = 'Symphony Network'
-to_chain_id = 'symphony-1'
-connection_id = 'connection-10760'
-channel_id = 'channel-104867'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.'ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24']
-chain_denom = 'ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24'
-ibc_denom = 'note'
-base_denom = 'note'
-origin_chain = 'symphony-1'
-symbol = 'MLD'
-decimals = 6
-
 [[chains]]
 name = 'Nolus Protocol'
 id = 'pirin-1'
@@ -633,36 +729,4 @@ ibc_denom = 'ibc/D9AFCECDD361D38302AA66EB3BAC23B95234832C51D12489DC451FA2B7C7278
 base_denom = 'unls'
 origin_chain = 'pirin-1'
 symbol = 'NLS'
-decimals = 6
-
-[[chains]]
-name = 'Symphony Network'
-id = 'symphony-1'
-has_pfm = true
-broker = false
-bech32_prefix = 'symphony'
-slip44 = 118
-
-[[chains.native_tokens]]
-chain_denom = 'note'
-ibc_denom = ''
-base_denom = 'note'
-origin_chain = 'symphony-1'
-symbol = 'MLD'
-decimals = 6
-
-[[chains.routes]]
-to_chain = 'Osmosis'
-to_chain_id = 'osmosis-1'
-connection_id = 'connection-0'
-channel_id = 'channel-0'
-port_id = 'transfer'
-
-[chains.routes.allowed_tokens]
-[chains.routes.allowed_tokens.note]
-chain_denom = 'note'
-ibc_denom = 'ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24'
-base_denom = 'note'
-origin_chain = 'symphony-1'
-symbol = 'MLD'
 decimals = 6
