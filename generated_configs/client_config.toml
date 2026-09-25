@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-09-09T11:02:01Z'
+generated_at = '2026-09-25T10:07:34Z'
 
 [[chains]]
 name = 'Atom One'
@@ -139,6 +139,111 @@ logo = '/icons/osmosis/logo.png'
 sendable_tokens = ['uatone', 'uphoton']
 
 [[chains]]
+name = 'Celestia'
+id = 'celestia'
+bech32_prefix = 'celestia'
+account_type = 'cosmos'
+slip44 = 118
+chain_logo = '/icons/celestia/logo.png'
+is_dex = false
+cosmos_sdk_version = 'v0.52.8'
+ibc_tokens = []
+
+[chains.explorer_details]
+base_url = 'https://mintscan.io'
+account_path = 'celestia/address/{address}'
+transaction_path = 'celestia/txs/{tx_hash}'
+
+[[chains.rpc_endpoints]]
+url = 'https://celestia-rpc.cogwheel.zone'
+provider = 'Cogwheel ⚙️'
+
+[[chains.rpc_endpoints]]
+url = 'https://celestia-rpc.polkachu.com'
+provider = 'Polkachu'
+
+[[chains.rest_endpoints]]
+url = 'https://celestia-api.cogwheel.zone'
+provider = 'Cogwheel ⚙️'
+
+[[chains.rest_endpoints]]
+url = 'https://celestia-api.polkachu.com'
+provider = 'Polkachu'
+
+[[chains.native_tokens]]
+denom = 'utia'
+name = 'Celestia'
+symbol = 'TIA'
+decimals = 6
+icon = '/icons/celestia/tia.png'
+origin_chain = 'celestia'
+is_native = true
+
+[chains.keplr_chain_config]
+rpc = 'https://rpc-celestia.keplr.app'
+rest = 'https://lcd-celestia.keplr.app'
+chain_id = 'celestia'
+chain_name = 'Celestia'
+chain_symbol_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/celestia/chain.png'
+wallet_url_for_staking = 'https://wallet.keplr.app/chains/celestia?modal=staking&chain=celestia&step_id=2'
+features = []
+
+[chains.keplr_chain_config.bip44]
+coin_type = 118
+
+[chains.keplr_chain_config.bech32_config]
+bech32_prefix_acc_addr = 'celestia'
+bech32_prefix_acc_pub = 'celestiapub'
+bech32_prefix_val_addr = 'celestiavaloper'
+bech32_prefix_val_pub = 'celestiavaloperpub'
+bech32_prefix_cons_addr = 'celestiavalcons'
+bech32_prefix_cons_pub = 'celestiavalconspub'
+
+[[chains.keplr_chain_config.currencies]]
+coin_denom = 'TIA'
+coin_minimal_denom = 'utia'
+coin_decimals = 6
+coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/celestia/chain.png'
+coin_gecko_id = 'celestia'
+
+[[chains.keplr_chain_config.fee_currencies]]
+coin_denom = 'TIA'
+coin_minimal_denom = 'utia'
+coin_decimals = 6
+coin_gecko_id = 'celestia'
+coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/celestia/chain.png'
+
+[chains.keplr_chain_config.fee_currencies.gas_price_step]
+low = 0.01
+average = 0.02
+high = 0.1
+
+[chains.keplr_chain_config.stake_currency]
+coin_denom = 'TIA'
+coin_minimal_denom = 'utia'
+coin_decimals = 6
+coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/celestia/utia.png'
+coin_gecko_id = 'celestia'
+
+[[chains.connected_chains]]
+id = 'cosmoshub-4'
+name = 'Cosmos Hub'
+logo = '/icons/cosmoshub/logo.png'
+sendable_tokens = ['utia']
+
+[[chains.connected_chains]]
+id = 'injective-1'
+name = 'Injective'
+logo = '/icons/injective/logo.png'
+sendable_tokens = ['utia']
+
+[[chains.connected_chains]]
+id = 'osmosis-1'
+name = 'Osmosis'
+logo = '/icons/osmosis/logo.png'
+sendable_tokens = ['utia']
+
+[[chains]]
 name = 'Cosmos Hub'
 id = 'cosmoshub-4'
 bech32_prefix = 'cosmos'
@@ -185,6 +290,17 @@ decimals = 6
 icon = '/icons/cosmoshub/atom.png'
 origin_chain = 'cosmoshub-4'
 is_native = true
+
+[[chains.ibc_tokens]]
+denom = 'ibc/55148A7DA8BEC90853F68D58085D56ED3531907CEE97C379F9534BDEA7E64698'
+name = 'Celestia'
+symbol = 'TIA'
+decimals = 6
+icon = '/icons/celestia/tia.png'
+origin_chain = 'celestia'
+origin_chain_name = 'Celestia'
+is_native = false
+base_denom = 'utia'
 
 [[chains.ibc_tokens]]
 denom = 'ibc/99B00614DDBE6189AA03B77066FF8EB3F93680BD790C43CF56096B7F23542015'
@@ -304,6 +420,12 @@ coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-regis
 coin_gecko_id = 'cosmos'
 
 [[chains.connected_chains]]
+id = 'celestia'
+name = 'Celestia'
+logo = '/icons/celestia/logo.png'
+sendable_tokens = ['ibc/55148A7DA8BEC90853F68D58085D56ED3531907CEE97C379F9534BDEA7E64698']
+
+[[chains.connected_chains]]
 id = 'injective-1'
 name = 'Injective'
 logo = '/icons/injective/logo.png'
@@ -336,7 +458,7 @@ evm_chain_id = 1
 slip44 = 60
 chain_logo = '/icons/injective/logo.png'
 is_dex = false
-cosmos_sdk_version = 'v0.50.14-inj.11'
+cosmos_sdk_version = 'v0.50.15-inj.1'
 
 [chains.explorer_details]
 base_url = 'https://mintscan.io'
@@ -348,12 +470,20 @@ url = 'https://injective-rpc.highstakes.ch'
 provider = 'HighStakes'
 
 [[chains.rpc_endpoints]]
+url = 'https://injective-rpc.polkachu.com'
+provider = 'Polkachu'
+
+[[chains.rpc_endpoints]]
 url = 'https://injective-rpc.publicnode.com:443/'
 provider = 'PublicNode'
 
 [[chains.rest_endpoints]]
 url = 'https://injective-api.highstakes.ch'
 provider = 'HighStakes'
+
+[[chains.rest_endpoints]]
+url = 'https://injective-api.polkachu.com'
+provider = 'Polkachu'
 
 [[chains.rest_endpoints]]
 url = 'https://injective-rest.publicnode.com'
@@ -401,6 +531,17 @@ origin_chain_name = 'Cosmos Hub'
 is_native = false
 base_denom = 'uatom'
 
+[[chains.ibc_tokens]]
+denom = 'ibc/F51BB221BAA275F2EBF654F70B005627D7E713AFFD6D86AFD1E43CAA886149F4'
+name = 'Celestia'
+symbol = 'TIA'
+decimals = 6
+icon = '/icons/celestia/tia.png'
+origin_chain = 'celestia'
+origin_chain_name = 'Celestia'
+is_native = false
+base_denom = 'utia'
+
 [chains.keplr_chain_config]
 rpc = 'https://rpc-injective.keplr.app'
 rest = 'https://lcd-injective.keplr.app'
@@ -443,7 +584,7 @@ coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-regis
 coin_gecko_id = 'weth'
 
 [[chains.keplr_chain_config.currencies]]
-coin_denom = 'USDC'
+coin_denom = 'USDC.inj'
 coin_minimal_denom = 'erc20:0xa00c59ff5a080d2b954d0c75e46e22a0c371235a'
 coin_decimals = 6
 coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/injective/erc20/0xa00c59ff5a080d2b954d0c75e46e22a0c371235a.png'
@@ -700,6 +841,12 @@ coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-regis
 coin_gecko_id = 'injective-protocol'
 
 [[chains.connected_chains]]
+id = 'celestia'
+name = 'Celestia'
+logo = '/icons/celestia/logo.png'
+sendable_tokens = ['ibc/F51BB221BAA275F2EBF654F70B005627D7E713AFFD6D86AFD1E43CAA886149F4']
+
+[[chains.connected_chains]]
 id = 'cosmoshub-4'
 name = 'Cosmos Hub'
 logo = '/icons/cosmoshub/logo.png'
@@ -735,6 +882,14 @@ transaction_path = 'juno/tx/{tx_hash}'
 
 [[chains.rpc_endpoints]]
 url = 'https://juno-rpc.polkachu.com'
+provider = 'Polkachu'
+
+[[chains.rpc_endpoints]]
+url = 'https://juno.rpc.m.stavr.tech'
+provider = '🔥STAVR🔥'
+
+[[chains.rest_endpoints]]
+url = 'https://juno-api.cogwheel.zone'
 provider = 'Polkachu'
 
 [[chains.rest_endpoints]]
@@ -937,7 +1092,7 @@ bech32_prefix_cons_addr = 'noblevalcons'
 bech32_prefix_cons_pub = 'noblevalconspub'
 
 [[chains.keplr_chain_config.currencies]]
-coin_denom = 'USDC'
+coin_denom = 'USDC.n'
 coin_minimal_denom = 'uusdc'
 coin_decimals = 6
 coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/noble/uusdc.png'
@@ -979,7 +1134,7 @@ coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-regis
 coin_gecko_id = ''
 
 [[chains.keplr_chain_config.fee_currencies]]
-coin_denom = 'USDC'
+coin_denom = 'USDC.n'
 coin_minimal_denom = 'uusdc'
 coin_decimals = 6
 coin_gecko_id = 'usd-coin'
@@ -1088,9 +1243,17 @@ provider = 'Ecostake'
 url = 'https://rpc.osmosis.citizenweb3.com'
 provider = 'CitizenWeb3'
 
+[[chains.rpc_endpoints]]
+url = 'https://rpc.osmosis.zone'
+provider = 'Osmosis'
+
 [[chains.rest_endpoints]]
 url = 'https://api.osmosis.citizenweb3.com'
 provider = 'CitizenWeb3'
+
+[[chains.rest_endpoints]]
+url = 'https://lcd.osmosis.zone'
+provider = 'Osmosis'
 
 [[chains.rest_endpoints]]
 url = 'https://osmosis-api.cogwheel.zone'
@@ -1176,17 +1339,6 @@ origin_chain = 'cosmoshub-4'
 origin_chain_name = 'Cosmos Hub'
 is_native = false
 base_denom = 'uatom'
-
-[[chains.ibc_tokens]]
-denom = 'ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24'
-name = 'Melody'
-symbol = 'MLD'
-decimals = 6
-icon = '/icons/symphony/mld.png'
-origin_chain = 'symphony-1'
-origin_chain_name = 'Symphony Network'
-is_native = false
-base_denom = 'note'
 
 [[chains.ibc_tokens]]
 denom = 'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA'
@@ -1275,6 +1427,17 @@ origin_chain = 'atomone-1'
 origin_chain_name = 'Atom One'
 is_native = false
 base_denom = 'uphoton'
+
+[[chains.ibc_tokens]]
+denom = 'ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877'
+name = 'Celestia'
+symbol = 'TIA'
+decimals = 6
+icon = '/icons/celestia/tia.png'
+origin_chain = 'celestia'
+origin_chain_name = 'Celestia'
+is_native = false
+base_denom = 'utia'
 
 [[chains.ibc_tokens]]
 denom = 'ibc/D9AFCECDD361D38302AA66EB3BAC23B95234832C51D12489DC451FA2B7C72782'
@@ -1606,6 +1769,12 @@ logo = '/icons/atomone/logo.png'
 sendable_tokens = ['ibc/BC26A7A805ECD6822719472BCB7842A48EF09DF206182F8F259B2593EB5D23FB', 'ibc/D6E02C5AE8A37FC2E3AB1FC8AC168878ADB870549383DFFEA9FD020C234520A7']
 
 [[chains.connected_chains]]
+id = 'celestia'
+name = 'Celestia'
+logo = '/icons/celestia/logo.png'
+sendable_tokens = ['ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877']
+
+[[chains.connected_chains]]
 id = 'cosmoshub-4'
 name = 'Cosmos Hub'
 logo = '/icons/cosmoshub/logo.png'
@@ -1635,12 +1804,6 @@ name = 'Nolus Protocol'
 logo = '/icons/nolus/logo.png'
 sendable_tokens = ['ibc/D9AFCECDD361D38302AA66EB3BAC23B95234832C51D12489DC451FA2B7C72782']
 
-[[chains.connected_chains]]
-id = 'symphony-1'
-name = 'Symphony Network'
-logo = '/icons/symphony/logo.png'
-sendable_tokens = ['ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24']
-
 [[chains]]
 name = 'Nolus Protocol'
 id = 'pirin-1'
@@ -1649,7 +1812,7 @@ account_type = 'cosmos'
 slip44 = 118
 chain_logo = '/icons/nolus/logo.png'
 is_dex = false
-cosmos_sdk_version = 'v0.53.3-nolus-3'
+cosmos_sdk_version = 'v0.53.3-nolus-4'
 ibc_tokens = []
 
 [chains.explorer_details]
@@ -1794,112 +1957,6 @@ name = 'Osmosis'
 logo = '/icons/osmosis/logo.png'
 sendable_tokens = ['unls']
 
-[[chains]]
-name = 'Symphony Network'
-id = 'symphony-1'
-bech32_prefix = 'symphony'
-account_type = 'cosmos'
-slip44 = 118
-chain_logo = '/icons/symphony/logo.png'
-is_dex = false
-cosmos_sdk_version = 'v0.50.6-v26-osmo-2-symphony-3'
-ibc_tokens = []
-
-[chains.explorer_details]
-base_url = 'https://thespectra.io'
-account_path = 'symphony/account/{address}'
-transaction_path = 'symphony/transactions/{tx_hash}'
-
-[[chains.rpc_endpoints]]
-url = 'https://symphony-rpc.cogwheel.zone'
-provider = 'Cogwheel ⚙️'
-
-[[chains.rest_endpoints]]
-url = 'https://symphony-api.cogwheel.zone'
-provider = 'Cogwheel ⚙️'
-
-[[chains.native_tokens]]
-denom = 'note'
-name = 'Melody'
-symbol = 'MLD'
-decimals = 6
-icon = '/icons/symphony/mld.png'
-origin_chain = 'symphony-1'
-is_native = true
-
-[chains.keplr_chain_config]
-rpc = 'https://symphony-rpc.cogwheel.zone/'
-rest = 'https://symphony-api.cogwheel.zone/'
-chain_id = 'symphony-1'
-chain_name = 'Symphony'
-chain_symbol_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/symphony/chain.png'
-wallet_url_for_staking = ''
-features = ['cosmwasm', 'osmosis-txfees']
-
-[chains.keplr_chain_config.bip44]
-coin_type = 118
-
-[chains.keplr_chain_config.bech32_config]
-bech32_prefix_acc_addr = 'symphony'
-bech32_prefix_acc_pub = 'symphonypub'
-bech32_prefix_val_addr = 'symphonyvaloper'
-bech32_prefix_val_pub = 'symphonyvaloperpub'
-bech32_prefix_cons_addr = 'symphonyvalcons'
-bech32_prefix_cons_pub = 'symphonyvalconspub'
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'MLD'
-coin_minimal_denom = 'note'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/symphony/melody.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'HUSD'
-coin_minimal_denom = 'uusd'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/symphony/husd.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'HHKD'
-coin_minimal_denom = 'uhkd'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/symphony/hhkd.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.currencies]]
-coin_denom = 'HVND'
-coin_minimal_denom = 'uvnd'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/symphony/hvnd.png'
-coin_gecko_id = ''
-
-[[chains.keplr_chain_config.fee_currencies]]
-coin_denom = 'MLD'
-coin_minimal_denom = 'note'
-coin_decimals = 6
-coin_gecko_id = ''
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/symphony/melody.png'
-
-[chains.keplr_chain_config.fee_currencies.gas_price_step]
-low = 0.00025
-average = 0.0025
-high = 0.004
-
-[chains.keplr_chain_config.stake_currency]
-coin_denom = 'MLD'
-coin_minimal_denom = 'note'
-coin_decimals = 6
-coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/symphony/melody.png'
-coin_gecko_id = ''
-
-[[chains.connected_chains]]
-id = 'osmosis-1'
-name = 'Osmosis'
-logo = '/icons/osmosis/logo.png'
-sendable_tokens = ['note']
-
 [[all_tokens]]
 base_denom = 'ausdy'
 symbol = 'USDY'
@@ -1997,15 +2054,6 @@ origin_chain_name = 'Noble'
 available_on = ['noble-1']
 
 [[all_tokens]]
-base_denom = 'ibc/41AD5D4AFA42104295D08E564ADC7B40FD9DAB4BCD3002ECFA8BDD1309B65F24'
-symbol = 'MLD'
-name = 'Melody'
-icon = '/icons/symphony/mld.png'
-origin_chain = 'symphony-1'
-origin_chain_name = 'Symphony Network'
-available_on = ['symphony-1']
-
-[[all_tokens]]
 base_denom = 'ibc/41F21D47117EAADE50568A70CD1E6FB567469E6838157CEF73172CDF126582DA'
 symbol = 'NETA'
 name = 'Neta'
@@ -2031,6 +2079,15 @@ icon = '/icons/noble/usdc.png'
 origin_chain = 'noble-1'
 origin_chain_name = 'Noble'
 available_on = ['noble-1']
+
+[[all_tokens]]
+base_denom = 'ibc/55148A7DA8BEC90853F68D58085D56ED3531907CEE97C379F9534BDEA7E64698'
+symbol = 'TIA'
+name = 'Celestia'
+icon = '/icons/celestia/tia.png'
+origin_chain = 'celestia'
+origin_chain_name = 'Celestia'
+available_on = ['celestia']
 
 [[all_tokens]]
 base_denom = 'ibc/64BA6E31FE887D66C6F8F31C7B1A80C7CA179239677B4088BB55F5EA07DBE273'
@@ -2096,6 +2153,15 @@ origin_chain_name = 'Atom One'
 available_on = ['atomone-1']
 
 [[all_tokens]]
+base_denom = 'ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877'
+symbol = 'TIA'
+name = 'Celestia'
+icon = '/icons/celestia/tia.png'
+origin_chain = 'celestia'
+origin_chain_name = 'Celestia'
+available_on = ['celestia']
+
+[[all_tokens]]
 base_denom = 'ibc/D9AFCECDD361D38302AA66EB3BAC23B95234832C51D12489DC451FA2B7C72782'
 symbol = 'NLS'
 name = 'Nolus'
@@ -2103,6 +2169,15 @@ icon = '/icons/nolus/nolus.png'
 origin_chain = 'pirin-1'
 origin_chain_name = 'Nolus Protocol'
 available_on = ['pirin-1']
+
+[[all_tokens]]
+base_denom = 'ibc/F51BB221BAA275F2EBF654F70B005627D7E713AFFD6D86AFD1E43CAA886149F4'
+symbol = 'TIA'
+name = 'Celestia'
+icon = '/icons/celestia/tia.png'
+origin_chain = 'celestia'
+origin_chain_name = 'Celestia'
+available_on = ['celestia']
 
 [[all_tokens]]
 base_denom = 'ibc/F663521BF1836B00F5F177680F74BFB9A8B5654A694D0D2BC249E03CF2509013'
@@ -2122,15 +2197,6 @@ origin_chain = 'injective-1'
 origin_chain_name = ''
 available_on = ['injective-1']
 coingecko_id = 'injective-protocol'
-
-[[all_tokens]]
-base_denom = 'note'
-symbol = 'MLD'
-name = 'Melody'
-icon = '/icons/symphony/mld.png'
-origin_chain = 'symphony-1'
-origin_chain_name = ''
-available_on = ['symphony-1']
 
 [[all_tokens]]
 base_denom = 'uatom'
@@ -2197,6 +2263,15 @@ icon = '/icons/atomone/photon.png'
 origin_chain = 'atomone-1'
 origin_chain_name = ''
 available_on = ['atomone-1']
+
+[[all_tokens]]
+base_denom = 'utia'
+symbol = 'TIA'
+name = 'Celestia'
+icon = '/icons/celestia/tia.png'
+origin_chain = 'celestia'
+origin_chain_name = ''
+available_on = ['celestia']
 
 [[all_tokens]]
 base_denom = 'uusdc'
