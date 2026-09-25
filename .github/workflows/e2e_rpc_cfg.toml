@@ -53,10 +53,10 @@ ip_addr_detect = "direct"
 # =============================================================================
 
 # Maximum requests per IP per minute
-rate_per_minute = 100
+rate_per_minute = 1000
 
 # Set the amount of possible concurrent request possible to the RPC
-max_concurrent_requests = 200
+max_concurrent_requests = 2000
 
 # =============================================================================
 # Osmosis SQS Configuration
