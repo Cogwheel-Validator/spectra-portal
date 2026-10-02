@@ -42,6 +42,43 @@ const stringFieldsWithNumberValue = ["timeout_timestamp", "revision_height", "re
 const stringFieldsToOmitIfEmpty = ["cid"];
 const fieldsToOmitIfEmpty = ["admin_info", "order"];
 
+// Injective's ante handler derives the EIP-712 types by reflecting over the Go structs,
+// so every struct's fields must be listed in proto field order. `objectKeysToEip712Types`
+// follows JS key order instead, and cosmjs' Amino converters keep nested objects as the
+// caller built them (`{ amount, denom }` coins) or use their own order
+// (`{ revision_height, revision_number }`). Any order mismatch changes the type hash
+// and the signature fails to verify.
+// TODO: Add some upstream verification with Injective to verify that the ante handler's reflection
+// order matches the proto field order, and that this list is complete.
+const protoFieldOrders: string[][] = [
+    ["denom", "amount"], // cosmos.base.v1beta1.Coin
+    ["revision_number", "revision_height"], // ibc.core.client.v1.Height
+];
+
+/**
+ * Recursively reorders known nested message shapes (see protoFieldOrders) into proto
+ * field order, leaving everything else untouched.
+ * @param value an Amino JSON value
+ * @returns the same value with known shapes reordered
+ */
+export function toProtoFieldOrder(value: unknown): unknown {
+    if (Array.isArray(value)) {
+        return value.map(toProtoFieldOrder);
+    }
+    if (value === null || typeof value !== "object" || value instanceof Date) {
+        return value;
+    }
+
+    const object = value as Record<string, unknown>;
+    const keys = Object.keys(object);
+    const order =
+        protoFieldOrders.find(
+            (fields) => fields.length === keys.length && fields.every((f) => keys.includes(f)),
+        ) ?? keys;
+
+    return Object.fromEntries(order.map((key) => [key, toProtoFieldOrder(object[key])]));
+}
+
 function toSnakeCase(input: string): string {
     return input.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
@@ -303,7 +340,7 @@ export function getEipTxDetails({
     chainId,
     memo,
 }: {
-    accountNumber: number;
+    accountNumber: bigint;
     sequence: number;
     timeoutHeight: number;
     chainId: string;
@@ -343,7 +380,7 @@ export function getEip712TypedData({
     evmChainId,
 }: {
     aminoMsgs: { type: string; value: Record<string, unknown> }[];
-    accountNumber: number;
+    accountNumber: bigint;
     sequence: number;
     timeoutHeight: number;
     chainId: string;
@@ -351,6 +388,11 @@ export function getEip712TypedData({
     fee: StdFee;
     evmChainId: number;
 }) {
+    aminoMsgs = aminoMsgs.map((msg) => ({
+        type: msg.type,
+        value: toProtoFieldOrder(msg.value) as Record<string, unknown>,
+    }));
+
     const eip712MessageTypes = aminoMsgs.reduce((acc, msg) => {
         const msgTypes = objectKeysToEip712Types({ object: msg.value, messageType: msg.type });
         for (const [key, value] of msgTypes.entries()) {

@@ -13,7 +13,6 @@ import {
 } from "react";
 import type { ClientChain, ClientConfig } from "@/components/modules/tomlTypes";
 import useIbcTracking from "@/hooks/useIbcTracking";
-import useTransactionConstructor from "@/hooks/useTransactionConstr";
 import clientLogger from "@/lib/clientLogger";
 import type {
     SwapAmountInRoute,
@@ -30,6 +29,12 @@ import {
     type TransactionRecord,
     UpdateTransactionStatus,
 } from "@/lib/indexDb/dbManager";
+import {
+    createIbcTransferMessage,
+    createSplitRouteSwapMessage,
+    createSwapMessage,
+    createWasmExecutionMessage,
+} from "@/lib/transactionMessages";
 import { applySlippageBps, humanToBaseUnits } from "@/lib/utils";
 import {
     extractChainPath,
@@ -115,12 +120,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const { sendTransaction, getAddress } = useWallet();
     const transfer = useTransfer();
     const { trackIbcTransfer, trackSmartTransferMultiHop } = useIbcTracking();
-    const {
-        createIbcTransferMessage,
-        createSwapMessage,
-        createSplitRouteSwapMessage,
-        createWasmExecutionMessage,
-    } = useTransactionConstructor();
 
     // Initialize database connection
     useEffect(() => {
@@ -375,10 +374,6 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             transfer.state.pathfinderResponse,
             transfer.state.receiverAddress,
             transfer.state.slippageBps,
-            createIbcTransferMessage,
-            createSwapMessage,
-            createSplitRouteSwapMessage,
-            createWasmExecutionMessage,
         ],
     );
 

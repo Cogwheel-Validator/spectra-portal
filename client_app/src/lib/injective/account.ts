@@ -33,7 +33,7 @@ export const injectiveAccountParser: AccountParser = (input: Any): Account => {
     return {
         address: baseAccount.address,
         pubkey,
-        accountNumber: baseAccount.accountNumber,
+        accountNumber: BigInt(baseAccount.accountNumber),
         sequence: baseAccount.sequence,
     };
 };
