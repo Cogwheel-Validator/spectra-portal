@@ -30,14 +30,21 @@ const EXTENSION_OPTIONS_WEB3_TX_TYPE_URL = "/injective.types.v1beta1.ExtensionOp
 // lagging this far behind (~115 days at 1s blocks) is past any trusting period anyway.
 const EIP712_TIMEOUT_HEIGHT_OFFSET = 10_000_000n;
 
+const TENDERMINT_CLIENT_STATE_TYPE_URL = "/ibc.lightclients.tendermint.v1.ClientState";
+
 /**
  * Replaces zero timeout heights on MsgTransfer messages with `latestHeight + offset`.
  *
  * Injective builds the EIP-712 types for a Ledger tx from the Go structs, which always
  * include `timeout_height.revision_number/revision_height` (uint64), but its Amino JSON
- * leaves zeros out. The chain then fails to hash its own typed data
- * ("invalid integer value <nil>/<nil> for type uint64"), so a zero timeout height can
- * never verify. A non-zero one is encoded on both sides.
+ * leaves zero values out. The chain then fails to hash its own typed data
+ * ("invalid integer value <nil>/<nil> for type uint64"), so a timeout height can only
+ * verify when *both* fields are non-zero.
+ *
+ * That includes the revision number. A counterparty whose chain id has no `-N` suffix
+ * (e.g. `celestia`) is on revision 0, so its height is `{0, h}`. For those we use
+ * revision 1 instead: IBC compares revision numbers first, so `{0, h}` never reaches
+ * `{1, x}`. The height timeout then never fires and the timeout timestamp governs.
  * @param messages - tx messages
  * @param latestHeights - counterparty client latest height per `port/channel`
  * @returns messages with MsgTransfer timeout heights filled in
@@ -52,6 +59,11 @@ export function withEip712TimeoutHeights(
         }
         const { timeoutHeight, sourcePort, sourceChannel } = message.value;
         if (timeoutHeight && (timeoutHeight.revisionHeight || timeoutHeight.revisionNumber)) {
+            if (!timeoutHeight.revisionHeight || !timeoutHeight.revisionNumber) {
+                throw new Error(
+                    "MsgTransfer timeout height needs a non-zero revision number and height to be signed with EIP-712",
+                );
+            }
             return message;
         }
         const latest = latestHeights.get(`${sourcePort}/${sourceChannel}`);
@@ -63,12 +75,37 @@ export function withEip712TimeoutHeights(
             value: {
                 ...message.value,
                 timeoutHeight: {
-                    revisionNumber: latest.revisionNumber,
+                    revisionNumber: latest.revisionNumber || 1n,
                     revisionHeight: latest.revisionHeight + EIP712_TIMEOUT_HEIGHT_OFFSET,
                 },
             },
         };
     });
+}
+
+/**
+ * Reads the latest height out of a channel's counterparty client state.
+ * @param key - `port/channel`, for error messages
+ * @param clientState - the client state Any from the channel client state query
+ * @returns the client's latest height
+ */
+export function latestHeightFromClientState(key: string, clientState: Any | undefined): Height {
+    if (!clientState) {
+        throw new Error(`No client state found for ${key}`);
+    }
+    // Other client types (e.g. 08-wasm) would decode into garbage without an error.
+    // TODO: reaserch about this behavior. Qodo did mention it could cause some problem
+    // for now the solution is to limit it to tendermint only.
+    if (clientState.typeUrl !== TENDERMINT_CLIENT_STATE_TYPE_URL) {
+        throw new Error(
+            `Unsupported light client ${clientState.typeUrl} for ${key}, can't build a Ledger timeout height`,
+        );
+    }
+    const { latestHeight } = TendermintClientState.decode(clientState.value);
+    if (!latestHeight?.revisionHeight) {
+        throw new Error(`Client state for ${key} has no latest height`);
+    }
+    return latestHeight;
 }
 
 /**
@@ -99,12 +136,10 @@ async function queryCounterpartyHeights(
                 continue;
             }
             const response = await queryClient.ibc.channel.clientState(port, channel);
-            const clientStateAny = response.identifiedClientState?.clientState;
-            if (!clientStateAny) {
-                throw new Error(`No client state found for ${key}`);
-            }
-            const { latestHeight } = TendermintClientState.decode(clientStateAny.value);
-            heights.set(key, latestHeight);
+            heights.set(
+                key,
+                latestHeightFromClientState(key, response.identifiedClientState?.clientState),
+            );
         }
     } finally {
         cometClient.disconnect();

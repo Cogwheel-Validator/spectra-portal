@@ -1,4 +1,4 @@
-import { createWasmAminoConverters, wasmTypes } from "@cosmjs/cosmwasm-stargate";
+import { createWasmAminoConverters, wasmTypes } from "@cosmjs/cosmwasm";
 import { type GeneratedType, Registry } from "@cosmjs/proto-signing";
 import { AminoTypes, createDefaultAminoConverters, defaultRegistryTypes } from "@cosmjs/stargate";
 import {
