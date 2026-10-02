@@ -95,7 +95,7 @@ export async function signAndBroadcastEthermintDirect(
     ctx: EthermintTxContext & {
         signer: OfflineDirectSigner;
         chainId: string;
-        accountNumber: number;
+        accountNumber: bigint;
         sequence: number;
         fee: StdFee;
     },

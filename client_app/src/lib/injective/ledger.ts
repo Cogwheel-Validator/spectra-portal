@@ -6,19 +6,111 @@ import {
     calculateFee,
     type DeliverTxResponse,
     type GasPrice,
+    isMsgTransferEncodeObject,
+    QueryClient,
     StargateClient,
+    setupIbcExtension,
 } from "@cosmjs/stargate";
 import { connectComet } from "@cosmjs/tendermint-rpc";
 import type { Keplr } from "@keplr-wallet/types";
 import { SignMode } from "cosmjs-types/cosmos/tx/signing/v1beta1/signing";
 import { TxBody, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Any } from "cosmjs-types/google/protobuf/any";
+import type { Height } from "cosmjs-types/ibc/core/client/v1/client";
+import { ClientState as TendermintClientState } from "cosmjs-types/ibc/lightclients/tendermint/v1/tendermint";
 import { ExtensionOptionsWeb3Tx } from "@/lib/generated/injective/injective/types/v1beta1/tx_ext";
 import { injectiveAccountParser } from "@/lib/injective/account";
 import { getEip712TypedData } from "@/lib/injective/eip712";
 import { encodeEthermintPubkeyAny, simulateEthermintTx } from "@/lib/injective/tx";
 
 const EXTENSION_OPTIONS_WEB3_TX_TYPE_URL = "/injective.types.v1beta1.ExtensionOptionsWeb3Tx";
+
+// Added to the counterparty client's latest height to form the MsgTransfer timeout
+// height. Large on purpose: the timeout timestamp stays the real timeout, and a client
+// lagging this far behind (~115 days at 1s blocks) is past any trusting period anyway.
+const EIP712_TIMEOUT_HEIGHT_OFFSET = 10_000_000n;
+
+/**
+ * Replaces zero timeout heights on MsgTransfer messages with `latestHeight + offset`.
+ *
+ * Injective builds the EIP-712 types for a Ledger tx from the Go structs, which always
+ * include `timeout_height.revision_number/revision_height` (uint64), but its Amino JSON
+ * leaves zeros out. The chain then fails to hash its own typed data
+ * ("invalid integer value <nil>/<nil> for type uint64"), so a zero timeout height can
+ * never verify. A non-zero one is encoded on both sides.
+ * @param messages - tx messages
+ * @param latestHeights - counterparty client latest height per `port/channel`
+ * @returns messages with MsgTransfer timeout heights filled in
+ */
+export function withEip712TimeoutHeights(
+    messages: EncodeObject[],
+    latestHeights: Map<string, Height>,
+): EncodeObject[] {
+    return messages.map((message) => {
+        if (!isMsgTransferEncodeObject(message)) {
+            return message;
+        }
+        const { timeoutHeight, sourcePort, sourceChannel } = message.value;
+        if (timeoutHeight && (timeoutHeight.revisionHeight || timeoutHeight.revisionNumber)) {
+            return message;
+        }
+        const latest = latestHeights.get(`${sourcePort}/${sourceChannel}`);
+        if (!latest) {
+            throw new Error(`No client height for ${sourcePort}/${sourceChannel}`);
+        }
+        return {
+            ...message,
+            value: {
+                ...message.value,
+                timeoutHeight: {
+                    revisionNumber: latest.revisionNumber,
+                    revisionHeight: latest.revisionHeight + EIP712_TIMEOUT_HEIGHT_OFFSET,
+                },
+            },
+        };
+    });
+}
+
+/**
+ * Queries the latest height of the counterparty light client behind each MsgTransfer's
+ * source channel.
+ * @param rpcEndpoint - RPC endpoint of the sending chain
+ * @param messages - tx messages
+ * @returns latest height per `port/channel`
+ */
+async function queryCounterpartyHeights(
+    rpcEndpoint: string,
+    messages: EncodeObject[],
+): Promise<Map<string, Height>> {
+    const heights = new Map<string, Height>();
+    const transfers = messages.filter(isMsgTransferEncodeObject);
+    if (transfers.length === 0) {
+        return heights;
+    }
+
+    const cometClient = await connectComet(rpcEndpoint);
+    try {
+        const queryClient = QueryClient.withExtensions(cometClient, setupIbcExtension);
+        for (const { value } of transfers) {
+            const port = value.sourcePort ?? "transfer";
+            const channel = value.sourceChannel ?? "";
+            const key = `${port}/${channel}`;
+            if (heights.has(key)) {
+                continue;
+            }
+            const response = await queryClient.ibc.channel.clientState(port, channel);
+            const clientStateAny = response.identifiedClientState?.clientState;
+            if (!clientStateAny) {
+                throw new Error(`No client state found for ${key}`);
+            }
+            const { latestHeight } = TendermintClientState.decode(clientStateAny.value);
+            heights.set(key, latestHeight);
+        }
+    } finally {
+        cometClient.disconnect();
+    }
+    return heights;
+}
 
 export interface EthermintLedgerTxParams {
     wallet: Keplr;
@@ -53,7 +145,6 @@ export async function sendEthermintLedgerTransaction(
         address,
         pubkeyBytes,
         evmChainId,
-        messages,
         memo,
         registry,
         aminoTypes,
@@ -71,6 +162,10 @@ export async function sendEthermintLedgerTransaction(
         throw new Error("Could not retrieve account details for signing.");
     }
 
+    const messages = withEip712TimeoutHeights(
+        params.messages,
+        await queryCounterpartyHeights(rpcEndpoint, params.messages),
+    );
     const aminoMsgs = messages.map((message) => aminoTypes.toAmino(message));
 
     let finalFee: StdFee;
