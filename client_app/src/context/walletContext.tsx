@@ -1,14 +1,9 @@
 "use client";
 
 import { Buffer } from "node:buffer";
-import { createWasmAminoConverters, wasmTypes } from "@cosmjs/cosmwasm-stargate";
-import type { OfflineDirectSigner } from "@cosmjs/proto-signing";
-import { type EncodeObject, type GeneratedType, Registry } from "@cosmjs/proto-signing";
+import type { EncodeObject, OfflineDirectSigner } from "@cosmjs/proto-signing";
 import {
-    AminoTypes,
     calculateFee,
-    createDefaultAminoConverters,
-    defaultRegistryTypes,
     GasPrice,
     SigningStargateClient,
     StargateClient,
@@ -19,13 +14,10 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useS
 import type { ClientChain } from "@/components/modules/tomlTypes";
 import { getRandomHealthyRpcImperative } from "@/lib/apiQueries/featchHealthyEndpoint";
 import clientLogger from "@/lib/clientLogger";
-import {
-    MsgSplitRouteSwapExactAmountIn,
-    MsgSwapExactAmountIn,
-} from "@/lib/generated/osmosis/osmosis/poolmanager/v1beta1/tx";
 import { injectiveAccountParser } from "@/lib/injective/account";
 import { sendEthermintLedgerTransaction } from "@/lib/injective/ledger";
 import { signAndBroadcastEthermintDirect, simulateEthermintTx } from "@/lib/injective/tx";
+import { createSigningTypes } from "@/lib/signingTypes";
 import {
     getWalletProviderAsync,
     type WalletConnectionState,
@@ -499,21 +491,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                     key.isNanoLedger || process.env.NEXT_PUBLIC_FORCE_LEDGER_SIGNING === "true";
                 const offlineSigner = await wallet.getOfflineSignerAuto(chainId);
 
-                // Create registry with Osmosis + CosmWasm types
-                const registry = new Registry([...defaultRegistryTypes, ...wasmTypes]);
-                registry.register(
-                    "/osmosis.poolmanager.v1beta1.MsgSwapExactAmountIn",
-                    MsgSwapExactAmountIn as GeneratedType,
-                );
-                registry.register(
-                    "/osmosis.poolmanager.v1beta1.MsgSplitRouteSwapExactAmountIn",
-                    MsgSplitRouteSwapExactAmountIn as GeneratedType,
-                );
-
-                const aminoTypes = new AminoTypes({
-                    ...createDefaultAminoConverters(),
-                    ...createWasmAminoConverters(),
-                });
+                const { registry, aminoTypes } = createSigningTypes();
 
                 // Get fee currency and gas price
                 const feeCurrency = configToUse.keplr_chain_config.fee_currencies[0];
@@ -606,7 +584,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
                         ...ethermintCtx,
                         signer: directSigner,
                         chainId,
-                        accountNumber: chainAccount.accountNumber,
+                        accountNumber: BigInt(chainAccount.accountNumber),
                         sequence: chainAccount.sequence,
                         fee: finalFee,
                     });
