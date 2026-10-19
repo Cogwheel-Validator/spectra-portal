@@ -8,6 +8,7 @@ import type {
     ClientTokenSummary,
     ConnectedChainInfo,
 } from "@/components/modules/tomlTypes";
+import { clientConfigSchema } from "./configSchema";
 
 /**
  * Loads the client config at build time.
@@ -46,9 +47,9 @@ export async function LoadConfig(format?: string): Promise<FullClientConfig> {
             let parsedConfig: ClientConfig;
 
             if (fmt === "toml") {
-                parsedConfig = TOML.parse(text) as ClientConfig;
+                parsedConfig = clientConfigSchema.parse(TOML.parse(text));
             } else {
-                parsedConfig = JSON.parse(text) as ClientConfig;
+                parsedConfig = clientConfigSchema.parse(JSON.parse(text));
             }
 
             return new FullClientConfig(parsedConfig);
