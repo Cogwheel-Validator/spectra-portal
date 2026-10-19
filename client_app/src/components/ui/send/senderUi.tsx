@@ -206,15 +206,15 @@ export default function SendUI({
     // chains are required before issuing this render's request - reading
     // this render's own query result here would be a temporal-dead-zone
     // problem, since that result depends on the params we're building now.
-    // Before any response has come back, fall back to just the two
-    // endpoints the user picked.
-    const requiredChainIds = useMemo(() => {
-        const previousResponse = transfer.state.pathfinderResponse;
-        if (previousResponse?.requiredChains && previousResponse.requiredChains.length > 0) {
-            return previousResponse.requiredChains;
-        }
-        return [sendChain, receiveChain].filter(Boolean);
-    }, [transfer.state.pathfinderResponse, sendChain, receiveChain]);
+    // The pathfinder rejects any non-empty address list that misses a chain
+    // the route needs, so until pathfinder
+    // response has told us the full set we must send an empty list to
+    // discover it - never just the two endpoints.
+    const discoveredChainIds = transfer.state.pathfinderResponse?.requiredChains;
+    const requiredChainIds = useMemo(
+        () => (discoveredChainIds && discoveredChainIds.length > 0 ? discoveredChainIds : []),
+        [discoveredChainIds],
+    );
 
     // Once every required chain has a connected wallet address, build the
     // real ChainAddress list for an executable route. Until then this stays
@@ -370,7 +370,11 @@ export default function SendUI({
     // intermediate broker/PFM chains - falling back to just the two
     // endpoints before a quote has been returned.
     const requiredChains = useMemo((): ClientChain[] => {
-        const chains = requiredChainIds
+        const chains = (
+            requiredChainIds.length > 0
+                ? requiredChainIds
+                : [sendChain, receiveChain].filter(Boolean)
+        )
             .map((chainId) => getChainById(chainId))
             .filter((chain): chain is ClientChain => chain !== undefined);
         if (chains.length > 0) return chains;
@@ -381,7 +385,7 @@ export default function SendUI({
             fallback.push(receiveChainData);
         }
         return fallback;
-    }, [requiredChainIds, getChainById, sendChainData, receiveChainData]);
+    }, [requiredChainIds, sendChain, receiveChain, getChainById, sendChainData, receiveChainData]);
 
     // Validation
     const isWalletReady = useMemo(() => {
