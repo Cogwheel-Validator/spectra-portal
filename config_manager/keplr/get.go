@@ -77,12 +77,12 @@ func ProcessKeplrRegistry(dst string, jsonNames []string) ([]ChainConfig, error)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read file: %w", err)
 		}
-		var keplrConfig ChainConfig
+		var keplrConfig registryChainConfig
 		err = json.Unmarshal(body, &keplrConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal file: %w", err)
 		}
-		keplrConfigs = append(keplrConfigs, keplrConfig)
+		keplrConfigs = append(keplrConfigs, keplrConfig.toChainConfig())
 	}
 	return keplrConfigs, nil
 }

@@ -88,7 +88,7 @@ importers:
         version: 5.7.0(react@19.3.0)
       smol-toml:
         specifier: ^1.9.0
-        version: 1.9.0
+        version: 1.9.1
       tailwind-merge:
         specifier: ^3.7.0
         version: 3.7.0
@@ -1593,8 +1593,8 @@ packages:
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
 
-  smol-toml@1.9.0:
-    resolution: {integrity: sha512-hpd+HLON7HdZXqYchMM/+LaTTbdK0AU3NngIJ4KVyWbY9bfQqdL9cD+4yf6dUoU2Ap4VsU0JkQi6FxAI1B2mXQ==}
+  smol-toml@1.9.1:
+    resolution: {integrity: sha512-j7WyPdf0CJoutMzMoPLF/bVXHtKZIT9Rb4eGeEbWw8X2t5oirjPgpL+OpaENZrILYaXqYwnVH+qgUwVbl+pUJQ==}
     engines: {node: '>= 18'}
 
   solid-js@1.9.15:
@@ -1633,6 +1633,7 @@ packages:
   starknet@8.9.2:
     resolution: {integrity: sha512-+dp+o2w67fV6JyVOVkYeM1Ec71aORHc/JrF4VHLlfeGee0nLilooCQLE2u6hUcSGQG2x2/fvzkxYpIN+k1JBvA==}
     engines: {node: '>=22'}
+    deprecated: starknet <10 is end-of-life and no longer receives security fixes. Upgrade to starknet@10 (10.8.0 or later).
 
   std-env@4.2.0:
     resolution: {integrity: sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw==}
@@ -3140,7 +3141,7 @@ snapshots:
 
   siginfo@2.0.0: {}
 
-  smol-toml@1.9.0: {}
+  smol-toml@1.9.1: {}
 
   solid-js@1.9.15:
     dependencies:
