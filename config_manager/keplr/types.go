@@ -10,15 +10,15 @@ package keplr
 type ChainConfig struct {
 	RPC                 string        `json:"rpc" toml:"rpc"`
 	Rest                string        `json:"rest" toml:"rest"`
-	ChainID             string        `json:"chainId" toml:"chain_id"`
-	ChainName           string        `json:"chainName" toml:"chain_name"`
-	ChainSymbolImageURL string        `json:"chainSymbolImageUrl" toml:"chain_symbol_image_url"`
+	ChainID             string        `json:"chain_id" toml:"chain_id"`
+	ChainName           string        `json:"chain_name" toml:"chain_name"`
+	ChainSymbolImageURL string        `json:"chain_symbol_image_url" toml:"chain_symbol_image_url"`
 	Bip44               Bip44         `json:"bip44" toml:"bip44"`
-	WalletURLForStaking string        `json:"walletUrlForStaking" toml:"wallet_url_for_staking"`
-	Bech32Config        Bech32Config  `json:"bech32Config" toml:"bech32_config"`
+	WalletURLForStaking string        `json:"wallet_url_for_staking" toml:"wallet_url_for_staking"`
+	Bech32Config        Bech32Config  `json:"bech32_config" toml:"bech32_config"`
 	Currencies          []Currency    `json:"currencies" toml:"currencies"`
-	FeeCurrencies       []FeeCurrency `json:"feeCurrencies" toml:"fee_currencies"`
-	StakeCurrency       StakeCurrency `json:"stakeCurrency" toml:"stake_currency"`
+	FeeCurrencies       []FeeCurrency `json:"fee_currencies" toml:"fee_currencies"`
+	StakeCurrency       StakeCurrency `json:"stake_currency" toml:"stake_currency"`
 	Features            []string      `json:"features" toml:"features"`
 }
 
@@ -29,31 +29,31 @@ type Bip44 struct {
 
 // Bech32Config holds the bech32 address prefixes for the chain.
 type Bech32Config struct {
-	Bech32PrefixAccAddr  string `json:"bech32PrefixAccAddr" toml:"bech32_prefix_acc_addr"`
-	Bech32PrefixAccPub   string `json:"bech32PrefixAccPub" toml:"bech32_prefix_acc_pub"`
-	Bech32PrefixValAddr  string `json:"bech32PrefixValAddr" toml:"bech32_prefix_val_addr"`
-	Bech32PrefixValPub   string `json:"bech32PrefixValPub" toml:"bech32_prefix_val_pub"`
-	Bech32PrefixConsAddr string `json:"bech32PrefixConsAddr" toml:"bech32_prefix_cons_addr"`
-	Bech32PrefixConsPub  string `json:"bech32PrefixConsPub" toml:"bech32_prefix_cons_pub"`
+	Bech32PrefixAccAddr  string `json:"bech32_prefix_acc_addr" toml:"bech32_prefix_acc_addr"`
+	Bech32PrefixAccPub   string `json:"bech32_prefix_acc_pub" toml:"bech32_prefix_acc_pub"`
+	Bech32PrefixValAddr  string `json:"bech32_prefix_val_addr" toml:"bech32_prefix_val_addr"`
+	Bech32PrefixValPub   string `json:"bech32_prefix_val_pub" toml:"bech32_prefix_val_pub"`
+	Bech32PrefixConsAddr string `json:"bech32_prefix_cons_addr" toml:"bech32_prefix_cons_addr"`
+	Bech32PrefixConsPub  string `json:"bech32_prefix_cons_pub" toml:"bech32_prefix_cons_pub"`
 }
 
 // Currency describes a currency supported by the chain.
 type Currency struct {
-	CoinDenom        string `json:"coinDenom" toml:"coin_denom"`
-	CoinMinimalDenom string `json:"coinMinimalDenom" toml:"coin_minimal_denom"`
-	CoinDecimals     int    `json:"coinDecimals" toml:"coin_decimals"`
-	CoinImageURL     string `json:"coinImageUrl" toml:"coin_image_url"`
-	CoinGeckoID      string `json:"coinGeckoId" toml:"coin_gecko_id"`
+	CoinDenom        string `json:"coin_denom" toml:"coin_denom"`
+	CoinMinimalDenom string `json:"coin_minimal_denom" toml:"coin_minimal_denom"`
+	CoinDecimals     int    `json:"coin_decimals" toml:"coin_decimals"`
+	CoinImageURL     string `json:"coin_image_url" toml:"coin_image_url"`
+	CoinGeckoID      string `json:"coin_gecko_id" toml:"coin_gecko_id"`
 }
 
 // FeeCurrency describes a currency that can be used to pay transaction fees.
 type FeeCurrency struct {
-	CoinDenom        string       `json:"coinDenom" toml:"coin_denom"`
-	CoinMinimalDenom string       `json:"coinMinimalDenom" toml:"coin_minimal_denom"`
-	CoinDecimals     int          `json:"coinDecimals" toml:"coin_decimals"`
-	CoinGeckoID      string       `json:"coinGeckoId" toml:"coin_gecko_id"`
-	CoinImageURL     string       `json:"coinImageUrl" toml:"coin_image_url"`
-	GasPriceStep     GasPriceStep `json:"gasPriceStep" toml:"gas_price_step"`
+	CoinDenom        string       `json:"coin_denom" toml:"coin_denom"`
+	CoinMinimalDenom string       `json:"coin_minimal_denom" toml:"coin_minimal_denom"`
+	CoinDecimals     int          `json:"coin_decimals" toml:"coin_decimals"`
+	CoinGeckoID      string       `json:"coin_gecko_id" toml:"coin_gecko_id"`
+	CoinImageURL     string       `json:"coin_image_url" toml:"coin_image_url"`
+	GasPriceStep     GasPriceStep `json:"gas_price_step" toml:"gas_price_step"`
 }
 
 // GasPriceStep holds the low, average, and high gas price recommendations.
@@ -65,9 +65,9 @@ type GasPriceStep struct {
 
 // StakeCurrency describes the currency used for staking on the chain.
 type StakeCurrency struct {
-	CoinDenom        string `json:"coinDenom" toml:"coin_denom"`
-	CoinMinimalDenom string `json:"coinMinimalDenom" toml:"coin_minimal_denom"`
-	CoinDecimals     int    `json:"coinDecimals" toml:"coin_decimals"`
-	CoinImageURL     string `json:"coinImageUrl" toml:"coin_image_url"`
-	CoinGeckoID      string `json:"coinGeckoId" toml:"coin_gecko_id"`
+	CoinDenom        string `json:"coin_denom" toml:"coin_denom"`
+	CoinMinimalDenom string `json:"coin_minimal_denom" toml:"coin_minimal_denom"`
+	CoinDecimals     int    `json:"coin_decimals" toml:"coin_decimals"`
+	CoinImageURL     string `json:"coin_image_url" toml:"coin_image_url"`
+	CoinGeckoID      string `json:"coin_gecko_id" toml:"coin_gecko_id"`
 }
