@@ -24,7 +24,7 @@ type ChainConfig struct {
 
 // Bip44 holds the BIP44 coin type used to derive accounts for the chain.
 type Bip44 struct {
-	CoinType int `json:"coinType" toml:"coin_type"`
+	CoinType int `json:"coin_type" toml:"coin_type"`
 }
 
 // Bech32Config holds the bech32 address prefixes for the chain.
