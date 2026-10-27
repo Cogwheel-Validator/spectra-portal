@@ -1,4 +1,4 @@
-FROM node:24-alpine AS base
+FROM node:24.22.1-alpine AS base
 RUN corepack enable && corepack prepare pnpm@12 --activate
 
 FROM base AS deps
@@ -21,9 +21,10 @@ ENV CI=true
 RUN pnpm run build
 
 FROM debian:13-slim AS tini-getter
-RUN apt-get update && apt-get install -y tini
+RUN apt-get update && apt-get install -y tini --no-install-recommends
 
-FROM gcr.io/distroless/nodejs24-debian13 AS distroless
+# Google does not publish versioned node tags; the digest pins the build and dependabot bumps it
+FROM gcr.io/distroless/nodejs24-debian13:latest@sha256:206cfbab1a64af20b63645150e3aa61b7babc17869e0254914947732963d6f07 AS distroless
 
 WORKDIR /app
 
