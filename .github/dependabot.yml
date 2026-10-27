@@ -16,3 +16,10 @@ updates:
       default-days: 1
     commit-message:
       prefix: "build"
+    ignore:
+      # stay on node 24, allow minor and patch updates
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+      # stay on go 1.26, allow patch updates only
+      - dependency-name: "golang"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
