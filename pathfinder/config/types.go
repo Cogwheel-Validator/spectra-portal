@@ -9,6 +9,9 @@ type RPCPathfinderConfig struct {
 	// CORS configs
 	AllowedOrigins   []string `toml:"allowed_origins" mapstructure:"allowed_origins"`
 	EnableReflection bool     `toml:"enable_reflection" mapstructure:"enable_reflection"`
+	EnableMCP        bool     `toml:"enable_mcp" mapstructure:"enable_mcp"`
+	// EnableMCPBroadcast adds the broadcast_signed_tx MCP tool (only meaningful with EnableMCP).
+	EnableMCPBroadcast bool `toml:"enable_mcp_broadcast" mapstructure:"enable_mcp_broadcast"`
 
 	// rate limiting configs
 	RatePerMinute         int `toml:"rate_per_minute" mapstructure:"rate_per_minute"`

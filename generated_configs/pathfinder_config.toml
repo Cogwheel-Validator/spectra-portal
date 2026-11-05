@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-09-25T10:07:34Z'
+generated_at = '2026-10-15T14:06:26Z'
 
 [[chains]]
 name = 'Atom One'
@@ -8,6 +8,10 @@ has_pfm = false
 broker = false
 bech32_prefix = 'atone'
 slip44 = 118
+account_type = 'cosmos'
+cosmos_sdk_version = 'v0.500.2'
+rpcs = ['https://atomone-rpc.cogwheel.zone', 'https://atomone-mainnet-rpc.itrocket.net', 'https://rpc-atomone.ecostake.com', 'https://rpc.atomone.citizenweb3.com']
+rests = ['https://api.atomone.citizenweb3.com', 'https://atomone-api.cogwheel.zone', 'https://atomone-mainnet-api.itrocket.net', 'https://rest-atomone.ecostake.com']
 
 [[chains.native_tokens]]
 chain_denom = 'uatone'
@@ -56,6 +60,10 @@ has_pfm = true
 broker = false
 bech32_prefix = 'celestia'
 slip44 = 118
+account_type = 'cosmos'
+cosmos_sdk_version = 'v0.52.8'
+rpcs = ['https://celestia-rpc.polkachu.com', 'https://celestia-rpc.cogwheel.zone']
+rests = ['https://celestia-api.polkachu.com', 'https://celestia-api.cogwheel.zone']
 
 [[chains.native_tokens]]
 chain_denom = 'utia'
@@ -120,6 +128,10 @@ has_pfm = true
 broker = false
 bech32_prefix = 'cosmos'
 slip44 = 118
+account_type = 'cosmos'
+cosmos_sdk_version = 'v0.53.4'
+rpcs = ['https://rpc.cosmoshub-4.citizenweb3.com/', 'https://cosmos-rpc.polkachu.com/', 'https://rpc-cosmoshub.ecostake.com']
+rests = ['https://api.cosmoshub-4.citizenweb3.com/', 'https://cosmos-api.polkachu.com/', 'https://rest-cosmoshub.ecostake.com']
 
 [[chains.native_tokens]]
 chain_denom = 'uatom'
@@ -216,6 +228,10 @@ has_pfm = true
 broker = false
 bech32_prefix = 'inj'
 slip44 = 60
+account_type = 'ethermint'
+cosmos_sdk_version = 'v0.50.15-inj.1'
+rpcs = ['https://injective-rpc.polkachu.com', 'https://injective-rpc.highstakes.ch', 'https://injective-rpc.publicnode.com:443/']
+rests = ['https://injective-rest.publicnode.com', 'https://injective-api.polkachu.com', 'https://public.stakewolle.com/cosmos/injective/rest', 'https://injective-api.highstakes.ch']
 
 [[chains.native_tokens]]
 chain_denom = 'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a'
@@ -312,6 +328,10 @@ has_pfm = true
 broker = false
 bech32_prefix = 'juno'
 slip44 = 118
+account_type = 'cosmos'
+cosmos_sdk_version = 'v0.53.7'
+rpcs = ['https://juno-rpc.polkachu.com', 'https://juno.rpc.m.stavr.tech']
+rests = ['https://juno-api.cogwheel.zone', 'https://juno.api.m.stavr.tech']
 
 [[chains.native_tokens]]
 chain_denom = 'cw20:juno168ctmpyppk90d34p3jjy658zf5a5l3w8wk35wht6ccqj4mr0yv8s4j5awr'
@@ -376,6 +396,10 @@ has_pfm = true
 broker = false
 bech32_prefix = 'noble'
 slip44 = 118
+account_type = 'cosmos'
+cosmos_sdk_version = 'v0.50.14'
+rpcs = ['https://noble-rpc.polkachu.com', 'https://rpc.lavenderfive.com:443/noble']
+rests = ['https://noble-api.polkachu.com', 'https://rest.lavenderfive.com:443/noble']
 
 [[chains.native_tokens]]
 chain_denom = 'ausdy'
@@ -498,6 +522,10 @@ broker_id = 'osmosis-sqs'
 ibc_hooks_contract = 'osmo10a3k4hvk37cc4hnxctw4p95fhscd2z6h2rmx0aukc6rm8u9qqx9smfsh7u'
 bech32_prefix = 'osmo'
 slip44 = 118
+account_type = 'cosmos'
+cosmos_sdk_version = 'v0.50.14-v30-osmo'
+rpcs = ['https://osmosis-rpc.cogwheel.zone', 'https://rpc.osmosis.zone', 'https://rpc.osmosis.citizenweb3.com', 'https://osmosis-rpc.polkachu.com', 'https://rpc-osmosis.ecostake.com/']
+rests = ['https://osmosis-api.polkachu.com', 'https://rest-osmosis.ecostake.com', 'https://osmosis-api.cogwheel.zone', 'https://lcd.osmosis.zone', 'https://api.osmosis.citizenweb3.com']
 
 [[chains.native_tokens]]
 chain_denom = 'factory/osmo1k6c8jln7ejuqwtqmay3yvzrg3kueaczl96pk067ldg8u835w0yhsw27twm/alloyed/allETH'
@@ -706,6 +734,10 @@ has_pfm = false
 broker = false
 bech32_prefix = 'nolus'
 slip44 = 118
+account_type = 'cosmos'
+cosmos_sdk_version = 'v0.53.3-nolus-4'
+rpcs = ['https://nolus-rpc.polkachu.com/', 'https://nolus-rpc.cogwheel.zone']
+rests = ['https://nolus-api.cogwheel.zone', 'https://nolus-api.polkachu.com/']
 
 [[chains.native_tokens]]
 chain_denom = 'unls'
