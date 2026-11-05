@@ -78,7 +78,14 @@ message FindPathRequest {
         (buf.validate.field).string.max_len = 128];
 
     // Amount to transfer/swap (in base units)
-    string amount_in = 3 [(buf.validate.field).required = true];
+    string amount_in = 3 [
+      (buf.validate.field).required = true,
+      (buf.validate.field).cel = {
+        id: "amount_in.is_positive_integer"
+        message: "amount_in must be a positive integer"
+        expression: "this.matches('^[1-9][0-9]*$')"
+      }
+    ];
 
     // Destination chain ID
     string chain_to = 4 [(buf.validate.field).required = true];
@@ -174,7 +181,14 @@ message FindPathStreamingRequest {
         (buf.validate.field).string.max_len = 128];
 
     // Amount to transfer/swap (in base units)
-    string amount_in = 3 [(buf.validate.field).required = true];
+    string amount_in = 3 [
+      (buf.validate.field).required = true,
+      (buf.validate.field).cel = {
+        id: "amount_in.is_positive_integer"
+        message: "amount_in must be a positive integer"
+        expression: "this.matches('^[1-9][0-9]*$')"
+      }
+    ];
 
     // Destination chain ID
     string chain_to = 4 [(buf.validate.field).required = true];
