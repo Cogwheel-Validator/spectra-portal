@@ -148,8 +148,9 @@
         }
       }
 
-      // Tells whoever started this: the host/agent (inline) or the local program.
-      async function reportDone(hashes) {
+      // Tells whoever started this (the host/agent inline, or the local program)
+      // how it ended. result: {status: "completed"|"failed", transactions, error?}
+      async function reportResult(result) {
         if (LOCAL) {
           await fetch("/api/result", {
             method: "POST",
@@ -157,17 +158,20 @@
               "content-type": "application/json",
               "x-spectra-token": LOCAL.token,
             },
-            body: JSON.stringify({ status: "completed", transactions: hashes }),
+            body: JSON.stringify(result),
           });
         } else {
+          const ok = result.status === "completed";
           await request("ui/message", {
             role: "user",
             content: [
               {
                 type: "text",
                 text:
-                  "The transfer completed. Transactions: " +
-                  JSON.stringify(hashes),
+                  (ok
+                    ? "The transfer completed. Transactions: "
+                    : "The transfer did not complete (" + result.error + "). Transactions sent: ") +
+                  JSON.stringify(result.transactions),
               },
             ],
           });
@@ -210,6 +214,7 @@
       let started = false;
       let nextStep = 0; // first step not yet completed (a retry must not re-send finished steps)
       const hashes = [];
+      let sent = null; // {step, hash} of the step that was broadcast but not yet confirmed
 
       function onToolResult(p) {
         if (started) return;
@@ -412,19 +417,33 @@
         return hash || tx.tx_hash;
       }
 
+      // Statuses after which waiting longer changes nothing.
+      const TERMINAL = new Set(["completed", "failed", "timed_out", "tx_failed", "no_ibc_packets"]);
+
+      // Polls track_transfer. "not_found" right after a broadcast only means the
+      // chain has not indexed the transaction yet, and "in_progress" means the
+      // packet is still travelling: both keep waiting. Lookup errors are retried.
       async function waitDone(chainId, hash, label) {
-        for (let i = 0; i < 120; i++) {
-          const t = await callTool("track_transfer", {
-            chain_id: chainId,
-            tx_hash: hash,
-          });
-          status(`${label}: ${t.status}`, "muted");
-          if (t.status && t.status !== "in_progress") return t;
-          await sleep(5000);
+        const began = Date.now();
+        let last = "not_found";
+        for (;;) {
+          try {
+            const t = await callTool("track_transfer", { chain_id: chainId, tx_hash: hash });
+            last = t.status || "unknown";
+            status(`${label} sent (${hash}): ${last}`, "muted");
+            if (TERMINAL.has(last)) return t;
+          } catch (e) {
+            status(`${label} sent (${hash}): waiting, ${e.message}`, "muted");
+          }
+          if (Date.now() - began > 10 * 60 * 1000) {
+            const err = new Error(
+              `${label} was sent (${hash}) but is still "${last}" after 10 minutes. Check it in an explorer.`,
+            );
+            err.fatal = true;
+            throw err;
+          }
+          await sleep(last === "not_found" ? 3000 : 5000);
         }
-        throw new Error(
-          "Still in progress after 10 minutes; check the explorer.",
-        );
       }
 
       async function run() {
@@ -446,25 +465,39 @@
           }
           for (let i = nextStep; i < plan.steps.length; i++) {
             const s = plan.steps[i];
-            status(`Approve step ${i + 1}/${plan.steps.length} in Keplr…`);
-            const hash = await signAndSend(s);
-            hashes.push({ chain_id: s.chain_id, tx_hash: hash });
-            const t = await waitDone(s.chain_id, hash, `Step ${i + 1}`);
-            if (t.status !== "completed") {
-              nextStep = plan.steps.length;
-              throw new Error(
-                `Step ${i + 1} ended as ${t.status}. Funds, if any, are refunded to the sender. Ask the assistant to build a new transfer.`,
-              );
+            // A step that was already broadcast is never signed again, even on retry:
+            // that would send the transfer twice. A retry only resumes waiting for it.
+            if (!sent || sent.step !== i) {
+              status(`Approve step ${i + 1}/${plan.steps.length} in Keplr…`);
+              const hash = await signAndSend(s);
+              sent = { step: i, hash };
+              hashes.push({ chain_id: s.chain_id, tx_hash: hash });
             }
+            const t = await waitDone(s.chain_id, sent.hash, `Step ${i + 1}`);
+            if (t.status !== "completed") {
+              const err = new Error(
+                `Step ${i + 1} (${sent.hash}) ended as ${t.status}: ${t.summary || ""} Funds, if any, are refunded to the sender.`,
+              );
+              err.fatal = true;
+              throw err;
+            }
+            sent = null;
             nextStep = i + 1;
           }
           status("Done: " + hashes.map((h) => h.tx_hash).join(", "), "ok");
           btn.style.display = "none";
           // The wallet signature is the user's consent; tell whoever is waiting for the outcome.
-          reportDone(hashes).catch(() => {});
+          reportResult({ status: "completed", transactions: hashes }).catch(() => {});
         } catch (e) {
           status(e.message || String(e), "err");
-          btn.textContent = plan ? "Retry signing" : "Retry";
+          if (e.fatal) {
+            // The transaction was sent but did not end well: nothing more can be done here.
+            // Report it with the hashes so the agent can look into it.
+            btn.style.display = "none";
+            reportResult({ status: "failed", error: e.message, transactions: hashes }).catch(() => {});
+            return;
+          }
+          btn.textContent = sent ? "Resume" : plan ? "Retry signing" : "Retry";
           btn.disabled = false;
           if (!LOCAL) {
             request("ui/update-model-context", {

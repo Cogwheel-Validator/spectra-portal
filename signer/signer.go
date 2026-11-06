@@ -67,7 +67,7 @@ type TxRef struct {
 
 // Result is printed to stdout when the run ends.
 type Result struct {
-	Status       string  `json:"status"` // completed | timeout | cancelled | error
+	Status       string  `json:"status"` // completed | failed | timeout | cancelled | error
 	Transactions []TxRef `json:"transactions,omitempty"`
 	Error        string  `json:"error,omitempty"`
 }
@@ -347,8 +347,23 @@ func (s *Server) postResult(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad json", http.StatusBadRequest)
 		return
 	}
-	if res.Status != "completed" || len(res.Transactions) == 0 {
-		http.Error(w, "only completed results with transactions are accepted", http.StatusBadRequest)
+	switch res.Status {
+	case "completed":
+		if len(res.Transactions) == 0 {
+			http.Error(w, "a completed result needs transactions", http.StatusBadRequest)
+			return
+		}
+	case "failed":
+		// A transaction was sent but did not end well. The hashes matter: the agent must be able to look into it.
+		if res.Error == "" {
+			http.Error(w, "a failed result needs an error", http.StatusBadRequest)
+			return
+		}
+		if len(res.Error) > 600 {
+			res.Error = res.Error[:600]
+		}
+	default:
+		http.Error(w, "status must be completed or failed", http.StatusBadRequest)
 		return
 	}
 	s.once.Do(func() { s.result <- res })

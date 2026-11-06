@@ -155,8 +155,12 @@ func TestResultEndsTheRun(t *testing.T) {
 	done := make(chan signer.Result, 1)
 	go func() { done <- s.Serve(context.Background(), time.Minute) }()
 
-	// Results without transactions are rejected and do not end the run.
+	// Results without transactions, unknown statuses and errorless failures are rejected and do not end the run.
 	resp, _ := do(t, "POST", base+"/api/result", token, `{"status":"completed"}`, nil)
+	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	resp, _ = do(t, "POST", base+"/api/result", token, `{"status":"cancelled","transactions":[{"chain_id":"a","tx_hash":"B"}]}`, nil)
+	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
+	resp, _ = do(t, "POST", base+"/api/result", token, `{"status":"failed","transactions":[{"chain_id":"a","tx_hash":"B"}]}`, nil)
 	assert.Equal(t, resp.StatusCode, http.StatusBadRequest)
 	resp, _ = do(t, "POST", base+"/api/result", token, `{"status":"completed","transactions":[{"chain_id":"cosmoshub-4","tx_hash":"ABC"}]}`, nil)
 	assert.Equal(t, resp.StatusCode, http.StatusNoContent)
@@ -177,4 +181,28 @@ func TestTimeout(t *testing.T) {
 	assert.NoError(t, err)
 	r := s.Serve(context.Background(), 50*time.Millisecond)
 	assert.Equal(t, r.Status, "timeout")
+}
+
+// A transaction that was broadcast but ended badly must still reach the agent
+// with its hash, otherwise the user's funds are in limbo with nothing to track.
+func TestFailedResultKeepsTheHashes(t *testing.T) {
+	s, err := signer.New(validReq(), &fakeRemote{})
+	assert.NoError(t, err)
+	link, err := s.Listen(0)
+	assert.NoError(t, err)
+	base, token := split(link)
+	done := make(chan signer.Result, 1)
+	go func() { done <- s.Serve(context.Background(), time.Minute) }()
+
+	resp, _ := do(t, "POST", base+"/api/result", token,
+		`{"status":"failed","error":"timed out","transactions":[{"chain_id":"injective-1","tx_hash":"ABC"}]}`, nil)
+	assert.Equal(t, resp.StatusCode, http.StatusNoContent)
+	select {
+	case r := <-done:
+		assert.Equal(t, r.Status, "failed")
+		assert.Equal(t, r.Error, "timed out")
+		assert.Equal(t, r.Transactions[0].TxHash, "ABC")
+	case <-time.After(5 * time.Second):
+		t.Fatal("run did not finish")
+	}
 }
