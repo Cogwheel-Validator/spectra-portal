@@ -180,6 +180,14 @@ func (s *FindPathServer) findPath(p findPathParams, allowEmpty bool) (*models.Ro
 	return &internalResp, nil
 }
 
+// FindRoute validates a request exactly like FindPath (addresses are required)
+// and returns the internal route model, including execution data. It exists so
+// in-process callers such as the MCP server can build transactions from the
+// typed model instead of the protobuf projection.
+func (s *FindPathServer) FindRoute(req *v2beta.FindPathRequest) (*models.RouteResponse, error) {
+	return s.findPath(paramsFromFindPathRequest(req), false)
+}
+
 // FindPath implements the ConnectRPC handler for finding paths.
 //
 // Returns:

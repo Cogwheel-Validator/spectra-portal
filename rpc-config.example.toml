@@ -48,6 +48,13 @@ ip_addr_detect = "direct"
 # If you don't want to expose the reflection endpoint, set to false
 enable_reflection = true
 
+# Serve a Model Context Protocol endpoint at /mcp so AI agents can query routes.
+# Read-only + unsigned transaction data; the server never signs or broadcasts.
+enable_mcp = false
+# Also let MCP clients submit already-signed transactions (broadcast_signed_tx).
+# Restricted to Spectra route message types; still never signs. Requires enable_mcp.
+enable_mcp_broadcast = false
+
 # =============================================================================
 # Rate Limiting
 # =============================================================================

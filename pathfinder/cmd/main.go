@@ -160,10 +160,12 @@ func main() {
 // buildServerConfig converts the loaded RPCPathfinderConfig to rpc.ServerConfig
 func buildServerConfig(cfg *config.RPCPathfinderConfig) *rpc.ServerConfig {
 	serverConfig := &rpc.ServerConfig{
-		Address:          cfg.Host + ":" + itoa(cfg.Port),
-		AllowedOrigins:   cfg.AllowedOrigins,
-		EnableReflection: cfg.EnableReflection,
-		EnableMetrics:    cfg.UsePrometheus, // Enable metrics endpoint if prometheus is enabled
+		Address:            cfg.Host + ":" + itoa(cfg.Port),
+		AllowedOrigins:     cfg.AllowedOrigins,
+		EnableReflection:   cfg.EnableReflection,
+		EnableMCP:          cfg.EnableMCP,
+		EnableMCPBroadcast: cfg.EnableMCPBroadcast,
+		EnableMetrics:      cfg.UsePrometheus, // Enable metrics endpoint if prometheus is enabled
 	}
 
 	// Set rate limiting if configured
