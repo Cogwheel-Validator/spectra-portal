@@ -19,8 +19,20 @@ const (
 	signModeAminoEnum  = 127
 )
 
+// Public key types a Signer can have.
+const (
+	// KeyTypeSecp256k1 is a standard Cosmos secp256k1 key (the default).
+	KeyTypeSecp256k1 = "secp256k1"
+	// KeyTypeEthSecp256k1 is the Ethermint key used by Injective accounts: the same curve, but the
+	// address is derived with keccak256 and the key is wrapped in a different Any type.
+	KeyTypeEthSecp256k1 = "ethsecp256k1"
+)
+
 // PubKeyTypeURLSecp256k1 is the Any type URL of a standard Cosmos secp256k1 key.
 const PubKeyTypeURLSecp256k1 = "/cosmos.crypto.secp256k1.PubKey"
+
+// PubKeyTypeURLEthSecp256k1 is the Any type URL of an Injective eth_secp256k1 key.
+const PubKeyTypeURLEthSecp256k1 = "/injective.crypto.v1beta1.ethsecp256k1.PubKey"
 
 // Fee is the transaction fee.
 type Fee struct {
@@ -34,6 +46,18 @@ type Signer struct {
 	PubKey   []byte
 	Sequence uint64
 	Mode     string // SignModeDirect or SignModeAmino
+	// KeyType is KeyTypeSecp256k1 (default) or KeyTypeEthSecp256k1.
+	KeyType string
+}
+
+func pubKeyTypeURL(keyType string) (string, error) {
+	switch keyType {
+	case "", KeyTypeSecp256k1:
+		return PubKeyTypeURLSecp256k1, nil
+	case KeyTypeEthSecp256k1:
+		return PubKeyTypeURLEthSecp256k1, nil
+	}
+	return "", fmt.Errorf("unknown key type %q", keyType)
 }
 
 func signModeEnum(mode string) (uint64, error) {
@@ -75,11 +99,15 @@ func BuildAuthInfo(s Signer, f Fee) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	keyURL, err := pubKeyTypeURL(s.KeyType)
+	if err != nil {
+		return nil, err
+	}
 	var key, single, modeInfo, si, ai encoder
 	key.bytes(1, s.PubKey)
 	single.u64(1, mode)
 	modeInfo.msg(1, single.b)
-	si.msg(1, marshalAny(PubKeyTypeURLSecp256k1, key.b))
+	si.msg(1, marshalAny(keyURL, key.b))
 	si.msg(2, modeInfo.b)
 	si.u64(3, s.Sequence)
 	ai.msg(1, si.b)

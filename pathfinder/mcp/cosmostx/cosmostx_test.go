@@ -157,3 +157,40 @@ func TestBuildAuthInfoValidatesKeyAndMode(t *testing.T) {
 	_, err = cosmostx.BuildAuthInfo(cosmostx.Signer{PubKey: make([]byte, 33), Mode: "textual"}, cosmostx.Fee{})
 	assert.Error(t, err)
 }
+
+// Injective signs with eth_secp256k1 keys: the AuthInfo must carry the
+// Injective key type URL. Fixtures come from the client app's own encoder
+// (src/lib/generated/injective/.../ethsecp256k1/keys.ts) via cosmjs
+// makeAuthInfoBytes (testdata/injective_golden.json).
+func TestEthSecp256k1AuthInfoMatchesClientApp(t *testing.T) {
+	raw, err := os.ReadFile("testdata/injective_golden.json")
+	assert.NoError(t, err)
+	var g struct {
+		Pub   string `json:"pub"`
+		Cases []struct {
+			Seq         uint64 `json:"seq"`
+			Gas         uint64 `json:"gas"`
+			Amount      string `json:"amount"`
+			Denom       string `json:"denom"`
+			AuthInfoB64 string `json:"authInfoB64"`
+		} `json:"cases"`
+	}
+	assert.NoError(t, json.Unmarshal(raw, &g))
+	assert.Equal(t, len(g.Cases), 2)
+	pub := b64(t, g.Pub)
+	for _, c := range g.Cases {
+		auth, err := cosmostx.BuildAuthInfo(
+			cosmostx.Signer{PubKey: pub, Sequence: c.Seq, Mode: cosmostx.SignModeDirect, KeyType: cosmostx.KeyTypeEthSecp256k1},
+			cosmostx.Fee{Amount: []cosmostx.Coin{{Denom: c.Denom, Amount: c.Amount}}, GasLimit: c.Gas})
+		assert.NoError(t, err)
+		assert.Equal(t, base64.StdEncoding.EncodeToString(auth), c.AuthInfoB64)
+
+		// The default key type must still be the Cosmos one.
+		std, err := cosmostx.BuildAuthInfo(cosmostx.Signer{PubKey: pub, Sequence: c.Seq},
+			cosmostx.Fee{Amount: []cosmostx.Coin{{Denom: c.Denom, Amount: c.Amount}}, GasLimit: c.Gas})
+		assert.NoError(t, err)
+		assert.NotEqual(t, base64.StdEncoding.EncodeToString(std), c.AuthInfoB64)
+	}
+	_, err = cosmostx.BuildAuthInfo(cosmostx.Signer{PubKey: pub, KeyType: "ed25519"}, cosmostx.Fee{})
+	assert.Error(t, err)
+}
