@@ -24,7 +24,7 @@ FROM debian:13-slim AS tini-getter
 RUN apt-get update && apt-get install -y tini --no-install-recommends
 
 # Google does not publish versioned node tags; the digest pins the build and dependabot bumps it
-FROM gcr.io/distroless/nodejs24-debian13:latest@sha256:51eee69b25037942014428da85f5b436a4d88f283e545981d03f25b7db72469a AS distroless
+FROM gcr.io/distroless/nodejs24-debian13:latest@sha256:03980f6fd2a3245fa06e371c36fd33528ebbc676a1d0f84e3e21d95cd291b807 AS distroless
 
 WORKDIR /app
 
