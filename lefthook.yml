@@ -12,6 +12,9 @@
 prepare-commit-msg:
   commands:
     koji:
+      # No controlling terminal (IDE/GUI commit): skip instead of erroring.
+      skip:
+        - run: "! (: < /dev/tty) 2>/dev/null"
       interactive: true
       run: exec < /dev/tty && koji --hook || true
       env:

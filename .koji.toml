@@ -34,3 +34,7 @@ patterns = "^/pathfinder/.*"
 name = "client"
 description = "client_app"
 patterns = "^/client_app/.*"
+
+[[commit_scopes]]
+name = "signer"
+description = "signer for MCP"
