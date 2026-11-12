@@ -29,6 +29,37 @@ The route index is built using the following algorithm:
 - `/server/health` - This is a classic http endpoint to check if the RPC is healthy
 - `/server/metrics` - This is a classic http endpoint to get the metrics of the RPC for prometheus if enabled
 
+## MCP server (for AI agents)
+
+Set `enable_mcp = true` (env: `PATHFINDER_ENABLE_MCP`) to serve a [Model Context Protocol](https://modelcontextprotocol.io) endpoint at `/mcp` (streamable HTTP). It is off by default. Example client config: `{"mcpServers": {"spectra": {"type": "http", "url": "http://localhost:8080/mcp"}}}`
+
+The MCP is a **planning, building and tracking layer**: it finds routes, builds unsigned transactions and follows transfers to completion. **It never holds keys and never signs**; the user's wallet signs. Agents should call `get_execution_guide` first (also the resource `spectra://guide/execution`).
+
+Signing: `prepare_transfer` validates a transfer and returns a ready `pathfinder-sign` command. [`pathfinder-sign`](../docs/PATHFINDER_SING.md) is a small program for the user's own machine that opens a page on `127.0.0.1` where they approve in Keplr. It is published with every release for Linux, macOS and Windows. Why it works this way: [docs/MCP_SIGNING.md](../docs/MCP_SIGNING.md).
+
+| Tool | What it does |
+| --- | --- |
+| `list_chains`, `get_chain_info`, `get_chain_tokens`, `lookup_denom`, `get_token_denoms` | Same data as the query RPC |
+| `get_chain_endpoints` | Healthy RPC/REST endpoints, prefix, SLIP-44, SDK version, swap contract |
+| `find_route` | Route preview (no addresses) or route with execution data |
+| `prepare_transfer` | Validates a transfer and returns the `pathfinder-sign` command and signing request (no addresses needed) |
+| `get_signing_options` | The ways to sign and where to download `pathfinder-sign` |
+| `build_transaction` | Ordered **unsigned** steps (`smart` = fewest txs via PFM / ibc-hooks, `manual` = one tx per leg), each message as `type_url` + `value_base64`, proto JSON and amino JSON |
+| `build_sign_doc` | Direct SignDoc or amino-JSON sign doc for one step (account number/sequence, simulated gas, fee, key/sender checks) |
+| `assemble_signed_tx` | body + auth_info + the wallet's 64-byte signature -> broadcastable tx bytes and hash |
+| `get_account`, `get_tx` | Account number / sequence / balances; tx result |
+| `track_transfer` | Follows each IBC packet (including forwarded hops): `in_progress` / `completed` / `failed` / `timed_out` |
+| `decode_tx`, `address_info`, `convert_address`, `compute_ibc_denom` | Decode / encode helpers |
+| `broadcast_signed_tx` | **Only with `enable_mcp_broadcast = true`.** Submits an already-signed tx; only IBC transfers, Osmosis swaps and wasm calls to the chain's configured swap entry-point contract |
+
+Every tool except `broadcast_signed_tx` is marked read-only. `build_sign_doc` supports standard secp256k1 Cosmos accounts and Injective (eth_secp256k1) accounts in direct mode; not a Ledger on Injective (EIP-712).
+
+Extra MCP config: `mcp_public_url` (public base URL used in the `pathfinder-sign` command; set it behind a proxy) and `enable_mcp_inline_ui` (experimental inline signer view, off by default). Full documentation: [docs/MCP.md](../docs/MCP.md).
+
+Chain endpoints (used by the account, simulate, track and broadcast tools) come from the generated Pathfinder config (`rpcs`, `rests`, `cosmos_sdk_version`, `account_type`). Configs generated before these fields existed still load, but those tools need the config regenerated with the config manager.
+
+The encoders in `pathfinder/mcp/cosmostx` are tested byte-for-byte against CosmJS (`testdata/cosmjs_golden.json`). Opt-in live checks against real chains: `go test -tags live ./pathfinder/mcp/` (see `live_test.go`).
+
 ## Route Types
 
 The pathfinder attempts to find routes in priority order, returning the first successful match:
