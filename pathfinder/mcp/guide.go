@@ -77,8 +77,10 @@ transaction details and tell them honestly that signing needs option A or B on t
    c. assemble_signed_tx -> tx_bytes_base64 + tx_hash.
    d. Broadcast: broadcast_signed_tx if this server offers it, otherwise POST {"tx_bytes":"<base64>","mode":"BROADCAST_MODE_SYNC"} to
       <rest>/cosmos/tx/v1beta1/txs (rest endpoints from get_chain_endpoints), or let the wallet broadcast.
-   e. track_transfer(chain_id, tx_hash) until status is completed / failed / timed_out. Do not start a step that has wait_for
-      until the previous one is completed.
+   e. track_transfer(chain_id, tx_hash) until status is completed / failed / timed_out (a swap step with no IBC transfer ends as
+      no_ibc_packets, which is its success). Do not start a step that has wait_for until the previous one is done.
+   f. After a swap step, each later step with amount_from_swap carries the swap's minimum output: call set_transfer_amount with
+      the swap_output amount from track_transfer for that denom and sign the returned message instead.
 3. Report the outcome, with tx hashes.
 
 Other ways to sign in the manual flow:

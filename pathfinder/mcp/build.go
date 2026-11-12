@@ -12,6 +12,7 @@ import (
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/mcp/cosmostx"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers/osmosis"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/handlers/common"
 	v2beta "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v2beta"
 )
 
@@ -62,6 +63,11 @@ type TxStep struct {
 	// SuggestedGasLimit is a conservative default; build_sign_doc can simulate
 	// for a tighter value.
 	SuggestedGasLimit uint64 `json:"suggested_gas_limit"`
+	// AmountFromSwap marks a transfer that moves the output of the earlier
+	// swap step. It is built with the swap's guaranteed minimum output; once
+	// the swap is done, set its amount to the actual output (track_transfer's
+	// swap_output) with set_transfer_amount before signing.
+	AmountFromSwap bool `json:"amount_from_swap,omitempty"`
 }
 
 // BuildResult is the output of build_transaction.
@@ -198,11 +204,13 @@ func deref(s *string) string {
 // brokerManual builds inbound transfers, the on-chain swap, then outbound transfers.
 func (b *builder) brokerManual(r *models.BrokerRoute, slippage uint32) error {
 	b.manualLegs("inbound", r.InboundLegs, "")
+	minOut := ""
 	if r.Swap != nil {
-		swapMsg, err := b.swapMessage(r, slippage)
+		swapMsg, min, err := b.swapMessage(r, slippage)
 		if err != nil {
 			return err
 		}
+		minOut = min
 		chain := r.Path[len(r.InboundLegs)]
 		wait := ""
 		if len(r.InboundLegs) > 0 {
@@ -220,12 +228,27 @@ func (b *builder) brokerManual(r *models.BrokerRoute, slippage uint32) error {
 		if i > 0 {
 			wait = fmt.Sprintf("the %s arrives on %s from the previous step", l.Token.ChainDenom, l.FromChain)
 		}
-		b.transfer(fmt.Sprintf("outbound-%d", i+1), "ibc_transfer", legDesc(l), l, b.addr[l.ToChain], "", wait)
+		if minOut == "" {
+			b.transfer(fmt.Sprintf("outbound-%d", i+1), "ibc_transfer", legDesc(l), l, b.addr[l.ToChain], "", wait)
+			continue
+		}
+		// The swap may return less than quoted (down to minOut). A transfer of
+		// the quoted amount would then fail, so start from the minimum and let
+		// the signer raise it to the actual output.
+		leg := *l
+		leg.Amount = minOut
+		b.transfer(fmt.Sprintf("outbound-%d", i+1), "ibc_transfer", legDesc(&leg)+" (the swap's minimum output; set to the actual output before signing)", &leg, b.addr[l.ToChain], "", wait)
+		b.steps[len(b.steps)-1].AmountFromSwap = true
+	}
+	if minOut != "" && len(r.OutboundLegs) > 0 {
+		b.warn = append(b.warn,
+			"The outbound transfers carry the swap's minimum output ("+minOut+"). After the swap, read swap_output from track_transfer and call set_transfer_amount on each step with amount_from_swap before signing it, or the difference stays on "+r.OutboundLegs[0].FromChain+".")
 	}
 	return nil
 }
 
-func (b *builder) swapMessage(r *models.BrokerRoute, slippage uint32) (cosmostx.Msg, error) {
+// swapMessage returns the swap message and its minimum output.
+func (b *builder) swapMessage(r *models.BrokerRoute, slippage uint32) (cosmostx.Msg, string, error) {
 	var rd *osmosis.RouteData
 	switch v := r.Swap.RouteData.(type) {
 	case *osmosis.RouteData:
@@ -234,12 +257,12 @@ func (b *builder) swapMessage(r *models.BrokerRoute, slippage uint32) (cosmostx.
 		rd = &v
 	}
 	if rd == nil || len(rd.Routes) == 0 {
-		return nil, fmt.Errorf("the swap has no Osmosis route data; use mode=smart")
+		return nil, "", fmt.Errorf("the swap has no Osmosis route data; use mode=smart")
 	}
 	chain := b.addr[r.Path[len(r.InboundLegs)]]
 	minOut, err := applySlippage(r.Swap.AmountOut, slippage)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	pools := func(rt osmosis.Route) []cosmostx.SwapRoute {
 		out := make([]cosmostx.SwapRoute, len(rt.Pools))
@@ -253,13 +276,47 @@ func (b *builder) swapMessage(r *models.BrokerRoute, slippage uint32) (cosmostx.
 		for _, rt := range rd.Routes {
 			m.Routes = append(m.Routes, cosmostx.SplitRoute{Pools: pools(rt), TokenInAmount: rt.InAmount})
 		}
-		return m, nil
+		return m, minOut, nil
 	}
 	return &cosmostx.MsgSwapExactAmountIn{
 		Sender: chain, Routes: pools(rd.Routes[0]),
 		TokenIn:           cosmostx.Coin{Denom: r.Swap.TokenIn.ChainDenom, Amount: r.Swap.AmountIn},
 		TokenOutMinAmount: minOut,
-	}, nil
+	}, minOut, nil
+}
+
+type setAmountInput struct {
+	Message MessageIn `json:"message" jsonschema:"the MsgTransfer of a build_transaction step (type_url + value_base64)"`
+	Amount  string    `json:"amount" jsonschema:"new amount in base units, e.g. the swap_output amount from track_transfer"`
+}
+
+// MessageIn is a message as passed back in by a caller.
+type MessageIn struct {
+	TypeURL     string `json:"type_url"`
+	ValueBase64 string `json:"value_base64"`
+}
+
+// setTransferAmount re-encodes an IBC MsgTransfer with a new amount; nothing
+// else in the message changes.
+func setTransferAmount(in setAmountInput) (*MessageOut, error) {
+	if in.Message.TypeURL != cosmostx.TypeURLMsgTransfer {
+		return nil, fmt.Errorf("only %s messages can be changed", cosmostx.TypeURLMsgTransfer)
+	}
+	if err := common.ValidateAmount(in.Amount); err != nil {
+		return nil, fmt.Errorf("amount must be a positive integer in base units")
+	}
+	raw, err := base64.StdEncoding.DecodeString(in.Message.ValueBase64)
+	if err != nil {
+		return nil, fmt.Errorf("value_base64 is not valid base64")
+	}
+	m, err := cosmostx.ParseMsg(in.Message.TypeURL, raw)
+	if err != nil {
+		return nil, err
+	}
+	tr := m.(*cosmostx.MsgTransfer)
+	tr.Token.Amount = in.Amount
+	out := messageOut(tr)
+	return &out, nil
 }
 
 // applySlippage returns amount * (10000-bps) / 10000, rounded down.
@@ -303,6 +360,9 @@ func (t *tools) build(ctx context.Context, in buildInput) (*BuildResult, error) 
 		ChainFrom: in.ChainFrom, TokenFromDenom: in.TokenFrom, AmountIn: in.AmountIn,
 		ChainTo: in.ChainTo, TokenToDenom: in.TokenTo,
 		SmartRoute: mode == "smart", SlippageBps: slippage,
+	}
+	if err := common.ValidateAmount(in.AmountIn); err != nil {
+		return nil, err
 	}
 	b := &builder{addr: map[string]string{}, timeout: uint64(t.now().Add(time.Duration(tm) * time.Minute).UnixNano())}
 	for _, a := range in.Addresses {

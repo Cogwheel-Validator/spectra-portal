@@ -13,7 +13,9 @@ import (
 	"time"
 
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/mcp/cosmostx"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/models"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
+	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/brokers/osmosis"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/routeindex"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/handlers/common"
 	v2beta "github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/services/pathfinder/v2beta"
@@ -149,6 +151,12 @@ func TestBuildRejectsBadInput(t *testing.T) {
 	_, err = tl.build(context.Background(), buildInput{ChainFrom: "cosmoshub-4", TokenFrom: "uatom", AmountIn: "1", ChainTo: "osmosis-1",
 		Addresses: []addressInput{{ChainID: "cosmoshub-4", Address: testAddr(t, "cosmos", 1)}, {ChainID: "osmosis-1", Address: testAddr(t, "osmo", 1)}}, TimeoutMinutes: 999})
 	assert.Error(t, err)
+	// Direct routes must not accept amounts the proto rule would reject.
+	for _, amt := range []string{"-1", "1.5", "0", "00", "01", "1e6", " 1", ""} {
+		_, err = tl.build(context.Background(), buildInput{ChainFrom: "cosmoshub-4", TokenFrom: "uatom", AmountIn: amt, ChainTo: "osmosis-1",
+			Addresses: []addressInput{{ChainID: "cosmoshub-4", Address: testAddr(t, "cosmos", 1)}, {ChainID: "osmosis-1", Address: testAddr(t, "osmo", 1)}}})
+		assert.Error(t, err)
+	}
 }
 
 func TestApplySlippage(t *testing.T) {
@@ -384,6 +392,20 @@ func sendPacketEvent(seq, srcCh, dstCh string, timeoutNs int64) map[string]any {
 	}}
 }
 
+func recvPacketEvent(seq, srcCh, dstCh, msgIndex string) map[string]any {
+	attr := func(k, v string) map[string]any { return map[string]any{"key": k, "value": v} }
+	attrs := []any{attr("packet_sequence", seq), attr("packet_src_channel", srcCh), attr("packet_dst_channel", dstCh)}
+	if msgIndex != "" {
+		attrs = append(attrs, attr("msg_index", msgIndex))
+	}
+	return map[string]any{"type": "recv_packet", "attributes": attrs}
+}
+
+func withMsgIndex(e map[string]any, idx string) map[string]any {
+	e["attributes"] = append(e["attributes"].([]any), map[string]any{"key": "msg_index", "value": idx})
+	return e
+}
+
 func itoa(n int64) string { b, _ := json.Marshal(n); return string(b) }
 
 func TestTrackTransferStates(t *testing.T) {
@@ -464,7 +486,9 @@ func TestTrackFollowsForwardedPacketsAndAckErrors(t *testing.T) {
 
 	// recv tx on osmosis forwards a new packet back to the hub (seq 8), still unreceived.
 	osmo.json("/cosmos/tx/v1beta1/txs", map[string]any{"tx_responses": []any{map[string]any{
-		"txhash": "RECV1", "code": 0, "events": []any{sendPacketEvent("8", "channel-0", "channel-141", future)}}}})
+		"txhash": "RECV1", "code": 0, "events": []any{
+			recvPacketEvent("5", "channel-141", "channel-0", ""),
+			sendPacketEvent("8", "channel-0", "channel-141", future)}}}})
 	osmo.json("/ibc/core/channel/v1/channels/channel-0/ports/transfer/packet_commitments/8", map[string]any{"commitment": "y"})
 	hub.json("/ibc/core/channel/v1/channels/channel-141/ports/transfer/packet_receipts/8", map[string]any{"received": false})
 
@@ -484,6 +508,86 @@ func TestTrackFollowsForwardedPacketsAndAckErrors(t *testing.T) {
 	res, _ = tl.trackerFn.track(context.Background(), "cosmoshub-4", "H1", true)
 	assert.Equal(t, res.Status, "failed")
 	assert.Equal(t, res.Packets[0].Status, pktFailed)
+}
+
+func TestTrackPendingWhenRecvTxNotSearchable(t *testing.T) {
+	hub, osmo := newFakeLCD(t), newFakeLCD(t)
+	tl := testTools(t, hub, osmo, Options{})
+	future := tl.now().Add(time.Hour).UnixNano()
+	hub.json("/cosmos/tx/v1beta1/txs/H1", map[string]any{"tx_response": map[string]any{
+		"txhash": "H1", "code": 0, "events": []any{sendPacketEvent("5", "channel-141", "channel-0", future)}}})
+	osmo.json("/ibc/core/channel/v1/channels/channel-0/ports/transfer/packet_receipts/5", map[string]any{"received": true})
+
+	// Received, but the search index has nothing yet: not completed.
+	osmo.json("/cosmos/tx/v1beta1/txs", map[string]any{"tx_responses": []any{}})
+	res, err := tl.trackerFn.track(context.Background(), "cosmoshub-4", "H1", true)
+	assert.NoError(t, err)
+	assert.Equal(t, res.Status, "in_progress")
+	assert.True(t, res.Packets[0].Unchecked)
+
+	// Without follow, the first hop is all that is asked about.
+	res, _ = tl.trackerFn.track(context.Background(), "cosmoshub-4", "H1", false)
+	assert.Equal(t, res.Status, "completed")
+
+	// Once the receive tx is found with no forward, the route is complete.
+	osmo.json("/cosmos/tx/v1beta1/txs", map[string]any{"tx_responses": []any{map[string]any{
+		"txhash": "RECV1", "code": 0, "events": []any{recvPacketEvent("5", "channel-141", "channel-0", "")}}}})
+	res, _ = tl.trackerFn.track(context.Background(), "cosmoshub-4", "H1", true)
+	assert.Equal(t, res.Status, "completed")
+}
+
+func TestForwardedPacketsOnlyFromOwnReceive(t *testing.T) {
+	pt := &PacketTrack{Sequence: "5", SrcChannel: "channel-141", DstChannel: "channel-0"}
+	other := sendPacketEvent("99", "channel-0", "channel-1", 1)
+	mine := sendPacketEvent("8", "channel-0", "channel-141", 1)
+
+	// Positional: sends between our recv_packet and the next one.
+	evs := []map[string]any{
+		recvPacketEvent("4", "channel-141", "channel-0", ""), other,
+		recvPacketEvent("5", "channel-141", "channel-0", ""), mine,
+		recvPacketEvent("6", "channel-141", "channel-0", ""), sendPacketEvent("100", "channel-0", "channel-1", 1),
+	}
+	got := forwardedPackets(evs, pt)
+	assert.Equal(t, len(got), 1)
+	assert.Equal(t, got[0]["packet_sequence"], "8")
+
+	// msg_index wins over position.
+	evs = []map[string]any{
+		recvPacketEvent("4", "channel-141", "channel-0", "0"),
+		recvPacketEvent("5", "channel-141", "channel-0", "1"),
+		withMsgIndex(sendPacketEvent("99", "channel-0", "channel-1", 1), "0"),
+		withMsgIndex(sendPacketEvent("8", "channel-0", "channel-141", 1), "1"),
+	}
+	got = forwardedPackets(evs, pt)
+	assert.Equal(t, len(got), 1)
+	assert.Equal(t, got[0]["packet_sequence"], "8")
+
+	// Our packet's receive is not in this tx: nothing is attributed to it.
+	assert.Equal(t, len(forwardedPackets([]map[string]any{other}, pt)), 0)
+}
+
+func TestNotFoundOnlyWhenEveryEndpointSaysSo(t *testing.T) {
+	dead := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusBadGateway) }))
+	defer dead.Close()
+	lagging := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"message":"packet commitment not found"}`))
+	}))
+	defer lagging.Close()
+	api := func(eps ...string) *chainAPI {
+		return newChainAPI(func(string) (routeindex.PathfinderChain, error) {
+			return routeindex.PathfinderChain{Id: "x", Rests: eps}, nil
+		})
+	}
+
+	// A dead node then a lagging 404: unknown, not "no commitment".
+	_, err := api(dead.URL, lagging.URL).packetCommitted(context.Background(), "x", "transfer", "channel-0", "1")
+	assert.Error(t, err)
+
+	// Every endpoint says not found: that is an answer.
+	ok, err := api(lagging.URL, lagging.URL).packetCommitted(context.Background(), "x", "transfer", "channel-0", "1")
+	assert.NoError(t, err)
+	assert.False(t, ok)
 }
 
 func TestSDKVersionQueryStyle(t *testing.T) {
@@ -548,4 +652,58 @@ func TestProtoToolResultsExposeZeroValues(t *testing.T) {
 	b, err := protoJSON(&v2beta.LookupDenomResponse{Found: false})
 	assert.NoError(t, err)
 	assert.True(t, strings.Contains(string(b), `"found":false`) || strings.Contains(string(b), `"found": false`))
+}
+
+func TestSwapOutput(t *testing.T) {
+	attr := func(k, v string) map[string]any { return map[string]any{"key": k, "value": v} }
+	swap := func(in, out string) map[string]any {
+		return map[string]any{"type": "token_swapped", "attributes": []any{attr("tokens_in", in), attr("tokens_out", out)}}
+	}
+	// Split route: two routes, each two hops through uosmo, into ibc/ATOM.
+	got := swapOutput([]map[string]any{
+		swap("600uusdc", "300uosmo"), swap("300uosmo", "400ibc/ATOM"),
+		swap("400uusdc", "200uosmo"), swap("200uosmo", "595ibc/ATOM"),
+	})
+	assert.Equal(t, len(got), 1)
+	assert.Equal(t, got[0], coinOut{Denom: "ibc/ATOM", Amount: "995"})
+	assert.Equal(t, len(swapOutput(nil)), 0)
+}
+
+func TestSetTransferAmount(t *testing.T) {
+	orig := &cosmostx.MsgTransfer{SourcePort: "transfer", SourceChannel: "channel-0", Token: cosmostx.Coin{Denom: "uosmo", Amount: "990"},
+		Sender: "osmo1a", Receiver: "cosmos1b", TimeoutTimestamp: 7, Memo: "m"}
+	mo := messageOut(orig)
+	out, err := setTransferAmount(setAmountInput{Message: MessageIn{TypeURL: mo.TypeURL, ValueBase64: mo.ValueBase64}, Amount: "995"})
+	assert.NoError(t, err)
+	raw, _ := base64.StdEncoding.DecodeString(out.ValueBase64)
+	m, err := cosmostx.ParseMsg(out.TypeURL, raw)
+	assert.NoError(t, err)
+	want := *orig
+	want.Token.Amount = "995"
+	assert.DeepEqual(t, m, &want)
+
+	_, err = setTransferAmount(setAmountInput{Message: MessageIn{TypeURL: mo.TypeURL, ValueBase64: mo.ValueBase64}, Amount: "-5"})
+	assert.Error(t, err)
+	_, err = setTransferAmount(setAmountInput{Message: MessageIn{TypeURL: "/cosmos.bank.v1beta1.MsgSend", ValueBase64: mo.ValueBase64}, Amount: "5"})
+	assert.Error(t, err)
+}
+
+func TestManualBrokerOutboundUsesMinimumOutput(t *testing.T) {
+	b := &builder{addr: map[string]string{"osmosis-1": "osmo1a", "cosmoshub-4": "cosmos1b"}, timeout: 1}
+	tok := &models.TokenMapping{ChainDenom: "ibc/ATOM"}
+	r := &models.BrokerRoute{
+		Path: []string{"osmosis-1", "cosmoshub-4"},
+		Swap: &models.SwapQuote{TokenIn: &models.TokenMapping{ChainDenom: "uosmo"}, TokenOut: tok, AmountIn: "5000", AmountOut: "1000",
+			RouteData: &osmosis.RouteData{Routes: []osmosis.Route{{Pools: []osmosis.Pool{{ID: 1, TokenOutDenom: "ibc/ATOM"}}}}}},
+		OutboundLegs: []*models.IBCLeg{{FromChain: "osmosis-1", ToChain: "cosmoshub-4", Channel: "channel-0", Port: "transfer", Token: tok, Amount: "1000"}},
+	}
+	assert.NoError(t, b.brokerManual(r, 100))
+	assert.Equal(t, len(b.steps), 2)
+	out := b.steps[1]
+	assert.True(t, out.AmountFromSwap)
+	raw, _ := base64.StdEncoding.DecodeString(out.Messages[0].ValueBase64)
+	m, err := cosmostx.ParseMsg(out.Messages[0].TypeURL, raw)
+	assert.NoError(t, err)
+	assert.Equal(t, m.(*cosmostx.MsgTransfer).Token.Amount, "990") // 1000 minus 1% slippage
+	assert.Equal(t, r.OutboundLegs[0].Amount, "1000")              // the route itself is untouched
 }

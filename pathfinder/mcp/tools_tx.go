@@ -134,6 +134,19 @@ func (t *tools) registerTx(s *sdk.Server) {
 	})
 
 	sdk.AddTool(s, &sdk.Tool{
+		Name: "set_transfer_amount",
+		Description: "Return a build_transaction MsgTransfer with a different amount, re-encoded; nothing else changes. Use it on steps marked amount_from_swap: " +
+			"after the swap step, set the amount to track_transfer's swap_output for that denom, then pass the new message to build_sign_doc. Nothing is signed or sent.",
+		Annotations: &sdk.ToolAnnotations{ReadOnlyHint: true},
+	}, func(_ context.Context, _ *sdk.CallToolRequest, in setAmountInput) (*sdk.CallToolResult, any, error) {
+		out, err := setTransferAmount(in)
+		if err != nil {
+			return nil, nil, err
+		}
+		return jsonResult(out)
+	})
+
+	sdk.AddTool(s, &sdk.Tool{
 		Name: "track_transfer",
 		Description: "Track an IBC transfer from its source transaction: confirms inclusion, then follows each IBC packet to its destination (including packets forwarded through intermediate chains) and reports in_progress / completed / failed / timed_out with per-hop detail. " +
 			"Poll every ~30s until status is not in_progress.",

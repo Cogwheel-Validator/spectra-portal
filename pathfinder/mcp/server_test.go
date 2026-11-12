@@ -61,7 +61,7 @@ func text(t *testing.T, res *sdk.CallToolResult) string {
 
 const readOnlyTools = "address_info,assemble_signed_tx,build_sign_doc,build_transaction,compute_ibc_denom,convert_address," +
 	"decode_tx,find_route,get_account,get_chain_endpoints,get_chain_info,get_chain_tokens,get_execution_guide,get_signing_options," +
-	"get_token_denoms,get_tx,list_chains,lookup_denom,prepare_transfer,track_transfer"
+	"get_token_denoms,get_tx,list_chains,lookup_denom,prepare_transfer,set_transfer_amount,track_transfer"
 
 func toolNames(t *testing.T, s *sdk.ClientSession) (names []string, byName map[string]*sdk.Tool) {
 	t.Helper()

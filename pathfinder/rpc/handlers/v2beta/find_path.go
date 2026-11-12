@@ -92,9 +92,8 @@ func (s *FindPathServer) validateRequest(p findPathParams, allowEmpty bool) (map
 			fmt.Errorf("unknown destination chain: %s", p.ChainTo))
 	}
 
-	if p.AmountIn == "" || p.AmountIn == "0" {
-		return nil, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("amount_in must be a positive number"))
+	if err := common.ValidateAmount(p.AmountIn); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	if len(p.Addresses) == 0 {

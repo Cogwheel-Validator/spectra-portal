@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,10 @@ type PacketTrack struct {
 	RecvTx    string `json:"dest_tx_hash,omitempty"`
 	AckError  string `json:"ack_error,omitempty"`
 	Note      string `json:"note,omitempty"`
+	// Unchecked is set when the packet was received but the receiving
+	// transaction could not be read, so packets it may have forwarded are
+	// unknown. The route then counts as still in progress.
+	Unchecked bool `json:"downstream_unchecked,omitempty"`
 	// Forwarded are packets the destination chain sent on as a result of this
 	// one (packet-forward-middleware or ibc-hooks swap-and-forward).
 	Forwarded []*PacketTrack `json:"forwarded,omitempty"`
@@ -51,6 +56,14 @@ type TrackResult struct {
 	Summary string         `json:"summary"`
 	Tx      *txResult      `json:"tx,omitempty"`
 	Packets []*PacketTrack `json:"packets,omitempty"`
+	// SwapOutput is what an Osmosis swap in this transaction paid out, read
+	// from its token_swapped events (empty when there was no swap).
+	SwapOutput []coinOut `json:"swap_output,omitempty"`
+}
+
+type coinOut struct {
+	Denom  string `json:"denom"`
+	Amount string `json:"amount"`
 }
 
 type tracker struct {
@@ -74,6 +87,7 @@ func (t *tracker) track(ctx context.Context, chainID, hash string, follow bool) 
 		res.Summary = fmt.Sprintf("The transaction failed on %s (code %d): %s. No IBC packets were sent.", chainID, tx.Code, tx.RawLog)
 		return res, nil
 	}
+	res.SwapOutput = swapOutput(tx.Events)
 	pkts := sendPackets(tx.Events)
 	if len(pkts) == 0 {
 		res.Status = "no_ibc_packets"
@@ -138,6 +152,13 @@ func (t *tracker) fill(ctx context.Context, pt *PacketTrack, attrs map[string]st
 	}
 	recv, err := t.findRecvTx(ctx, pt)
 	if err != nil || recv == nil {
+		// Without the receiving transaction we cannot tell whether the packet
+		// was forwarded on (or rejected), so this hop is not the end yet.
+		pt.Unchecked = true
+		pt.Note = "Received on " + pt.DestChain + ", but the receiving transaction is not searchable yet, so forwarded packets cannot be checked."
+		if err != nil {
+			pt.Note += " Search error: " + err.Error()
+		}
 		return
 	}
 	pt.RecvTx = recv.Hash
@@ -147,7 +168,7 @@ func (t *tracker) fill(ctx context.Context, pt *PacketTrack, attrs map[string]st
 		pt.Note = "The destination rejected the transfer; the funds are refunded on " + pt.SourceChain + "."
 		return
 	}
-	for _, p := range sendPackets(recv.Events) {
+	for _, p := range forwardedPackets(recv.Events, pt) {
 		next := &PacketTrack{
 			SourceChain: pt.DestChain, SourceTx: recv.Hash,
 			Sequence: p["packet_sequence"], SrcPort: p["packet_src_port"], SrcChannel: p["packet_src_channel"],
@@ -208,6 +229,9 @@ func overall(roots []*PacketTrack) (status, summary string) {
 		case pktTimedOut:
 			timedOut = append(timedOut, l.SourceChain+"->"+l.DestChain)
 		case pktDelivered, pktReceived:
+			if l.Unchecked {
+				pending = append(pending, l.SourceChain+"->"+l.DestChain)
+			}
 		default:
 			pending = append(pending, l.SourceChain+"->"+l.DestChain)
 		}
@@ -233,6 +257,100 @@ func sendPackets(events []map[string]any) []map[string]string {
 		out = append(out, attrMap(e))
 	}
 	return out
+}
+
+// forwardedPackets returns the send_packet events caused by receiving pt in
+// the receiving transaction. A relayer may receive many packets in one
+// transaction, so only sends from the same message count: matched by the
+// msg_index attribute when the chain emits it, otherwise by position (the
+// events between this recv_packet and the next recv_packet).
+func forwardedPackets(events []map[string]any, pt *PacketTrack) []map[string]string {
+	start := -1
+	var msgIndex string
+	for i, e := range events {
+		if e["type"] != "recv_packet" {
+			continue
+		}
+		a := attrMap(e)
+		if a["packet_sequence"] == pt.Sequence && a["packet_src_channel"] == pt.SrcChannel &&
+			(pt.DstChannel == "" || a["packet_dst_channel"] == pt.DstChannel) {
+			start, msgIndex = i, a["msg_index"]
+			break
+		}
+	}
+	if start < 0 {
+		return nil
+	}
+	var out []map[string]string
+	if msgIndex != "" {
+		for _, e := range events {
+			if e["type"] != "send_packet" {
+				continue
+			}
+			if a := attrMap(e); a["msg_index"] == msgIndex {
+				out = append(out, a)
+			}
+		}
+		return out
+	}
+	for _, e := range events[start+1:] {
+		if e["type"] == "recv_packet" {
+			break
+		}
+		if e["type"] == "send_packet" {
+			out = append(out, attrMap(e))
+		}
+	}
+	return out
+}
+
+// swapOutput sums the final outputs of the Osmosis swaps in a transaction.
+// Each pool hop emits token_swapped with tokens_in and tokens_out; a multi-hop
+// or split route passes intermediate denoms from one hop to the next, so the
+// final output is the tokens_out of denoms that no hop took in.
+func swapOutput(events []map[string]any) []coinOut {
+	out := map[string]*big.Int{}
+	in := map[string]bool{}
+	var order []string
+	for _, e := range events {
+		if e["type"] != "token_swapped" {
+			continue
+		}
+		a := attrMap(e)
+		if c, ok := parseCoin(a["tokens_in"]); ok {
+			in[c.Denom] = true
+		}
+		c, ok := parseCoin(a["tokens_out"])
+		if !ok {
+			continue
+		}
+		n, _ := new(big.Int).SetString(c.Amount, 10)
+		if out[c.Denom] == nil {
+			out[c.Denom] = new(big.Int)
+			order = append(order, c.Denom)
+		}
+		out[c.Denom].Add(out[c.Denom], n)
+	}
+	var res []coinOut
+	for _, d := range order {
+		if !in[d] {
+			res = append(res, coinOut{Denom: d, Amount: out[d].String()})
+		}
+	}
+	return res
+}
+
+// parseCoin parses a single coin like "995ibc/27394FB..." or "12uosmo".
+func parseCoin(s string) (coinOut, bool) {
+	s = strings.TrimSpace(s)
+	i := 0
+	for i < len(s) && s[i] >= '0' && s[i] <= '9' {
+		i++
+	}
+	if i == 0 || i == len(s) || strings.Contains(s, ",") {
+		return coinOut{}, false
+	}
+	return coinOut{Amount: s[:i], Denom: s[i:]}, true
 }
 
 func attrMap(e map[string]any) map[string]string {

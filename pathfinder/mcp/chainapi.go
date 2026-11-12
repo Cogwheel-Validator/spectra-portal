@@ -67,7 +67,10 @@ func (c *chainAPI) do(ctx context.Context, chainID, method, path string, body []
 	if err != nil {
 		return err
 	}
-	var last error
+	// A "not found" only counts once every endpoint has said it: if any
+	// endpoint failed for another reason, that failure is returned instead, so
+	// a lagging node's 404 never hides a live node that was just unreachable.
+	var notFound, other error
 	for _, ep := range eps {
 		var rdr io.Reader
 		if body != nil {
@@ -75,7 +78,7 @@ func (c *chainAPI) do(ctx context.Context, chainID, method, path string, body []
 		}
 		req, err := http.NewRequestWithContext(ctx, method, strings.TrimRight(ep, "/")+path, rdr)
 		if err != nil {
-			last = err
+			other = err
 			continue
 		}
 		if body != nil {
@@ -83,20 +86,25 @@ func (c *chainAPI) do(ctx context.Context, chainID, method, path string, body []
 		}
 		resp, err := c.client.Do(req)
 		if err != nil {
-			last = err
+			other = err
 			continue
 		}
 		data, rerr := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 		_ = resp.Body.Close()
 		if rerr != nil {
-			last = rerr
+			other = rerr
 			continue
 		}
 		// 5xx and 404 try the next endpoint: a pruned or lagging node answers
 		// 404 for data that other nodes still have, so "not found" is only
 		// real once every endpoint has said it.
 		if resp.StatusCode >= 500 || resp.StatusCode == http.StatusNotFound {
-			last = &apiError{Status: resp.StatusCode, Body: snippet(data)}
+			ae := &apiError{Status: resp.StatusCode, Body: snippet(data)}
+			if isNotFound(ae) {
+				notFound = ae
+			} else {
+				other = ae
+			}
 			continue
 		}
 		if resp.StatusCode >= 400 {
@@ -106,15 +114,24 @@ func (c *chainAPI) do(ctx context.Context, chainID, method, path string, body []
 			return nil
 		}
 		if err := json.Unmarshal(data, out); err != nil {
-			last = fmt.Errorf("invalid JSON from endpoint: %w", err)
+			other = fmt.Errorf("invalid JSON from endpoint: %w", err)
 			continue
 		}
 		return nil
 	}
-	if last == nil {
-		last = errNoEndpoints
+	if other != nil {
+		return fmt.Errorf("all REST endpoints failed for %s: %w", chainID, other)
 	}
-	return fmt.Errorf("all REST endpoints failed for %s: %w", chainID, last)
+	if notFound != nil {
+		return fmt.Errorf("every REST endpoint of %s reported not found: %w", chainID, notFound)
+	}
+	return fmt.Errorf("all REST endpoints failed for %s: %w", chainID, errNoEndpoints)
+}
+
+// isNotFound reports whether err is an endpoint saying the data does not exist.
+func isNotFound(err error) bool {
+	var ae *apiError
+	return errors.As(err, &ae) && (ae.Status == http.StatusNotFound || strings.Contains(ae.Body, "not found"))
 }
 
 func snippet(b []byte) string {
@@ -139,8 +156,7 @@ func (c *chainAPI) account(ctx context.Context, chainID, address string) (*Accou
 		Account map[string]any `json:"account"`
 	}
 	err := c.do(ctx, chainID, http.MethodGet, "/cosmos/auth/v1beta1/accounts/"+url.PathEscape(address), nil, &resp)
-	var ae *apiError
-	if errors.As(err, &ae) && (ae.Status == http.StatusNotFound || strings.Contains(ae.Body, "not found")) {
+	if isNotFound(err) {
 		return &AccountInfo{Address: address, AccountNumber: "0", Sequence: "0", Exists: false}, nil
 	}
 	if err != nil {
@@ -212,8 +228,7 @@ func (c *chainAPI) tx(ctx context.Context, chainID, hash string) (*txResult, err
 		} `json:"tx_response"`
 	}
 	err := c.do(ctx, chainID, http.MethodGet, "/cosmos/tx/v1beta1/txs/"+url.PathEscape(strings.ToUpper(hash)), nil, &resp)
-	var ae *apiError
-	if errors.As(err, &ae) && (ae.Status == http.StatusNotFound || strings.Contains(ae.Body, "not found")) {
+	if isNotFound(err) {
 		return &txResult{Found: false, Hash: strings.ToUpper(hash)}, nil
 	}
 	if err != nil {
@@ -317,8 +332,7 @@ func (c *chainAPI) packetCommitted(ctx context.Context, srcChain, port, channel,
 	p := fmt.Sprintf("/ibc/core/channel/v1/channels/%s/ports/%s/packet_commitments/%s",
 		url.PathEscape(channel), url.PathEscape(port), url.PathEscape(seq))
 	err := c.do(ctx, srcChain, http.MethodGet, p, nil, &resp)
-	var ae *apiError
-	if errors.As(err, &ae) && (ae.Status == http.StatusNotFound || strings.Contains(ae.Body, "not found")) {
+	if isNotFound(err) {
 		return false, nil // no commitment stored: acked or timed out
 	}
 	if err != nil {

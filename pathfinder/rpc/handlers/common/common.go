@@ -51,6 +51,22 @@ func (d Deps) ResolveDenoms(chainFrom, tokenFrom, chainTo, tokenTo string) (stri
 	return resolvedFromDenom, resolvedToDenom, nil
 }
 
+// ValidateAmount checks that an amount is a positive integer in base units with
+// no sign, decimal point or leading zeros (the same rule as the proto
+// is_positive_integer constraint). In-process callers skip protovalidate, so
+// handlers must call this themselves.
+func ValidateAmount(amount string) error {
+	if amount == "" || amount[0] < '1' || amount[0] > '9' {
+		return fmt.Errorf("amount_in must be a positive integer")
+	}
+	for i := 1; i < len(amount); i++ {
+		if amount[i] < '0' || amount[i] > '9' {
+			return fmt.Errorf("amount_in must be a positive integer")
+		}
+	}
+	return nil
+}
+
 // ValidateBech32Address validates that an address is a valid bech32 address
 // Returns the prefix if valid, or an error if invalid
 func ValidateBech32Address(address string) (string, error) {

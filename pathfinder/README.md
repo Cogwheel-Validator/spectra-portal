@@ -35,7 +35,7 @@ Set `enable_mcp = true` (env: `PATHFINDER_ENABLE_MCP`) to serve a [Model Context
 
 The MCP is a **planning, building and tracking layer**: it finds routes, builds unsigned transactions and follows transfers to completion. **It never holds keys and never signs**; the user's wallet signs. Agents should call `get_execution_guide` first (also the resource `spectra://guide/execution`).
 
-Signing: `prepare_transfer` validates a transfer and returns a ready `pathfinder-sign` command. [`pathfinder-sign`](../docs/PATHFINDER_SING.md) is a small program for the user's own machine that opens a page on `127.0.0.1` where they approve in Keplr. It is published with every release for Linux, macOS and Windows. Why it works this way: [docs/MCP_SIGNING.md](../docs/MCP_SIGNING.md).
+Signing: `prepare_transfer` validates a transfer and returns a ready `pathfinder-sign` command. [`pathfinder-sign`](../docs/PATHFINDER_SIGN.md) is a small program for the user's own machine that opens a page on `127.0.0.1` where they approve in Keplr. It is published with every release for Linux, macOS and Windows. Why it works this way: [docs/MCP_SIGNING.md](../docs/MCP_SIGNING.md).
 
 | Tool | What it does |
 | --- | --- |
