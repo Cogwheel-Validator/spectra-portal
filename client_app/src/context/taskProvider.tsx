@@ -137,7 +137,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
-        initDb();
+        void initDb();
 
         return () => {
             mounted = false;

@@ -163,7 +163,7 @@ describe("IndexedDB Manager", () => {
         });
 
         it("should reject when transaction not found", async () => {
-            expect(FetchTransactionById(db, 999)).rejects.toThrow(
+            await expect(FetchTransactionById(db, 999)).rejects.toThrow(
                 "Transaction with id 999 not found"
             );
         });
@@ -340,7 +340,7 @@ describe("IndexedDB Manager", () => {
         });
 
         it("should reject when transaction not found", async () => {
-            expect(
+            await expect(
                 UpdateTransactionStatus(db, {
                     id: 999,
                     status: "success",
@@ -416,7 +416,7 @@ describe("IndexedDB Manager", () => {
                 error: null,
             };
 
-            expect(UpdateTransactionInDb(db, transaction as TransactionRecord)).rejects.toThrow(
+            await expect(UpdateTransactionInDb(db, transaction as TransactionRecord)).rejects.toThrow(
                 "Transaction must have an id to be updated"
             );
         });
@@ -446,7 +446,7 @@ describe("IndexedDB Manager", () => {
             const id = await AddTransactionToDb(db, transaction);
             await DeleteTransactionById(db, id);
 
-            expect(FetchTransactionById(db, id)).rejects.toThrow(
+            await expect(FetchTransactionById(db, id)).rejects.toThrow(
                 `Transaction with id ${id} not found`
             );
         });

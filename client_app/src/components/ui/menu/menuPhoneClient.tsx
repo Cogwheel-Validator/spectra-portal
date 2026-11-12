@@ -8,6 +8,14 @@ import { MdOutlineClose } from "react-icons/md";
 export function MenuSelectionClient({ elements }: { elements: JSX.Element[] }): JSX.Element {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const menuListRef = useRef<HTMLDivElement>(null);
+
+    // Move focus into the menu when it opens so Escape works from the keyboard
+    useEffect(() => {
+        if (isOpen) {
+            menuListRef.current?.focus();
+        }
+    }, [isOpen]);
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -45,6 +53,8 @@ export function MenuSelectionClient({ elements }: { elements: JSX.Element[] }): 
             {isOpen && (
                 <div
                     role="menu"
+                    ref={menuListRef}
+                    tabIndex={-1}
                     className="absolute top-full right-0 mt-2 flex flex-col gap-2 p-3 rounded-box backdrop-blur-sm bg-base-100 shadow-lg border border-accent min-w-[200px]"
                     onClick={() => setIsOpen(false)}
                     onKeyDown={(event) => {
