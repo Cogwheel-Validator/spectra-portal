@@ -165,6 +165,8 @@ func buildServerConfig(cfg *config.RPCPathfinderConfig) *rpc.ServerConfig {
 		EnableReflection:   cfg.EnableReflection,
 		EnableMCP:          cfg.EnableMCP,
 		EnableMCPBroadcast: cfg.EnableMCPBroadcast,
+		MCPPublicURL:       cfg.MCPPublicURL,
+		EnableMCPInlineUI:  cfg.EnableMCPInlineUI,
 		EnableMetrics:      cfg.UsePrometheus, // Enable metrics endpoint if prometheus is enabled
 	}
 

@@ -37,6 +37,12 @@ type Options struct {
 	// Broadcast enables broadcast_signed_tx, the only tool that submits
 	// anything to a chain. It is off unless the operator opts in.
 	Broadcast bool
+	// PublicURL is the externally reachable base URL of this server (no
+	// trailing /mcp), put into the signing requests returned by
+	// prepare_transfer. When empty it is derived from the request headers.
+	PublicURL string
+	// InlineUI serves the experimental inline signer view (MCP Apps).
+	InlineUI bool
 }
 
 // NewServer builds an MCP server exposing the Pathfinder tools.
@@ -52,21 +58,24 @@ func NewServer(deps common.Deps, opts Options) *sdk.Server {
 	t.register(s)
 	t.registerTx(s)
 	t.registerUtil(s)
-	t.registerUI(s)
+	t.registerSigning(s)
+	if opts.InlineUI {
+		t.registerInlineUI(s)
+	}
 	registerGuide(s)
 	return s
 }
 
 func serverInstructions(opts Options) string {
-	msg := "Spectra Pathfinder finds IBC routes (with optional DEX swaps) between Cosmos chains and prepares the " +
-		"unsigned transactions for them. Read get_execution_guide first. If your client renders MCP Apps (inline UI), call prepare_transfer: it opens a signer view where the user connects Keplr and signs, with no further tool calls from you. Manual flow: list_chains -> get_chain_tokens -> " +
-		"find_route (no addresses = preview) -> build_transaction -> build_sign_doc -> user's wallet signs -> " +
-		"assemble_signed_tx -> broadcast -> track_transfer. " +
-		"This server never holds keys and never signs; the user's wallet must sign. "
+	msg := "Spectra Pathfinder is a planning, building and tracking layer for cross-chain (IBC) transfers and DEX swaps between Cosmos chains. " +
+		"Read get_execution_guide first. It finds routes (list_chains, get_chain_tokens, find_route), builds unsigned transactions (build_transaction), " +
+		"and follows transfers to completion (track_transfer). " +
+		"It never holds keys and never signs: the user's own wallet signs. The easiest path is prepare_transfer, which validates the route and returns a " +
+		"`pathfinder-sign` command the user approves in Keplr; get_signing_options lists the other ways to sign. "
 	if opts.Broadcast {
 		return msg + "broadcast_signed_tx submits an already-signed transaction (restricted to Spectra route message types)."
 	}
-	return msg + "Broadcasting is disabled here: submit the signed transaction through your own RPC/REST endpoint (see get_chain_endpoints)."
+	return msg + "Broadcasting is disabled here: submit signed transactions through your own RPC/REST endpoint (see get_chain_endpoints) or let the wallet broadcast."
 }
 
 func newTools(deps common.Deps, opts Options) *tools {
@@ -87,8 +96,17 @@ func Handler(server *sdk.Server) http.Handler {
 	opts := sdk.StreamableHTTPOptions{
 		DisableLocalhostProtection: true,
 	}
-	return sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return server }, &opts)
+	h := sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return server }, &opts)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Go keeps Host out of the header map (it lives in r.Host), so tools could never see it.
+		// Always overwrite, so a client cannot supply its own value.
+		r.Header.Set(hostHeader, r.Host)
+		h.ServeHTTP(w, r)
+	})
 }
+
+// hostHeader carries the request's Host to the tools (set by Handler).
+const hostHeader = "X-Spectra-Request-Host"
 
 type tools struct {
 	deps      common.Deps

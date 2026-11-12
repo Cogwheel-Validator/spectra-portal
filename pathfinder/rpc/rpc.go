@@ -43,8 +43,10 @@ type ServerConfig struct {
 	Address               string
 	AllowedOrigins        []string
 	EnableReflection      bool
-	EnableMCP             bool // serve the Model Context Protocol endpoint at /mcp
-	EnableMCPBroadcast    bool // expose the broadcast_signed_tx MCP tool
+	EnableMCP             bool   // serve the Model Context Protocol endpoint at /mcp
+	EnableMCPBroadcast    bool   // expose the broadcast_signed_tx MCP tool
+	MCPPublicURL          string // public base URL used in prepare_transfer's signing requests
+	EnableMCPInlineUI     bool   // serve the experimental inline signer view
 	EnableMetrics         bool
 	RatePerMinute         *int
 	MaxConcurrentRequests *int
@@ -297,7 +299,10 @@ func addConnectRoutes(
 	// MCP uses long-lived streams, so like the streaming RPC it sits outside
 	// the timeout group; the concurrency throttle still applies.
 	if config.EnableMCP {
-		mcpHandler := pfmcp.Handler(pfmcp.NewServer(deps, pfmcp.Options{Version: "v2beta", Broadcast: config.EnableMCPBroadcast}))
+		mcpHandler := pfmcp.Handler(pfmcp.NewServer(deps, pfmcp.Options{
+			Version: "v2beta", Broadcast: config.EnableMCPBroadcast,
+			PublicURL: config.MCPPublicURL, InlineUI: config.EnableMCPInlineUI,
+		}))
 		if config.MaxConcurrentRequests != nil && *config.MaxConcurrentRequests > 0 {
 			mcpHandler = middleware.Throttle(*config.MaxConcurrentRequests)(mcpHandler)
 		}

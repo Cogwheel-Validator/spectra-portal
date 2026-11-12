@@ -52,7 +52,7 @@ func loadEnv(v *viper.Viper) (*RPCPathfinderConfig, error) {
 // when no config file is loaded (env-only mode).
 func bindEnvKeys(v *viper.Viper) {
 	keys := []string{
-		"port", "host", "allowed_origins", "enable_reflection", "enable_mcp", "enable_mcp_broadcast",
+		"port", "host", "allowed_origins", "enable_reflection", "enable_mcp", "enable_mcp_broadcast", "mcp_public_url", "enable_mcp_inline_ui",
 		"rate_per_minute", "max_concurrent_requests",
 		"service_name", "service_version", "environment",
 		"enable_tracing", "use_otlp_traces", "otlp_traces_url",
