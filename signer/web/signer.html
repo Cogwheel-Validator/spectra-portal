@@ -339,6 +339,26 @@
           box.append(el("div", "card warn", w));
       }
 
+      // Outbound transfers after a swap are built with the swap's minimum output.
+      // Once the swap is done, move the whole actual output instead.
+      async function useSwapOutput(after, coins) {
+        for (let j = after + 1; j < plan.steps.length; j++) {
+          const s = plan.steps[j];
+          if (!s.amount_from_swap) continue;
+          const msg = s.messages[0];
+          const denom = msg.proto_json && msg.proto_json.token && msg.proto_json.token.denom;
+          const c = coins.find((x) => x.denom === denom);
+          if (!c) continue; // keep the minimum: it is always available
+          s.messages[0] = await callTool("set_transfer_amount", {
+            message: { type_url: msg.type_url, value_base64: msg.value_base64 },
+            amount: c.amount,
+          });
+          const card = $("step-" + j);
+          if (card)
+            card.append(el("div", "muted", `Amount set to the swap's actual output: ${c.amount} ${denom}`));
+        }
+      }
+
       // ---- signing one step ----
       async function signAndSend(step) {
         const w = wallet[step.chain_id];
@@ -474,13 +494,18 @@
               hashes.push({ chain_id: s.chain_id, tx_hash: hash });
             }
             const t = await waitDone(s.chain_id, sent.hash, `Step ${i + 1}`);
-            if (t.status !== "completed") {
+            // A swap that sends nothing over IBC ends as "no_ibc_packets": that is its success.
+            const ok =
+              t.status === "completed" ||
+              (t.status === "no_ibc_packets" && !s.type.startsWith("ibc_transfer"));
+            if (!ok) {
               const err = new Error(
                 `Step ${i + 1} (${sent.hash}) ended as ${t.status}: ${t.summary || ""} Funds, if any, are refunded to the sender.`,
               );
               err.fatal = true;
               throw err;
             }
+            if (t.swap_output && t.swap_output.length) await useSwapOutput(i, t.swap_output);
             sent = null;
             nextStep = i + 1;
           }

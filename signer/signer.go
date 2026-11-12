@@ -37,6 +37,7 @@ const placeholder = "<!--SPECTRA_LOCAL-->"
 var allowedTools = map[string]bool{
 	"find_route": true, "build_transaction": true, "build_sign_doc": true,
 	"assemble_signed_tx": true, "broadcast_signed_tx": true, "track_transfer": true,
+	"set_transfer_amount": true,
 }
 
 // Transfer is the route the agent asked for. The recipient is optional and,
