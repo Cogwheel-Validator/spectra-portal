@@ -150,7 +150,7 @@ features.
 
 The Pathfinder can also serve an MCP endpoint so AI agents can plan, build and track transfers (it never signs; the
 user's wallet does, through the small local `pathfinder-sign` program published with each release). See
-[docs/MCP.md](docs/MCP.md), [docs/MCP_SIGNING.md](docs/MCP_SIGNING.md) and [docs/PATHFINDER_SING.md](docs/PATHFINDER_SING.md).
+[docs/MCP.md](docs/MCP.md), [docs/MCP_SIGNING.md](docs/MCP_SIGNING.md) and [docs/PATHFINDER_SIGN.md](docs/PATHFINDER_SIGN.md).
 
 ### The Client App
 

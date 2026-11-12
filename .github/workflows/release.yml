@@ -79,7 +79,7 @@ jobs:
             chmod +x pathfinder-sign-${{ steps.version.outputs.version }}-linux-amd64
             mv pathfinder-sign-${{ steps.version.outputs.version }}-linux-amd64 ~/.local/bin/pathfinder-sign
             ```
-            See docs/PATHFINDER_SING.md.
+            See docs/PATHFINDER_SIGN.md.
 
             ### Client App
             Download the tar.gz file and extract it:

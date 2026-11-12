@@ -4,7 +4,7 @@ The Pathfinder can expose a [Model Context Protocol](https://modelcontextprotoco
 endpoint so that AI agents
 can **plan, build and track** cross-chain (IBC) transfers and DEX swaps. It never
 holds keys and never signs: the user's own wallet signs. See [MCP_SIGNING.md](MCP_SIGNING.md)
-for why, and [PATHFINDER_SING.md](PATHFINDER_SING.md) for the local program that
+for why, and [PATHFINDER_SIGN.md](PATHFINDER_SIGN.md) for the local program that
 connects the user's Keplr.
 
 Contents:
@@ -73,7 +73,7 @@ claude mcp add --transport http spectra https://pathfinder.example.com/mcp
 For clients that only support local stdio servers, use a bridge such as `mcp-remote`. The agent should call
 `get_execution_guide` first (also served as the resource `spectra://guide/execution`); the server instructions say so.
 
-To let the agent sign through your browser wallet, install [pathfinder-sign](PATHFINDER_SING.md) on the machine where the
+To let the agent sign through your browser wallet, install [pathfinder-sign](PATHFINDER_SIGN.md) on the machine where the
 browser with Keplr runs.
 
 ## A typical conversation
@@ -118,6 +118,7 @@ All tools are read-only except `broadcast_signed_tx`. None of them signs.
 | --- | --- |
 | `build_transaction` | Ordered **unsigned** steps (`smart` = fewest transactions via packet-forward / ibc-hooks, `manual` = one per leg). Messages in `type_url` + `value_base64`, proto JSON and amino JSON. Needs an address per chain |
 | `build_sign_doc` | Direct SignDoc or amino sign doc for one step. Looks up account number/sequence, simulates gas, derives the fee, and checks that the public key matches the signer and every message sender |
+| `set_transfer_amount` | Re-encodes a step's MsgTransfer with a new amount. Used on manual-mode steps marked `amount_from_swap`, which are built with the swap's minimum output: after the swap, set them to its actual output (`swap_output` from `track_transfer`) |
 | `assemble_signed_tx` | body + auth_info + the wallet's 64-byte signature → broadcastable bytes and hash |
 | `broadcast_signed_tx` | **Only with `enable_mcp_broadcast`.** Submits a signed tx; rejects unsigned txs and anything outside the allowlist |
 
@@ -125,7 +126,7 @@ All tools are read-only except `broadcast_signed_tx`. None of them signs.
 
 | Tool | What it does |
 | --- | --- |
-| `track_transfer` | Follows each IBC packet (including forwarded hops) and reports `in_progress` / `completed` / `failed` / `timed_out` with per-hop detail |
+| `track_transfer` | Follows each IBC packet (including forwarded hops) and reports `in_progress` / `completed` / `failed` / `timed_out` with per-hop detail. A hop counts as done only once its receiving transaction was found, so forwarded packets are never missed. For a swap it also returns `swap_output` |
 | `get_account`, `get_tx` | Account number / sequence / balances; a transaction's result |
 | `decode_tx`, `address_info`, `convert_address`, `compute_ibc_denom` | Decode and encode helpers |
 

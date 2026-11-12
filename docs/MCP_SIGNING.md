@@ -1,7 +1,7 @@
 # How signing works with the Pathfinder MCP
 
 This document explains **why** the MCP signs the way it does, what was tried, and what the limits are. For
-setup and tools see [MCP.md](MCP.md); for the signing program see [PATHFINDER_SING.md](PATHFINDER_SING.md).
+setup and tools see [MCP.md](MCP.md); for the signing program see [PATHFINDER_SIGN.md](PATHFINDER_SIGN.md).
 
 ## The principle
 

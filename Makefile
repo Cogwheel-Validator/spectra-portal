@@ -92,7 +92,7 @@ build-pathfinder:
 	GOTOOLCHAIN=auto go build -ldflags="-s -w" -o build/pathfinder-rpc ./pathfinder/cmd/main.go
 	@echo "Pathfinder rpc binary built successfully!"
 
-# ---- pathfinder-sign: the local signing program (see docs/PATHFINDER_SING.md) ----
+# ---- pathfinder-sign: the local signing program (see docs/PATHFINDER_SIGN.md) ----
 # It holds no keys; it serves the signer page on 127.0.0.1 so the user's browser wallet can sign.
 # Pure Go, no cgo, so every target cross-compiles from any host.
 # Override the version with: make build-signer-all SIGNER_VERSION=1.2.3
@@ -128,7 +128,13 @@ signer-checksums:
 	@cat build/pathfinder-sign-$(SIGNER_VERSION)-checksums.txt
 
 # Build pathfinder-sign for Linux, macOS and Windows, plus checksums
-build-signer-all: clean-signer build-signer-linux-amd64 build-signer-linux-arm64 build-signer-darwin-amd64 build-signer-darwin-arm64 build-signer-windows-amd64 signer-checksums
+# Clean, build, checksum run in that order even under make -j; the builds
+# themselves still run in parallel.
+SIGNER_TARGETS := build-signer-linux-amd64 build-signer-linux-arm64 build-signer-darwin-amd64 build-signer-darwin-arm64 build-signer-windows-amd64
+build-signer-all:
+	$(MAKE) clean-signer
+	$(MAKE) $(SIGNER_TARGETS)
+	$(MAKE) signer-checksums
 	@echo "pathfinder-sign $(SIGNER_VERSION) built for all platforms in build/"
 
 clean-signer:
