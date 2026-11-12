@@ -46,13 +46,7 @@ type registryFeeCurrency struct {
 }
 
 func (c registryCurrency) toCurrency() Currency {
-	return Currency{
-		CoinDenom:        c.CoinDenom,
-		CoinMinimalDenom: c.CoinMinimalDenom,
-		CoinDecimals:     c.CoinDecimals,
-		CoinImageURL:     c.CoinImageURL,
-		CoinGeckoID:      c.CoinGeckoID,
-	}
+	return Currency(c)
 }
 
 func (r registryChainConfig) toChainConfig() ChainConfig {

@@ -50,7 +50,7 @@ func (e *encoder) u64(num protowire.Number, v uint64) {
 // field is one decoded protobuf field. Only varint and length-delimited wire
 // types are kept; anything else is skipped.
 type field struct {
-	num protowire.Number
+	num int32 // plain int so field-number switches aren't treated as enums
 	typ protowire.Type
 	u   uint64
 	b   []byte
@@ -72,14 +72,14 @@ func parseFields(b []byte) ([]field, error) {
 			if n < 0 {
 				return nil, fmt.Errorf("invalid varint: %w", protowire.ParseError(n))
 			}
-			out = append(out, field{num: num, typ: typ, u: v})
+			out = append(out, field{num: int32(num), typ: typ, u: v})
 			b = b[n:]
 		case protowire.BytesType:
 			v, n := protowire.ConsumeBytes(b)
 			if n < 0 {
 				return nil, fmt.Errorf("invalid length-delimited field: %w", protowire.ParseError(n))
 			}
-			out = append(out, field{num: num, typ: typ, b: v})
+			out = append(out, field{num: int32(num), typ: typ, b: v})
 			b = b[n:]
 		default:
 			n := protowire.ConsumeFieldValue(num, typ, b)

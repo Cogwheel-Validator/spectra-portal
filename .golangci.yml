@@ -37,6 +37,8 @@ linters:
           disabled: false
         - name: error-strings
           disabled: false
+    exhaustive:
+      default-signifies-exhaustive: true
     gocritic:
       disabled-checks:
         - ifElseChain

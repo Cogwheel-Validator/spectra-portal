@@ -28,7 +28,7 @@ func validReq() *signer.Request {
 	}
 }
 
-func start(t *testing.T) (*signer.Server, string, *fakeRemote) {
+func start(t *testing.T) (string, *fakeRemote) {
 	t.Helper()
 	f := &fakeRemote{}
 	s, err := signer.New(validReq(), f)
@@ -36,12 +36,20 @@ func start(t *testing.T) (*signer.Server, string, *fakeRemote) {
 	link, err := s.Listen(0)
 	assert.NoError(t, err)
 	go s.Serve(context.Background(), time.Minute)
-	return s, link, f
+	return link, f
 }
 
-func do(t *testing.T, method, url, token string, body string, mod func(*http.Request)) (*http.Response, string) {
+// reply is the part of an HTTP response the tests look at; the body is
+// already read and closed by do.
+type reply struct {
+	StatusCode int
+	Header     http.Header
+}
+
+func do(t *testing.T, method, url, token string, body string, mod func(*http.Request)) (reply, string) {
 	t.Helper()
-	req, _ := http.NewRequest(method, url, strings.NewReader(body))
+	req, err := http.NewRequestWithContext(context.Background(), method, url, strings.NewReader(body))
+	assert.NoError(t, err)
 	if token != "" {
 		req.Header.Set("X-Spectra-Token", token)
 	}
@@ -50,9 +58,9 @@ func do(t *testing.T, method, url, token string, body string, mod func(*http.Req
 	}
 	resp, err := http.DefaultClient.Do(req)
 	assert.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
 	b, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
-	return resp, string(b)
+	return reply{StatusCode: resp.StatusCode, Header: resp.Header}, string(b)
 }
 
 func split(link string) (base, token string) {
@@ -84,7 +92,7 @@ func TestValidate(t *testing.T) {
 }
 
 func TestPageNeedsTokenAndInjectsBootstrap(t *testing.T) {
-	_, link, _ := start(t)
+	link, _ := start(t)
 	base, token := split(link)
 
 	resp, _ := do(t, "GET", base+"/", "", "", nil)
@@ -100,7 +108,7 @@ func TestPageNeedsTokenAndInjectsBootstrap(t *testing.T) {
 }
 
 func TestHostAndOriginAreChecked(t *testing.T) {
-	_, link, _ := start(t)
+	link, _ := start(t)
 	base, token := split(link)
 
 	resp, _ := do(t, "GET", base+"/api/request", token, "", func(r *http.Request) { r.Host = "evil.example.com" })
@@ -112,7 +120,7 @@ func TestHostAndOriginAreChecked(t *testing.T) {
 }
 
 func TestAPIRequiresTokenAndReturnsPreview(t *testing.T) {
-	_, link, f := start(t)
+	link, f := start(t)
 	base, token := split(link)
 
 	resp, _ := do(t, "GET", base+"/api/request", "", "", nil)
@@ -132,7 +140,7 @@ func TestAPIRequiresTokenAndReturnsPreview(t *testing.T) {
 }
 
 func TestCallProxyIsAllowlisted(t *testing.T) {
-	_, link, f := start(t)
+	link, f := start(t)
 	base, token := split(link)
 
 	resp, _ := do(t, "POST", base+"/api/call", token, `{"name":"build_sign_doc","arguments":{}}`, nil)

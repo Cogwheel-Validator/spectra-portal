@@ -316,15 +316,6 @@ func (c *chainAPI) broadcast(ctx context.Context, chainID string, txBytes []byte
 	return &txResult{Found: true, Hash: r.TxHash, Code: r.Code, Codespace: r.Codespace, RawLog: r.RawLog}, nil
 }
 
-// packetState is the on-chain state of one IBC packet.
-type packetState struct {
-	// CommitmentOnSource is true while the source chain still holds the packet
-	// commitment, i.e. no acknowledgement or timeout has been processed.
-	CommitmentOnSource bool
-	// ReceivedOnDest is true once the destination chain recorded the receipt.
-	ReceivedOnDest bool
-}
-
 func (c *chainAPI) packetCommitted(ctx context.Context, srcChain, port, channel, seq string) (bool, error) {
 	var resp struct {
 		Commitment string `json:"commitment"`
@@ -351,22 +342,4 @@ func (c *chainAPI) packetReceived(ctx context.Context, dstChain, port, channel, 
 		return false, err
 	}
 	return resp.Received, nil
-}
-
-// channelCounterparty returns the destination port/channel and connection for
-// a source channel, read from the source chain.
-func (c *chainAPI) channelCounterparty(ctx context.Context, srcChain, port, channel string) (dstPort, dstChannel string, err error) {
-	var resp struct {
-		Channel struct {
-			Counterparty struct {
-				PortID    string `json:"port_id"`
-				ChannelID string `json:"channel_id"`
-			} `json:"counterparty"`
-		} `json:"channel"`
-	}
-	p := fmt.Sprintf("/ibc/core/channel/v1/channels/%s/ports/%s", url.PathEscape(channel), url.PathEscape(port))
-	if err := c.do(ctx, srcChain, http.MethodGet, p, nil, &resp); err != nil {
-		return "", "", err
-	}
-	return resp.Channel.Counterparty.PortID, resp.Channel.Counterparty.ChannelID, nil
 }

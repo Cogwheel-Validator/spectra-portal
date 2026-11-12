@@ -392,7 +392,8 @@ func sendPacketEvent(seq, srcCh, dstCh string, timeoutNs int64) map[string]any {
 	}}
 }
 
-func recvPacketEvent(seq, srcCh, dstCh, msgIndex string) map[string]any {
+func recvPacketEvent(seq, msgIndex string) map[string]any {
+	const srcCh, dstCh = "channel-141", "channel-0"
 	attr := func(k, v string) map[string]any { return map[string]any{"key": k, "value": v} }
 	attrs := []any{attr("packet_sequence", seq), attr("packet_src_channel", srcCh), attr("packet_dst_channel", dstCh)}
 	if msgIndex != "" {
@@ -487,7 +488,7 @@ func TestTrackFollowsForwardedPacketsAndAckErrors(t *testing.T) {
 	// recv tx on osmosis forwards a new packet back to the hub (seq 8), still unreceived.
 	osmo.json("/cosmos/tx/v1beta1/txs", map[string]any{"tx_responses": []any{map[string]any{
 		"txhash": "RECV1", "code": 0, "events": []any{
-			recvPacketEvent("5", "channel-141", "channel-0", ""),
+			recvPacketEvent("5", ""),
 			sendPacketEvent("8", "channel-0", "channel-141", future)}}}})
 	osmo.json("/ibc/core/channel/v1/channels/channel-0/ports/transfer/packet_commitments/8", map[string]any{"commitment": "y"})
 	hub.json("/ibc/core/channel/v1/channels/channel-141/ports/transfer/packet_receipts/8", map[string]any{"received": false})
@@ -531,7 +532,7 @@ func TestTrackPendingWhenRecvTxNotSearchable(t *testing.T) {
 
 	// Once the receive tx is found with no forward, the route is complete.
 	osmo.json("/cosmos/tx/v1beta1/txs", map[string]any{"tx_responses": []any{map[string]any{
-		"txhash": "RECV1", "code": 0, "events": []any{recvPacketEvent("5", "channel-141", "channel-0", "")}}}})
+		"txhash": "RECV1", "code": 0, "events": []any{recvPacketEvent("5", "")}}}})
 	res, _ = tl.trackerFn.track(context.Background(), "cosmoshub-4", "H1", true)
 	assert.Equal(t, res.Status, "completed")
 }
@@ -543,9 +544,9 @@ func TestForwardedPacketsOnlyFromOwnReceive(t *testing.T) {
 
 	// Positional: sends between our recv_packet and the next one.
 	evs := []map[string]any{
-		recvPacketEvent("4", "channel-141", "channel-0", ""), other,
-		recvPacketEvent("5", "channel-141", "channel-0", ""), mine,
-		recvPacketEvent("6", "channel-141", "channel-0", ""), sendPacketEvent("100", "channel-0", "channel-1", 1),
+		recvPacketEvent("4", ""), other,
+		recvPacketEvent("5", ""), mine,
+		recvPacketEvent("6", ""), sendPacketEvent("100", "channel-0", "channel-1", 1),
 	}
 	got := forwardedPackets(evs, pt)
 	assert.Equal(t, len(got), 1)
@@ -553,8 +554,8 @@ func TestForwardedPacketsOnlyFromOwnReceive(t *testing.T) {
 
 	// msg_index wins over position.
 	evs = []map[string]any{
-		recvPacketEvent("4", "channel-141", "channel-0", "0"),
-		recvPacketEvent("5", "channel-141", "channel-0", "1"),
+		recvPacketEvent("4", "0"),
+		recvPacketEvent("5", "1"),
 		withMsgIndex(sendPacketEvent("99", "channel-0", "channel-1", 1), "0"),
 		withMsgIndex(sendPacketEvent("8", "channel-0", "channel-141", 1), "1"),
 	}

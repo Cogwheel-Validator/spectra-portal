@@ -14,7 +14,7 @@ import (
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/mcp/cosmostx"
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
-	"golang.org/x/crypto/ripemd160" //nolint:staticcheck // deprecated but mandated by the Cosmos address format
+	"golang.org/x/crypto/ripemd160" //nolint:staticcheck,gosec // deprecated but mandated by the Cosmos address format
 	"golang.org/x/crypto/sha3"
 )
 
@@ -146,8 +146,9 @@ func (t *tools) buildSignDoc(ctx context.Context, in signDocInput) (*SignDocOut,
 		if !acc.Exists {
 			return nil, fmt.Errorf("account %s does not exist on %s yet (it has never received funds); fund it first", in.SignerAddress, in.ChainID)
 		}
-		fmt.Sscan(acc.AccountNumber, &accNum) //nolint:errcheck // values come from a chain, defaulting to 0 on garbage
-		fmt.Sscan(acc.Sequence, &seq)         //nolint:errcheck
+		// Values come from a chain; garbage leaves them at 0.
+		_, _ = fmt.Sscan(acc.AccountNumber, &accNum)
+		_, _ = fmt.Sscan(acc.Sequence, &seq)
 		if in.AccountNumber != nil {
 			accNum = *in.AccountNumber
 		}
@@ -277,7 +278,7 @@ func (c *chainAPI) simulate(ctx context.Context, chainID string, txBytes []byte)
 		return 0, err
 	}
 	var used uint64
-	fmt.Sscan(resp.GasInfo.GasUsed, &used) //nolint:errcheck
+	_, _ = fmt.Sscan(resp.GasInfo.GasUsed, &used) // garbage leaves 0, handled below
 	if used == 0 {
 		return 0, fmt.Errorf("simulation returned no gas usage")
 	}

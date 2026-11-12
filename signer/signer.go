@@ -114,7 +114,7 @@ func (r *Request) Validate() error {
 	if err != nil || u.Host == "" {
 		return fmt.Errorf("pathfinder_url %q is not a valid URL", r.PathfinderURL)
 	}
-	if u.Scheme != "https" && !(u.Scheme == "http" && isLoopback(u.Hostname())) {
+	if u.Scheme != "https" && (u.Scheme != "http" || !isLoopback(u.Hostname())) {
 		return fmt.Errorf("pathfinder_url must be https (plain http is only allowed for localhost)")
 	}
 	t := r.Transfer
@@ -201,7 +201,7 @@ func New(req *Request, remote Caller) (*Server, error) {
 
 // Listen binds 127.0.0.1 (port 0 picks a free port) and returns the URL to open.
 func (s *Server) Listen(port int) (string, error) {
-	l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	l, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		return "", err
 	}
@@ -216,7 +216,7 @@ func (s *Server) Serve(ctx context.Context, timeout time.Duration) Result {
 	srv := &http.Server{Handler: s.Handler(), ReadHeaderTimeout: 10 * time.Second}
 	go func() { _ = srv.Serve(s.listen) }()
 	defer func() {
-		sctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		sctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 		defer cancel()
 		_ = srv.Shutdown(sctx)
 	}()
@@ -246,8 +246,12 @@ func (s *Server) Handler() http.Handler {
 func (s *Server) hostCheck(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		s.mu.Lock()
-		addr := s.listen.Addr().(*net.TCPAddr)
+		addr, ok := s.listen.Addr().(*net.TCPAddr)
 		s.mu.Unlock()
+		if !ok {
+			http.Error(w, "not listening on TCP", http.StatusInternalServerError)
+			return
+		}
 		okHost := map[string]bool{
 			fmt.Sprintf("127.0.0.1:%d", addr.Port): true,
 			fmt.Sprintf("localhost:%d", addr.Port): true,

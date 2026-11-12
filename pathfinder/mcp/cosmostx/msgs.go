@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-
-	"google.golang.org/protobuf/encoding/protowire"
 )
 
 // Type URLs of the messages this package understands.
@@ -546,9 +544,9 @@ func parseAny(b []byte) (typeURL string, value []byte, err error) {
 	}
 	for _, f := range fs {
 		switch f.num {
-		case protowire.Number(1):
+		case 1:
 			typeURL = f.str()
-		case protowire.Number(2):
+		case 2:
 			value = f.b
 		}
 	}
