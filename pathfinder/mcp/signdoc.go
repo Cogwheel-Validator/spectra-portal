@@ -15,6 +15,7 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"golang.org/x/crypto/ripemd160" //nolint:staticcheck // deprecated but mandated by the Cosmos address format
+	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -84,8 +85,17 @@ func (t *tools) buildSignDoc(ctx context.Context, in signDocInput) (*SignDocOut,
 	if err != nil {
 		return nil, fmt.Errorf("unknown chain %q", in.ChainID)
 	}
-	if ch.AccountType != "" && ch.AccountType != "cosmos" {
-		return nil, fmt.Errorf("chain %s uses account type %q, which build_sign_doc does not support (only standard secp256k1 Cosmos accounts); sign this chain's transactions with a wallet that handles its own signing", in.ChainID, ch.AccountType)
+	keyType := cosmostx.KeyTypeSecp256k1
+	switch ch.AccountType {
+	case "", "cosmos":
+	case "ethermint":
+		// Injective: eth_secp256k1 keys. Direct signing with a software wallet works; Ledger signs EIP-712 typed data, which is not built here.
+		keyType = cosmostx.KeyTypeEthSecp256k1
+		if mode == cosmostx.SignModeAmino {
+			return nil, fmt.Errorf("chain %s uses Ethermint (eth_secp256k1) accounts: only sign_mode %q is supported. Ledger needs EIP-712 signing, which this server does not build; use a software wallet (e.g. Keplr) for this chain", in.ChainID, cosmostx.SignModeDirect)
+		}
+	default:
+		return nil, fmt.Errorf("chain %s uses account type %q, which build_sign_doc does not support (only standard Cosmos and Ethermint/Injective accounts); sign this chain's transactions with a wallet that handles its own signing", in.ChainID, ch.AccountType)
 	}
 	pub, err := base64.StdEncoding.DecodeString(in.PublicKey)
 	if err != nil || len(pub) != 33 {
@@ -95,7 +105,7 @@ func (t *tools) buildSignDoc(ctx context.Context, in signDocInput) (*SignDocOut,
 		return nil, fmt.Errorf("public_key_base64 is not a valid secp256k1 public key: %w", err)
 	}
 	if ch.Bech32Prefix != "" {
-		want, err := addressFromPubKey(ch.Bech32Prefix, pub)
+		want, err := addressFromKey(keyType, ch.Bech32Prefix, pub)
 		if err != nil {
 			return nil, err
 		}
@@ -148,7 +158,7 @@ func (t *tools) buildSignDoc(ctx context.Context, in signDocInput) (*SignDocOut,
 	out.AccountNumber, out.Sequence = u(accNum), u(seq)
 
 	body := cosmostx.BuildTxBody(msgs, in.TxMemo, 0)
-	signer := cosmostx.Signer{PubKey: pub, Sequence: seq, Mode: mode}
+	signer := cosmostx.Signer{PubKey: pub, Sequence: seq, Mode: mode, KeyType: keyType}
 
 	// Gas.
 	gas := in.GasLimit
@@ -287,6 +297,32 @@ func messageSender(m cosmostx.Msg) (string, bool) {
 		return v.Sender, true
 	}
 	return "", false
+}
+
+// addressFromKey derives the account address for a key type.
+func addressFromKey(keyType, prefix string, pub []byte) (string, error) {
+	if keyType == cosmostx.KeyTypeEthSecp256k1 {
+		return ethAddressFromPubKey(prefix, pub)
+	}
+	return addressFromPubKey(prefix, pub)
+}
+
+// ethAddressFromPubKey derives the Ethermint / Injective address of a
+// compressed secp256k1 key: the last 20 bytes of keccak256 over the
+// uncompressed key without its 0x04 prefix, bech32-encoded. These are the same
+// 20 bytes as the key's 0x... Ethereum address.
+func ethAddressFromPubKey(prefix string, pub []byte) (string, error) {
+	key, err := secp256k1.ParsePubKey(pub)
+	if err != nil {
+		return "", err
+	}
+	h := sha3.NewLegacyKeccak256()
+	h.Write(key.SerializeUncompressed()[1:])
+	conv, err := bech32.ConvertBits(h.Sum(nil)[12:], 8, 5, true)
+	if err != nil {
+		return "", err
+	}
+	return bech32.Encode(prefix, conv)
 }
 
 // addressFromPubKey derives the bech32 account address of a compressed
