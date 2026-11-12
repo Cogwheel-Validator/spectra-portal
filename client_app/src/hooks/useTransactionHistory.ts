@@ -102,7 +102,7 @@ export function useTransactionHistory(limit: number = 50): TransactionHistorySta
             }
         };
 
-        initDb();
+        void initDb();
 
         return () => {
             mounted = false;

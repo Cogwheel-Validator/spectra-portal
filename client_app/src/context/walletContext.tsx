@@ -260,7 +260,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
             }
         };
 
-        autoReconnect();
+        void autoReconnect();
     }, [autoReconnectToChain, loadAllWalletStates]);
 
     const suggestChain = async (

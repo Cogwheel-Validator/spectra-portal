@@ -109,7 +109,7 @@ async function checkRpcHealth(rpc: string): Promise<HealthCheckResult> {
         const data = await response.json();
         const version = data.result.response.version;
         const abciAppName = data.result.response.data;
-        const lastBlockHeight = parseInt(data.result.response.last_block_height, 10);
+        const lastBlockHeight = Number.parseInt(data.result.response.last_block_height, 10);
 
         return {
             endpoint: rpc,

@@ -26,7 +26,7 @@ export default function AmountInput({
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const newValue = e.target.value;
             // Allow empty string, numbers, and decimals
-            if (newValue === "" || /^\d*\.?\d*$/.test(newValue)) {
+            if (newValue === "" || /^\d*(?:\.\d*)?$/.test(newValue)) {
                 onChange(newValue);
             }
         },
