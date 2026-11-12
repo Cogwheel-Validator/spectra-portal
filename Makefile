@@ -7,6 +7,15 @@
 	generate-config-c
 	validate-config
 	build-pathfinder
+	build-signer
+	build-signer-all
+	build-signer-linux-amd64
+	build-signer-linux-arm64
+	build-signer-darwin-amd64
+	build-signer-darwin-arm64
+	build-signer-windows-amd64
+	signer-checksums
+	clean-signer
 	build-client
 	vulncheck-all
 	lint-all
@@ -82,6 +91,48 @@ build-pathfinder:
 	@echo "Building pathfinder rpc binary..."
 	GOTOOLCHAIN=auto go build -ldflags="-s -w" -o build/pathfinder-rpc ./pathfinder/cmd/main.go
 	@echo "Pathfinder rpc binary built successfully!"
+
+# ---- pathfinder-sign: the local signing program (see docs/PATHFINDER_SING.md) ----
+# It holds no keys; it serves the signer page on 127.0.0.1 so the user's browser wallet can sign.
+# Pure Go, no cgo, so every target cross-compiles from any host.
+# Override the version with: make build-signer-all SIGNER_VERSION=1.2.3
+SIGNER_VERSION ?= dev
+SIGNER_LDFLAGS := -s -w -X main.version=$(SIGNER_VERSION)
+SIGNER_OUT := build/pathfinder-sign-$(SIGNER_VERSION)
+
+# Build pathfinder-sign for the machine running make
+build-signer:
+	@echo "Building pathfinder-sign for the host platform..."
+	GOTOOLCHAIN=auto CGO_ENABLED=0 go build -trimpath -ldflags="$(SIGNER_LDFLAGS)" -o build/pathfinder-sign ./signer/cmd
+	@echo "Built build/pathfinder-sign"
+
+build-signer-linux-amd64:
+	GOTOOLCHAIN=auto CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="$(SIGNER_LDFLAGS)" -o $(SIGNER_OUT)-linux-amd64 ./signer/cmd
+
+build-signer-linux-arm64:
+	GOTOOLCHAIN=auto CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="$(SIGNER_LDFLAGS)" -o $(SIGNER_OUT)-linux-arm64 ./signer/cmd
+
+# macOS: Intel and Apple silicon
+build-signer-darwin-amd64:
+	GOTOOLCHAIN=auto CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -trimpath -ldflags="$(SIGNER_LDFLAGS)" -o $(SIGNER_OUT)-darwin-amd64 ./signer/cmd
+
+build-signer-darwin-arm64:
+	GOTOOLCHAIN=auto CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags="$(SIGNER_LDFLAGS)" -o $(SIGNER_OUT)-darwin-arm64 ./signer/cmd
+
+build-signer-windows-amd64:
+	GOTOOLCHAIN=auto CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="$(SIGNER_LDFLAGS)" -o $(SIGNER_OUT)-windows-amd64.exe ./signer/cmd
+
+# SHA-256 checksums of every pathfinder-sign binary of this version
+signer-checksums:
+	cd build && sha256sum pathfinder-sign-$(SIGNER_VERSION)-* | grep -v checksums > pathfinder-sign-$(SIGNER_VERSION)-checksums.txt
+	@cat build/pathfinder-sign-$(SIGNER_VERSION)-checksums.txt
+
+# Build pathfinder-sign for Linux, macOS and Windows, plus checksums
+build-signer-all: clean-signer build-signer-linux-amd64 build-signer-linux-arm64 build-signer-darwin-amd64 build-signer-darwin-arm64 build-signer-windows-amd64 signer-checksums
+	@echo "pathfinder-sign $(SIGNER_VERSION) built for all platforms in build/"
+
+clean-signer:
+	rm -f build/pathfinder-sign build/pathfinder-sign-$(SIGNER_VERSION)-*
 
 build-client:
 	@echo "Building the client app..."
