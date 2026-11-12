@@ -51,6 +51,10 @@ func (c *PathfinderConverter) convertChain(chain *enriched.ChainConfig) Pathfind
 		IBCHooksContract: chain.IBCHooksContract,
 		Bech32Prefix:     chain.Bech32Prefix,
 		Slip44:           chain.Slip44,
+		AccountType:      chain.AccountType,
+		CosmosSdkVersion: chain.CosmosSdkVersion,
+		RPCs:             endpointURLs(chain.HealthyRPCs),
+		Rests:            endpointURLs(chain.HealthyRests),
 		NativeTokens:     make([]PathfinderTokenInfo, 0, len(chain.NativeTokens)),
 		Routes:           make([]PathfinderRoute, 0, len(chain.Routes)),
 	}
@@ -113,4 +117,15 @@ func (c *PathfinderConverter) convertRoute(route enriched.RouteConfig) Pathfinde
 	}
 
 	return pathfinderRoute
+}
+
+// endpointURLs returns the URLs of the healthy endpoints, preserving order.
+func endpointURLs(endpoints []enriched.Endpoint) []string {
+	var urls []string
+	for _, e := range endpoints {
+		if e.Healthy && e.URL != "" {
+			urls = append(urls, e.URL)
+		}
+	}
+	return urls
 }

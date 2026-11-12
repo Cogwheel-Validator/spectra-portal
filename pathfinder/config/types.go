@@ -9,6 +9,14 @@ type RPCPathfinderConfig struct {
 	// CORS configs
 	AllowedOrigins   []string `toml:"allowed_origins" mapstructure:"allowed_origins"`
 	EnableReflection bool     `toml:"enable_reflection" mapstructure:"enable_reflection"`
+	EnableMCP        bool     `toml:"enable_mcp" mapstructure:"enable_mcp"`
+	// EnableMCPBroadcast adds the broadcast_signed_tx MCP tool (only meaningful with EnableMCP).
+	EnableMCPBroadcast bool `toml:"enable_mcp_broadcast" mapstructure:"enable_mcp_broadcast"`
+	// MCPPublicURL is the externally reachable base URL (no /mcp suffix) put into
+	// the signing requests prepare_transfer returns. Set it behind a proxy.
+	MCPPublicURL string `toml:"mcp_public_url" mapstructure:"mcp_public_url"`
+	// EnableMCPInlineUI serves the experimental inline signer view (MCP Apps).
+	EnableMCPInlineUI bool `toml:"enable_mcp_inline_ui" mapstructure:"enable_mcp_inline_ui"`
 
 	// rate limiting configs
 	RatePerMinute         int `toml:"rate_per_minute" mapstructure:"rate_per_minute"`

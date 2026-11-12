@@ -11,6 +11,7 @@ import (
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
 	"connectrpc.com/otelconnect"
+	pfmcp "github.com/Cogwheel-Validator/spectra-portal/pathfinder/mcp"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/router/denomresolver"
 	"github.com/Cogwheel-Validator/spectra-portal/pathfinder/rpc/handlers/common"
@@ -42,6 +43,10 @@ type ServerConfig struct {
 	Address               string
 	AllowedOrigins        []string
 	EnableReflection      bool
+	EnableMCP             bool   // serve the Model Context Protocol endpoint at /mcp
+	EnableMCPBroadcast    bool   // expose the broadcast_signed_tx MCP tool
+	MCPPublicURL          string // public base URL used in prepare_transfer's signing requests
+	EnableMCPInlineUI     bool   // serve the experimental inline signer view
 	EnableMetrics         bool
 	RatePerMinute         *int
 	MaxConcurrentRequests *int
@@ -143,6 +148,9 @@ func (s *Server) logServerInfo(protocol string) {
 	Logger.Info().Msg("\tRPC v2beta: /pathfinder.v2beta.PathfinderQueryService/*")
 	Logger.Info().Msg("\tHealth: /server/health")
 	Logger.Info().Msg("\tReady: /server/ready")
+	if s.config.EnableMCP {
+		Logger.Info().Msg("\tMCP: " + pfmcp.Path)
+	}
 
 	if s.config.EnableMetrics || (s.config.OTelConfig != nil && s.config.OTelConfig.UsePrometheus) {
 		Logger.Info().Msg("\tMetrics: /server/metrics")
@@ -287,4 +295,18 @@ func addConnectRoutes(
 
 	// Streaming handler, lives outside the timeout/throttle group.
 	mux.Handle(v2betaconnect.FindPathServiceFindPathStreamingProcedure, findPathV2Handler)
+
+	// MCP uses long-lived streams, so like the streaming RPC it sits outside
+	// the timeout group; the concurrency throttle still applies.
+	if config.EnableMCP {
+		mcpHandler := pfmcp.Handler(pfmcp.NewServer(deps, pfmcp.Options{
+			Version: "v2beta", Broadcast: config.EnableMCPBroadcast,
+			PublicURL: config.MCPPublicURL, InlineUI: config.EnableMCPInlineUI,
+		}))
+		if config.MaxConcurrentRequests != nil && *config.MaxConcurrentRequests > 0 {
+			mcpHandler = middleware.Throttle(*config.MaxConcurrentRequests)(mcpHandler)
+		}
+		mux.Handle(pfmcp.Path, mcpHandler)
+		Logger.Info().Msg("MCP endpoint enabled: " + pfmcp.Path)
+	}
 }

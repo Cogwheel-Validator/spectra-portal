@@ -92,9 +92,8 @@ func (s *FindPathServer) validateRequest(p findPathParams, allowEmpty bool) (map
 			fmt.Errorf("unknown destination chain: %s", p.ChainTo))
 	}
 
-	if p.AmountIn == "" || p.AmountIn == "0" {
-		return nil, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("amount_in must be a positive number"))
+	if err := common.ValidateAmount(p.AmountIn); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	if len(p.Addresses) == 0 {
@@ -178,6 +177,14 @@ func (s *FindPathServer) findPath(p findPathParams, allowEmpty bool) (*models.Ro
 				internalResp.MissingAddressChains))
 	}
 	return &internalResp, nil
+}
+
+// FindRoute validates a request exactly like FindPath (addresses are required)
+// and returns the internal route model, including execution data. It exists so
+// in-process callers such as the MCP server can build transactions from the
+// typed model instead of the protobuf projection.
+func (s *FindPathServer) FindRoute(req *v2beta.FindPathRequest) (*models.RouteResponse, error) {
+	return s.findPath(paramsFromFindPathRequest(req), false)
 }
 
 // FindPath implements the ConnectRPC handler for finding paths.

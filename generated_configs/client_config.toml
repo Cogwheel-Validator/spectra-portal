@@ -1,5 +1,5 @@
 version = 'v1-20260212'
-generated_at = '2026-09-25T10:07:34Z'
+generated_at = '2026-10-15T14:06:26Z'
 
 [[chains]]
 name = 'Atom One'
@@ -489,6 +489,10 @@ provider = 'Polkachu'
 url = 'https://injective-rest.publicnode.com'
 provider = 'PublicNode'
 
+[[chains.rest_endpoints]]
+url = 'https://public.stakewolle.com/cosmos/injective/rest'
+provider = 'StakeWolle'
+
 [[chains.native_tokens]]
 denom = 'erc20:0xa00C59fF5a080D2b954d0c75e46E22a0c371235a'
 name = 'USDC (Injective)'
@@ -819,6 +823,13 @@ coin_denom = 'ZZTOP'
 coin_minimal_denom = 'factory/inj13j2rpnlwl30c02d4pzukykwfeyyhelvry9cqte/shroom_157_99c09d972f9c1f79'
 coin_decimals = 18
 coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/injective/factory/inj13j2rpnlwl30c02d4pzukykwfeyyhelvry9cqte/zztop.png'
+coin_gecko_id = ''
+
+[[chains.keplr_chain_config.currencies]]
+coin_denom = 'SPROUT'
+coin_minimal_denom = 'erc20:0x503f2a7bac1e2ff2800aa92edb82abef0bfa631e'
+coin_decimals = 18
+coin_image_url = 'https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/injective/erc20/0x503f2a7bac1e2ff2800aa92edb82abef0bfa631e.png'
 coin_gecko_id = ''
 
 [[chains.keplr_chain_config.fee_currencies]]

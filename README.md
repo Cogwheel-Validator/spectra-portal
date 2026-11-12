@@ -148,6 +148,10 @@ While the Pathfinder is great and fully open sourced, it is not perfect and it h
 The Skip API has many advantages and it is more mature. The Pathfinder is still very new and lacks some
 features.
 
+The Pathfinder can also serve an MCP endpoint so AI agents can plan, build and track transfers (it never signs; the
+user's wallet does, through the small local `pathfinder-sign` program published with each release). See
+[docs/MCP.md](docs/MCP.md), [docs/MCP_SIGNING.md](docs/MCP_SIGNING.md) and [docs/PATHFINDER_SIGN.md](docs/PATHFINDER_SIGN.md).
+
 ### The Client App
 
 The web app is a Next.js application ran with Node. According by this

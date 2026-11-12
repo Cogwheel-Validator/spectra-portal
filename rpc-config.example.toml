@@ -16,11 +16,11 @@ port = 8080
 # Allowed origins for CORS requests
 # Use ["*"] to allow all origins (not recommended for production)
 allowed_origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:8080",
-    "http://localhost:8080",
-    "https://your-frontend.example.com"
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:8080",
+  "http://localhost:8080",
+  "https://your-frontend.example.com",
 ]
 
 # =============================================================================
@@ -48,6 +48,20 @@ ip_addr_detect = "direct"
 # If you don't want to expose the reflection endpoint, set to false
 enable_reflection = true
 
+# Serve a Model Context Protocol endpoint at /mcp so AI agents can query routes.
+# Read-only + unsigned transaction data; the server never signs or broadcasts.
+enable_mcp = false
+# Also let MCP clients submit already-signed transactions (broadcast_signed_tx).
+# Restricted to Spectra route message types. Still never signs. Requires enable_mcp.
+enable_mcp_broadcast = false
+# Public base URL of this server (no trailing /mcp), e.g. "https://pathfinder.example.com".
+# prepare_transfer puts it into the pathfinder-sign command it hands to agents. Set it when
+# running behind a proxy. If empty it is derived from the request headers.
+mcp_public_url = ""
+# EXPERIMENTAL: also serve the signer as an inline MCP App. Chat hosts run it on a sandbox
+# origin that browser wallets usually refuse, so Keplr is typically unavailable there.
+enable_mcp_inline_ui = false
+
 # =============================================================================
 # Rate Limiting
 # =============================================================================
@@ -64,8 +78,8 @@ max_concurrent_requests = 200
 
 # SQS endpoints (Osmosis Sidecar Query Server)
 sqs_urls = [
-    "https://sqs.osmosis.zone",
-    #"https://sqs-osmosis.example.com",
+  "https://sqs.osmosis.zone",
+  #"https://sqs-osmosis.example.com",
 ]
 # =============================================================================
 # OpenTelemetry Configuration (Optional)
@@ -74,7 +88,7 @@ sqs_urls = [
 # Service identification
 service_name = "spectra-portal"
 service_version = "1.0.0"
-environment = "development"  # PROD, DEV, TEST, LOCAL
+environment = "development"     # PROD, DEV, TEST, LOCAL
 
 # Tracing configuration
 enable_tracing = false
@@ -83,7 +97,7 @@ otlp_traces_url = "http://localhost:4317"
 
 # Metrics configuration
 enable_metrics = false
-use_prometheus = true        # Expose /metrics endpoint for Prometheus
+use_prometheus = true                      # Expose /metrics endpoint for Prometheus
 use_otlp_metrics = false
 otlp_metrics_url = "http://localhost:4317"
 

@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spectra signer</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+        font-size: 14px;
+      }
+      body {
+        margin: 0;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0 0 8px;
+      }
+      .card {
+        border: 1px solid #8884;
+        border-radius: 8px;
+        padding: 10px;
+        margin: 8px 0;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 2px 0;
+      }
+      .row b {
+        white-space: nowrap;
+      }
+      .row span {
+        word-break: break-all;
+        text-align: right;
+      }
+      .warn {
+        border-color: #c80;
+        background: #c801;
+      }
+      .err {
+        border-color: #c33;
+        background: #c331;
+      }
+      .ok {
+        border-color: #2a6;
+        background: #2a61;
+      }
+      button {
+        font: inherit;
+        padding: 8px 14px;
+        border-radius: 6px;
+        border: 0;
+        background: #4a6cf7;
+        color: #fff;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .mono {
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+      }
+      .muted {
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Spectra transfer</h1>
+    <div id="route"></div>
+    <div id="steps"></div>
+    <div id="status" class="card muted">
+      Waiting for the route from the assistant…
+    </div>
+    <button id="go" disabled>Connect Keplr</button>
+
+    <!--SPECTRA_LOCAL-->
+    <script>
+      "use strict";
+      // This one page runs in two places:
+      //  - inside an MCP Apps host (talks to the server through the host, postMessage), or
+      //  - served by the local `pathfinder-sign` program on 127.0.0.1 (talks to it over fetch).
+      // The local program injects window.__SPECTRA_LOCAL__ = {token} at the placeholder above.
+      const LOCAL = window.__SPECTRA_LOCAL__ || null;
+
+      // ---- MCP Apps bridge (JSON-RPC 2.0 over postMessage to the host) ----
+      let nextId = 1;
+      const pending = new Map();
+      const post = (m) =>
+        window.parent.postMessage({ jsonrpc: "2.0", ...m }, "*");
+      const request = (method, params) =>
+        new Promise((res, rej) => {
+          const id = nextId++;
+          pending.set(id, { res, rej });
+          post({ id, method, params });
+        });
+      const notify = (method, params) => post({ method, params });
+
+      window.addEventListener("message", (e) => {
+        if (e.source !== window.parent) return;
+        const m = e.data;
+        if (!m || m.jsonrpc !== "2.0") return;
+        if (m.method === undefined && m.id != null) {
+          const p = pending.get(m.id);
+          if (!p) return;
+          pending.delete(m.id);
+          m.error
+            ? p.rej(new Error(m.error.message || "request failed"))
+            : p.res(m.result);
+          return;
+        }
+        if (m.method === "ui/notifications/tool-result") onToolResult(m.params);
+        else if (m.method === "ui/resource-teardown" && m.id != null)
+          post({ id: m.id, result: {} });
+      });
+
+      // Calls a server tool and parses its JSON text result. In local mode the
+      // pathfinder-sign program forwards the call (allowlisted tools only) to Pathfinder.
+      async function callTool(name, args) {
+        let r;
+        if (LOCAL) {
+          const resp = await fetch("/api/call", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              "x-spectra-token": LOCAL.token,
+            },
+            body: JSON.stringify({ name, arguments: args }),
+          });
+          if (!resp.ok)
+            throw new Error(name + ": local signer returned " + resp.status);
+          r = await resp.json();
+        } else {
+          r = await request("tools/call", { name, arguments: args });
+        }
+        const text = (r.content || []).map((c) => c.text || "").join("");
+        if (r.isError) throw new Error(text || name + " failed");
+        try {
+          return JSON.parse(text);
+        } catch {
+          return text;
+        }
+      }
+
+      // Tells whoever started this (the host/agent inline, or the local program)
+      // how it ended. result: {status: "completed"|"failed", transactions, error?}
+      async function reportResult(result) {
+        if (LOCAL) {
+          await fetch("/api/result", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              "x-spectra-token": LOCAL.token,
+            },
+            body: JSON.stringify(result),
+          });
+        } else {
+          const ok = result.status === "completed";
+          await request("ui/message", {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  (ok
+                    ? "The transfer completed. Transactions: "
+                    : "The transfer did not complete (" + result.error + "). Transactions sent: ") +
+                  JSON.stringify(result.transactions),
+              },
+            ],
+          });
+        }
+      }
+
+      // ---- helpers ----
+      const $ = (id) => document.getElementById(id);
+      const b64 = (u8) => btoa(String.fromCharCode(...u8));
+      const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      function el(tag, cls, text) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text !== undefined) e.textContent = text; // never innerHTML: all text is untrusted
+        return e;
+      }
+      function rows(parent, pairs) {
+        for (const [k, v] of pairs) {
+          const r = el("div", "row");
+          r.append(el("b", "", k), el("span", "mono", String(v)));
+          parent.append(r);
+        }
+      }
+      function status(text, cls) {
+        const s = $("status");
+        s.className = "card " + (cls || "muted");
+        s.textContent = text;
+        notify("ui/notifications/size-changed", {
+          height: document.documentElement.scrollHeight,
+        });
+      }
+
+      // ---- state ----
+      let req = null; // the find_route-style request chosen by the assistant
+      let required = []; // chain IDs that need an address
+      let wallet = {}; // chain_id -> { address, pubKey(b64), ledger }
+      let plan = null; // build_transaction result
+      let started = false;
+      let nextStep = 0; // first step not yet completed (a retry must not re-send finished steps)
+      const hashes = [];
+      let sent = null; // {step, hash} of the step that was broadcast but not yet confirmed
+
+      function onToolResult(p) {
+        if (started) return;
+        const sc = p && p.structuredContent;
+        if (!sc || !sc.request) {
+          status("The assistant did not send a route.", "err");
+          return;
+        }
+        req = sc.request;
+        required = (sc.preview && sc.preview.required_chains) || [
+          req.chain_from,
+          req.chain_to,
+        ];
+        const r = $("route");
+        r.replaceChildren();
+        const c = el("div", "card");
+        rows(c, [
+          ["Send", `${req.amount_in} (base units) of ${req.token_from}`],
+          ["From", req.chain_from],
+          ["To chain", req.chain_to],
+          ["Receive token", req.token_to || "same token"],
+          ["Recipient", req.recipient || "your own wallet address"],
+        ]);
+        r.append(c);
+        if (req.recipient) {
+          r.append(
+            el(
+              "div",
+              "card warn",
+              "The recipient above was chosen by the assistant. Check it is the address you intended before signing.",
+            ),
+          );
+        }
+        status(
+          "Connect Keplr to continue. Nothing is signed until you approve in Keplr.",
+        );
+        $("go").disabled = false;
+      }
+
+      // ---- wallet ----
+      function diagnostics() {
+        let inFrame = false;
+        try {
+          inFrame = window.self !== window.top;
+        } catch {
+          inFrame = true;
+        }
+        return (
+          `in_iframe=${inFrame} origin=${location.origin} protocol=${location.protocol} ` +
+          `keplr=${typeof window.keplr} getOfflineSigner=${typeof window.getOfflineSigner} ` +
+          `csp_violations=${violations.length ? violations.join(" | ") : "none seen"}`
+        );
+      }
+      const violations = [];
+      document.addEventListener("securitypolicyviolation", (e) => {
+        violations.push(`${e.violatedDirective} blocked ${e.blockedURI}`);
+      });
+
+      async function connect() {
+        // Keplr injects window.keplr asynchronously; give it a few seconds.
+        for (let i = 0; i < 30 && !window.keplr; i++) await sleep(100);
+        if (!window.keplr) {
+          throw new Error(
+            (LOCAL
+              ? "Keplr was not found in this browser. Open the link in the browser where the Keplr extension is installed. "
+              : "Keplr is not available in this view. ") +
+              "Diagnostics: " +
+              diagnostics(),
+          );
+        }
+        for (const id of required) {
+          await window.keplr.enable(id);
+          const k = await window.keplr.getKey(id);
+          wallet[id] = {
+            address: k.bech32Address,
+            pubKey: b64(k.pubKey),
+            ledger: !!k.isNanoLedger,
+          };
+        }
+      }
+
+      function addressesForBuild() {
+        return required.map((id) => ({
+          chain_id: id,
+          address:
+            id === req.chain_to && req.recipient
+              ? req.recipient
+              : wallet[id].address,
+        }));
+      }
+
+      async function buildPlan() {
+        plan = await callTool("build_transaction", {
+          chain_from: req.chain_from,
+          token_from: req.token_from,
+          amount_in: req.amount_in,
+          chain_to: req.chain_to,
+          token_to: req.token_to || "",
+          addresses: addressesForBuild(),
+          mode: req.mode || "smart",
+          slippage_bps: req.slippage_bps || 0,
+        });
+        if (!plan.success)
+          throw new Error(plan.error || "No route could be built.");
+        const box = $("steps");
+        box.replaceChildren();
+        plan.steps.forEach((s, i) => {
+          const c = el("div", "card");
+          c.id = "step-" + i;
+          c.append(el("b", "", `Step ${i + 1}: ${s.description}`));
+          for (const m of s.messages)
+            rows(c, [
+              ["Message", m.type_url],
+              ["Details", JSON.stringify(m.proto_json)],
+            ]);
+          c.append(
+            el("div", "muted", "Signed on " + s.chain_id + " by " + s.signer),
+          );
+          box.append(c);
+        });
+        for (const w of plan.warnings || [])
+          box.append(el("div", "card warn", w));
+      }
+
+      // Outbound transfers after a swap are built with the swap's minimum output.
+      // Once the swap is done, move the whole actual output instead.
+      async function useSwapOutput(after, coins) {
+        for (let j = after + 1; j < plan.steps.length; j++) {
+          const s = plan.steps[j];
+          if (!s.amount_from_swap) continue;
+          const msg = s.messages[0];
+          const denom = msg.proto_json && msg.proto_json.token && msg.proto_json.token.denom;
+          const c = coins.find((x) => x.denom === denom);
+          if (!c) continue; // keep the minimum: it is always available
+          s.messages[0] = await callTool("set_transfer_amount", {
+            message: { type_url: msg.type_url, value_base64: msg.value_base64 },
+            amount: c.amount,
+          });
+          const card = $("step-" + j);
+          if (card)
+            card.append(el("div", "muted", `Amount set to the swap's actual output: ${c.amount} ${denom}`));
+        }
+      }
+
+      // ---- signing one step ----
+      async function signAndSend(step) {
+        const w = wallet[step.chain_id];
+        if (!w) throw new Error("No wallet account for " + step.chain_id);
+        const amino = w.ledger;
+        const doc = await callTool("build_sign_doc", {
+          chain_id: step.chain_id,
+          signer_address: step.signer,
+          public_key_base64: w.pubKey,
+          sign_mode: amino ? "amino" : "direct",
+          messages: step.messages.map((m) => ({
+            type_url: m.type_url,
+            value_base64: m.value_base64,
+          })),
+          tx_memo: step.suggested_tx_memo || "",
+        });
+        let body = doc.body_bytes_base64,
+          auth = doc.auth_info_bytes_base64,
+          sig;
+        if (amino) {
+          const r = await window.keplr.signAmino(
+            step.chain_id,
+            step.signer,
+            doc.amino_sign_doc,
+          );
+          sig = r.signature.signature;
+          // If Keplr changed fee/memo the signed doc differs from ours: refuse rather than send a mismatching tx.
+          if (
+            JSON.stringify(r.signed.fee) !==
+              JSON.stringify(doc.amino_sign_doc.fee) ||
+            r.signed.memo !== doc.amino_sign_doc.memo
+          ) {
+            throw new Error(
+              "The wallet changed the fee or memo; please retry without editing them.",
+            );
+          }
+        } else {
+          const r = await window.keplr.signDirect(step.chain_id, step.signer, {
+            bodyBytes: unb64(body),
+            authInfoBytes: unb64(auth),
+            chainId: step.chain_id,
+            accountNumber: doc.account_number,
+          });
+          sig = r.signature.signature;
+          body = b64(r.signed.bodyBytes); // use what the wallet actually signed
+          auth = b64(r.signed.authInfoBytes);
+        }
+        const tx = await callTool("assemble_signed_tx", {
+          body_bytes_base64: body,
+          auth_info_bytes_base64: auth,
+          signature_base64: sig,
+        });
+        // Keplr broadcasts through its own nodes, so this works even when the operator disabled broadcast_signed_tx.
+        let hash;
+        try {
+          const h = await window.keplr.sendTx(
+            step.chain_id,
+            unb64(tx.tx_bytes_base64),
+            "sync",
+          );
+          hash = Array.from(h)
+            .map((x) => x.toString(16).padStart(2, "0"))
+            .join("")
+            .toUpperCase();
+        } catch (e) {
+          const r = await callTool("broadcast_signed_tx", {
+            chain_id: step.chain_id,
+            tx_bytes_base64: tx.tx_bytes_base64,
+          });
+          if (!r.accepted)
+            throw new Error(
+              "Rejected by the node: " + (r.result && r.result.raw_log),
+            );
+          hash = r.tx_hash;
+        }
+        return hash || tx.tx_hash;
+      }
+
+      // Statuses after which waiting longer changes nothing.
+      const TERMINAL = new Set(["completed", "failed", "timed_out", "tx_failed", "no_ibc_packets"]);
+
+      // Polls track_transfer. "not_found" right after a broadcast only means the
+      // chain has not indexed the transaction yet, and "in_progress" means the
+      // packet is still travelling: both keep waiting. Lookup errors are retried.
+      async function waitDone(chainId, hash, label) {
+        const began = Date.now();
+        let last = "not_found";
+        for (;;) {
+          try {
+            const t = await callTool("track_transfer", { chain_id: chainId, tx_hash: hash });
+            last = t.status || "unknown";
+            status(`${label} sent (${hash}): ${last}`, "muted");
+            if (TERMINAL.has(last)) return t;
+          } catch (e) {
+            status(`${label} sent (${hash}): waiting, ${e.message}`, "muted");
+          }
+          if (Date.now() - began > 10 * 60 * 1000) {
+            const err = new Error(
+              `${label} was sent (${hash}) but is still "${last}" after 10 minutes. Check it in an explorer.`,
+            );
+            err.fatal = true;
+            throw err;
+          }
+          await sleep(last === "not_found" ? 3000 : 5000);
+        }
+      }
+
+      async function run() {
+        const btn = $("go");
+        btn.disabled = true;
+        started = true;
+        try {
+          if (!plan) {
+            status("Connecting to Keplr…");
+            await connect();
+            status("Building the transaction…");
+            await buildPlan();
+            status(
+              `Review the steps above, then press the button to sign ${plan.steps.length > 1 ? "step 1" : "in Keplr"}.`,
+            );
+            btn.textContent = "Sign & send";
+            btn.disabled = false;
+            return;
+          }
+          for (let i = nextStep; i < plan.steps.length; i++) {
+            const s = plan.steps[i];
+            // A step that was already broadcast is never signed again, even on retry:
+            // that would send the transfer twice. A retry only resumes waiting for it.
+            if (!sent || sent.step !== i) {
+              status(`Approve step ${i + 1}/${plan.steps.length} in Keplr…`);
+              const hash = await signAndSend(s);
+              sent = { step: i, hash };
+              hashes.push({ chain_id: s.chain_id, tx_hash: hash });
+            }
+            const t = await waitDone(s.chain_id, sent.hash, `Step ${i + 1}`);
+            // A swap that sends nothing over IBC ends as "no_ibc_packets": that is its success.
+            const ok =
+              t.status === "completed" ||
+              (t.status === "no_ibc_packets" && !s.type.startsWith("ibc_transfer"));
+            if (!ok) {
+              const err = new Error(
+                `Step ${i + 1} (${sent.hash}) ended as ${t.status}: ${t.summary || ""} Funds, if any, are refunded to the sender.`,
+              );
+              err.fatal = true;
+              throw err;
+            }
+            if (t.swap_output && t.swap_output.length) await useSwapOutput(i, t.swap_output);
+            sent = null;
+            nextStep = i + 1;
+          }
+          status("Done: " + hashes.map((h) => h.tx_hash).join(", "), "ok");
+          btn.style.display = "none";
+          // The wallet signature is the user's consent; tell whoever is waiting for the outcome.
+          reportResult({ status: "completed", transactions: hashes }).catch(() => {});
+        } catch (e) {
+          status(e.message || String(e), "err");
+          if (e.fatal) {
+            // The transaction was sent but did not end well: nothing more can be done here.
+            // Report it with the hashes so the agent can look into it.
+            btn.style.display = "none";
+            reportResult({ status: "failed", error: e.message, transactions: hashes }).catch(() => {});
+            return;
+          }
+          btn.textContent = sent ? "Resume" : plan ? "Retry signing" : "Retry";
+          btn.disabled = false;
+          if (!LOCAL) {
+            request("ui/update-model-context", {
+              content: [
+                {
+                  type: "text",
+                  text: "Signer view error: " + (e.message || e),
+                },
+              ],
+            }).catch(() => {});
+          }
+        }
+      }
+      $("go").addEventListener("click", run);
+
+      if (LOCAL) {
+        // Local mode: the request the agent prepared is served by pathfinder-sign.
+        fetch("/api/request", { headers: { "x-spectra-token": LOCAL.token } })
+          .then((r) => r.json())
+          .then((sc) => onToolResult({ structuredContent: sc }))
+          .catch((e) =>
+            status("Could not load the request: " + e.message, "err"),
+          );
+      } else {
+        request("ui/initialize", {
+          protocolVersion: "2026-01-26",
+          appInfo: { name: "pathfinder-signer", version: "1.0.0" },
+          appCapabilities: {},
+        })
+          .then(() => notify("ui/notifications/initialized", {}))
+          .catch((e) =>
+            status("Could not initialise with the host: " + e.message, "err"),
+          );
+      }
+    </script>
+  </body>
+</html>

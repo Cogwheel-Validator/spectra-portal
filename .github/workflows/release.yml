@@ -44,6 +44,11 @@ jobs:
           # Linux AMD64 for the pathfinder rpc binary
           GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o build/pathfinder-rpc-${{ steps.version.outputs.version }}-linux-amd64 pathfinder/cmd/main.go
 
+      - name: Build pathfinder-sign (Linux, macOS, Windows)
+        run: |
+          # Cross-compiles all platforms (pure Go, no cgo) and writes the SHA-256 checksums file.
+          make build-signer-all SIGNER_VERSION=${{ steps.version.outputs.version }}
+
       - name: Build client app tar
         run: |
           mkdir -p build
@@ -63,6 +68,18 @@ jobs:
             ```bash
             chmod +x pathfinder-rpc-${{ steps.version.outputs.version }}-linux-amd64
             ```
+
+            ### pathfinder-sign (local signer for AI agents)
+            A small program that lets your own browser wallet (Keplr) sign a transfer prepared by the
+            Pathfinder MCP server. It holds no keys. Download the file for your system:
+            `pathfinder-sign-${{ steps.version.outputs.version }}-{linux-amd64,linux-arm64,darwin-amd64,darwin-arm64,windows-amd64.exe}`,
+            verify it against `pathfinder-sign-${{ steps.version.outputs.version }}-checksums.txt`, then on Linux/macOS:
+            ```bash
+            sha256sum -c --ignore-missing pathfinder-sign-${{ steps.version.outputs.version }}-checksums.txt
+            chmod +x pathfinder-sign-${{ steps.version.outputs.version }}-linux-amd64
+            mv pathfinder-sign-${{ steps.version.outputs.version }}-linux-amd64 ~/.local/bin/pathfinder-sign
+            ```
+            See docs/PATHFINDER_SIGN.md.
 
             ### Client App
             Download the tar.gz file and extract it:

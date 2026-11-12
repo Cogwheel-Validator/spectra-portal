@@ -1,0 +1,20 @@
+{
+  "pub": "Anm+Zn753LusVaBilc6HCwcCm/zbLc4o2VnygVsW+BeY",
+  "address": "inj10e0525sfrf53yh2aljmm3sn9jq5njk7lwfmzjf",
+  "cases": [
+    {
+      "seq": 7,
+      "gas": 200000,
+      "amount": "5000000000000000",
+      "denom": "inj",
+      "authInfoB64": "Cl4KVAotL2luamVjdGl2ZS5jcnlwdG8udjFiZXRhMS5ldGhzZWNwMjU2azEuUHViS2V5EiMKIQJ5vmZ++dy7rFWgYpXOhwsHApv82y3OKNlZ8oFbFvgXmBIECgIIARgHEh0KFwoDaW5qEhA1MDAwMDAwMDAwMDAwMDAwEMCaDA=="
+    },
+    {
+      "seq": 0,
+      "gas": 120000,
+      "amount": "1",
+      "denom": "inj",
+      "authInfoB64": "ClwKVAotL2luamVjdGl2ZS5jcnlwdG8udjFiZXRhMS5ldGhzZWNwMjU2azEuUHViS2V5EiMKIQJ5vmZ++dy7rFWgYpXOhwsHApv82y3OKNlZ8oFbFvgXmBIECgIIARIOCggKA2luahIBMRDAqQc="
+    }
+  ]
+}

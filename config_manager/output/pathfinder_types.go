@@ -44,6 +44,19 @@ type PathfinderChain struct {
 	// Address conversion between chains is only valid when both chains share the same SLIP-44 type.
 	Slip44 int `json:"slip44" toml:"slip44"`
 
+	// Account type used for signing ("cosmos", "injective", ...). Lets MCP/clients pick the right signing flow.
+	AccountType string `json:"account_type,omitempty" toml:"account_type,omitempty"`
+
+	// Cosmos SDK version of the chain (e.g. "v0.50.9"); decides how tx search queries are formed.
+	CosmosSdkVersion string `json:"cosmos_sdk_version,omitempty" toml:"cosmos_sdk_version,omitempty"`
+
+	// Healthy RPC endpoint URLs verified by the config manager. Used by the MCP server
+	// to point agents at working endpoints; not needed for routing.
+	RPCs []string `json:"rpcs,omitempty" toml:"rpcs,omitempty"`
+
+	// Healthy REST (LCD) endpoint URLs verified by the config manager.
+	Rests []string `json:"rests,omitempty" toml:"rests,omitempty"`
+
 	// Native tokens on this chain (includes tokens with no allowed destinations)
 	// These are always available on their native chain even if they can't be sent via IBC.
 	//

@@ -133,9 +133,8 @@ func (s *Server) validateFindPathRequest(req *v1.FindPathRequest) error {
 	}
 
 	// Validate amount is positive
-	if req.AmountIn == "" || req.AmountIn == "0" {
-		return connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("amount_in must be a positive number"))
+	if err := common.ValidateAmount(req.AmountIn); err != nil {
+		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	return nil
