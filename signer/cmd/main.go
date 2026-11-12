@@ -63,9 +63,12 @@ func run() int {
 			return fail(fmt.Errorf("request is not valid JSON: %w", err))
 		}
 	case *chainFrom != "":
+		if *slippage > 10000 {
+			return fail(fmt.Errorf("--slippage-bps must be at most 10000, got %d", *slippage))
+		}
 		req.Transfer = signer.Transfer{
 			ChainFrom: *chainFrom, TokenFrom: *tokenFrom, AmountIn: *amount, ChainTo: *chainTo,
-			TokenTo: *tokenTo, Recipient: *recipient, Mode: *mode, SlippageBps: uint32(*slippage),
+			TokenTo: *tokenTo, Recipient: *recipient, Mode: *mode, SlippageBps: uint32(*slippage), //nolint:gosec // bounded to 10000 above
 		}
 	default:
 		flag.Usage()
@@ -102,7 +105,7 @@ func run() int {
 	}
 	fmt.Fprintf(os.Stderr, "Open this link in the browser that has Keplr installed:\n  %s\n", link)
 	if !*noOpen {
-		if err := openBrowser(link); err != nil {
+		if err := openBrowser(ctx, link); err != nil {
 			fmt.Fprintln(os.Stderr, "could not open the browser automatically:", err)
 		}
 	}
@@ -134,13 +137,15 @@ func readRequest(arg string) ([]byte, error) {
 	}
 }
 
-func openBrowser(link string) error {
+// openBrowser opens our own loopback link; the argument is never user input,
+// so the variable subprocess arguments below are safe.
+func openBrowser(ctx context.Context, link string) error {
 	switch runtime.GOOS {
 	case "darwin":
-		return exec.Command("open", link).Start()
+		return exec.CommandContext(ctx, "open", link).Start() //nolint:gosec // link is our loopback URL
 	case "windows":
-		return exec.Command("rundll32", "url.dll,FileProtocolHandler", link).Start()
+		return exec.CommandContext(ctx, "rundll32", "url.dll,FileProtocolHandler", link).Start() //nolint:gosec // link is our loopback URL
 	default:
-		return exec.Command("xdg-open", link).Start()
+		return exec.CommandContext(ctx, "xdg-open", link).Start() //nolint:gosec // link is our loopback URL
 	}
 }

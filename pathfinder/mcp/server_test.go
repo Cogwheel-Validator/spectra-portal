@@ -200,7 +200,7 @@ func TestRequestLogShowsToolAndArgNamesButNeverValues(t *testing.T) {
 	assert.NoError(t, err)
 	s, err := sdk.NewClient(&sdk.Implementation{Name: "my-agent", Version: "1.2"}, nil).Connect(ctx, ct, nil)
 	assert.NoError(t, err)
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	secret := "osmo1supersecretaddressvalue"
 	call(t, s, "address_info", map[string]any{"address": secret})
@@ -234,7 +234,7 @@ func TestRequestLogOverHTTPTransport(t *testing.T) {
 	s, err := sdk.NewClient(&sdk.Implementation{Name: "http-agent", Version: "9"}, nil).
 		Connect(ctx, &sdk.StreamableClientTransport{Endpoint: srv.URL}, nil)
 	assert.NoError(t, err)
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 	call(t, s, "list_chains", nil)
 
 	log := buf.String()

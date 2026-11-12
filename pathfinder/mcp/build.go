@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"slices"
 	"time"
 
 	"connectrpc.com/connect"
@@ -264,10 +265,18 @@ func (b *builder) swapMessage(r *models.BrokerRoute, slippage uint32) (cosmostx.
 	if err != nil {
 		return nil, "", err
 	}
+	for _, rt := range rd.Routes {
+		for _, p := range rt.Pools {
+			if p.ID < 0 {
+				return nil, "", fmt.Errorf("the swap route has an invalid pool id %d", p.ID)
+			}
+		}
+	}
 	pools := func(rt osmosis.Route) []cosmostx.SwapRoute {
 		out := make([]cosmostx.SwapRoute, len(rt.Pools))
 		for i, p := range rt.Pools {
-			out[i] = cosmostx.SwapRoute{PoolID: uint64(p.ID), TokenOutDenom: p.TokenOutDenom}
+			id := uint64(p.ID) //nolint:gosec // checked non-negative above
+			out[i] = cosmostx.SwapRoute{PoolID: id, TokenOutDenom: p.TokenOutDenom}
 		}
 		return out
 	}
@@ -313,7 +322,10 @@ func setTransferAmount(in setAmountInput) (*MessageOut, error) {
 	if err != nil {
 		return nil, err
 	}
-	tr := m.(*cosmostx.MsgTransfer)
+	tr, ok := m.(*cosmostx.MsgTransfer)
+	if !ok {
+		return nil, fmt.Errorf("message did not decode as %s", cosmostx.TypeURLMsgTransfer)
+	}
 	tr.Token.Amount = in.Amount
 	out := messageOut(tr)
 	return &out, nil
@@ -333,7 +345,7 @@ func applySlippage(amount string, bps uint32) (string, error) {
 	return n.String(), nil
 }
 
-func (t *tools) build(ctx context.Context, in buildInput) (*BuildResult, error) {
+func (t *tools) build(_ context.Context, in buildInput) (*BuildResult, error) {
 	mode := in.Mode
 	if mode == "" {
 		mode = "smart"
@@ -397,7 +409,7 @@ func (t *tools) build(ctx context.Context, in buildInput) (*BuildResult, error) 
 		return nil, fmt.Errorf("the pathfinder returned a route type this builder does not support: %s", route.RouteType)
 	}
 	res.Steps = b.steps
-	res.Warnings = append(b.warn,
+	res.Warnings = append(slices.Clone(b.warn),
 		"These are UNSIGNED messages. Show the user the amounts, chains, recipient and steps and get explicit approval before anyone signs.",
 		fmt.Sprintf("IBC timeout is %d minutes from now; build again if signing is delayed past it.", tm))
 	res.Next = "For each step in order: call build_sign_doc, have the user's wallet sign it, call assemble_signed_tx, then broadcast_signed_tx (if enabled) or broadcast it yourself, and confirm with track_transfer before starting a step that has wait_for."
