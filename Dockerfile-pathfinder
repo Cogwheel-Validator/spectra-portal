@@ -7,7 +7,7 @@ COPY ./config_manager /app/config_manager
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux GOTOOLCHAIN=auto go build -ldflags="-s -w" -o pathfinder-rpc ./pathfinder/cmd/main.go
 
-FROM gcr.io/distroless/base-debian13:latest@sha256:075a33d9c49026ca7ee72738b4c4a1caea55d0f44227356e46a611a211050e20
+FROM gcr.io/distroless/base-debian13:latest@sha256:0e48b9bcd868bce9fa872cee10b52961d9e32677823da4bf68eefb44f38e7b9d
 WORKDIR /app
 COPY --from=builder /app/pathfinder-rpc /app/pathfinder-rpc
 
